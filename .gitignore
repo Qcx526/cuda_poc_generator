@@ -1,0 +1,34 @@
+# CUDA PoC Generator
+# =============================================================================
+
+# --- IDE & Desktop session data ---
+.reasonix/
+.docs/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Environment & secrets ---
+.env
+*.env.local
+.env.*.local
+
+# --- Generated outputs ---
+data/outputs/CVE-*/
+
+# --- Vector index (ChromaDB) ---
+data/knowledge_bases/.chromadb/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db

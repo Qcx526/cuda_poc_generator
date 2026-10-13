@@ -1,0 +1,51 @@
+# ============================================================================
+# CUDA PoC Generator - 默认配置文件
+# 仅供授权安全研究使用 (Authorized Security Research Only)
+# ============================================================================
+
+# --- LLM 配置 ---
+# NIUBIAPI 中转站，走 OpenAI 兼容接口
+# Key 在 .env 中通过 NIUBIAPI_KEY 设置；模型可用环境变量 CPG_LLM_MODEL_NAME 覆盖
+llm:
+  model_name: "deepseek-flash"                     # 中转站可用模型，按需修改
+  api_base: "https://api.deepseek.com"
+  api_key_env: "DEEPSEEK_KEY"                   # 对应 .env 中的 Key
+  temperature: 0.3
+  max_tokens: 4096  # PoC 代码通常在 1-3K token；4K 足够且生成快
+  timeout: 600  # kimi-k2.7-code 生成完整 PoC 需 5-8 分钟，300s 不够
+  max_retries: 3
+  streaming: false
+
+# --- RAG 知识库配置 ---
+rag:
+  enabled: true
+  chunk_size: 1024
+  chunk_overlap: 128
+  top_k: 5
+  persist_directory: "data/knowledge_bases/.chromadb"
+  knowledge_base_dir: "data/knowledge_bases"
+
+# --- 路径配置 ---
+paths:
+  inputs_dir: "data/inputs"
+  outputs_dir: "data/outputs"
+  templates_dir: "data/templates"
+
+# --- CUDA 漏洞专项配置 ---
+vulnerability:
+  vuln_type: "cuda"
+  # 7 个输入文件（七维度）的默认文件名 — CUDA 专项定制
+  input_files:
+    os_environment: "1_os_environment.json"
+    cuda_environment: "2_cuda_environment.json"
+    affected_component: "3_affected_component.json"
+    attack_surface: "4_attack_surface.json"
+    vulnerability_type: "5_vulnerability_type.json"
+    impact_controllability: "6_impact_controllability.json"
+    root_cause: "7_root_cause.json"
+
+# --- 迭代控制 ---
+iteration:
+  max_iterations: 5
+  low_confidence_threshold: 0.4
+  max_auto_retries: 3
