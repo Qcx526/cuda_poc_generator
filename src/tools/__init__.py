@@ -1,8 +1,8 @@
-"""CUDA PoC Tool Library — battle-tested, importable tools for PoC code generation.
+"""CUDA PoC tool adapters with bounded process evidence and ELF64LE checks.
 
-These tools encapsulate the patterns we've validated against real CUDA 11.2
-cubin files on Windows. LLM-generated PoC code should import and use these
-functions instead of reimplementing ELF manipulation or MSVC setup from scratch.
+Generated candidates can import these functions rather than duplicate binary
+layouts or process handling. Compilation and structural validation cannot attest
+candidate execution or verification of a vulnerability.
 
 Layer 2 tools (this package):
   env.py      — GPU/CUDA environment detection
@@ -25,7 +25,8 @@ from .env import (
 )
 
 # Compilation
-from .compile import compile_cubin, compile_kernel_source
+from .compile import (compile_cubin, compile_kernel_source, compile_cubin_result,
+                      CompileResult, CompileError, prepare_msvc_environment)
 
 # ELF operations
 from .elf_ops import (
@@ -40,6 +41,7 @@ from .elf_ops import (
 from .inspect import (
     cuobjdump_elf, nvdisasm_run, nvdisasm_has_relocation_sections,
     get_nvdisasm_version, is_access_violation,
+    cuobjdump_result, nvdisasm_result,
 )
 
 # Web Search
@@ -50,6 +52,7 @@ __all__ = [
     "get_cuda_driver_version", "get_gpu_compute_capability", "setup_msvc_env",
     "get_compiler_info",
     "compile_cubin", "compile_kernel_source",
+    "compile_cubin_result", "CompileResult", "CompileError", "prepare_msvc_environment",
     "ELF64_SHDR_FMT", "ELF64_SHDR_SIZE",
     "SHT_REL", "SHT_RELA", "SHT_PROGBITS", "SHT_SYMTAB",
     "find_section", "find_sections_by_type",
@@ -57,6 +60,7 @@ __all__ = [
     "validate_elf_structure", "get_section_info",
     "cuobjdump_elf", "nvdisasm_run", "nvdisasm_has_relocation_sections",
     "get_nvdisasm_version", "is_access_violation",
+    "cuobjdump_result", "nvdisasm_result",
     "search_cve", "search_cuda_vuln", "search_to_context", "search_available",
 ]
 
@@ -66,10 +70,10 @@ def get_tools_reference_text() -> str:
     Inject this into the LLM code generation prompt so it knows what to import.
     """
     return """\
-## IMPORTABLE TOOL LIBRARY (use these — do NOT reimplement from scratch)
+## IMPORTABLE TOOL LIBRARY
 
-These are battle-tested, importable functions verified against CUDA 11.2 cubin
-files. To use them, your PoC script MUST first add the project root to sys.path
+These functions provide process evidence and supported ELF64LE structure checks.
+No tool outcome by itself verifies a CVE. To use them, your PoC script must first add the project root to sys.path
 (because the script runs from data/outputs/<CVE>/ which is 4 levels deep):
 
 ```python
@@ -84,30 +88,30 @@ Then import the tools you need:
 # Environment detection
 from src.tools.env import (
     find_cuda_tool,             # find nvcc/cuobjdump path
-    get_gpu_compute_capability, # returns 'sm_75' etc.
-    setup_msvc_env,             # returns env dict with MSVC/SDK paths
+    get_gpu_compute_capability, # observed 'sm_*' or None
+    setup_msvc_env,             # validates an already prepared MSVC environment
 )
 
 # Compilation
 from src.tools.compile import (
-    compile_cubin,              # compile .cu -> .cubin with MSVC setup
-    compile_kernel_source,      # compile from string, auto-cleanup temp files
+    compile_cubin,              # explicit arch required; prepared Windows MSVC env
+    compile_kernel_source,      # returns two retained paths; caller cleans task dir
 )
 
-# ELF operations (use these — verified correct for CUDA 11.2)
+# ELF operations (strict ELF64 little endian; unsupported variants are rejected)
 from src.tools.elf_ops import (
     ELF64_SHDR_FMT,             # '<IIQQQQIIQQ' (64 bytes)
     find_section,               # find section by name
     find_sections_by_type,      # find all REL/RELA sections
-    replace_section_content,    # replace content, update sh_new_size
+    replace_section_content,    # replace content, update sh_offset/sh_size
     patch_section_field,        # modify sh_link/sh_info/sh_size
-    validate_elf_structure,     # integrity check before running tool
+    validate_elf_structure,     # structural errors; not execution/CVE verification
 )
 
 # Toolchain
 from src.tools.inspect import (
     nvdisasm_run,               # run nvdisasm, returns (ok, stdout, stderr, rc)
-    is_access_violation,        # check if exit code indicates crash
+    is_access_violation,        # exact Windows access violation; not a CVE verdict
     cuobjdump_elf,              # structured cuobjdump output
 )
 
@@ -115,6 +119,7 @@ from src.tools.inspect import (
 from src.tools.search import search_cve, search_cuda_vuln, search_to_context
 ```
 
-USE these imports — they handle MSVC setup, correct struct formats, and platform
-differences. Do NOT write your own struct.pack/unpack for ELF headers.
+Compilation requires an explicit arch or a validated target snapshot and a
+separately prepared MSVC environment on Windows. ToolResult records raw bytes and
+process status. Candidate execution remains NOT_EXECUTED / NOT_VERIFIED.
 """

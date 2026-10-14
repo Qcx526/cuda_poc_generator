@@ -138,35 +138,23 @@ def get_gpu_compute_capability() -> Optional[str]:
 
 
 def setup_msvc_env(msvc_version: str = "") -> Dict[str, str]:
-    """Return environment dict with MSVC + Windows SDK paths for nvcc.
+    """Compatibility adapter for a separately prepared developer environment.
 
-    On Windows, calls vcvarsall.bat and captures INCLUDE/LIB/PATH.
-    On Linux, returns os.environ unchanged.
-    Returns empty dict on failure (caller should fall back to os.environ).
+    Open a Visual Studio developer terminal before calling this on Windows.
+    No batch files or shell command strings are executed here. A requested MSVC
+    toolset must match VCToolsVersion; an unknown selection returns {}.
     """
+    if not isinstance(msvc_version, str) or (msvc_version and not re.fullmatch(r"[0-9]+\.[0-9]+(?:\.[0-9]+)?", msvc_version)):
+        raise ValueError("msvc_version must be a numeric toolset version")
     if os.name != "nt":
         return dict(os.environ)
-    vcvars = find_msvc_vcvarsall()
-    if not vcvars:
+    env = dict(os.environ)
+    lookup = {key.upper(): value for key, value in env.items()}
+    if not lookup.get("INCLUDE") or not lookup.get("LIB") or not shutil.which("cl.exe", path=lookup.get("PATH", "")):
         return {}
-    try:
-        ver_arg = f" -vcvars_ver={msvc_version}" if msvc_version else ""
-        result = subprocess.run(
-            f'cmd /c ""{vcvars}" x64{ver_arg} >nul && set"',
-            capture_output=True, text=True, timeout=30, shell=True,
-        )
-        if result.returncode != 0:
-            return {}
-        env = {}
-        for line in result.stdout.splitlines():
-            if "=" in line:
-                k, _, v = line.partition("=")
-                env[k] = v
-        if "INCLUDE" in env:
-            return {**os.environ, **env}
+    if msvc_version and not re.fullmatch(re.escape(msvc_version) + r"(?:\.[0-9]+)*", lookup.get("VCTOOLSVERSION", "")):
         return {}
-    except Exception:
-        return {}
+    return env
 
 
 def get_compiler_info() -> Dict[str, str]:

@@ -6,12 +6,15 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 
 
 def protect_directory(path):
     path.mkdir(parents=True, exist_ok=False, mode=0o700)
     if os.name != "nt":
         path.chmod(0o700)
+        if stat.S_IMODE(path.stat().st_mode) != 0o700:
+            raise OSError("Private evidence permissions could not be enforced; use a native Linux filesystem")
         return {"status": "APPLIED", "method": "POSIX directory 0700 / files 0600"}
     from ctypes import wintypes
     advapi = ctypes.WinDLL("advapi32", use_last_error=True)
@@ -106,6 +109,8 @@ def write_probe_artifacts(root, result):
         destination.write_bytes(data)
         if os.name != "nt":
             destination.chmod(0o600)
+            if stat.S_IMODE(destination.stat().st_mode) != 0o600:
+                raise OSError("Private evidence file permissions could not be enforced")
 
     def json_file(name, value):
         write(name, (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8"))

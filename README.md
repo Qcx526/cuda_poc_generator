@@ -13,6 +13,7 @@
 - 可选本地 CPU embedding + Chroma 持久化检索；可选 Tavily CVE Web 检索。
 - 带字段状态、来源和内容哈希的只读平台探测；支持 Windows 经 `wsl.exe` 显式探测 WSL，并分别保存两套环境。
 - 可导入的编译、ELF 操作、反汇编工具；主流程不自动执行这些工具。
+- P1-C 底层工具使用严格 `ToolResult` 和私有原始日志；编译采用受控 argv、明确架构及参数白名单，ELF 操作严格支持 ELF64 little-endian。
 
 ## 2. 尚未实现的功能与边界
 
@@ -29,10 +30,9 @@ main.py → CLI 检查 → ConfigLoader（根目录 .env + YAML + CPG_*）
   → CudaPipeline
     → CudaDataLoader：七维原始文件 → 归一化 → 一致性/字段检查
       → input_manifest_v1.json（来源、哈希、状态与未验证声明）
-    → 可选 RAG：本地 embedding / Chroma → 检索文本
-    → 可选 Tavily → Web 文本
     → 新鲜平台探测：默认 local；显式 wsl 时经 wsl.exe 返回 Linux 快照
       → 严格 PlatformSnapshot 校验 → 私有原始记录 + 确定性 Markdown 摘要
+    → 模型客户端初始化 → 可选 RAG / Tavily 检索（平台失败时跳过）
     → CudaSecurityExpert：一次 LLM 分析 → 完整JSON解析 → 严格模型/CVE校验
       → cuda_analysis_v1.raw.txt（原文）与 cuda_analysis_v1.json（合格分析）
     → CudaCodeGenerator：一次 LLM 生成 + 最多两次静态纠正
@@ -211,7 +211,9 @@ Windows PowerShell（不加载模型、不读取 `.env`、不调用付费 API）
 
 默认 Linux 解释器是 `/home/pocdev/.venvs/cuda-poc-generator/bin/python`，用户 `pocdev`；可用 `--linux-python`、`--wsl-user` 显式调整。生成流程对应配置在 `config/default.yaml` 的 `platform` 节。WSL 终端也可用自身 venv 执行 `python -m src.platform_probe --backend local`。
 
-每次记录位于 `data/outputs/platform_probes/<probe_id>/`，包含 `platform_snapshot.json`、`host_snapshot.json`、`commands.json`、原始 stdout/stderr、`probe_result.json` 和确定性 `probe_report.md`。原始路径和输出仅留在私有目录，Windows 使用受保护 DACL，Linux 使用目录 `0700` / 文件 `0600`；这些产物不进入 Git。`PARTIAL` 保留可用观测和未知项，`FAILED` 不提供替代快照；CLI 分别返回 0 / 1，不能仅凭退出码判断能力齐全。
+Windows 记录位于 `data/outputs/platform_probes/<probe_id>/`；Linux 默认使用 `~/.local/state/cuda-poc-generator/platform_probes/<probe_id>/`。包含快照、命令、原始双流和确定性报告。Windows 使用受保护 DACL，Linux 检查实际目录 `0700` / 文件 `0600`；`/mnt/*` 若不落实权限会明确失败。这些产物不进入 Git。`PARTIAL` 保留可用观测和未知项，`FAILED` 不提供替代快照；CLI 分别返回 0 / 1，不能仅凭退出码判断能力齐全。
+
+底层工具接口和迁移见 [P1-C 合同](docs/P1_C_TOOL_CONTRACT.md)：`compile_cubin` 必须指定 `arch` 或提供合格 snapshot；Windows 先从 Visual Studio developer terminal 准备 MSVC，再使用项目 `.venv`。不再自动拼接 `vcvarsall` 与编译命令。`compile_kernel_source` 返回的两个文件均保留，成功后由调用者清理独立目录。原始工具记录默认在 Windows `data/outputs/tool_runs/` 或 Linux `~/.local/state/cuda-poc-generator/tool_runs/`。
 
 版本检查也可在 WSL 手动执行：
 
@@ -242,7 +244,7 @@ P1-B 真实只读桥接观察到 WSL 的 nvcc `12.8.93`、Compute Sanitizer `202
 
 P1-A 新增严格合同与阻断、原文保留及独立状态回归，双环境验收见 [P1-A 交付记录](docs/P1_A_VALIDATION.md)。非 JSON、截断、额外杂文、重复键、NaN/Infinity、字段缺失/类型错误、步骤 ID 或目标 CVE 冲突均会失败；没有结构纠正重试（0次），供应商请求沿用既有有界重试。
 
-P1-B 合同、迁移说明与报告示例见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)。后续 P1-C 修复底层编译/ELF/退出状态 helper；P2 在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。
+P1-B 见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)；P1-C 工具修复、双环境测试和未检查项见 [工具合同](docs/P1_C_TOOL_CONTRACT.md)、[验收记录](docs/P1_C_VALIDATION.md)。后续 P2 在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。
 
 ## 14. 安全边界、来源与许可证说明
 

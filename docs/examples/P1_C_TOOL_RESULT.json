@@ -1,0 +1,56 @@
+{
+  "example_kind": "SYNTHETIC_OFFLINE_FIXTURE_NOT_REAL_EVIDENCE",
+  "tool_result": {
+    "schema_version": "1.0",
+    "run_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "record_id": "sha256:fced78c27bc790146dbc6ee4088d4438fdb8d80bc40b9f4b27e74a01575d4215",
+    "argv": [
+      "/tools/nvcc",
+      "--version"
+    ],
+    "cwd": "/synthetic",
+    "target_environment": "wsl:Ubuntu-22.04",
+    "platform_type": "wsl",
+    "start_status": "STARTED",
+    "end_status": "NORMAL_EXIT",
+    "returncode": 0,
+    "linux_signal": null,
+    "windows_exception_code": null,
+    "timed_out": false,
+    "truncated": false,
+    "capture_failed": false,
+    "started_at": "2026-10-14T00:00:00+00:00",
+    "finished_at": "2026-10-14T00:00:01+00:00",
+    "duration_seconds": 1.0,
+    "resource_limits": {
+      "timeout_seconds": 3.0,
+      "max_output_bytes": 4096,
+      "termination_scope": "POSIX_PROCESS_GROUP",
+      "memory_bytes": null,
+      "cpu_seconds": null,
+      "memory_limit_status": "NOT_ENFORCED",
+      "cpu_limit_status": "NOT_ENFORCED"
+    },
+    "stdout_b64": "",
+    "stderr_b64": "",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdin_sha256": null,
+    "stdin_size_bytes": 0,
+    "command_identity": {
+      "source": "synthetic fixture",
+      "argv_sha256": "505dc379f4d474d4fc97faa13f37492df20f1c9caeabd5db95300b003b14a340"
+    },
+    "tool_identity": {
+      "requested_executable": "/tools/nvcc",
+      "resolved_path": "/tools/nvcc",
+      "status": "OBSERVED",
+      "file_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "source": "synthetic fixture"
+    },
+    "diagnostics": [],
+    "candidate_execution_status": "NOT_EXECUTED",
+    "verification_status": "NOT_VERIFIED",
+    "evidence_directory": "/synthetic/not-a-real-record"
+  }
+}

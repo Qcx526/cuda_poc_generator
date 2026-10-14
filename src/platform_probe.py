@@ -14,6 +14,14 @@ from .probe_process import run_bounded
 from .wsl_bridge import parse_packet, probe_wsl, validate_wsl_options
 
 
+def default_probe_output_root():
+    # DrvFS mounts can ignore chmod; retain the Windows DACL path on Windows,
+    # and keep Linux private evidence on its own native filesystem by default.
+    if os.name == "nt":
+        return Path(__file__).resolve().parent.parent / "data" / "outputs" / "platform_probes"
+    return Path.home() / ".local" / "state" / "cuda-poc-generator" / "platform_probes"
+
+
 def read_snapshot(path, *, expected_probe_id):
     """Validate an exact stored record; never relabel a historical probe as current."""
     import json
@@ -89,7 +97,7 @@ def run_platform_probe(*, backend="local", distro="Ubuntu-22.04",
     for snapshot in (result["snapshot"], result["host_snapshot"]):
         if snapshot is not None:
             result["diagnostics"].extend(snapshot["diagnostics"])
-    root = output_root or Path(__file__).resolve().parent.parent / "data" / "outputs" / "platform_probes"
+    root = output_root or default_probe_output_root()
     folder = write_probe_artifacts(root, result)
     result["run_directory"] = str(folder)
     if result["snapshot"] is not None:

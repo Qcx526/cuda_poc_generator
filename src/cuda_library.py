@@ -66,8 +66,8 @@ CUDA_HELPER_SIGNATURES: List[str] = [
     "  # 获取可用 GPU 设备数量",
 
     # ---------- CUDA Toolchain ----------
-    "nvcc_compile(source_path: str, output_path: str, arch: str = 'sm_75') -> bool",
-    "  # 使用 nvcc 编译 .cu 源文件生成 cubin",
+    "nvcc_compile(source_path: str, output_path: str, arch: str) -> bool",
+    "  # 必须明确架构；使用 src.tools.compile 的受控编译接口，保留 ToolResult 原始证据",
     "cuobjdump_dump_elf(cubin_path: str) -> str",
     "  # 调用 cuobjdump --dump-elf 解析 cubin 的 ELF 结构",
     "nvdisasm_dump(cubin_path: str) -> str",

@@ -140,15 +140,7 @@ class CudaPipeline:
         print(f"  CVE: {bundle.cve_id}; all seven inputs passed structural checks")
 
         try:
-            self._initialize_components(str(target_dir))
-        except Exception as exc:
-            finish("PROVIDER_ERROR", exc)
-            raise
-
-        try:
-            self.data_loader.build_or_load_knowledge_base()
-            rag_context = self._query_rag(vuln_context)
-            web_context = self._query_web_search(vuln_context)
+            # Platform preflight precedes providers, embeddings and Web requests.
             selected_backend = target_backend or "local"  # WSL is never selected implicitly.
             if selected_backend == "wsl":
                 from .platform_probe import run_platform_probe
@@ -174,6 +166,19 @@ class CudaPipeline:
             report["platform_environment_id"] = env_info.get("environment_id")
             report["platform_probe_record"] = env_info.get("metadata", {}).get("record_directory")
             env_prompt_block = format_for_prompt(env_info)
+        except Exception as exc:
+            finish("CONTEXT_ERROR", exc)
+            raise
+
+        try:
+            self._initialize_components(str(target_dir))
+        except Exception as exc:
+            finish("PROVIDER_ERROR", exc)
+            raise
+        try:
+            self.data_loader.build_or_load_knowledge_base()
+            rag_context = self._query_rag(vuln_context)
+            web_context = self._query_web_search(vuln_context)
         except Exception as exc:
             finish("CONTEXT_ERROR", exc)
             raise
