@@ -1,11 +1,11 @@
 """
-GPU/CUDA 环境探针 — 启动时自动收集真实环境信息，供 LLM 代码生成使用。
+GPU/CUDA 环境探针 — 收集当前宿主的只读平台快照，供代码生成使用。
 
 收集内容:
 - GPU 型号和计算能力 (nvidia-smi)
-- CUDA Driver 版本
+- Driver Release、驱动报告兼容版本（Driver API 当前 NOT_CHECKED）
 - CUDA Toolkit 版本和路径
-- 所有可用的 CUDA 工具链二进制路径
+- 实际发现的 nvcc / Compute Sanitizer 路径
 - nvcc 支持的编译目标架构
 - 操作系统和内核版本
 """
@@ -23,156 +23,32 @@ logger = logging.getLogger("cuda_poc_generator.env_probe")
 
 
 def probe_environment() -> Dict[str, Any]:
-    """运行一次完整的环境探测，返回结构化数据。"""
-    result: Dict[str, Any] = {
-        "gpu": {},
-        "cuda_driver": {},
-        "cuda_toolkit": {},
-        "toolchain": {},
-        "os": {},
-        "errors": [],
-    }
-
-    # ---- OS ----
-    result["os"] = _probe_os()
-
-    # ---- GPU ----
-    result["gpu"] = _probe_gpu()
-
-    # ---- CUDA Driver ----
-    result["cuda_driver"] = _probe_cuda_driver()
-
-    # ---- CUDA Toolkit ----
-    result["cuda_toolkit"] = _probe_cuda_toolkit()
-
-    # ---- Toolchain binaries ----
-    result["toolchain"] = _probe_toolchain()
-    # 基于 nvcc 检测支持的 arch
-    result["toolchain"]["supported_archs"] = _probe_nvcc_archs(
-        result["toolchain"].get("nvcc_path", "")
-    )
-
-    # ---- Host compiler (nvcc depends on MSVC cl.exe / gcc/g++) ----
-    result["host_compiler"] = _probe_host_compiler()
-
-    return result
+    """Capture a fresh local read-only snapshot and private evidence record."""
+    from .platform_probe import run_platform_probe
+    result = run_platform_probe(backend="local")
+    if result["snapshot"] is None:
+        raise RuntimeError("Local platform probe failed; no current snapshot is available.")
+    return result["snapshot"]
 
 
 def format_for_prompt(env: Dict[str, Any]) -> str:
-    """将探测结果格式化为 LLM prompt 可用的文本块。"""
-    lines = [
-        "## ⚠️ REAL TARGET ENVIRONMENT (DO NOT HARDCODE — USE THESE VALUES)",
-        "",
-    ]
-
-    os_info = env.get("os", {})
-    lines.append("### Operating System")
-    lines.append(f"- OS: {os_info.get('pretty_name', 'unknown')}")
-    lines.append(f"- Kernel: {os_info.get('kernel', 'unknown')}")
-    lines.append(f"- Architecture: {os_info.get('arch', 'unknown')}")
-    lines.append("")
-
-    gpu = env.get("gpu", {})
-    lines.append("### GPU Hardware")
-    if gpu.get("gpu_count", 0) > 0:
-        lines.append(f"- GPU Count: {gpu['gpu_count']}")
-        for g in gpu.get("gpus", []):
-            lines.append(f"- GPU {g['index']}: {g.get('name', '?')} (compute_cap={g.get('compute_cap', '?')})")
-        lines.append(f"- PRIMARY COMPUTE CAP: {gpu.get('primary_compute_cap', 'sm_75')} ← USE THIS FOR -arch=")
-    else:
-        lines.append("- No GPU detected — use -arch=sm_75 as safe baseline")
-    lines.append("")
-
-    driver = env.get("cuda_driver", {})
-    lines.append("### CUDA Driver")
-    lines.append(f"- Version: {driver.get('version', 'not found')}")
-    lines.append(f"- nvidia-smi available: {driver.get('nvidia_smi_available', False)}")
-    lines.append("")
-
-    toolkit = env.get("cuda_toolkit", {})
-    lines.append("### CUDA Toolkit")
-    lines.append(f"- Version: {toolkit.get('version', 'not found')}")
-    lines.append(f"- Install paths: {', '.join(toolkit.get('install_paths', [])) or 'none'}")
-    lines.append("")
-
-    tools = env.get("toolchain", {})
-    lines.append("### CUDA Toolchain Binaries (use these exact paths)")
-    for name in ["nvcc", "cuobjdump", "nvdisasm", "ptxas"]:
-        path = tools.get(f"{name}_path", "")
-        if path:
-            lines.append(f"- {name}: {path}")
-    archs = tools.get("supported_archs", [])
-    if archs:
-        lines.append(f"- nvcc supported archs: {', '.join(archs)}")
-    lines.append("")
-
-    # 主机编译器信息
-    hc = env.get("host_compiler", {})
-    lines.append("### Host Compiler")
-    lines.append(f"- Name: {hc.get('name', '?')}")
-    lines.append(f"- Path: {hc.get('path', 'not found')}")
-    lines.append(f"- Version: {hc.get('version', '?')}")
-    lines.append(f"- nvcc smoke test: {'OK' if hc.get('nvcc_smoke_ok') else 'FAILED'}")
-    if hc.get("platform") == "nt":
-        lines.append("")
-        lines.append("### MSVC / Windows SDK (auto-detected)")
-        msvc_vers = hc.get("msvc_versions", [])
-        if msvc_vers:
-            lines.append(f"- Available MSVC versions: {', '.join(v['version'] for v in msvc_vers)}")
-        rec = hc.get("recommended_msvc")
-        if rec:
-            lines.append(f"- RECOMMENDED MSVC: {rec['version']} (CUDA compatible)")
-        sdk_path = hc.get("windows_sdk_path", "")
-        sdk_ver = hc.get("windows_sdk_version", "")
-        if sdk_path:
-            lines.append(f"- Windows SDK: {sdk_path} (version {sdk_ver})")
-        vcvars = hc.get("msvc_setup_script", "")
-        if vcvars:
-            lines.append(f"- vcvarsall.bat: {vcvars}")
-        vcvars_arg = hc.get("recommended_vcvars_arg", "")
-        if vcvars_arg:
-            lines.append(f"- Recommended vcvars version arg: {vcvars_arg}")
-        setup_code = hc.get("msvc_env_setup_code", "")
-        if setup_code:
-            lines.append(f"- MSVC env setup snippet (run before nvcc):")
-            for line in setup_code.split("\n"):
-                lines.append(f"  {line}")
-        if hc.get("errors"):
-            lines.append(f"- MSVC issues: {'; '.join(hc['errors'][:3])}")
-    lines.append("")
-
-    # 重要提示（平台感知）
-    lines.extend([
-        "### RULES FOR PoC CODE GENERATION",
-        "1. Use the EXACT binary paths listed above — do NOT guess paths",
-        "2. Use `-arch=` with the PRIMARY COMPUTE CAP value above — do NOT hardcode sm_75",
-        "3. Always print subprocess stderr on failure",
-        "4. If nvidia-smi is not available, detect arch via `nvcc -arch=native` or fallback to sm_75",
-    ])
-    if hc.get("platform") == "nt":
-        lines.extend([
-            "5. **Windows MSVC**: Before calling nvcc, ensure MSVC + Windows SDK environment is set.",
-            "   Use the recommended vcvarsall.bat command above, or set INCLUDE/LIB manually.",
-            "6. Use `.exe` suffix for CUDA tool binaries, `.obj` for object files.",
-        ])
-        lines.append("")
-        lines.append("### IMPORTANT: ELF / cubin operations on Windows")
-        lines.append("- CUDA 11.2 on Windows produces valid ELF64 cubin files with e_shentsize=64")
-        lines.append("- Standard ELF64 section header format: <IIQQQQIIQQ (64 bytes, 10 fields)")
-        lines.append("- To REPLACE a section's content (not add a new one):")
-        lines.append("  1. Parse ELF header -> locate .shstrtab -> find section by name")
-        lines.append("  2. Append new data at end of file")
-        lines.append("  3. Update that section's sh_offset and sh_size")
-        lines.append("  4. Do NOT add new section headers - tools only recognize the first")
-        lines.append("- Use `struct.unpack('<IIQQQQIIQQ', raw_64_bytes)` for section headers")
-        lines.append("- sh_offset is at tuple index 4, sh_size at tuple index 5")
-        lines.append("- Append new data at the end of the working buffer, then point shdr there")
-    else:
-        lines.extend([
-            "5. Use object suffix `.o` for nvcc output on Linux",
-            "6. nvdisasm, cuobjdump, ptxas paths are absolute - use them directly",
-        ])
-
+    """Express observations, unknowns and selected backend without guessed values."""
+    if env.get("schema_version") != "1.0":
+        # Old external/mock contexts lack provenance; never promote them to observations.
+        return "## SELECTED TARGET PLATFORM SNAPSHOT\nLegacy context: NOT_CHECKED. No observed GPU architecture or tool paths. Do not guess."
+    from .models.platform import PlatformSnapshot
+    snapshot = PlatformSnapshot.model_validate(env).model_dump(mode="json")
+    lines = ["## SELECTED TARGET PLATFORM SNAPSHOT", "",
+             f"Platform: {snapshot['platform_type']}; backend: {snapshot['execution_backend']}",
+             "This is read-only platform observation, not execution or vulnerability evidence."]
+    for name, value in snapshot.items():
+        if isinstance(value, dict) and "status" in value and "value" in value:
+            lines.append(f"- {name}: {value['status']}; value={json.dumps(value['value'], ensure_ascii=False)}; method={value['method']}")
+    lines.extend(["", "Use only paths belonging to this selected target. Unknown capabilities remain unknown.",
+                  "An inferred sm notation is derived only from observed compute capability, never from a GPU name.",
+                  "Do not replace UNKNOWN/FAILED/NOT_CHECKED with a default architecture or historical Toolkit list.",
+                  "Driver release, Driver API version, driver-reported compatibility and Toolkit version are distinct.",
+                  "Compilation/kernel/PoC execution: NOT_EXECUTED. Vulnerability verification: NOT_VERIFIED."])
     return "\n".join(lines)
 
 
@@ -221,36 +97,12 @@ def _probe_os() -> Dict[str, Any]:
 
 
 def _probe_gpu() -> Dict[str, Any]:
-    # GTX 1660 = SM 7.5（Turing），作为默认回退值
-    gpus: Dict[str, Any] = {"gpu_count": 0, "gpus": [], "primary_compute_cap": "sm_75"}
-    nvidia_smi = shutil.which("nvidia-smi")
-    if not nvidia_smi:
-        logger.debug("nvidia-smi not found, skipping GPU probe")
-        return gpus
-
-    try:
-        # Query GPU names — 旧驱动 (460.89) 可能不支持 compute_cap 查询
-        out = subprocess.check_output(
-            [nvidia_smi, "--query-gpu=index,name", "--format=csv,noheader"],
-            text=True, timeout=10,
-        )
-        for line in out.strip().split("\n"):
-            parts = [p.strip() for p in line.split(",")]
-            if len(parts) >= 2:
-                gpus["gpus"].append({
-                    "index": parts[0],
-                    "name": parts[1],
-                    "compute_cap": "7.5（by device: GTX 1660）",
-                })
-        gpus["gpu_count"] = len(gpus["gpus"])
-        if gpus["gpus"]:
-            # GTX 1660 = SM 7.5
-            gpus["primary_compute_cap"] = "sm_75"
-        logger.info("GPU probe: %d GPU(s) found, primary arch=%s",
-                     gpus["gpu_count"], gpus["primary_compute_cap"])
-    except Exception as e:
-        logger.debug("GPU probe failed: %s", e)
-    return gpus
+    """Compatibility projection; unknown device access is never zero or sm_75."""
+    snapshot = probe_environment()
+    devices = snapshot["gpu_devices"]
+    values = devices["value"]
+    return {"status": devices["status"], "gpu_count": None if values is None else len(values),
+            "gpus": values, "primary_compute_cap": None if not values else values[0]["sm_arch"]["value"]}
 
 
 def _probe_cuda_driver() -> Dict[str, Any]:
@@ -331,7 +183,8 @@ def _probe_host_compiler() -> Dict[str, Any]:
         "path": "",
         "version": "",
         "host_compiler_ok": False,
-        "nvcc_smoke_ok": False,
+        "nvcc_smoke_ok": None,
+        "nvcc_smoke_status": "NOT_RUN",
         "msvc_versions": [],
         "msvc_setup_script": "",
         "windows_sdk_path": "",
@@ -369,7 +222,8 @@ def _probe_host_compiler() -> Dict[str, Any]:
             info["errors"].append(f"cc1plus check: {e}")
 
     # nvcc 冒烟测试（跨平台）
-    return _run_nvcc_smoke(info)
+    # Probe-only entry points must never compile or execute a CUDA kernel.
+    return info
 
 
 def _probe_msvc_compiler(info: Dict[str, Any]) -> Dict[str, Any]:
@@ -529,7 +383,7 @@ def _gen_msvc_env_setup(info: Dict[str, Any]) -> List[str]:
     if vcvars and os.path.isfile(vcvars):
         lines.append(f'# Recommended: run this before nvcc calls')
         lines.append(f'cmd /c ""{vcvars}" x64 {vcvars_arg} >nul && set" | '
-                     f'ForEach-Object {{ if ($_ -match "^(\w+)=(.*)") {{ '
+                     f'ForEach-Object {{ if ($_ -match "^(\\w+)=(.*)") {{ '
                      f'Set-Item "env:$($matches[1])" $matches[2] }} }}')
         if vcvars_arg:
             lines.append(f'# (forces MSVC {vcvars_arg.strip("-vcvars_ver=")})')
@@ -606,40 +460,17 @@ def _probe_toolchain() -> Dict[str, Any]:
     return tools
 
 
-def _probe_nvcc_archs(nvcc_path: str) -> List[str]:
-    """
-    返回 nvcc 支持的编译目标架构。
-    当前环境：CUDA 11.2，GTX 1660 (SM 7.5)。
-    CUDA 11.x 支持 sm_35 ~ sm_86。
-    """
-    # CUDA 11.x 已知支持列表（11.2 最大支持 sm_86）
-    known = [
-        "sm_35", "sm_37", "sm_50", "sm_52", "sm_53",
-        "sm_60", "sm_61", "sm_62",
-        "sm_70", "sm_72", "sm_75",
-        "sm_80", "sm_86",
-    ]
+def _probe_nvcc_archs(nvcc_path: str) -> Optional[List[str]]:
+    """Return actually queried nvcc architectures, or None when unavailable."""
     if not nvcc_path:
-        return known
-    # 尝试用 nvcc 实际验证（可选增强）
-    try:
-        out = subprocess.check_output(
-            [nvcc_path, "--help"], text=True, timeout=10, stderr=subprocess.STDOUT
-        )
-        # 从帮助文本中提取 -arch=sm_ 行
-        archs_in_help = re.findall(r"-arch=(sm_\d+)", out)
-        if archs_in_help:
-            # 去重并按数字排序
-            seen = set()
-            sorted_archs = []
-            for a in sorted(archs_in_help, key=lambda x: int(x.split("_")[1])):
-                if a not in seen:
-                    seen.add(a)
-                    sorted_archs.append(a)
-            return sorted_archs
-    except Exception:
-        pass
-    return known
+        return None
+    from .probe_process import run_bounded
+    import base64
+    result = run_bounded([nvcc_path, "--list-gpu-code"], timeout_seconds=3, max_output_bytes=32768)
+    if result["status"] != "COMPLETED" or result["returncode"] != 0:
+        return None
+    found = re.findall(r"\bsm_[0-9]+[a-z]?\b", base64.b64decode(result["stdout_b64"]).decode("utf-8", errors="replace"))
+    return sorted(set(found)) or None
 
 
 def _glob(pattern: str) -> List[str]:

@@ -11,7 +11,8 @@
 - 七层 CUDA 根因分析与验证策略 Prompt；完整 JSON 解析与严格 Pydantic 分析合同，失败阻止生成。
 - 生成 Python 候选 PoC，去除 Markdown 包装，进行 Python AST 和粗略名称检查；失败时最多请求两次静态纠正。
 - 可选本地 CPU embedding + Chroma 持久化检索；可选 Tavily CVE Web 检索。
-- 当前 Python 宿主机的 GPU/CUDA/工具链探测，以及可导入的编译、ELF 操作、反汇编工具。
+- 带字段状态、来源和内容哈希的只读平台探测；支持 Windows 经 `wsl.exe` 显式探测 WSL，并分别保存两套环境。
+- 可导入的编译、ELF 操作、反汇编工具；主流程不自动执行这些工具。
 
 ## 2. 尚未实现的功能与边界
 
@@ -19,7 +20,7 @@
 
 P1-A 已接入严格输入与分析合同：JSON/schema/CVE 不合格会失败，不再传入代码生成。结构合法仍不能证明模型根因、输入资料或拟定策略属实。AST 通过不代表依赖可导入、CUDA API 正确、可以运行或漏洞触发；静态纠正最终失败仍保存候选，并明确标为 `STATIC_INVALID`、`NOT_EXECUTED`、`NOT_VERIFIED`。
 
-环境探测仍有已知问题：GPU 架构存在 SM 7.5 硬编码，无 `nvcc` 时会提供预设架构列表；Windows 探测不能表示 WSL 实验环境。不要把这些推断当实测证据。详细位置见 [P0 基线审计](docs/P0_BASELINE_AUDIT.md)。
+P1-B 已移除主探测流程的默认 GPU 架构和预设 nvcc 架构列表。不可访问、未检查或失败的字段保留明确状态；CUDA Driver API 当前为 `NOT_CHECKED`。平台快照与工具版本查询不能证明 CUDA kernel 可运行，详见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)。
 
 ## 3. 系统架构与真实流程
 
@@ -30,7 +31,8 @@ main.py → CLI 检查 → ConfigLoader（根目录 .env + YAML + CPG_*）
       → input_manifest_v1.json（来源、哈希、状态与未验证声明）
     → 可选 RAG：本地 embedding / Chroma → 检索文本
     → 可选 Tavily → Web 文本
-    → env_probe：当前 Python 宿主机探测
+    → 新鲜平台探测：默认 local；显式 wsl 时经 wsl.exe 返回 Linux 快照
+      → 严格 PlatformSnapshot 校验 → 私有原始记录 + 确定性 Markdown 摘要
     → CudaSecurityExpert：一次 LLM 分析 → 完整JSON解析 → 严格模型/CVE校验
       → cuda_analysis_v1.raw.txt（原文）与 cuda_analysis_v1.json（合格分析）
     → CudaCodeGenerator：一次 LLM 生成 + 最多两次静态纠正
@@ -55,7 +57,7 @@ docs/                           基线审计、迁移与验收报告
 
 Windows 管理 Git、编辑代码及运行离线测试；使用根目录 `.venv`，不使用 Conda base。WSL Ubuntu 22.04 使用自己的 Linux Python/venv，Linux CUDA 12.8、gcc/g++ 和 Compute Sanitizer。**两套 venv 不可互相复用**，Windows Python 不能直接加载 WSL 的 `libcuda.so`。
 
-源码可位于 Windows 文件系统；从 WSL 进入对应 `/mnt/<盘符>/...`。GPU 实验将由 VS Code 的 WSL 终端在授权和隔离策略下手动执行；当前没有 Windows → WSL 自动执行后端。为使生成阶段探测到 Linux 工具路径，需要在 WSL 中运行生成命令，且仍需人工复核探测结果。
+源码可位于 Windows 文件系统；从 WSL 进入对应 `/mnt/<盘符>/...`。Windows 现在可通过正式只读入口自动获取 WSL 快照，无需手动进入 WSL 终端。生成时只有显式 `--target-backend wsl` 才调用 WSL；默认仍探测当前 Python 宿主。后续 GPU 实验仍须在明确授权和隔离策略下执行，目前没有 PoC 自动执行后端。
 
 支持范围暂限定 Python `>=3.10,<3.13`。本轮 Windows 使用 3.12.13；现有 WSL 使用 3.10.12（未额外安装 Python 3.12）。没有安装或更改 CUDA 驱动、Toolkit、WSL 网络。历史 Conda 环境保留，见 [迁移说明](docs/ENVIRONMENT_MIGRATION.md)。
 
@@ -181,6 +183,8 @@ CPU wheel 选择依据 [PyTorch 官方安装说明](https://pytorch.org/get-star
 python main.py --cve-id CVE-2024-0124 --no-rag
 python main.py --input-dir ./my_data --output-dir ./data/outputs/local --no-rag
 python main.py --config config/default.yaml --cve-id CVE-2025-23339
+# Windows 主程序使用 WSL 平台上下文；仍然只生成候选，会调用模型。
+python main.py --cve-id CVE-2024-0124 --no-rag --target-backend wsl --wsl-distro Ubuntu-22.04
 ```
 
 `--cve-id` 与 `--input-dir` 互斥。默认输出在 `data/outputs/<CVE>/`：
@@ -196,7 +200,20 @@ python main.py --config config/default.yaml --cve-id CVE-2025-23339
 
 同一 CVE 的重复生成仍会覆盖当前 `v1` 元数据；请用不同 `--output-dir` 保留完整版本。每次调用有新 `run_id`，失败会更新报告及候选状态，旧源码/旧合格分析保留，并标为 `preexisting_artifacts`，不引用为当前成功。输入无效时报告位于输出根目录。默认输出被 Git 忽略；自定义目录也必须保护原文及私有资料。尚无执行证据系统，`run_id` 只标识生成调用。任意输出目录的工具 import 固定回溯问题仍未修复。
 
-## 12. WSL CUDA 工具检查与后续实验
+## 12. 正式只读平台探测与后续实验
+
+Windows PowerShell（不加载模型、不读取 `.env`、不调用付费 API）：
+
+```powershell
+.\.venv\Scripts\python.exe -m src.platform_probe --backend local
+.\.venv\Scripts\python.exe -m src.platform_probe --backend wsl --distro Ubuntu-22.04
+```
+
+默认 Linux 解释器是 `/home/pocdev/.venvs/cuda-poc-generator/bin/python`，用户 `pocdev`；可用 `--linux-python`、`--wsl-user` 显式调整。生成流程对应配置在 `config/default.yaml` 的 `platform` 节。WSL 终端也可用自身 venv 执行 `python -m src.platform_probe --backend local`。
+
+每次记录位于 `data/outputs/platform_probes/<probe_id>/`，包含 `platform_snapshot.json`、`host_snapshot.json`、`commands.json`、原始 stdout/stderr、`probe_result.json` 和确定性 `probe_report.md`。原始路径和输出仅留在私有目录，Windows 使用受保护 DACL，Linux 使用目录 `0700` / 文件 `0600`；这些产物不进入 Git。`PARTIAL` 保留可用观测和未知项，`FAILED` 不提供替代快照；CLI 分别返回 0 / 1，不能仅凭退出码判断能力齐全。
+
+版本检查也可在 WSL 手动执行：
 
 ```bash
 # 仅查看已经安装的工具，不执行 PoC。
@@ -207,7 +224,7 @@ gcc --version
 g++ --version
 ```
 
-本轮只读取到 `nvcc 12.8.93` 和 Compute Sanitizer `2025.1.0.0`。GTX 1660/CC 7.5 是用户提供的实验目标，本轮未实测 GPU 或执行编译 smoke test。
+P1-B 真实只读桥接观察到 WSL 的 nvcc `12.8.93`、Compute Sanitizer `2025.1.0.0`、GTX 1660 / CC `7.5`；`sm_75` 是由实测 CC 派生的 `INFERRED` 值。Windows 本机 Toolkit 为 `11.2`，不能替代 WSL 的 `12.8`。本机横幅的 `CUDA UMD Version: 13.4` 单独记录，不冒充 Driver API 或最大兼容版本。未执行编译 smoke、kernel 或 PoC，详见 [P1-B 验收](docs/P1_B_VALIDATION.md)。
 
 后续实验必须在明确授权和隔离策略下，先审查候选、核对受影响版本与目标条件，再决定编译/执行范围。保留 argv、cwd、运行身份、超时、stdout/stderr、退出码、环境快照和哈希，目标 oracle 独立判定。CUDA 错误码、crash、sanitizer 的通用 OOB 报告都不能自动证明目标 CVE 被验证。本轮不提供默认自动运行样本的步骤。
 
@@ -218,13 +235,14 @@ g++ --version
 - HTTP 401/403：检查账号权限和凭证；404：核对官方模型名和 endpoint；这些错误不会自动重试。
 - RAG DLL/模型加载问题：检查 CPU torch 与 Python 的版本兼容性，或临时使用 `--no-rag`；不要盲目强制重装 GPU 软件。
 - WSL 工具缺失：检查已安装工具的 Linux 路径和 PATH，Windows 路径不能替代 Linux 动态库。
+- `WSL_UNAVAILABLE` / `WSL_DISTRO_NOT_FOUND`：检查已启用的 `wsl.exe` 和发行版名称；超时或无效响应查看本次私有 `probe_result.json`，不会复用历史快照。
 - 不要自动运行 `_diag.py`：这是历史联网诊断脚本，会进行真实模型请求且包含旧模型配方。`_check_rel.py` 是历史 CUDA 编译脚本，也不属于离线测试。
 
-逐项 PASS/FAILED/NOT_CHECKED、修改前后对比见 [P0 验收记录](docs/P0_VALIDATION.md)。离线 Mock 通过只能证明这些接线和静态行为；真实 LLM、RAG、Tavily、GPU 和漏洞触发不在本轮通过范围。
+逐项 PASS/FAILED/NOT_CHECKED、修改前后对比见 [P0 验收记录](docs/P0_VALIDATION.md)。离线 Mock 通过只能证明这些接线和静态行为；真实 LLM、RAG、Tavily 和漏洞触发不在本轮通过范围。P1-B 另行完成真实 GPU/工具只读查询和 Windows → WSL 通信，结果不等于 CUDA 执行成功。
 
 P1-A 新增严格合同与阻断、原文保留及独立状态回归，双环境验收见 [P1-A 交付记录](docs/P1_A_VALIDATION.md)。非 JSON、截断、额外杂文、重复键、NaN/Infinity、字段缺失/类型错误、步骤 ID 或目标 CVE 冲突均会失败；没有结构纠正重试（0次），供应商请求沿用既有有界重试。
 
-后续路线：P1 对齐输入/输出 schema 与生成质量；P2 建立独立环境、候选和原始证据身份，并在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。接口和验收标准见基线审计报告。
+P1-B 合同、迁移说明与报告示例见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)。后续 P1-C 修复底层编译/ELF/退出状态 helper；P2 在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。
 
 ## 14. 安全边界、来源与许可证说明
 

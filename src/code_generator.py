@@ -341,14 +341,14 @@ class CudaCodeGenerator:
         # --- CUDA 环境信息 ---
         env = vuln_ctx.get("os_environment", {})
         if env:
-            parts.append("## OS Environment\n")
+            parts.append("## Source OS assertions (not selected execution target)\n")
             parts.append(
                 f"```json\n{json.dumps(env, indent=2, ensure_ascii=False)}\n```\n"
             )
 
         cuda_env = vuln_ctx.get("cuda_environment", {})
         if cuda_env:
-            parts.append("## CUDA Environment\n")
+            parts.append("## Source CUDA assertions (not selected execution target)\n")
             parts.append(
                 f"```json\n{json.dumps(cuda_env, indent=2, ensure_ascii=False)}\n```\n"
             )
@@ -389,7 +389,7 @@ class CudaCodeGenerator:
             "- [CUDA_STEP:Sxx] logging is MANDATORY for every step.\n"
             "- All CUDA API and subprocess calls must have error checking.\n"
             "- NO AI commentary, stub markers, section dividers, or commented-out code.\n"
-            "- Use the EXACT paths and arch values from the REAL TARGET ENVIRONMENT above.\n"
+            "- Use only the selected TARGET PLATFORM SNAPSHOT paths; unknown architecture stays unknown.\n"
             "- Print subprocess stderr on any failure.\n"
             "- Your response must START with executable Python code (shebang or docstring).\n"
             "- DO NOT simulate execution — write the script, not a play-by-play."

@@ -42,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dir", type=str, default=None, help="输入目录（与 --cve-id 互斥）")
     parser.add_argument("--output-dir", type=str, default=None, help="输出目录")
     parser.add_argument("--no-rag", action="store_true", default=False, help="禁用 RAG")
+    parser.add_argument("--target-backend", choices=["local", "wsl"], default=None, help="目标平台：当前宿主或显式 WSL 只读探测")
+    parser.add_argument("--wsl-distro", default=None, help="显式 WSL 发行版，例如 Ubuntu-22.04")
     parser.add_argument("--log-level", type=str, default="INFO",
                         choices=["DEBUG","INFO","WARNING","ERROR"], help="日志级别")
     return parser.parse_args()
@@ -94,7 +96,14 @@ def main() -> None:
         # CLI help and input checks also work before dependencies are installed.
         from src.pipeline import CudaPipeline
         pipeline = CudaPipeline(config_path=args.config)
-        pipeline.run(input_dir=input_dir, output_dir=args.output_dir)
+        options = {}
+        if args.target_backend is not None:
+            options["target_backend"] = args.target_backend
+        if args.wsl_distro is not None:
+            if args.target_backend != "wsl":
+                raise ValueError("--wsl-distro 需要显式 --target-backend wsl。")
+            options["wsl_distro"] = args.wsl_distro
+        pipeline.run(input_dir=input_dir, output_dir=args.output_dir, **options)
     except ImportError:
         print('[ERROR] 缺少运行依赖。请在项目 venv 中执行: python -m pip install -e "."')
         sys.exit(1)

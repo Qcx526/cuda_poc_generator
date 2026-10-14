@@ -8,7 +8,7 @@ import os
 import re
 import shutil
 import subprocess
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 def find_cuda_tool(name: str) -> str:
@@ -92,8 +92,8 @@ def find_msvc_vcvarsall() -> str:
 
 def get_cuda_toolkit_version() -> str:
     """Return CUDA Toolkit version string (e.g. '11.2'), or 'unknown'."""
-    nvcc = find_cuda_tool("nvcc")
     try:
+        nvcc = find_cuda_tool("nvcc")
         out = subprocess.check_output([nvcc, "--version"], text=True, timeout=10)
         m = re.search(r"release\s+(\d+\.\d+)", out)
         return m.group(1) if m else "unknown"
@@ -101,37 +101,29 @@ def get_cuda_toolkit_version() -> str:
         return "unknown"
 
 
-def get_cuda_driver_version() -> int:
-    """Return CUDA Driver version as integer (e.g. 11020 for 11.2), or 0."""
-    if os.name == "nt":
-        try:
-            import ctypes
-            lib = ctypes.CDLL("nvcuda.dll")
-            ver = ctypes.c_int()
-            if hasattr(lib, "cuDriverGetVersion"):
-                lib.cuDriverGetVersion(ctypes.byref(ver))
-                return ver.value
-        except Exception:
-            pass
-    # fallback: nvidia-smi
-    nvidia_smi = shutil.which("nvidia-smi")
-    if nvidia_smi:
-        try:
-            out = subprocess.check_output(
-                [nvidia_smi, "--query-gpu=driver_version", "--format=csv,noheader"],
-                text=True, timeout=10,
-            )
-            return int(out.strip().split(".")[0]) * 1000 + int(out.strip().split(".")[1].split(".")[0])
-        except Exception:
-            pass
-    return 0
+def get_cuda_driver_version() -> Optional[int]:
+    """Read this OS's cuDriverGetVersion, or None; never convert driver release.
+
+    The standard probe intentionally does not call this optional library helper.
+    It does not initialize a CUDA context or load another OS's dynamic library.
+    """
+    try:
+        import ctypes
+        lib = ctypes.WinDLL("nvcuda.dll") if os.name == "nt" else ctypes.CDLL("libcuda.so.1")
+        ver = ctypes.c_int()
+        query = lib.cuDriverGetVersion
+        query.argtypes = [ctypes.POINTER(ctypes.c_int)]
+        query.restype = ctypes.c_int
+        return ver.value if query(ctypes.byref(ver)) == 0 and ver.value > 0 else None
+    except (OSError, AttributeError):
+        return None
 
 
-def get_gpu_compute_capability() -> str:
-    """Return primary GPU compute capability (e.g. 'sm_75'), or 'sm_52' fallback."""
+def get_gpu_compute_capability() -> Optional[str]:
+    """Return sm notation derived from an actual compute_cap query, or None."""
     nvidia_smi = shutil.which("nvidia-smi")
     if not nvidia_smi:
-        return "sm_52"
+        return None
     try:
         out = subprocess.check_output(
             [nvidia_smi, "--query-gpu=compute_cap", "--format=csv,noheader"],
@@ -142,7 +134,7 @@ def get_gpu_compute_capability() -> str:
             return f"sm_{cap}"
     except Exception:
         pass
-    return "sm_52"
+    return None
 
 
 def setup_msvc_env(msvc_version: str = "") -> Dict[str, str]:

@@ -77,7 +77,7 @@ class ConfigLoader:
     def _validate_sections(self) -> None:
         if not isinstance(self.config, dict):
             raise ValueError("配置根节点必须为 YAML mapping。")
-        for section in ("llm", "rag", "paths", "vulnerability", "iteration"):
+        for section in ("llm", "rag", "paths", "vulnerability", "iteration", "platform"):
             if section in self.config and not isinstance(self.config[section], dict):
                 raise ValueError(f"配置字段 {section} 必须为 mapping。")
 
@@ -169,6 +169,16 @@ class ConfigLoader:
         if input_files is not None and (not isinstance(input_files, dict) or any(
                 not isinstance(k, str) or not isinstance(v, str) for k, v in input_files.items())):
             raise ValueError("配置字段 vulnerability.input_files 必须为字符串到字符串的 mapping。")
+        platform_cfg = self.config.get("platform", {})
+        for name in ("wsl_distro", "wsl_user", "wsl_python"):
+            if name in platform_cfg and (not isinstance(platform_cfg[name], str) or not platform_cfg[name].strip()):
+                raise ValueError(f"配置字段 platform.{name} 必须为非空字符串。")
+        timeout = platform_cfg.get("timeout_seconds", 45)
+        if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 1 <= timeout <= 120:
+            raise ValueError("配置字段 platform.timeout_seconds 必须在 [1,120]。")
+        limit = platform_cfg.get("max_output_bytes", 1048576)
+        if type(limit) is not int or not 4096 <= limit <= 4194304:
+            raise ValueError("配置字段 platform.max_output_bytes 必须在 [4096,4194304]。")
 
     def get(self, dotted_key: str, default: Any = None) -> Any:
         """用点号分隔的路径访问嵌套配置。"""

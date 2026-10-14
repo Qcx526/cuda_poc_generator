@@ -18,6 +18,8 @@ import hashlib
 import os
 from pathlib import Path
 import uuid
+import copy
+import re
 from typing import Any, Dict, Optional
 
 from .code_generator import CudaCodeGenerator
@@ -67,6 +69,8 @@ class CudaPipeline:
         self,
         input_dir: Optional[str] = None,
         output_dir: Optional[str] = None,
+        target_backend: Optional[str] = None,
+        wsl_distro: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Normalize inputs, validate analysis, then save an unexecuted candidate.
 
@@ -145,7 +149,30 @@ class CudaPipeline:
             self.data_loader.build_or_load_knowledge_base()
             rag_context = self._query_rag(vuln_context)
             web_context = self._query_web_search(vuln_context)
-            env_info = probe_environment()
+            selected_backend = target_backend or "local"  # WSL is never selected implicitly.
+            if selected_backend == "wsl":
+                from .platform_probe import run_platform_probe
+                platform_run = run_platform_probe(
+                    backend="wsl", distro=wsl_distro or self.cfg.get("platform.wsl_distro", "Ubuntu-22.04"),
+                    linux_python=self.cfg.get("platform.wsl_python", "/home/pocdev/.venvs/cuda-poc-generator/bin/python"),
+                    user=self.cfg.get("platform.wsl_user", "pocdev"),
+                    timeout_seconds=self.cfg.get("platform.timeout_seconds", 45),
+                    max_output_bytes=self.cfg.get("platform.max_output_bytes", 1048576),
+                )
+                report["platform_probe_record"] = platform_run.get("run_directory")
+                report["platform_transport"] = platform_run.get("transport")
+                if platform_run["snapshot"] is None:
+                    report["platform_status"] = "FAILED"
+                    report["platform_diagnostics"] = platform_run["diagnostics"]
+                    raise RuntimeError("Selected WSL platform probe failed; no historical/local snapshot was substituted.")
+                env_info = platform_run["snapshot"]
+            elif selected_backend == "local":
+                env_info = probe_environment()
+            else:
+                raise ValueError("Unknown target backend; choose local or wsl.")
+            report["platform_status"] = env_info.get("probe_status", "NOT_CHECKED")
+            report["platform_environment_id"] = env_info.get("environment_id")
+            report["platform_probe_record"] = env_info.get("metadata", {}).get("record_directory")
             env_prompt_block = format_for_prompt(env_info)
         except Exception as exc:
             finish("CONTEXT_ERROR", exc)
@@ -184,10 +211,12 @@ class CudaPipeline:
         self._print_analysis_summary(analysis)
 
         print("\n[Phase 3/3] Candidate generation and static checks only")
-        extra_ctx = env_prompt_block + "\n\n" + rag_context[:1500] + "\n\n" + web_context[:1000]
+        extra_ctx = env_prompt_block + "\n\n" + self._target_view(rag_context[:1500], env_info) + "\n\n" + self._target_view(web_context[:1000], env_info)
         try:
+            generation_context = self._target_view(vuln_context, env_info)
+            generation_analysis = self._target_view(analysis, env_info)
             self.code_gen.generate(
-                vuln_context=vuln_context, expert_analysis=analysis,
+                vuln_context=generation_context, expert_analysis=generation_analysis,
                 iteration=1, extra_context=extra_ctx,
             )
             candidate = self.code_gen.last_result.model_copy(update={"run_id": run_id})
@@ -209,6 +238,21 @@ class CudaPipeline:
         print(f"\n[+] Candidate saved: {target_dir / candidate.source_file}")
         print(f"    {candidate.generation} / {candidate.static} / NOT_EXECUTED / NOT_VERIFIED")
         return report
+
+    @staticmethod
+    def _target_view(value, snapshot):
+        """Preserve source artifacts; omit foreign paths only in WSL generation view."""
+        is_linux = snapshot.get("platform_type") in ("linux", "wsl")
+        def transform(item):
+            if isinstance(item, dict):
+                return {key: transform(child) for key, child in item.items()}
+            if isinstance(item, list):
+                return [transform(child) for child in item]
+            if is_linux and isinstance(item, str):
+                return re.sub(r"(?:[A-Za-z]:[\\/]|\\\\[^\\\s]+\\)[^\s\"'<>|,;]*",
+                              "[Windows source path omitted for Linux target; use the selected platform snapshot]", item)
+            return copy.deepcopy(item)
+        return transform(value)
 
     # ------------------------------------------------------------------
     # 辅助方法
