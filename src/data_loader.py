@@ -162,13 +162,13 @@ class CudaDataLoader:
             from langchain_chroma import Chroma
         except ImportError as exc:
             logger.error(
-                "RAG 依赖未安装，请执行: pip install langchain langchain-chroma langchain-community (%s)",
+                'RAG 依赖未安装，RAG 已禁用；请在当前虚拟环境执行: python -m pip install -e ".[rag]" (%s)',
                 exc,
             )
             self.rag_enabled = False
             return
 
-        # ---------- 配置嵌入模型 (本地 sentence-transformers；中转站 OpenAI 兼容端点仅用于对话生成，嵌入走本地模型) ----------
+        # ---------- 本地 sentence-transformers 嵌入；模型 API 仅用于对话生成 ----------
         print("[RAG] 加载本地嵌入模型 (首次运行需下载 ~80MB)…")
         try:
             from langchain_huggingface import HuggingFaceEmbeddings
@@ -179,12 +179,12 @@ class CudaDataLoader:
             )
             logger.info("CUDA RAG 使用本地嵌入模型: all-MiniLM-L6-v2")
         except ImportError:
-            logger.error("langchain-huggingface 未安装，请执行: pip install langchain-huggingface sentence-transformers")
+            logger.error('本地嵌入依赖未安装，RAG 已禁用；请在当前虚拟环境执行: python -m pip install -e ".[rag]"')
             self.rag_enabled = False
             return
         except OSError as exc:
             logger.error("加载嵌入模型失败 (torch/sentence-transformers 环境问题): %s", exc)
-            print("[RAG] 嵌入模型加载失败，RAG 已禁用。可尝试: pip install torch --force-reinstall")
+            print("[RAG] 嵌入模型加载失败，RAG 已禁用。请检查当前平台/Python 与 torch 的兼容性、模型缓存和下载连接；可用 --no-rag 继续生成。")
             self.rag_enabled = False
             return
 

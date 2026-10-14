@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69,<81"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuda-poc-generator"
+version = "0.2.0"
+description = "CUDA research candidate PoC generation with optional local RAG"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "PyYAML>=6.0,<7",
+    "python-dotenv>=1.0,<2",
+    "pydantic>=2.7.4,<3",
+    "httpx>=0.27,<0.29",
+    "openai>=2.26.0,<3",
+    "langchain-core>=1.4.7,<1.5",
+    "langchain-openai>=1.3.3,<1.4",
+]
+
+[project.optional-dependencies]
+rag = [
+    "langchain-chroma>=1.0,<1.1",
+    "langchain-huggingface>=1.0,<1.1",
+    "chromadb>=1.0.20,<1.1",
+    "sentence-transformers>=3,<4",
+]
+search = ["tavily-python>=0.5,<0.9"]
+dev = ["pytest>=8.4,<9", "ruff>=0.14,<0.15"]
+
+[project.urls]
+Repository = "https://github.com/Qcx526/cuda_poc_generator"
+
+[tool.setuptools.packages.find]
+include = ["src", "src.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]

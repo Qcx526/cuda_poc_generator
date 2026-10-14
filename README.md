@@ -1,437 +1,227 @@
 # CUDA PoC Generator
 
-**NVIDIA CUDA 漏洞专项 PoC 生成 Agent**
+基于已有 CUDA 专项 PoC 生成系统的增量研究工程。保留七层分析 Prompt、七维漏洞输入、RAG、CUDA 知识映射和辅助工具，以候选代码生成为起点，逐步建设可复现实验和基于目标条件的验证系统。
 
-> **免责声明**: 本工具仅供经过合法授权的安全研究与渗透测试使用。使用者必须在获得目标系统所有者明确书面授权后方可使用本工具。未经授权对系统进行攻击属于违法行为，作者不承担任何由滥用导致的法律责任。
+**当前版本：Single-shot Generation。生成候选不代表漏洞已验证。**
 
----
+## 1. 当前已实现能力
 
-## 概述
+- 从七类 JSON 文件加载 CUDA 漏洞研究资料。
+- LangChain `ChatOpenAI` 调用 OpenAI 兼容端点；默认使用官方 DeepSeek API。
+- 七层 CUDA 根因分析与验证策略 Prompt，输出模型分析 JSON。
+- 生成 Python 候选 PoC，去除 Markdown 包装，进行 Python AST 和粗略名称检查；失败时最多请求两次静态纠正。
+- 可选本地 CPU embedding + Chroma 持久化检索；可选 Tavily CVE Web 检索。
+- 当前 Python 宿主机的 GPU/CUDA/工具链探测，以及可导入的编译、ELF 操作、反汇编工具。
 
-CUDA PoC Generator 是一个专用于 **NVIDIA CUDA 生态系统漏洞** 的自动化 PoC（概念验证）生成 Agent。它基于通用的 `universal_poc_generator` 框架演进而来，通过最新版本的 **LangChain + RAG** 架构，经 **NIUBIAPI 中转站**（OpenAI 兼容接口）调用大模型，内建 **CUDA 专项 7 层漏洞分析模型**，覆盖市面上绝大部分 CUDA 程序或库的漏洞类型。
+## 2. 尚未实现的功能与边界
 
-### 核心能力
+主流程没有自动 CUDA 编译、PoC 执行、Compute Sanitizer 验证、运行反馈迭代、CVE 成功 oracle 或 benchmark。`iteration` 配置是保留的历史接口，当前不控制循环；静态纠正也不是运行反馈。
 
-| 能力 | 说明 |
-|------|------|
-| **7 层 CUDA 漏洞分析模型** | 攻击面映射 → 原语识别 → 可控性评估 → 目标定义 → 触发路径构造 → 缓解分析 → 可靠性工程 |
-| **LangChain + ChromaDB RAG** | CUDA 专项知识增强检索，涵盖 CWE 分类、CUDA API 安全、已知 CVE 案例 |
-| **NIUBIAPI 中转驱动** | 通过中转站 OpenAI 兼容接口调用，内建 CUDA 安全专家人格 |
-| **人在回路反馈迭代** | 用户在 GPU 环境执行 PoC 后粘贴输出，Agent 自动解析 CUDA 错误码并优化 |
-| **7 维度结构化输入** | 专为 CUDA 漏洞定制的 7 类 JSON 输入格式 |
-| **CUDA 辅助函数库** | 预置 CUDA Driver/Runtime API 签名和攻击面知识 |
+模型 JSON 目前仅做容错解析和顶层字段检查，**没有真正执行输出 schema 校验**。`src/models` 尚未接入主流程，也未完整匹配全部输入格式。AST 通过不代表依赖可导入、CUDA API 正确、可以运行或漏洞触发。静态纠正最终失败仍会保存候选供人工检查。
 
----
+环境探测仍有已知问题：GPU 架构存在 SM 7.5 硬编码，无 `nvcc` 时会提供预设架构列表；Windows 探测不能表示 WSL 实验环境。不要把这些推断当实测证据。详细位置见 [P0 基线审计](docs/P0_BASELINE_AUDIT.md)。
 
-## CUDA PoC Agent 成体系的思考行为模式
+## 3. 系统架构与真实流程
 
-本 Agent 内建了一套专为 CUDA 漏洞设计的 **7 层分析 × 5 阶段执行** 成体系思考框架。
-
-### 一、7 层 CUDA 漏洞分析模型 (7-Layer CUDA Vulnerability Analysis Model)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Layer 7: 利用可靠性工程 (Reliability Engineering)           │
-│  ├─ [CUDA_STEP:Sxx] 步骤标记、GPU 错误码解析、TDR 处理      │
-│  ├─ GPU 资源清理、环境自适应检测                             │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 6: 缓解措施分析 (Mitigation Analysis)                 │
-│  ├─ GPU ECC, MIG 分区, GPU MMU 隔离                         │
-│  ├─ ASLR, SMEP/SMAP, IOMMU, VT-d                            │
-│  ├─ nvidia-container-toolkit 容器隔离                        │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 5: 触发路径构造 (Trigger Path Construction)           │
-│  ├─ 最小 CUDA 操作序列 (cuInit→cuCtxCreate→cuModuleLoad→…)  │
-│  ├─ CUDA 上下文生命周期管理                                  │
-│  ├─ 同步/异步错误处理路径                                    │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 4: 利用目标定义 (Exploitation Goal Definition)        │
-│  ├─ RCE / LPE / Info Leak / DoS                             │
-│  ├─ Container Escape / Persistent Implant                   │
-│  ├─ Kernel→Userland GPU 内存逃逸                             │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 3: 可控性评估 (Controllability Assessment)            │
-│  ├─ 数据可控: kernel args, buffer size, grid/block dims     │
-│  ├─ 文件可控: .cu/.ptx/.cubin/.fatbin 构造                   │
-│  ├─ 时序可控: CUDA Stream/Event 竞争窗口                     │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 2: 漏洞原语识别 (Primitive Identification)            │
-│  ├─ 整数溢出/回绕 (CWE-190) — CUDA 中最常见                 │
-│  ├─ 堆缓冲区溢出 (CWE-122) — GPU 全局内存/主机端堆           │
-│  ├─ UAF (CWE-416) — CUDA 内存/Stream/Event 生命周期          │
-│  ├─ 竞争条件 (CWE-362) — 多 Stream/MPS 并发                  │
-│  ├─ 空指针解引用 / OOB 读写 / 类型混淆 / 格式化字符串 …      │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 1: CUDA 攻击面映射 (Attack Surface Mapping)           │
-│  ├─ Driver API (cuMemAlloc, cuLaunchKernel, cuModuleLoad…)  │
-│  ├─ Runtime API (cudaMalloc, cudaMemcpy…)                   │
-│  ├─ Toolchain (nvcc, cuobjdump, nvdisasm, ptxas…)           │
-│  ├─ Libraries (cuBLAS, cuDNN, cuFFT…)                       │
-│  ├─ Virtualization (MPS, MIG, GPU Passthrough)               │
-│  └─ GPU Direct / RDMA / CUDA IPC                             │
-└─────────────────────────────────────────────────────────────┘
+```text
+main.py → CLI 检查 → ConfigLoader（根目录 .env + YAML + CPG_*）
+  → CudaPipeline
+    → CudaDataLoader：七维原始字典
+    → 可选 RAG：本地 embedding / Chroma → 检索文本
+    → 可选 Tavily → Web 文本
+    → env_probe：当前 Python 宿主机探测
+    → CudaSecurityExpert：一次 LLM 分析 → cuda_analysis_v1.json
+    → CudaCodeGenerator：一次 LLM 生成 + 最多两次静态纠正
+      → cuda_poc_v1.py
 ```
 
-#### Layer 1: CUDA 攻击面映射
+专家分析使用七维资料和 RAG；环境及 Web 文本只进入代码生成上下文。工具库的引用说明进入 Prompt，主流程不会自动调用这些工具。RAG 检索仍有扁平/包装字段混用问题。
 
-识别漏洞所在的具体 CUDA 子系统。CUDA 生态系统可分为 6 大攻击面：
-
-1. **CUDA Driver API** (`libcuda.so` / `nvcuda.dll`) — cuInit, cuCtxCreate, cuMemAlloc, cuMemFree, cuLaunchKernel, cuModuleLoad, cuStreamCreate, cuEventCreate 等
-2. **CUDA Runtime API** (`libcudart.so`) — cudaMalloc, cudaMemcpy, cudaLaunchKernel, cudaMallocManaged 等
-3. **CUDA Toolchain** — nvcc, cuobjdump, nvdisasm, ptxas, nvlink, fatbinary
-4. **CUDA Libraries** — cuBLAS, cuDNN, cuFFT, cuSPARSE, cuSOLVER
-5. **GPU Virtualization** — MPS, MIG, GPU Passthrough, nvidia-container-toolkit
-6. **GPU Direct / RDMA / CUDA IPC** — 跨进程/跨主机 GPU 通信
-
-#### Layer 2: 漏洞原语识别
-
-精确识别漏洞提供的能力原语。CUDA 中最常见的漏洞类型：
-
-| CWE | 原语 | CUDA 特定场景 |
-|-----|------|--------------|
-| CWE-190 | 整数溢出/回绕 | 16-bit/32-bit 字段在计算 buffer 大小时溢出（如 CVE-2025-23247） |
-| CWE-122 | 堆缓冲区溢出 | GPU 全局内存越界、主机端 CUDA 工具堆溢出 |
-| CWE-416 | UAF | cuMemFree 后 kernel 继续访问、CUDA Stream/Event 销毁后使用 |
-| CWE-476 | 空指针解引用 | CUDA API 返回 NULL 未检查 |
-| CWE-125 | 越界读取 | GPU 共享内存/全局内存信息泄露 |
-| CWE-362 | 竞争条件 | 多 Stream 竞争、MPS 多进程竞争、Unified Memory 页面迁移 |
-| CWE-787 | 越界写入 | Kernel 内数组越界、共享内存越界、cuMemcpy 参数越界 |
-| CWE-78  | 命令注入 | nvcc 编译选项注入、cuobjdump 参数注入 |
-| CWE-22  | 路径遍历 | CUDA 工具文件路径处理 |
-| CWE-457 | 未初始化内存 | GPU 内存分配（cudaMalloc）后未清零 |
-
-#### Layer 3: 可控性评估
-
-精确评估攻击者对漏洞触发条件的控制程度：
-
-- **数据可控**: kernel 参数、buffer 大小、grid/block 维度是否由攻击者控制
-- **文件可控**: 攻击者能否构造恶意 .cu、.ptx、.cubin、.fatbin 文件
-- **时序可控**: 能否精确控制 CUDA Stream 同步时机来触发竞争条件
-- **环境依赖**: 漏洞是否依赖特定 GPU 架构 (sm_75/86/89)、CUDA 版本、驱动版本
-
-#### Layer 4: 利用目标定义
-
-明确漏洞的利用目标：
-
-- **RCE**: 通过恶意输入触发 CUDA 工具/服务远程代码执行
-- **LPE**: 通过 CUDA 驱动漏洞实现本地权限提升
-- **Info Leak**: GPU 内存信息泄露（kernel 地址、驱动内存、相邻进程数据）
-- **DoS**: GPU 挂起 (TDR)、驱动崩溃、MPS/MIG 服务不可用
-- **Container Escape**: 通过 GPU 直通/MIG 配置缺陷/MPS 服务实现容器逃逸
-- **Persistent Implant**: GPU 内存中隐藏恶意代码
-
-#### Layer 5: 触发路径构造
-
-设计最小的 CUDA 操作序列来触发漏洞：
-
-```
-典型 CUDA 利用链：
-  cuInit(0)
-  → cuDeviceGet(&dev, 0)
-  → cuCtxCreate(&ctx, 0, dev)
-  → [构造恶意数据]
-  → cuModuleLoadData(&module, malicious_data)  ← 漏洞触发点
-  → cuModuleGetFunction(&func, module, "vuln_kernel")
-  → [观察崩溃/异常行为]
-  → cuCtxDestroy(ctx)
+```text
+config/default.yaml             默认配置
+src/{pipeline,core_expert,code_generator,llm_client}.py
+src/{data_loader,config_loader,env_probe,cuda_library,utils}.py
+src/models/                     现有未接入的 Pydantic 模型
+src/tools/                      compile / env / inspect / elf_ops / search
+data/inputs/CVE-*/               受控七维研究输入
+data/knowledge_bases/cuda/       受控知识源 .md / .txt
+tests/                          离线 CLI / 配置 / Mock 回归
+docs/                           基线审计、迁移与验收报告
 ```
 
-#### Layer 6: 缓解措施分析
+## 4. Windows 10 + VS Code + WSL2
 
-识别目标环境中可能阻碍利用的缓解措施：
+Windows 管理 Git、编辑代码及运行离线测试；使用根目录 `.venv`，不使用 Conda base。WSL Ubuntu 22.04 使用自己的 Linux Python/venv，Linux CUDA 12.8、gcc/g++ 和 Compute Sanitizer。**两套 venv 不可互相复用**，Windows Python 不能直接加载 WSL 的 `libcuda.so`。
 
-- **GPU 侧**: GPU ECC、GPU MMU、MIG 分区隔离、GPU 可信执行环境
-- **主机侧**: ASLR、SMEP/SMAP、KASLR、IOMMU/VT-d/AMD-Vi
-- **驱动层**: nvidia.ko 参数验证增强、CUDA 驱动输入校验
-- **容器层**: gVisor GPU passthrough、nvidia-container-toolkit 挂载隔离
+源码可位于 Windows 文件系统；从 WSL 进入对应 `/mnt/<盘符>/...`。GPU 实验将由 VS Code 的 WSL 终端在授权和隔离策略下手动执行；当前没有 Windows → WSL 自动执行后端。为使生成阶段探测到 Linux 工具路径，需要在 WSL 中运行生成命令，且仍需人工复核探测结果。
 
-#### Layer 7: 利用可靠性工程
+支持范围暂限定 Python `>=3.10,<3.13`。本轮 Windows 使用 3.12.13；现有 WSL 使用 3.10.12（未额外安装 Python 3.12）。没有安装或更改 CUDA 驱动、Toolkit、WSL 网络。历史 Conda 环境保留，见 [迁移说明](docs/ENVIRONMENT_MIGRATION.md)。
 
-确保 PoC 在不同 CUDA 环境下可靠执行：
+## 5. Windows 安装：PowerShell
 
-- **[CUDA_STEP:Sxx] 步骤标记**: 每个步骤清晰标注执行状态
-- **CUDA 错误码完整解析**: 0=SUCCESS, 1=INVALID_VALUE, 2=OUT_OF_MEMORY, 700=ILLEGAL_ADDRESS 等
-- **GPU 状态恢复**: TDR 超时处理、设备丢失 (Device Lost) 重试
-- **环境自适应**: 启动时检测 CUDA 版本、驱动版本、GPU 架构，自动适配
+在项目根目录执行。先确保所选 Python 3.12 是原生 CPython，而非 Conda：
 
----
-
-### 二、5 阶段 PoC 执行流水线
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  CUDA PoC Agent 5-Phase Execution Pipeline                             │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  Phase 1: 情报收集                Phase 2: 漏洞分析                     │
-│  ┌──────────────────┐            ┌──────────────────┐                   │
-│  │ 加载 7 类 CUDA   │            │ 7 层 CUDA 分析   │                   │
-│  │ 漏洞输入 JSON     │───────────→│ 模型深度分析     │                   │
-│  │ (D1 到 D7)       │            │                  │                   │
-│  │                  │            │ root_cause +     │                   │
-│  │ CUDA RAG 知识库  │            │ exploit_strategy │                   │
-│  │ 向量检索         │            └────────┬─────────┘                   │
-│  └──────────────────┘                     │                             │
-│                                           ↓                             │
-│  Phase 5: 迭代优化                Phase 3: PoC 构造                     │
-│  ┌──────────────────┐            ┌──────────────────┐                   │
-│  │ 更新 CUDA 上下文 │            │ LLM 代码生成     │                   │
-│  │ 注入用户补充信息 │←───────────│ + CUDA 辅助函数  │                   │
-│  │                  │            │                  │                   │
-│  │ 重新分析 + 生成  │            │ [CUDA_STEP:Sxx]  │                   │
-│  └──────────────────┘            │ 标记 PoC 脚本    │                   │
-│          ↑                       └────────┬─────────┘                   │
-│          │                                ↓                             │
-│  ┌──────┴───────────┐            ┌──────────────────┐                   │
-│  │ CUDA 失败分析    │            │ 用户执行 (GPU)   │                   │
-│  │ CUDA 错误码解析  │←───────────│ 粘贴终端输出     │                   │
-│  │ 缺失信息收集     │            │                  │                   │
-│  └──────────────────┘            └──────────────────┘                   │
-│  Phase 5 (续)                    Phase 4: 验证反馈                      │
-└─────────────────────────────────────────────────────────────────────────┘
+```powershell
+py -0p
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -c constraints/windows-py312.txt -e ".[dev]"
+.\.venv\Scripts\python.exe main.py --help
+.\.venv\Scripts\python.exe -m unittest discover -s tests -q
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check main.py src tests
 ```
 
-#### Phase 1: 情报收集 (Intelligence Gathering)
+如果 `py -3.12` 找不到解释器，但已有可信的 CPython 3.12（例如 uv 管理的解释器），直接使用其 **3.12 绝对路径**：`& "<Python 3.12 路径>" -m venv .venv`。本轮正是通过已有的 uv 管理 CPython 3.12.13 路径建立 `.venv`，未安装或覆盖其他 Python。
 
-1. 加载 7 维度 CUDA 漏洞输入 JSON 文件
-2. 构建/加载 CUDA 专项 RAG 知识库 (LangChain + ChromaDB)
-3. 根据漏洞特征 (CVE/CWE/CUDA component/GPU arch) 查询 RAG 知识库
-4. 为后续分析阶段注入 CUDA 领域知识
+不必激活即可使用以上完整解释器路径；可选激活：`.\.venv\Scripts\Activate.ps1`。若 PowerShell 阻止激活，继续使用完整路径即可。VS Code 已配置 `.venv/Scripts/python.exe`；已有工作区解释器选择可能需手动执行 **Python: Select Interpreter**。不要复用历史 Conda 解释器。
 
-#### Phase 2: 漏洞分析 (Vulnerability Analysis)
+## 6. WSL 安装与离线检查：Bash
 
-1. CUDA 安全专家 LLM (内建 7 层分析模型) 执行根因分析
-2. 输出 `root_cause_analysis` + `exploit_strategy`
-3. 每步策略包含: pseudocode, success_condition, failure_condition, expected_cuda_behavior
-4. 置信度评分 + 低置信度自动提示补充信息
-
-#### Phase 3: PoC 构造 (PoC Construction)
-
-1. LLM 根据攻击策略生成完整 Python PoC 脚本
-2. 引用 CUDA 辅助函数库签名
-3. 自动包含 CUDA 环境检测代码
-4. 所有步骤使用 [CUDA_STEP:Sxx] 标记
-5. 完整的 CUDA 错误码检查和解释
-
-#### Phase 4: 验证反馈 (Validation & Feedback)
-
-1. 用户在目标 GPU 环境执行 PoC
-2. 粘贴终端输出回 Agent
-3. 自动解析 [CUDA_STEP:Sxx] 标记和 CUDA 错误码
-4. 支持 "SUCCESS" 快速确认和 "QUIT" 退出
-
-#### Phase 5: 迭代优化 (Iteration & Optimization)
-
-1. LLM 分析 CUDA PoC 失败原因（CUDA 错误码 + 日志）
-2. 识别缺失的 CUDA 环境信息（驱动版本、GPU 型号、Toolkit 版本等）
-3. 向用户提问并收集补充信息
-4. 将补充信息注入漏洞上下文，返回 Phase 2 开始新一轮迭代
-5. 最多 10 轮迭代（可配置）
-
----
-
-## CUDA 漏洞覆盖范围
-
-本 Agent 覆盖市面上绝大部分 CUDA 程序或库的漏洞类型：
-
-### 按 CUDA 子系统分类
-
-| 子系统 | 覆盖的漏洞类型 | 典型攻击入口 |
-|--------|--------------|-------------|
-| **CUDA Driver API** | 整数溢出、UAF、OOB 读写、类型混淆、竞争条件 | cuMemAlloc、cuLaunchKernel、cuModuleLoad 参数 |
-| **CUDA Runtime API** | 缓冲区溢出、空指针、未初始化内存 | cudaMalloc、cudaMemcpy、cudaLaunchKernel |
-| **CUDA Toolchain** | 整数溢出、命令注入、路径遍历、OOB 读写 | nvcc 编译、cuobjdump 解析、PTX 汇编 |
-| **CUDA Libraries** | 参数验证缺陷、缓冲区溢出 | cuBLAS 矩阵维度、cuDNN 张量描述符 |
-| **GPU Virtualization** | 隔离逃逸、权限提升、信息泄露 | MPS 服务、MIG 配置、GPU 直通 |
-| **CUDA IPC/GPU Direct** | UAF、竞争条件、越界读写 | IPC 句柄、RDMA 缓冲区 |
-
-### 按 CWE 分类
-
-| CWE | 覆盖率说明 |
-|-----|-----------|
-| CWE-190 (整数溢出) | ✅ CUDA 中最常见，Agent 内建 16/32/64-bit 回绕检测逻辑 |
-| CWE-122 (堆溢出) | ✅ 涵盖 GPU 全局内存和主机端 CUDA 工具堆 |
-| CWE-416 (UAF) | ✅ 涵盖 CUDA 内存/Stream/Event/Graph 生命周期 |
-| CWE-476 (空指针) | ✅ CUDA API 返回值检查 |
-| CWE-125 (越界读) | ✅ GPU 共享内存/全局内存泄露 |
-| CWE-362 (竞争条件) | ✅ CUDA 流/事件/MPS 多进程并发 |
-| CWE-787 (越界写) | ✅ Kernel 数组边界、cuMemcpy 参数 |
-| CWE-78 (命令注入) | ✅ CUDA 工具链命令参数 |
-| CWE-22 (路径遍历) | ✅ CUDA 工具文件路径 |
-| CWE-457 (未初始化) | ✅ GPU 内存分配 |
-
----
-
-## 快速开始
-
-### 环境要求
-
-- Python 3.10+
-- 对于运行生成的 PoC: NVIDIA GPU + CUDA Toolkit 环境
-
-### 安装
+从 VS Code 的 WSL 终端进入项目 Linux 挂载路径，例如 `/mnt/f/qcx/code/cuda_poc_generator`：
 
 ```bash
-cd cuda_poc_generator
-pip install -r requirements.txt
+cd /mnt/f/qcx/code/cuda_poc_generator
+python3 --version
+python3 -m venv /home/pocdev/.venvs/cuda-poc-generator
+source /home/pocdev/.venvs/cuda-poc-generator/bin/activate
+python -m pip install -c constraints/wsl-py310.txt -e '.[dev]'
+python main.py --help
+python -m unittest discover -s tests -q
+python -m pytest -q
+python -m ruff check main.py src tests
 ```
 
-### 准备 CUDA 漏洞输入
+这里的版本快照对应现有 Python 3.10.12；若使用已安装的其他支持版本，先用 `constraints/core.txt` 安装并重新验证，不宣称已有版本快照适用于所有 Python。缺少 `venv` 支持时先由环境维护者准备对应 `python3-venv`，不要删除或覆盖已有环境。
 
-在 `data/inputs/<CVE-ID>/` 目录下创建 7 个 JSON 文件（每个 CVE 一个子目录）：
+WSL Remote 工作区中通过 **Python: Select Interpreter** 指定 `/home/pocdev/.venvs/cuda-poc-generator/bin/python`；仓库共享设置默认服务 Windows，Remote 解释器由该环境单独选择。
 
-| 文件 | 维度 | 内容 |
-|------|------|------|
-| `1_os_environment.json` | D1 | 操作系统与环境依赖 (OS、kernel、驱动版本) |
-| `2_cuda_environment.json` | D2 | CUDA 运行环境 (GPU 架构、CUDA/驱动版本、受影响工具) |
-| `3_affected_component.json` | D3 | 受影响组件 (具体库/工具/API 及版本范围) |
-| `4_attack_surface.json` | D4 | 攻击面与入口点 (API 调用、文件输入、网络端点) |
-| `5_vulnerability_type.json` | D5 | 漏洞类型 (CWE 分类 + CVSS) |
-| `6_impact_controllability.json` | D6 | 影响后果与可控性描述 |
-| `7_root_cause.json` | D7 | 漏洞根源描述 (代码级技术细节) |
+## 7. 依赖与版本策略
 
-> 项目中已包含 CVE-2025-23247 (cuobjdump 整数回绕) 的完整示例输入。
+`pyproject.toml` 是元数据和依赖入口；不需要 Python CUDA 包或本机 Toolkit 才能做离线开发。
 
-### 配置 LLM
+| 组 | 用途 | 安装 |
+|---|---|---|
+| 核心 | YAML、dotenv、Pydantic、httpx、OpenAI SDK、LangChain core/OpenAI | `python -m pip install -c constraints/core.txt -e .` |
+| `dev` | pytest、ruff；回归采用 unittest + Mock | `python -m pip install -c constraints/core.txt -e '.[dev]'` |
+| `rag` | Chroma、HuggingFace、sentence-transformers | 见下一节 |
+| `search` | Tavily 可选联网检索 | `python -m pip install -c constraints/core.txt -e '.[search]'` |
 
-项目通过 **NIUBIAPI 中转站**的 OpenAI 兼容接口调用模型。
-端点与中转站要求的请求头已在 `config/default.yaml` 中配置：
+核心 LangChain/OpenAI 固定在原 requirements 的最低版本，避免本轮大升级。平台快照固定实际安装的核心和开发传递依赖，并删除本地 editable 路径；它们是版本约束快照，不是带 wheel 哈希的完整供应链锁。RAG/search 仅完成依赖解析检查，未完成真实安装、模型下载和联网功能验证。
 
-```yaml
-llm:
-  api_base: "https://www.niubiapi.com/v1"
-  headers:
-    User-Agent: "claude-cli/2.0.76 (external, cli)"   # 中转站要求，勿删
+原 requirements 中未直接使用的 `langchain` 聚合包、community、text-splitters、rich、click 不再强制安装；实际需要的 LangSmith/tiktoken 仍由 LangChain 引入。Tavily 补上单独 extra。`requirements.txt` 保留旧式完整安装入口（RAG + search），可能下载较多依赖；推荐按需安装。
+
+## 8. API Key 与模型配置
+
+仅在本地创建 `.env`，不要把真实密钥填进 `.env.example`：
+
+```powershell
+# 首次使用且 .env 不存在时执行；已有 .env 请直接编辑，勿覆盖。
+Copy-Item .env.example .env
 ```
 
-获取中转站 Key 后设置环境变量：
+```dotenv
+DEEPSEEK_API_KEY=<本地密钥>
+CPG_LLM_MODEL_NAME=deepseek-flash
+CPG_LLM_API_BASE=https://api.deepseek.com
+```
+
+截至 2026-10-14，默认模型名和端点依据 [DeepSeek 官方首次调用文档](https://api-docs.deepseek.com/zh-cn/)。本轮没有真实 API 请求，不能据此宣称账号/模型已联通。
+
+配置优先级：现有进程环境高于项目根 `.env`；`CPG_*` 高于 YAML。默认密钥变量为 `DEEPSEEK_API_KEY`，兼容旧 `DEEPSEEK_KEY`。其他 OpenAI 兼容供应商须显式设置 `llm.api_key_env` 或 `CPG_LLM_API_KEY_ENV`，以及自己的 endpoint/model；原 NIUBIAPI 配置仍可使用，但不会从无关供应商的变量取密钥。不要在 YAML 中存明文密钥。
+
+支持环境覆盖：`CPG_LLM_MODEL_NAME`、`CPG_LLM_API_BASE`、`CPG_LLM_API_KEY_ENV`、`CPG_LLM_TEMPERATURE`、`CPG_LLM_MAX_TOKENS`、`CPG_LLM_TIMEOUT`、`CPG_LLM_MAX_RETRIES`、`CPG_RAG_ENABLED`、`CPG_VULN_TYPE`。`CPG_MAX_ITERATIONS` 仅保留兼容，当前没有运行循环。`streaming` 也未实现实际流式返回。
+
+Tavily Key 未设置时跳过 Web 检索；若设置 Key，生成主流程会尝试联网检索。`--no-rag` 只禁用 RAG，**不会禁用 LLM 或 Tavily 网络请求**。LangSmith 外部追踪默认关闭；开启前需考虑研究资料和 Prompt 的外发。
+
+## 9. RAG 知识库准备
+
+源码加载 `data/knowledge_bases/cuda/` 下 UTF-8 `.md`/`.txt`，自带知识源继续跟踪。嵌入为 `sentence-transformers/all-MiniLM-L6-v2`、`device=cpu`；首次使用需要联网下载模型。索引保存在 `data/knowledge_bases/.chromadb/`，不提交 Git。
 
 ```bash
-# Windows PowerShell
-$env:NIUBIAPI_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
-
-# Linux/macOS
-export NIUBIAPI_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+# 可选功能；本轮没有执行以下安装/下载/构建。
+# 如需明确 CPU-only torch，先从官方 CPU wheel 源安装。
+python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -c constraints/core.txt -e '.[rag]'
 ```
 
-也可以直接复制 `.env.example` 为 `.env` 并填入 Key（会被自动加载）。
+CPU wheel 选择依据 [PyTorch 官方安装说明](https://pytorch.org/get-started/locally/)。RAG 初始化缺依赖或部分模型加载错误时会记录降级说明；其他索引/模型异常仍可能中止生成。索引未记录源文档哈希和模型 revision；更新文档后需要人工管理重建，`force_rebuild` 的重复累积风险尚未修复。配置现在会拒绝 `chunk_overlap >= chunk_size`。
 
-如需切换模型，编辑 `config/default.yaml` 中的 `llm.model_name`，或设置环境变量 `CPG_LLM_MODEL_NAME`。
+## 10. CVE 七维输入 JSON
 
-### 运行
+```text
+1_os_environment.json          OS/kernel/权限/环境
+2_cuda_environment.json        GPU/CUDA/驱动/工具链
+3_affected_component.json      组件与版本范围
+4_attack_surface.json          入口与输入控制
+5_vulnerability_type.json      CWE/类型等
+6_impact_controllability.json   影响与控制条件
+7_root_cause.json              根因、来源与研究假设
+```
+
+例如现有 D7 包装形式：
+
+```json
+{
+  "cve_id": "CVE-2024-0124",
+  "root_cause": {
+    "summary": "研究资料中的根因描述；需核对官方来源和目标版本"
+  }
+}
+```
+
+仓库含 6 个 CVE、42 个 JSON，本轮检查了合法性、文件齐全及各目录 CVE ID 一致性。数据同时存在扁平和包装形式；加载器原样保留，部分检索字段不能兼容两者。缺失/损坏 JSON 会记录日志并返回空字典，当前并不强制七个维度全部有效。已有数据的版本范围、根因和假设未在本轮逐条核对官方公告，也未进行漏洞实验。
+
+## 11. 候选生成命令与输出
+
+以下命令会调用模型，**本轮未执行真实生成**。先确认密钥、目标资料和输出目录，调用成本以供应商当时计费为准：
 
 ```bash
-# 使用默认配置和示例数据运行
-python main.py --cve-id CVE-2024-0124
-
-# 指定 CVE 编号（自动定位到 data/inputs/<cve-id>/）
-python main.py --cve-id CVE-2025-23339
-
-# 指定自定义 CUDA 漏洞输入目录
-python main.py --input-dir ./my_cuda_vuln
-
-# 限制最大迭代次数
-python main.py --max-iter 5
-
-# 使用自定义配置
-python main.py --config ./my_cuda_config.yaml
+python main.py --cve-id CVE-2024-0124 --no-rag
+python main.py --input-dir ./my_data --output-dir ./data/outputs/local --no-rag
+python main.py --config config/default.yaml --cve-id CVE-2025-23339
 ```
 
----
+`--cve-id` 与 `--input-dir` 互斥。默认输出在 `data/outputs/<CVE>/`：
 
-## 项目结构
+| 文件 | 意义 |
+|---|---|
+| `cuda_analysis_v1.json` | 模型分析与拟定策略；不是实验结论 |
+| `cuda_poc_v1.py` | 未执行的候选代码；静态失败也可能保存 |
 
-```
-cuda_poc_generator/
-├── config/
-│   └── default.yaml                    # 默认配置文件
-├── data/
-│   ├── inputs/                         # CVE 输入数据，按 CVE 编号子目录组织
-│   │   ├── CVE-2024-0124/              # 每个 CVE 一个子目录，含 7 个 JSON
-│   │   │   ├── 1_os_environment.json
-│   │   │   ├── 2_cuda_environment.json
-│   │   │   ├── 3_affected_component.json
-│   │   │   ├── 4_attack_surface.json
-│   │   │   ├── 5_vulnerability_type.json
-│   │   │   ├── 6_impact_controllability.json
-│   │   │   └── 7_root_cause.json
-│   │   └── CVE-2025-23339/           # 另一个 CVE 的数据
-│   ├── knowledge_bases/
-│   │   ├── .chromadb/                  # ChromaDB 向量持久化
-│   │   └── cuda/
-│   │       └── cuda_vulnerability_knowledge.md  # CUDA 知识库种子
-│   ├── outputs/                        # 生成的 PoC 和报告，按 CVE 子目录
-│   │   ├── CVE-2024-0124/              # cuda_poc_vN.py + cuda_analysis_vN.json + cuda_final_report.json
-│   │   └── CVE-2025-23339/
-│   └── templates/                      # 代码模板（可选）
-├── src/
-│   ├── __init__.py
-│   ├── config_loader.py                # 配置加载
-│   ├── llm_client.py                   # LangChain + LLM 封装（NIUBIAPI 中转 / OpenAI 兼容）
-│   ├── data_loader.py                  # CUDA 数据加载 + LangChain RAG
-│   ├── cuda_library.py                 # CUDA 辅助函数签名库
-│   ├── core_expert.py                  # CUDA 安全专家 (7 层模型)
-│   ├── code_generator.py               # CUDA PoC 代码生成
-│   ├── feedback_loop.py                # 人在回路 CUDA 反馈
-│   ├── pipeline.py                     # CUDA 主流水线
-│   └── utils.py                        # 工具函数
-├── main.py                             # 程序入口
-├── requirements.txt
-└── README.md
+同一 CVE 的重复生成会覆盖 `v1`；现阶段应使用不同 `--output-dir` 手工保留版本。任意输出目录可能影响生成脚本寻找 `src.tools` 的固定回溯逻辑。当前没有运行身份、输入/代码哈希、原始响应或证据目录；不要把手工运行日志塞进受控源文件目录。
+
+## 12. WSL CUDA 工具检查与后续实验
+
+```bash
+# 仅查看已经安装的工具，不执行 PoC。
+export PATH=/usr/local/cuda-12.8/bin:$PATH
+nvcc --version
+compute-sanitizer --version
+gcc --version
+g++ --version
 ```
 
----
+本轮只读取到 `nvcc 12.8.93` 和 Compute Sanitizer `2025.1.0.0`。GTX 1660/CC 7.5 是用户提供的实验目标，本轮未实测 GPU 或执行编译 smoke test。
 
-## 用户补充接口 (Human-in-the-Loop)
+后续实验必须在明确授权和隔离策略下，先审查候选、核对受影响版本与目标条件，再决定编译/执行范围。保留 argv、cwd、运行身份、超时、stdout/stderr、退出码、环境快照和哈希，目标 oracle 独立判定。CUDA 错误码、crash、sanitizer 的通用 OOB 报告都不能自动证明目标 CVE 被验证。本轮不提供默认自动运行样本的步骤。
 
-当 CUDA PoC 执行失败时，Agent 会主动请求以下类型的补充信息：
+## 13. 常见问题与测试状态
 
-### 自动检测的失败类型
+- `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。
+- 密钥缺失：检查 `.env` 的变量名及 `llm.api_key_env`，不要输出密钥诊断。
+- HTTP 401/403：检查账号权限和凭证；404：核对官方模型名和 endpoint；这些错误不会自动重试。
+- RAG DLL/模型加载问题：检查 CPU torch 与 Python 的版本兼容性，或临时使用 `--no-rag`；不要盲目强制重装 GPU 软件。
+- WSL 工具缺失：检查已安装工具的 Linux 路径和 PATH，Windows 路径不能替代 Linux 动态库。
+- 不要自动运行 `_diag.py`：这是历史联网诊断脚本，会进行真实模型请求且包含旧模型配方。`_check_rel.py` 是历史 CUDA 编译脚本，也不属于离线测试。
 
-| 失败类型 | 自动分析 | 向用户请求的信息 |
-|---------|---------|-----------------|
-| CUDA_ERROR_INVALID_VALUE (1) | API 参数错误 | 请求提供 cuobjdump/nvcc 使用方式 |
-| CUDA_ERROR_OUT_OF_MEMORY (2) | GPU 内存不足 | 请求提供 `nvidia-smi` 输出、GPU 显存大小 |
-| CUDA_ERROR_NO_DEVICE (100) | 无 GPU 设备 | 确认是否有 GPU 硬件 |
-| CUDA_ERROR_ILLEGAL_ADDRESS (700) | 越界访问触发 | 请求提供 dmesg 日志、崩溃信号 |
-| CUDA_ERROR_LAUNCH_FAILED (719) | Kernel 启动失败 | 请求提供 nvcc 编译输出、GPU 架构 |
-| Python Traceback | 代码异常 | 请求提供完整 traceback |
-| SIGSEGV / SIGABRT | 崩溃 | 请求 dmesg/coredump 信息 |
+逐项 PASS/FAILED/NOT_CHECKED、修改前后对比见 [P0 验收记录](docs/P0_VALIDATION.md)。离线 Mock 通过只能证明这些接线和静态行为；真实 LLM、RAG、Tavily、GPU 和漏洞触发不在本轮通过范围。
 
-### 交互示例
+后续路线：P1 对齐输入/输出 schema 与生成质量；P2 建立独立环境、候选和原始证据身份，并在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。接口和验收标准见基线审计报告。
 
-```
---- 为了改进 CUDA PoC，需要您补充以下信息：---
+## 14. 安全边界、来源与许可证说明
 
-[Q01] 目标系统的 CUDA Toolkit 精确版本？
-    （背景：cuobjdump 解析逻辑在 12.9 修复，需要确认是否受影响版本）
-    您的回答：12.8
+仅用于经过授权的安全研究和防御验证。不得自动运行真实漏洞 PoC、提权或破坏性样本；不得把模型结论当客观证据；不得提交 API Key、私有日志、GPU UUID 或主机绝对路径。
 
-[Q02] cuobjdump 执行时的完整错误输出？
-    （背景：需要确认是 malloc(0) 还是其他原因导致的崩溃）
-    您的回答：Segmentation fault (core dumped)
-```
+本工程继承原有 CUDA 专项系统，并保留原 README 所述 `universal_poc_generator` 设计来源、七层分析、RAG、Prompt、辅助工具及生成能力。保留源码中的作者标识 `CUDA Security Research Framework` 和原免责声明；项目维护仓库为 [Qcx526/cuda_poc_generator](https://github.com/Qcx526/cuda_poc_generator)。
 
----
-
-## 与 universal_poc_generator 的对比
-
-| 维度 | universal_poc_generator | cuda_poc_generator |
-|------|------------------------|-------------------|
-| 目标领域 | 通用（蓝牙/WiFi/IoT/Web...） | 专注 CUDA 生态系统 |
-| 输入维度 | 7 个通用维度 | 7 个 CUDA 专项维度 (含 cuda_environment) |
-| LLM 框架 | 原始 OpenAI SDK | LangChain (ChatOpenAI) |
-| RAG 框架 | llama-index + ChromaDB | LangChain + ChromaDB |
-| 分析模型 | 8 条通用利用原则 | 7 层 CUDA 专项分析模型 |
-| 辅助函数库 | 领域可插拔协议库 | CUDA Driver/Runtime API + ELF 操作 |
-| 错误码知识 | 通用 | CUDA 完整错误码映射表 |
-| 攻击面知识 | 通用 | 6 大 CUDA 攻击面详细分类 |
-| 迭代标记 | [STEP:Sxx] | [CUDA_STEP:Sxx] |
-
----
-
-## 许可证
-
-本项目仅供授权安全研究使用。
-#   c u d a _ p o c _ g e n e r a t o r  
- 
+原 README 的许可证说明为“本项目仅供授权安全研究使用”；仓库未提供独立 `LICENSE` 文件。本轮不新增或推断其他开源许可证。

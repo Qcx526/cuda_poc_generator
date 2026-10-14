@@ -210,7 +210,7 @@ class CudaPipeline:
 ║         NVIDIA CUDA 漏洞专项 PoC 生成工具                    ║
 ║                                                              ║
 ║  7 层分析 → 代码生成 → 人工调试                              ║
-║  NIUBIAPI 中转驱动 | LangChain + RAG 知识增强                ║
+║  DeepSeek 默认 API | LangChain + 可选 RAG 知识增强           ║
 ║                                                              ║
 ║  [!] 仅供授权安全研究使用 — Authorized Research Only          ║
 ╚══════════════════════════════════════════════════════════════╝

@@ -1,34 +1,79 @@
-# CUDA PoC Generator
-# =============================================================================
+# Python caches, tests and packaging
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+build/
+dist/
+*.egg-info/
+.eggs/
 
-# --- IDE & Desktop session data ---
+# Windows/Linux virtual environments; preserve existing Conda environments
+.venv/
+.venv-*/
+venv/
+env/
+.conda/
+conda-env/
+environment.local.yml
+environment.local.yaml
+conda-export*.yml
+conda-export*.yaml
+conda-explicit*.txt
+
+# Credentials and local configuration (templates remain trackable)
+.env
+.env.*
+!.env.example
+*.env.local
+config/local.yaml
+config/local.yml
+config/*.local.yaml
+config/*.local.yml
+credentials/
+secrets/
+*.pem
+*.key
+
+# IDE/user session data; keep portable shared project settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.code-workspace
+.workbuddy/
 .reasonix/
 .docs/
 
-# --- Python ---
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-dist/
-build/
-
-# --- Virtual environments ---
-.venv/
-venv/
-env/
-
-# --- Environment & secrets ---
-.env
-*.env.local
-.env.*.local
-
-# --- Generated outputs ---
-data/outputs/CVE-*/
-
-# --- Vector index (ChromaDB) ---
+# Runtime outputs only: do not ignore data/, source CUDA files or fixtures
+data/outputs/*
+!data/outputs/.gitkeep
 data/knowledge_bases/.chromadb/
+.chromadb/
+logs/
+runs/
+artifacts/
+tmp/
+.tmp/
+benchmark/results/
+benchmarks/results/
+data/benchmark_results/
+data/probes/
+data/llm_logs/
 
-# --- OS files ---
+# CUDA artifacts belong in the explicit runtime/build locations above.
+# Do not broadly ignore research *.cu/*.cubin/*.log files.
+a.out
+a.exe
+
+# OS files
 .DS_Store
 Thumbs.db
+Desktop.ini

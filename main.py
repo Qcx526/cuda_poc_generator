@@ -18,15 +18,6 @@ import os
 import sys
 from typing import Optional
 
-# 自动加载 .env 文件中的环境变量
-try:
-    from dotenv import load_dotenv
-    _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-    if os.path.isfile(_env_path):
-        load_dotenv(_env_path)
-except ImportError:
-    pass
-
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -38,7 +29,6 @@ _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from src.pipeline import CudaPipeline
 from src.utils import setup_logging
 
 
@@ -100,8 +90,17 @@ def main() -> None:
     if args.no_rag:
         os.environ["CPG_RAG_ENABLED"] = "false"
 
-    pipeline = CudaPipeline(config_path=args.config)
-    pipeline.run(input_dir=input_dir, output_dir=args.output_dir)
+    try:
+        # CLI help and input checks also work before dependencies are installed.
+        from src.pipeline import CudaPipeline
+        pipeline = CudaPipeline(config_path=args.config)
+        pipeline.run(input_dir=input_dir, output_dir=args.output_dir)
+    except ImportError:
+        print('[ERROR] 缺少运行依赖。请在项目 venv 中执行: python -m pip install -e "."')
+        sys.exit(1)
+    except (ValueError, RuntimeError, OSError) as exc:
+        print(f"[ERROR] {exc}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

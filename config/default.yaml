@@ -4,17 +4,20 @@
 # ============================================================================
 
 # --- LLM 配置 ---
-# NIUBIAPI 中转站，走 OpenAI 兼容接口
-# Key 在 .env 中通过 NIUBIAPI_KEY 设置；模型可用环境变量 CPG_LLM_MODEL_NAME 覆盖
+# 官方 DeepSeek API，使用 OpenAI 兼容的 Chat Completions 接口。
+# Key 在项目根 .env 或进程环境变量中通过 DEEPSEEK_API_KEY 设置。
+# 兼容旧的 DEEPSEEK_KEY；其他端点需显式指定自己的 api_key_env。
+# 模型以服务商当前可用配置为准，可由 CPG_LLM_MODEL_NAME 覆盖。
 llm:
-  model_name: "deepseek-flash"                     # 中转站可用模型，按需修改
+  model_name: "deepseek-flash"
   api_base: "https://api.deepseek.com"
-  api_key_env: "DEEPSEEK_KEY"                   # 对应 .env 中的 Key
+  api_key_env: "DEEPSEEK_API_KEY"
   temperature: 0.3
-  max_tokens: 4096  # PoC 代码通常在 1-3K token；4K 足够且生成快
-  timeout: 600  # kimi-k2.7-code 生成完整 PoC 需 5-8 分钟，300s 不够
-  max_retries: 3
-  streaming: false
+  max_tokens: 4096  # 输出上限；长代码可能截断，需人工检查。
+  timeout: 600      # 单次请求读取超时（秒），不是全部重试的总时限。
+  max_retries: 3    # 兼容旧字段名：当前实际表示最大尝试次数（含首次）。
+  streaming: false # 保留兼容字段；当前代码未实现流式输出。
+  use_responses_api: false # 兼容其他支持此协议的端点；官方 DeepSeek 默认使用 Chat Completions。
 
 # --- RAG 知识库配置 ---
 rag:
@@ -44,7 +47,7 @@ vulnerability:
     impact_controllability: "6_impact_controllability.json"
     root_cause: "7_root_cause.json"
 
-# --- 迭代控制 ---
+# --- 历史迭代字段：保留配置兼容，当前 Single-shot 主流程未接入 ---
 iteration:
   max_iterations: 5
   low_confidence_threshold: 0.4

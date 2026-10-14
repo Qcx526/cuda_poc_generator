@@ -12,31 +12,21 @@
 """
 
 import logging
+import math
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
 from .utils import resolve_project_root
 
 logger = logging.getLogger("cuda_poc_generator.config_loader")
-
-try:
-    from dotenv import load_dotenv
-    _DOTENV_LOADED = load_dotenv()
-    if _DOTENV_LOADED:
-        logger.info(".env 文件已加载，环境变量已注入。")
-except ImportError:
-    _DOTENV_LOADED = False
-    logger.debug("python-dotenv 未安装，跳过 .env 加载。")
-
-# 检测 LangSmith
-_LANGSMITH_ENABLED = os.environ.get("LANGCHAIN_TRACING_V2", "").lower() == "true" \
-                     and bool(os.environ.get("LANGCHAIN_API_KEY", ""))
-if _LANGSMITH_ENABLED:
-    project = os.environ.get("LANGCHAIN_PROJECT", "(default)")
-    logger.info("LangSmith 追踪已启用 — 项目: %s", project)
 
 
 class ConfigLoader:
@@ -54,34 +44,131 @@ class ConfigLoader:
             config_path: YAML 配置文件路径。为 None 时使用默认路径。
         """
         self.project_root: Path = resolve_project_root()
+        self._load_project_dotenv()
 
         if config_path is None:
             config_path = str(self.project_root / "config" / "default.yaml")
 
         logger.info("加载配置文件: %s", config_path)
-        with open(config_path, "r", encoding="utf-8") as f:
-            self.config: Dict[str, Any] = yaml.safe_load(f) or {}
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                loaded = yaml.safe_load(f)
+        except yaml.YAMLError:
+            # YAML exceptions can include local configuration contents; do not echo them.
+            raise ValueError("配置 YAML 语法错误，请检查配置文件的缩进和字段格式。") from None
+        self.config: Dict[str, Any] = {} if loaded is None else loaded
+        self._validate_sections()
 
         # 用环境变量覆盖部分配置
         self._apply_env_overrides()
+        self._validate_config()
+
+    def _load_project_dotenv(self) -> None:
+        """仅在实例化时加载项目根 .env，保留已设置的进程环境变量。"""
+        if load_dotenv is None:
+            logger.debug("python-dotenv 未安装，跳过 .env 加载；可使用进程环境变量。")
+            return
+        if load_dotenv(self.project_root / ".env", override=False):
+            logger.info("项目根 .env 文件已加载（已有环境变量保持优先）。")
+        if (os.environ.get("LANGCHAIN_TRACING_V2", "").lower() == "true"
+                and os.environ.get("LANGCHAIN_API_KEY")):
+            logger.info("LangSmith 追踪已启用。")
+
+    def _validate_sections(self) -> None:
+        if not isinstance(self.config, dict):
+            raise ValueError("配置根节点必须为 YAML mapping。")
+        for section in ("llm", "rag", "paths", "vulnerability", "iteration"):
+            if section in self.config and not isinstance(self.config[section], dict):
+                raise ValueError(f"配置字段 {section} 必须为 mapping。")
+
+    @staticmethod
+    def _parse_bool(value: str) -> bool:
+        normalized = value.strip().lower()
+        if normalized in ("1", "true", "yes", "on"):
+            return True
+        if normalized in ("0", "false", "no", "off"):
+            return False
+        raise ValueError("必须是明确的布尔值。")
 
     def _apply_env_overrides(self) -> None:
         """读取环境变量并覆盖对应配置项。"""
         _env_map = {
             "CPG_LLM_MODEL_NAME":  ("llm", "model_name", str),
             "CPG_LLM_API_BASE":    ("llm", "api_base", str),
+            "CPG_LLM_API_KEY_ENV": ("llm", "api_key_env", str),
             "CPG_LLM_TEMPERATURE": ("llm", "temperature", float),
             "CPG_LLM_MAX_TOKENS":  ("llm", "max_tokens", int),
             "CPG_LLM_TIMEOUT":     ("llm", "timeout", int),
-            "CPG_RAG_ENABLED":     ("rag", "enabled", lambda v: v.lower() in ("1", "true", "yes")),
+            "CPG_LLM_MAX_RETRIES": ("llm", "max_retries", int),
+            "CPG_RAG_ENABLED":     ("rag", "enabled", self._parse_bool),
             "CPG_MAX_ITERATIONS":  ("iteration", "max_iterations", int),
             "CPG_VULN_TYPE":       ("vulnerability", "vuln_type", str),
         }
         for env_key, (section, key, cast) in _env_map.items():
             val = os.environ.get(env_key)
             if val is not None:
-                self.config.setdefault(section, {})[key] = cast(val)
-                logger.info("环境变量覆盖: %s -> %s.%s = %s", env_key, section, key, cast(val))
+                try:
+                    converted = cast(val)
+                except (TypeError, ValueError, OverflowError):
+                    raise ValueError(f"环境变量 {env_key} 的格式无效（配置字段 {section}.{key}）。") from None
+                self.config.setdefault(section, {})[key] = converted
+                logger.info("环境变量覆盖: %s -> %s.%s", env_key, section, key)
+
+    def _validate_config(self) -> None:
+        """校验已使用的字段；保留未知字段以兼容现有本地配置。"""
+        string_fields = {
+            "llm": ("model_name", "api_base", "api_key_env"),
+            "rag": ("persist_directory", "knowledge_base_dir"),
+            "paths": ("inputs_dir", "outputs_dir", "templates_dir"),
+            "vulnerability": ("vuln_type",),
+        }
+        for section, fields in string_fields.items():
+            for field in fields:
+                if field in self.config.get(section, {}):
+                    value = self.config[section][field]
+                    if not isinstance(value, str) or not value.strip():
+                        raise ValueError(f"配置字段 {section}.{field} 必须为非空字符串。")
+        for section, field in (("rag", "enabled"), ("llm", "streaming"), ("llm", "use_responses_api")):
+            if field in self.config.get(section, {}) and not isinstance(self.config[section][field], bool):
+                raise ValueError(f"配置字段 {section}.{field} 必须为 boolean。")
+        positive_int_fields = {
+            "llm": ("max_tokens", "max_retries"),
+            "rag": ("chunk_size", "top_k"),
+            "iteration": ("max_iterations", "max_auto_retries"),
+        }
+        for section, fields in positive_int_fields.items():
+            for field in fields:
+                if field in self.config.get(section, {}):
+                    value = self.config[section][field]
+                    if type(value) is not int or value <= 0:
+                        raise ValueError(f"配置字段 {section}.{field} 必须为正整数。")
+        numeric_fields = (("llm", "timeout", 0, None),
+                          ("llm", "temperature", 0, 2),
+                          ("iteration", "low_confidence_threshold", 0, 1))
+        for section, field, minimum, maximum in numeric_fields:
+            if field not in self.config.get(section, {}):
+                continue
+            value = self.config[section][field]
+            try:
+                finite_number = type(value) in (int, float) and math.isfinite(value)
+            except OverflowError:
+                finite_number = False
+            if (not finite_number
+                    or value < minimum or (field == "timeout" and value == 0)
+                    or (maximum is not None and value > maximum)):
+                raise ValueError(f"配置字段 {section}.{field} 必须为范围内的有限数值。")
+        overlap = self.rag.get("chunk_overlap", 128)
+        chunk_size = self.rag.get("chunk_size", 1024)
+        if type(overlap) is not int or overlap < 0 or overlap >= chunk_size:
+            raise ValueError("配置字段 rag.chunk_overlap 必须为非负整数且小于 rag.chunk_size。")
+        headers = self.llm.get("headers")
+        if headers is not None and (not isinstance(headers, dict) or any(
+                not isinstance(k, str) or not isinstance(v, str) for k, v in headers.items())):
+            raise ValueError("配置字段 llm.headers 必须为字符串到字符串的 mapping。")
+        input_files = self.vulnerability.get("input_files")
+        if input_files is not None and (not isinstance(input_files, dict) or any(
+                not isinstance(k, str) or not isinstance(v, str) for k, v in input_files.items())):
+            raise ValueError("配置字段 vulnerability.input_files 必须为字符串到字符串的 mapping。")
 
     def get(self, dotted_key: str, default: Any = None) -> Any:
         """用点号分隔的路径访问嵌套配置。"""

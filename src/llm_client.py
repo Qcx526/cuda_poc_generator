@@ -7,9 +7,9 @@
 """
 LLM 调用客户端。
 
-基于 LangChain 封装 LLM 调用接口，默认通过 NIUBIAPI 中转站的 OpenAI 兼容端点
-(https://www.niubiapi.com/v1) 访问模型，并按中转站要求透传自定义请求头，
-提供普通对话、结构化 JSON 生成、重试与流式输出能力。
+基于 LangChain 封装 LLM 调用接口，默认通过官方 DeepSeek 的 OpenAI 兼容端点
+(https://api.deepseek.com) 访问模型，兼容显式配置的其他端点和自定义请求头。
+提供普通对话、JSON 文本解析与有界重试；当前不执行 JSON schema 校验或流式输出。
 """
 
 import json
@@ -19,9 +19,11 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.output_parsers import JsonOutputParser
+try:
+    from langchain_openai import ChatOpenAI
+    from langchain_core.messages import SystemMessage, HumanMessage
+except ImportError as exc:
+    raise ImportError('LLM 核心依赖未安装，请在当前虚拟环境执行: python -m pip install -e "."') from exc
 
 from .config_loader import ConfigLoader
 
@@ -41,15 +43,14 @@ SECURITY_DISCLAIMER = (
 class LLMClient:
     """基于 LangChain 的 LLM 调用客户端。
 
-    封装 ChatOpenAI，通过 OpenAI 兼容接口访问 NIUBIAPI 中转站模型，
-    支持透传自定义请求头（如中转站要求的 User-Agent），
-    提供普通对话、结构化 JSON 生成、重试机制。
+    封装 ChatOpenAI，通过 OpenAI 兼容接口访问配置的模型，
+    支持透传自定义请求头，提供普通对话、JSON 解析和重试机制。
 
     Attributes:
         model: 模型名称。
         temperature: 默认采样温度。
         max_tokens: 最大生成 token 数。
-        max_retries: 请求最大重试次数。
+        max_retries: 历史字段名，当前表示最大尝试次数（含首次）。
         chat_model: LangChain ChatOpenAI 实例。
     """
 
@@ -61,30 +62,31 @@ class LLMClient:
 
         Raises:
             ImportError: 缺少 langchain 依赖时抛出。
+            ValueError: 所配置的 API Key 环境变量未设置时抛出。
         """
-        try:
-            import langchain_openai  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "请安装 LangChain 依赖: pip install langchain langchain-openai langchain-core"
-            )
-
         llm_cfg = cfg.llm
-        api_key = os.environ.get(llm_cfg.get("api_key_env", "NIUBIAPI_KEY"), "")
+        self._api_key_env: str = llm_cfg.get("api_key_env", "DEEPSEEK_API_KEY")
+        api_key = os.environ.get(self._api_key_env, "").strip()
+        if not api_key and self._api_key_env == "DEEPSEEK_API_KEY":
+            # Only the known DeepSeek legacy alias is eligible; never use another provider's key.
+            api_key = os.environ.get("DEEPSEEK_KEY", "").strip()
+            if api_key:
+                self._api_key_env = "DEEPSEEK_KEY"
+                logger.info("使用兼容 API Key 环境变量 DEEPSEEK_KEY。")
         if not api_key:
-            logger.warning(
-                "环境变量 %s 未设置，LLM 调用可能失败。",
-                llm_cfg.get("api_key_env", "NIUBIAPI_KEY"),
+            alias_note = "（兼容旧名称 DEEPSEEK_KEY）" if self._api_key_env == "DEEPSEEK_API_KEY" else ""
+            raise ValueError(
+                f"缺少 API Key：请在项目根 .env 或进程环境变量中设置 {self._api_key_env}{alias_note}。"
+                "其他服务商请显式配置 llm.api_key_env 或 CPG_LLM_API_KEY_ENV。"
             )
 
-        self.model: str = llm_cfg.get("model_name", "gpt-5.6-sol")
+        self.model: str = llm_cfg.get("model_name", "deepseek-flash")
         self.temperature: float = llm_cfg.get("temperature", 0.3)
-        self.max_tokens: int = llm_cfg.get("max_tokens", 8192)
+        self.max_tokens: int = llm_cfg.get("max_tokens", 4096)
         self.max_retries: int = llm_cfg.get("max_retries", 3)
-        self._timeout: int = llm_cfg.get("timeout", 300)
+        self._timeout: float = llm_cfg.get("timeout", 600)
         self._headers: Optional[Dict[str, str]] = llm_cfg.get("headers") or None
-        # 可选: 走 OpenAI Responses 协议 (/v1/responses)。某些中转站/上游对该路径的内容策略不同，
-        # 对照参考配置中的 "api": "openai-responses"。默认关闭，不影响现有 chat-completions 行为。
+        # 保留其他端点的可选 Responses 协议兼容；官方 DeepSeek 默认使用 Chat Completions。
         self._use_responses: bool = bool(llm_cfg.get("use_responses_api", False)) and (
             "use_responses_api" in getattr(ChatOpenAI, "model_fields", {})
         )
@@ -108,7 +110,7 @@ class LLMClient:
             temperature=self.temperature,
             max_tokens=self.max_tokens,
             api_key=api_key,
-            base_url=llm_cfg.get("api_base", "https://www.niubiapi.com/v1"),
+            base_url=llm_cfg.get("api_base", "https://api.deepseek.com"),
             default_headers=self._headers,
             timeout=_httpx_timeout,          # httpx.Timeout 对象，不是 float
             max_retries=0,  # 关闭 SDK 内置重试，统一由本类控制并打印每次尝试日志
@@ -117,7 +119,7 @@ class LLMClient:
         logger.info(
             "LLM 客户端就绪 (LangChain) — 模型: %s, API base: %s",
             self.model,
-            llm_cfg.get("api_base"),
+            llm_cfg.get("api_base", "https://api.deepseek.com"),
         )
 
     # ------------------------------------------------------------------
@@ -160,6 +162,8 @@ class LLMClient:
             import httpx as _httpx
             kwargs = {
                 "model": self.model,
+                "temperature": self.temperature if temperature is None else temperature,
+                "max_tokens": self.max_tokens if max_tokens is None else max_tokens,
                 "api_key": self.chat_model.openai_api_key,
                 "base_url": self.chat_model.openai_api_base,
                 "default_headers": self._headers,
@@ -167,10 +171,6 @@ class LLMClient:
                 "max_retries": 0,  # 同上：关闭 SDK 内置重试
                 **self._extra_init,
             }
-            if temperature is not None:
-                kwargs["temperature"] = temperature
-            if max_tokens is not None:
-                kwargs["max_tokens"] = max_tokens
             model = ChatOpenAI(**kwargs)
         else:
             model = self.chat_model
@@ -178,7 +178,7 @@ class LLMClient:
         last_exc: Optional[Exception] = None
         for attempt in range(1, self.max_retries + 1):
             logger.info(
-                "LLM 调用 尝试 %d/%d — 模型: %s, 单次超时: %ds（推理+结构化输出可能较慢，属正常，请耐心等待）",
+                "LLM 调用 尝试 %d/%d — 模型: %s, 单次读取超时: %gs",
                 attempt, self.max_retries, self.model, self._timeout,
             )
             try:
@@ -188,17 +188,22 @@ class LLMClient:
             except Exception as exc:
                 last_exc = exc
                 if not self._is_retryable(exc):
-                    raise RuntimeError(self._format_fatal(exc)) from exc
-                # 连接/超时类错误用更长等待（API 慢不是网络瞬断，短等无用）
+                    raise RuntimeError(self._format_fatal(exc, self._api_key_env)) from None
+                if attempt == self.max_retries:
+                    break
+                # 在剩余尝试之间使用有界退避。
                 code = getattr(exc, "status_code", None)
                 wait = min(10 * attempt, 60) if code is None else min(2 ** attempt, 30)
                 logger.warning(
                     "LLM 请求失败 (尝试 %d/%d): %s — %ds 后重试",
-                    attempt, self.max_retries, exc, wait,
+                    attempt, self.max_retries, type(exc).__name__, wait,
                 )
                 time.sleep(wait)
 
-        raise RuntimeError(f"LLM 请求在 {self.max_retries} 次重试后仍失败: {last_exc}")
+        raise RuntimeError(
+            f"LLM 请求在 {self.max_retries} 次尝试后仍失败（{type(last_exc).__name__}）。"
+            "请检查服务状态、网络连接和配置的请求超时。"
+        ) from None
 
     # ------------------------------------------------------------------
     # 重试判定 / 错误信息
@@ -219,34 +224,30 @@ class LLMClient:
         return False
 
     @staticmethod
-    def _format_fatal(exc: Exception) -> str:
+    def _format_fatal(exc: Exception, api_key_env: str = "llm.api_key_env") -> str:
         """为不可重试的错误组装带处置建议的提示。"""
         msg = str(exc)
         low = msg.lower()
+        code = getattr(exc, "status_code", None)
         hints: List[str] = []
         is_html = ("<!doctype html" in low) or ("cloudflare" in low) or ("<html" in low)
-        if is_html:
+        if code == 404 or "model_not_found" in low or "unknown model" in low:
+            hints.append("模型或 API 路径不可用：检查 llm.model_name / CPG_LLM_MODEL_NAME 和 llm.api_base，确认服务商当前支持该模型。")
+        elif is_html:
             hints.append(
-                "响应是 Cloudflare/网关 的 HTML 拦截页（并非模型返回），多为边缘 WAF/反爬或短时频控，"
-                "与提示内容、模型名、客户端类型均无关，也不是 Key 错误。建议: "
-                "(1) 稍等几分钟再重试，避开频控窗口; "
-                "(2) 核对另一台能跑通机器的 NIUBI_BASE_URL 是否就是 www.niubiapi.com（不同域名/IP 可能不走同一 Cloudflare 规则）; "
-                "(3) 更换出口网络/代理后再试。"
+                "响应包含 HTML 网关页面，不能据此确定具体原因。请检查 llm.api_base、"
+                "服务商状态和网络连接，必要时联系服务商。"
             )
         elif ("cybersecurity" in low) or ("trusted access" in low) or ("flagged" in low):
             hints.append(
-                "上游判定内容存在网络安全风险（OpenAI 内容审核）。可选对策: "
-                "(1) 在 config/default.yaml 设 llm.use_responses_api: true 改走 Responses 协议再试; "
-                "(2) 改用中转站上非 OpenAI 的模型路由（如 Claude/DeepSeek/Qwen），通过 llm.model_name 或环境变量 CPG_LLM_MODEL_NAME; "
-                "(3) 由中转站/上游账号加入 OpenAI Trusted Access for Cyber; "
-                "(4) 弱化提示中的攻击/利用类措辞。"
+                "请求被服务商内容策略拒绝。请确认研究授权和服务商使用政策，必要时联系服务商。"
             )
-        elif ("401" in msg) or ("403" in msg) or ("unauthorized" in low) or ("forbidden" in low):
-            hints.append("鉴权失败：检查 .env 中 NIUBIAPI_KEY 是否正确、是否过期。")
-        elif ("invalid_request" in low) or ("400" in msg):
+        elif code in (401, 403) or "unauthorized" in low or "forbidden" in low:
+            hints.append(f"鉴权或访问权限失败：检查 {api_key_env} 是否正确、过期，以及账户是否有访问权限。")
+        elif "invalid_request" in low or code == 400:
             hints.append("请求被上游以 400 拒绝（参数或内容），重试不会改变结果。请检查模型名/参数或上游内容策略。")
-        code = getattr(exc, "status_code", None)
-        head = f"LLM 请求被上游拒绝 (HTTP {code})，已停止重试。原始错误: {msg}"
+        # Do not echo server bodies: they may contain private prompts or credentials.
+        head = f"LLM 请求被上游拒绝 (HTTP {code})，已停止重试（{type(exc).__name__}）。"
         return head + ("  提示: " + " ".join(hints) if hints else "")
 
     # ------------------------------------------------------------------
