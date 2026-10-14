@@ -14,7 +14,10 @@ Phase 3: PoC 构造 — LLM 生成 PoC 代码，写入文件
 """
 
 import logging
+import hashlib
 import os
+from pathlib import Path
+import uuid
 from typing import Any, Dict, Optional
 
 from .code_generator import CudaCodeGenerator
@@ -24,6 +27,8 @@ from .cuda_library import CudaLibrary
 from .data_loader import CudaDataLoader
 from .env_probe import probe_environment, format_for_prompt
 from .llm_client import LLMClient
+from .models.analysis import validate_analysis
+from .models.generation import CandidateResult
 from .utils import ensure_dir, write_json
 
 logger = logging.getLogger("cuda_poc_generator.pipeline")
@@ -35,108 +40,175 @@ class CudaPipeline:
     def __init__(self, config_path: Optional[str] = None) -> None:
         self.cfg = ConfigLoader(config_path)
         logger.info("CUDA PoC 配置加载完成。")
-        self.llm = LLMClient(self.cfg)
+        # Input validation precedes provider setup, including missing-key checks.
+        self.llm = None
         self.data_loader = CudaDataLoader(self.cfg)
         self.cuda_lib = CudaLibrary()
-        self.expert = CudaSecurityExpert(self.llm)
+        self.expert = None
 
         outputs_dir = str(
             self.cfg.resolve_path(self.cfg.paths.get("outputs_dir", "data/outputs"))
         )
-        self.code_gen = CudaCodeGenerator(self.llm, self.cuda_lib, outputs_dir)
+        self.code_gen = None
         self._outputs_dir = outputs_dir
+        self.last_run = None
+
+    def _initialize_components(self, outputs_dir: str) -> None:
+        if self.llm is None:
+            self.llm = LLMClient(self.cfg)
+        if self.expert is None:
+            self.expert = CudaSecurityExpert(self.llm)
+        if self.code_gen is None:
+            self.code_gen = CudaCodeGenerator(self.llm, self.cuda_lib, outputs_dir)
+        self.code_gen.outputs_dir = outputs_dir
 
     # ------------------------------------------------------------------
     def run(
         self,
         input_dir: Optional[str] = None,
         output_dir: Optional[str] = None,
-    ) -> None:
-        """加载输入 → 专家分析 → 生成 PoC，一次性完成。
+    ) -> Dict[str, Any]:
+        """Normalize inputs, validate analysis, then save an unexecuted candidate.
 
-        Args:
-            input_dir: 7 类 JSON 输入目录。
-            output_dir: PoC 和报告输出目录（覆盖配置）。
+        The returned report describes this invocation. Failures also persist a
+        report before raising, so the CLI exits unsuccessfully. Existing v1
+        sources are retained and never cited as current successful artifacts.
         """
-        if output_dir:
-            ensure_dir(output_dir)
-            self._outputs_dir = output_dir
-            self.code_gen.outputs_dir = output_dir
-            logger.info("输出目录已覆盖: %s", output_dir)
-
+        base_dir = Path(output_dir or self._outputs_dir)
+        ensure_dir(str(base_dir))
         self._print_banner()
-
-        # ================================================================
-        # Phase 1: 情报收集
-        # ================================================================
-        logger.info("Phase 1: CUDA 情报收集")
-        print("\n[Phase 1/3] CUDA 情报收集…")
-
-        # 1a. 加载 7 维度输入
-        vuln_context = self.data_loader.load_inputs(input_dir)
-        non_empty = sum(1 for v in vuln_context.values() if v and not str(v).startswith("_"))
-        if non_empty == 0:
-            print("\n[ERROR] 输入目录中未找到 CUDA 漏洞数据。请准备 7 类 JSON 文件。")
-            return
-        print(f"  已加载 {non_empty}/7 个 CUDA 漏洞输入维度。")
-
-        # 提取 CVE，设置输出子目录
-        cve_id = self._extract_cve_id(vuln_context)
-        if cve_id:
-            cve_out = os.path.join(self._outputs_dir, cve_id)
-            ensure_dir(cve_out)
-            self._outputs_dir = cve_out
-            self.code_gen.outputs_dir = cve_out
-            print(f"  CVE 编号: {cve_id} — 输出目录: {cve_out}")
-
-        # 1b. RAG
-        self.data_loader.build_or_load_knowledge_base()
-        rag_context = self._query_rag(vuln_context)
-
-        # 1b2. Web Search (Tavily — supplements RAG with live results)
-        web_context = self._query_web_search(vuln_context)
-
-        # 1c. 环境探测
-        print("  正在探测 GPU/CUDA 环境…", end=" ")
-        env_info = probe_environment()
-        env_prompt_block = format_for_prompt(env_info)
-        gpu_count = env_info.get("gpu", {}).get("gpu_count", 0)
-        cap = env_info.get("gpu", {}).get("primary_compute_cap", "N/A")
-        nvcc = env_info.get("toolchain", {}).get("nvcc_path", "N/A")
-        print(f"GPU={gpu_count}, arch={cap}, nvcc={nvcc}")
-
-        # ================================================================
-        # Phase 2: 漏洞分析
-        # ================================================================
-        logger.info("Phase 2: CUDA 安全专家分析")
-        print("\n[Phase 2/3] CUDA 安全专家分析 (7-Layer Model)…")
-        analysis = self.expert.analyze(
-            vuln_context=vuln_context,
-            rag_context=rag_context,
-            previous_feedback=None,
+        print("\n[Phase 1/3] Input normalization and consistency checks")
+        bundle = self.data_loader.load_normalized_inputs(input_dir)
+        target_dir = base_dir / bundle.cve_id if bundle.is_valid else base_dir
+        ensure_dir(str(target_dir))
+        run_id = uuid.uuid4().hex
+        candidate = CandidateResult(run_id=run_id)
+        artifact_names = (
+            "cuda_analysis_v1.json", "cuda_analysis_v1.raw.txt", "cuda_poc_v1.py",
+            "cuda_poc_v1.status.json", "input_manifest_v1.json", "cuda_run_v1.json",
         )
-        write_json(os.path.join(self._outputs_dir, "cuda_analysis_v1.json"), analysis)
+        preexisting = {
+            name: hashlib.sha256((target_dir / name).read_bytes()).hexdigest()
+            for name in artifact_names if (target_dir / name).is_file()
+        }
+        report: Dict[str, Any] = {
+            "schema_version": "1.0", "run_id": run_id, "status": "INPUT_INVALID",
+            "cve_id": bundle.cve_id or None,
+            "input_status": "VALID" if bundle.is_valid else "INVALID",
+            "analysis_status": "NOT_ANALYZED",
+            "candidate": candidate.model_dump(mode="json"),
+            "execution": "NOT_EXECUTED", "verification": "NOT_VERIFIED",
+            "artifacts": {}, "preexisting_artifacts": preexisting,
+            "diagnostics": [],
+        }
+        self.last_run = report
+
+        def artifact(name: str) -> Dict[str, str]:
+            return {"file": name, "sha256": hashlib.sha256((target_dir / name).read_bytes()).hexdigest()}
+
+        def finish(status: str, exc: Optional[Exception] = None) -> Dict[str, Any]:
+            report["status"] = status
+            report["candidate"] = candidate.model_dump(mode="json")
+            if exc is not None:
+                # Never print provider bodies, raw model text or input field values.
+                report["error_type"] = type(exc).__name__
+                report["diagnostics"] = getattr(exc, "diagnostics", [])
+                report["diagnostics"] = [
+                    item.model_dump(mode="json") if hasattr(item, "model_dump") else item
+                    for item in report["diagnostics"]
+                ]
+            write_json(str(target_dir / "cuda_poc_v1.status.json"), report["candidate"])
+            report["artifacts"]["candidate_status"] = artifact("cuda_poc_v1.status.json")
+            write_json(str(target_dir / "cuda_run_v1.json"), report)
+            return report
+
+        manifest = bundle.model_dump(mode="json")
+        manifest["run_id"] = run_id
+        manifest["input_status"] = report["input_status"]
+        write_json(str(target_dir / "input_manifest_v1.json"), manifest)
+        report["artifacts"]["input_manifest"] = artifact("input_manifest_v1.json")
+        try:
+            bundle.require_valid()
+        except ValueError as exc:
+            finish("INPUT_INVALID", exc)
+            raise
+        vuln_context = bundle.dimensions
+        print(f"  CVE: {bundle.cve_id}; all seven inputs passed structural checks")
+
+        try:
+            self._initialize_components(str(target_dir))
+        except Exception as exc:
+            finish("PROVIDER_ERROR", exc)
+            raise
+
+        try:
+            self.data_loader.build_or_load_knowledge_base()
+            rag_context = self._query_rag(vuln_context)
+            web_context = self._query_web_search(vuln_context)
+            env_info = probe_environment()
+            env_prompt_block = format_for_prompt(env_info)
+        except Exception as exc:
+            finish("CONTEXT_ERROR", exc)
+            raise
+
+        print("\n[Phase 2/3] CUDA expert analysis and strict contract validation")
+        self.expert.last_raw_response = None
+
+        def save_raw() -> None:
+            raw = self.expert.last_raw_response
+            if isinstance(raw, str):
+                # write_bytes preserves Unicode and CRLF exactly, including outer whitespace.
+                (target_dir / "cuda_analysis_v1.raw.txt").write_bytes(raw.encode("utf-8"))
+                report["artifacts"]["analysis_raw"] = artifact("cuda_analysis_v1.raw.txt")
+
+        try:
+            analysis = self.expert.analyze(
+                vuln_context=vuln_context, rag_context=rag_context,
+                previous_feedback=None, expected_cve_id=bundle.cve_id,
+            )
+            # Defense in depth, including externally injected/mock experts.
+            analysis = validate_analysis(analysis, expected_cve_id=bundle.cve_id).model_dump(exclude_unset=True)
+            save_raw()
+        except Exception as exc:
+            save_raw()
+            category = getattr(exc, "category", None)
+            if category in ("PARSE_ERROR", "SCHEMA_ERROR", "CVE_MISMATCH"):
+                report["analysis_status"] = "INVALID"
+                finish("ANALYSIS_" + category, exc)
+            else:
+                finish("PROVIDER_ERROR", exc)
+            raise
+        report["analysis_status"] = "VALID"
+        write_json(str(target_dir / "cuda_analysis_v1.json"), analysis)
+        report["artifacts"]["analysis"] = artifact("cuda_analysis_v1.json")
         self._print_analysis_summary(analysis)
 
-        # ================================================================
-        # Phase 3: PoC 构造
-        # ================================================================
-        logger.info("Phase 3: 生成 CUDA PoC 代码")
-        print("\n[Phase 3/3] 生成 CUDA PoC 代码…")
-
+        print("\n[Phase 3/3] Candidate generation and static checks only")
         extra_ctx = env_prompt_block + "\n\n" + rag_context[:1500] + "\n\n" + web_context[:1000]
-        poc_code = self.code_gen.generate(
-            vuln_context=vuln_context,
-            expert_analysis=analysis,
-            iteration=1,
-            extra_context=extra_ctx,
-        )
-
-        poc_path = os.path.join(self._outputs_dir, "cuda_poc_v1.py")
-        print(f"\n[+] CUDA PoC 已生成: {poc_path}")
-        print(f"    代码长度: {len(poc_code)} 字符, {poc_code.count(chr(10)) + 1} 行")
-        print(f"\n    执行方式: python {poc_path}")
-        print(f"    执行后可将输出粘贴给 AI 助手进行调试和修改。")
+        try:
+            self.code_gen.generate(
+                vuln_context=vuln_context, expert_analysis=analysis,
+                iteration=1, extra_context=extra_ctx,
+            )
+            candidate = self.code_gen.last_result.model_copy(update={"run_id": run_id})
+            self.code_gen.last_result = candidate
+            if candidate.generation != "GENERATED":
+                raise RuntimeError("Candidate was not saved by the generator.")
+            report["artifacts"]["candidate"] = artifact(candidate.source_file)
+        except Exception as exc:
+            candidate = self.code_gen.last_result.model_copy(update={"run_id": run_id})
+            if candidate.generation != "GENERATION_FAILED":
+                candidate = CandidateResult(
+                    run_id=run_id, generation="GENERATION_FAILED",
+                    errors=[f"GENERATION_ERROR: {type(exc).__name__}"],
+                )
+            self.code_gen.last_result = candidate
+            finish("GENERATION_FAILED", exc)
+            raise
+        finish("COMPLETE")
+        print(f"\n[+] Candidate saved: {target_dir / candidate.source_file}")
+        print(f"    {candidate.generation} / {candidate.static} / NOT_EXECUTED / NOT_VERIFIED")
+        return report
 
     # ------------------------------------------------------------------
     # 辅助方法
@@ -156,15 +228,19 @@ class CudaPipeline:
         cwe = vt.get("cwe_id", "") or vt.get("vulnerability_type", "")
         if cwe:
             parts.append(f"CWE: {cwe}")
-        comp = af.get("name", "") or af.get("component_name", "")
-        if comp:
-            parts.append(f"CUDA Component: {comp}")
+        # Existing inputs use a short name and a separate formal component label.
+        # Preserve both rather than assuming they are interchangeable aliases.
+        for key in ("name", "component_name"):
+            component = af.get(key)
+            if isinstance(component, str) and component:
+                parts.append(f"CUDA Component {key}: {component}")
         arch = ce.get("gpu_architecture", "") or ce.get("compute_capability", "")
         if arch:
             parts.append(f"GPU Architecture: {arch}")
-        summary = rc.get("summary", "")
-        if summary:
-            parts.append(f"Summary: {summary[:200]}")
+        for key in ("summary", "vulnerable_code_summary"):
+            summary = rc.get(key)
+            if isinstance(summary, str) and summary:
+                parts.append(f"{key}: {summary[:200]}")
         query = " ".join(parts)[:500]
         if query:
             out = self.data_loader.query_knowledge(query)

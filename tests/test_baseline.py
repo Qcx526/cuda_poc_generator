@@ -94,7 +94,9 @@ class OfflineTestCase(unittest.TestCase):
 
     def fake_llm(self):
         fake = MagicMock()
-        fake.structured_generate.return_value = deepcopy(ANALYSIS)
+        fake.structured_generate.return_value = self.llm_module.StructuredResponse(
+            deepcopy(ANALYSIS), raw_response=json.dumps(ANALYSIS),
+        )
         fake.chat.return_value = SAFE_CODE
         return fake
 
@@ -269,14 +271,14 @@ class TestLLMConfigurationAndRetry(OfflineTestCase):
                 self.assertEqual(constructor.call_args.kwargs["max_tokens"],
                                  override.get("max_tokens", cfg.llm["max_tokens"]))
 
-    def test_json_parsing_is_not_schema_validation(self):
+    def test_generic_json_parsing_is_separate_from_cuda_analysis_validation(self):
         client = object.__new__(self.llm_module.LLMClient)
         with patch.object(client, "chat", return_value='{"unexpected": "valid JSON"}'):
             parsed = client.structured_generate(
                 "offline fixture", "offline fixture",
                 json_schema={"type": "object", "required": ["required_field"]},
             )
-        # This documents a known P1 boundary, not a claim of validated schema.
+        # Generic JSON parsing is separate from the strict CUDA expert model contract.
         self.assertEqual(parsed, {"unexpected": "valid JSON"})
         self.assertNotIn("required_field", parsed)
         self.assertEqual(self.llm_module.LLMClient._safe_parse_json("unstructured fixture"),
@@ -385,7 +387,8 @@ class TestInputsAndGeneration(OfflineTestCase):
                 pipeline.run(input_dir=str(PROJECT_ROOT / "data/inputs/CVE-2024-0124"))
             output = Path(directory) / "CVE-2024-0124"
             self.assertEqual({path.name for path in output.iterdir()},
-                             {"cuda_analysis_v1.json", "cuda_poc_v1.py"})
+                             {"cuda_analysis_v1.json", "cuda_poc_v1.py", "input_manifest_v1.json",
+                              "cuda_analysis_v1.raw.txt", "cuda_poc_v1.status.json", "cuda_run_v1.json"})
             self.assertEqual(json.loads((output / "cuda_analysis_v1.json").read_text(encoding="utf-8")), ANALYSIS)
             ast.parse((output / "cuda_poc_v1.py").read_text(encoding="utf-8"))
         fake.structured_generate.assert_called_once()

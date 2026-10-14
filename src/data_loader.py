@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .config_loader import ConfigLoader
+from .models.normalized_input import NormalizedInput, normalize_input_files
 from .utils import read_json
 
 logger = logging.getLogger("cuda_poc_generator.data_loader")
@@ -134,6 +135,21 @@ class CudaDataLoader:
                 logger.warning("输入为空或缺失 [%s]: %s", key, filepath)
 
         return result
+
+    def load_normalized_inputs(self, directory: Optional[str] = None) -> NormalizedInput:
+        """Load the seven dimensions with structure checks and source provenance.
+
+        Unlike the compatibility ``load_inputs`` interface, this returns explicit
+        diagnostics for unreadable, malformed, missing, or conflicting inputs.
+        Call ``require_valid()`` before expert analysis or code generation.
+        """
+        if directory is None:
+            directory = str(
+                self.cfg.resolve_path(self.cfg.paths.get("inputs_dir", "data/inputs"))
+            )
+        return normalize_input_files(
+            directory, self.cfg.vulnerability.get("input_files", {})
+        )
 
     # ------------------------------------------------------------------
     # 2. RAG 知识库构建 / 加载 (基于 LangChain + ChromaDB)

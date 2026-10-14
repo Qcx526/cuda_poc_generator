@@ -6,9 +6,9 @@
 
 ## 1. 当前已实现能力
 
-- 从七类 JSON 文件加载 CUDA 漏洞研究资料。
+- 从七类 JSON 文件加载资料，兼容 flat/wrapped 归一化，校验目标 CVE、关键字段、类型和明确冲突，保留原字段来源与 SHA-256。
 - LangChain `ChatOpenAI` 调用 OpenAI 兼容端点；默认使用官方 DeepSeek API。
-- 七层 CUDA 根因分析与验证策略 Prompt，输出模型分析 JSON。
+- 七层 CUDA 根因分析与验证策略 Prompt；完整 JSON 解析与严格 Pydantic 分析合同，失败阻止生成。
 - 生成 Python 候选 PoC，去除 Markdown 包装，进行 Python AST 和粗略名称检查；失败时最多请求两次静态纠正。
 - 可选本地 CPU embedding + Chroma 持久化检索；可选 Tavily CVE Web 检索。
 - 当前 Python 宿主机的 GPU/CUDA/工具链探测，以及可导入的编译、ELF 操作、反汇编工具。
@@ -17,7 +17,7 @@
 
 主流程没有自动 CUDA 编译、PoC 执行、Compute Sanitizer 验证、运行反馈迭代、CVE 成功 oracle 或 benchmark。`iteration` 配置是保留的历史接口，当前不控制循环；静态纠正也不是运行反馈。
 
-模型 JSON 目前仅做容错解析和顶层字段检查，**没有真正执行输出 schema 校验**。`src/models` 尚未接入主流程，也未完整匹配全部输入格式。AST 通过不代表依赖可导入、CUDA API 正确、可以运行或漏洞触发。静态纠正最终失败仍会保存候选供人工检查。
+P1-A 已接入严格输入与分析合同：JSON/schema/CVE 不合格会失败，不再传入代码生成。结构合法仍不能证明模型根因、输入资料或拟定策略属实。AST 通过不代表依赖可导入、CUDA API 正确、可以运行或漏洞触发；静态纠正最终失败仍保存候选，并明确标为 `STATIC_INVALID`、`NOT_EXECUTED`、`NOT_VERIFIED`。
 
 环境探测仍有已知问题：GPU 架构存在 SM 7.5 硬编码，无 `nvcc` 时会提供预设架构列表；Windows 探测不能表示 WSL 实验环境。不要把这些推断当实测证据。详细位置见 [P0 基线审计](docs/P0_BASELINE_AUDIT.md)。
 
@@ -26,22 +26,24 @@
 ```text
 main.py → CLI 检查 → ConfigLoader（根目录 .env + YAML + CPG_*）
   → CudaPipeline
-    → CudaDataLoader：七维原始字典
+    → CudaDataLoader：七维原始文件 → 归一化 → 一致性/字段检查
+      → input_manifest_v1.json（来源、哈希、状态与未验证声明）
     → 可选 RAG：本地 embedding / Chroma → 检索文本
     → 可选 Tavily → Web 文本
     → env_probe：当前 Python 宿主机探测
-    → CudaSecurityExpert：一次 LLM 分析 → cuda_analysis_v1.json
+    → CudaSecurityExpert：一次 LLM 分析 → 完整JSON解析 → 严格模型/CVE校验
+      → cuda_analysis_v1.raw.txt（原文）与 cuda_analysis_v1.json（合格分析）
     → CudaCodeGenerator：一次 LLM 生成 + 最多两次静态纠正
-      → cuda_poc_v1.py
+      → cuda_poc_v1.py + cuda_poc_v1.status.json + cuda_run_v1.json
 ```
 
-专家分析使用七维资料和 RAG；环境及 Web 文本只进入代码生成上下文。工具库的引用说明进入 Prompt，主流程不会自动调用这些工具。RAG 检索仍有扁平/包装字段混用问题。
+输入合格后才初始化模型客户端。专家使用归一化七维资料和 RAG；环境及 Web 文本只进入代码生成上下文。分析及生成器入口都校验目标 CVE。工具库的引用说明进入 Prompt，主流程不会自动调用这些工具。RAG 查询现在读取归一化字段，并保留组件短名/正式名称及两种根因摘要字段。
 
 ```text
 config/default.yaml             默认配置
 src/{pipeline,core_expert,code_generator,llm_client}.py
 src/{data_loader,config_loader,env_probe,cuda_library,utils}.py
-src/models/                     现有未接入的 Pydantic 模型
+src/models/                     归一化/严格分析/候选状态；旧输入字段视图保留
 src/tools/                      compile / env / inspect / elf_ops / search
 data/inputs/CVE-*/               受控七维研究输入
 data/knowledge_bases/cuda/       受控知识源 .md / .txt
@@ -169,7 +171,7 @@ CPU wheel 选择依据 [PyTorch 官方安装说明](https://pytorch.org/get-star
 }
 ```
 
-仓库含 6 个 CVE、42 个 JSON，本轮检查了合法性、文件齐全及各目录 CVE ID 一致性。数据同时存在扁平和包装形式；加载器原样保留，部分检索字段不能兼容两者。缺失/损坏 JSON 会记录日志并返回空字典，当前并不强制七个维度全部有效。已有数据的版本范围、根因和假设未在本轮逐条核对官方公告，也未进行漏洞实验。
+仓库含 6 个 CVE、42 个 JSON，全部通过 P1-A 归一化回归，源文件不变。CLI 现在要求七个文件均为合法 JSON object、目标 CVE ID 合法且一致，并具备组件名、入口、CWE、根因摘要等最小关键内容；缺失/损坏/冲突不能继续。OS/GPU 等可显式未知，字段状态区分 `MISSING/UNKNOWN/CONFLICT/VALID/INVALID`，JSON 容器最多128层。旧 `load_inputs()` 仍原样返回字典；主流程使用新 `load_normalized_inputs()`。所有资料标为 `input_assertion/unverified`，不核验公告或认定 CVE 已复现。接口、例子及迁移说明见 [P1-A 合同](docs/P1_A_CONTRACT.md)。
 
 ## 11. 候选生成命令与输出
 
@@ -187,8 +189,12 @@ python main.py --config config/default.yaml --cve-id CVE-2025-23339
 |---|---|
 | `cuda_analysis_v1.json` | 模型分析与拟定策略；不是实验结论 |
 | `cuda_poc_v1.py` | 未执行的候选代码；静态失败也可能保存 |
+| `input_manifest_v1.json` | 原始/归一化字段、来源路径、输入哈希、诊断和生成调用 ID |
+| `cuda_analysis_v1.raw.txt` | 成功或非法响应的完整原文，保留首尾空白和 CRLF；供应商失败未返回文本时不新建 |
+| `cuda_poc_v1.status.json` | 生成、静态、执行、验证四组独立状态及候选哈希 |
+| `cuda_run_v1.json` | 当前调用的完整/失败状态与有效产物引用；`COMPLETE` 不表示漏洞成功 |
 
-同一 CVE 的重复生成会覆盖 `v1`；现阶段应使用不同 `--output-dir` 手工保留版本。任意输出目录可能影响生成脚本寻找 `src.tools` 的固定回溯逻辑。当前没有运行身份、输入/代码哈希、原始响应或证据目录；不要把手工运行日志塞进受控源文件目录。
+同一 CVE 的重复生成仍会覆盖当前 `v1` 元数据；请用不同 `--output-dir` 保留完整版本。每次调用有新 `run_id`，失败会更新报告及候选状态，旧源码/旧合格分析保留，并标为 `preexisting_artifacts`，不引用为当前成功。输入无效时报告位于输出根目录。默认输出被 Git 忽略；自定义目录也必须保护原文及私有资料。尚无执行证据系统，`run_id` 只标识生成调用。任意输出目录的工具 import 固定回溯问题仍未修复。
 
 ## 12. WSL CUDA 工具检查与后续实验
 
@@ -215,6 +221,8 @@ g++ --version
 - 不要自动运行 `_diag.py`：这是历史联网诊断脚本，会进行真实模型请求且包含旧模型配方。`_check_rel.py` 是历史 CUDA 编译脚本，也不属于离线测试。
 
 逐项 PASS/FAILED/NOT_CHECKED、修改前后对比见 [P0 验收记录](docs/P0_VALIDATION.md)。离线 Mock 通过只能证明这些接线和静态行为；真实 LLM、RAG、Tavily、GPU 和漏洞触发不在本轮通过范围。
+
+P1-A 新增严格合同与阻断、原文保留及独立状态回归，双环境验收见 [P1-A 交付记录](docs/P1_A_VALIDATION.md)。非 JSON、截断、额外杂文、重复键、NaN/Infinity、字段缺失/类型错误、步骤 ID 或目标 CVE 冲突均会失败；没有结构纠正重试（0次），供应商请求沿用既有有界重试。
 
 后续路线：P1 对齐输入/输出 schema 与生成质量；P2 建立独立环境、候选和原始证据身份，并在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。接口和验收标准见基线审计报告。
 

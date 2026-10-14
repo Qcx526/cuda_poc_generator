@@ -9,11 +9,12 @@ LLM 调用客户端。
 
 基于 LangChain 封装 LLM 调用接口，默认通过官方 DeepSeek 的 OpenAI 兼容端点
 (https://api.deepseek.com) 访问模型，兼容显式配置的其他端点和自定义请求头。
-提供普通对话、JSON 文本解析与有界重试；当前不执行 JSON schema 校验或流式输出。
+提供普通对话、严格 JSON 文本解析与有界请求重试；CUDA 分析模型由专家层校验。
 """
 
 import json
 import logging
+import math
 import os
 import re
 import time
@@ -40,6 +41,27 @@ SECURITY_DISCLAIMER = (
 )
 
 
+class StructuredOutputError(ValueError):
+    """Invalid structured response with its unchanged text kept for diagnostics."""
+
+    category = "PARSE_ERROR"
+
+    def __init__(
+        self, raw_response: Optional[str], diagnostics: List[Dict[str, Any]]
+    ) -> None:
+        self.raw_response = raw_response
+        self.diagnostics = diagnostics
+        super().__init__("LLM structured response rejected (PARSE_ERROR); see diagnostics.")
+
+
+class StructuredResponse(dict):
+    """A backwards-compatible dictionary carrying the unchanged provider text."""
+
+    def __init__(self, parsed: Dict[str, Any], raw_response: str) -> None:
+        super().__init__(parsed)
+        self.raw_response = raw_response
+
+
 class LLMClient:
     """基于 LangChain 的 LLM 调用客户端。
 
@@ -64,6 +86,7 @@ class LLMClient:
             ImportError: 缺少 langchain 依赖时抛出。
             ValueError: 所配置的 API Key 环境变量未设置时抛出。
         """
+        self.last_chat_raw_response: Optional[str] = None
         llm_cfg = cfg.llm
         self._api_key_env: str = llm_cfg.get("api_key_env", "DEEPSEEK_API_KEY")
         api_key = os.environ.get(self._api_key_env, "").strip()
@@ -147,6 +170,7 @@ class LLMClient:
         Raises:
             RuntimeError: 重试耗尽，或遇到不可重试的确定性错误。
         """
+        self.last_chat_raw_response = None
         # 构建 LangChain 消息
         lc_messages = []
         for m in messages:
@@ -183,8 +207,16 @@ class LLMClient:
             )
             try:
                 resp = model.invoke(lc_messages)
-                content = resp.content or ""
+                content = resp.content
+                if not isinstance(content, str):
+                    raise StructuredOutputError(
+                        None, [{"path": [], "code": "non_text_provider_response"}]
+                    )
+                self.last_chat_raw_response = content
                 return content.strip()
+            except StructuredOutputError:
+                # An unsupported response representation is not a transport failure.
+                raise
             except Exception as exc:
                 last_exc = exc
                 if not self._is_retryable(exc):
@@ -272,7 +304,9 @@ class LLMClient:
             temperature: 覆盖默认温度（可选）。
 
         Returns:
-            解析后的字典。若解析失败则返回 ``{"raw": "<原始文本>"}``。
+            StructuredResponse 字典（包含未经修改的 raw_response 属性）。
+            解析失败抛出 StructuredOutputError；不作结构纠正重试。
+            json_schema 用于提示；CUDA 专家层执行同源 Pydantic 模型校验。
         """
         # 拼装系统提示
         full_system = system_prompt + SECURITY_DISCLAIMER
@@ -288,15 +322,73 @@ class LLMClient:
             {"role": "system", "content": full_system},
             {"role": "user", "content": user_prompt},
         ]
+        self.last_chat_raw_response = None
         raw = self.chat(messages, temperature=temperature)
-        return self._safe_parse_json(raw)
+        original = self.last_chat_raw_response
+        if original is None:
+            # Offline mocks and compatible custom chat implementations return raw text.
+            original = raw
+        return self._strict_parse_json(original)
 
     # ------------------------------------------------------------------
     # 内部工具
     # ------------------------------------------------------------------
     @staticmethod
+    def _strict_parse_json(text: str) -> StructuredResponse:
+        """Accept one full JSON object or one complete Markdown JSON fence only.
+
+        No extraction from surrounding prose, permissive constants, duplicate
+        keys, or partial objects. Diagnostics never include response contents.
+        """
+        if not isinstance(text, str):
+            raise StructuredOutputError(None, [{"path": [], "code": "response_not_text"}])
+        payload = text.strip()
+        if not payload:
+            raise StructuredOutputError(text, [{"path": [], "code": "empty_response"}])
+        if payload.startswith("```"):
+            fence = re.fullmatch(r"```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```", payload)
+            if fence is None:
+                raise StructuredOutputError(text, [{"path": [], "code": "invalid_json_fence"}])
+            payload = fence.group(1).strip()
+
+        def reject_constant(_constant: str) -> None:
+            raise StructuredOutputError(text, [{"path": [], "code": "non_finite_json_constant"}])
+
+        def finite_float(number: str) -> float:
+            value = float(number)
+            if not math.isfinite(value):
+                raise StructuredOutputError(text, [{"path": [], "code": "non_finite_json_number"}])
+            return value
+
+        def unique_object(pairs: List[Any]) -> Dict[str, Any]:
+            value: Dict[str, Any] = {}
+            for key, item in pairs:
+                if key in value:
+                    raise StructuredOutputError(text, [{"path": [], "code": "duplicate_json_key"}])
+                value[key] = item
+            return value
+
+        try:
+            parsed = json.loads(
+                payload, parse_constant=reject_constant,
+                parse_float=finite_float, object_pairs_hook=unique_object,
+            )
+        except StructuredOutputError:
+            raise
+        except json.JSONDecodeError as exc:
+            raise StructuredOutputError(
+                text, [{"path": [], "code": "invalid_json", "line": exc.lineno, "column": exc.colno}]
+            ) from None
+        except (RecursionError, ValueError):
+            # Avoid dumping JSON or parser values into public error messages.
+            raise StructuredOutputError(text, [{"path": [], "code": "invalid_json"}]) from None
+        if not isinstance(parsed, dict):
+            raise StructuredOutputError(text, [{"path": [], "code": "json_root_not_object"}])
+        return StructuredResponse(parsed, text)
+
+    @staticmethod
     def _safe_parse_json(text: str) -> Dict[str, Any]:
-        """从模型输出中尽力提取 JSON 字典。"""
+        """Legacy best-effort helper; never used by the strict expert path."""
         original = text.strip()
 
         # 1. 先在原文上提取 ```json ... ``` / ``` ... ``` 代码块
@@ -333,5 +425,5 @@ class LLMClient:
             except json.JSONDecodeError:
                 pass
 
-        logger.warning("无法解析 JSON。前100字符: %s", text[:100])
+        logger.warning("Legacy JSON helper could not parse response text.")
         return {"raw": text}

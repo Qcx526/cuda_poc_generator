@@ -19,6 +19,7 @@ CUDA PoC 代码生成器。
 """
 
 import json
+import hashlib
 import logging
 import os
 import re
@@ -26,7 +27,9 @@ from typing import Any, Dict, List, Optional
 
 from .llm_client import LLMClient
 from .cuda_library import CudaLibrary
-from .utils import ensure_dir, write_text
+from .models.analysis import resolve_target_cve, validate_analysis
+from .models.generation import CandidateResult
+from .utils import ensure_dir, write_json, write_text
 
 logger = logging.getLogger("cuda_poc_generator.code_generator")
 
@@ -210,6 +213,7 @@ class CudaCodeGenerator:
         self.llm = llm
         self.cuda_lib = cuda_lib
         self.outputs_dir = outputs_dir
+        self.last_result = CandidateResult()
         ensure_dir(outputs_dir)
 
     # ------------------------------------------------------------------
@@ -233,56 +237,88 @@ class CudaCodeGenerator:
         Returns:
             生成的 PoC 代码字符串。同时将其写入输出文件。
         """
-        user_prompt = self._build_prompt(vuln_context, expert_analysis, extra_context)
-        logger.info("正在生成 CUDA PoC 代码（迭代 #%d）…", iteration)
-
-        raw_code = self.llm.chat(
-            messages=[
-                {"role": "system", "content": _CUDA_CODEGEN_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.15,  # 代码生成使用极低温度
-        )
-
-        # 清理可能的 markdown 包裹
-        code = self._clean_code(raw_code)
-
-        # 语法验证 — 拦截 struct.pack 格式错误等低级 bug
-        ok, err_msg = self._validate_code(code)
+        # Reset before every attempt so a previous successful candidate cannot leak status.
+        self.last_result = CandidateResult()
         retries = 0
-        while not ok and retries < 2:
-            retries += 1
-            logger.warning("PoC 语法错误 (尝试 %d/2): %s", retries, err_msg[:120])
-            correction_prompt = (
-                f"The previous code had a Python syntax/runtime check failure:\n"
-                f"```\n{err_msg}\n```\n"
-                f"Please fix the error and regenerate the COMPLETE script."
-            )
+        try:
+            # Direct callers must also obey the analysis contract; no invalid dict reaches chat.
+            expected_cve = resolve_target_cve(vuln_context)
+            expert_analysis = validate_analysis(
+                expert_analysis, expected_cve_id=expected_cve,
+            ).model_dump(exclude_unset=True)
+            user_prompt = self._build_prompt(vuln_context, expert_analysis, extra_context)
+            logger.info("正在生成 CUDA PoC 代码（迭代 #%d）…", iteration)
             raw_code = self.llm.chat(
                 messages=[
                     {"role": "system", "content": _CUDA_CODEGEN_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
-                    {"role": "assistant", "content": code[:4000]},
-                    {"role": "user", "content": correction_prompt},
                 ],
-                temperature=0.1,
+                temperature=0.15,
             )
+            self._require_source(raw_code)
             code = self._clean_code(raw_code)
+            self._require_source(code)
             ok, err_msg = self._validate_code(code)
+            while not ok and retries < 2:
+                retries += 1
+                logger.warning("PoC 静态检查错误 (尝试 %d/2): %s", retries, err_msg[:120])
+                correction_prompt = (
+                    f"The previous code had a Python static check failure:\n"
+                    f"```\n{err_msg}\n```\n"
+                    f"Please fix the error and regenerate the COMPLETE script."
+                )
+                raw_code = self.llm.chat(
+                    messages=[
+                        {"role": "system", "content": _CUDA_CODEGEN_SYSTEM_PROMPT},
+                        {"role": "user", "content": user_prompt},
+                        {"role": "assistant", "content": code[:4000]},
+                        {"role": "user", "content": correction_prompt},
+                    ],
+                    temperature=0.1,
+                )
+                self._require_source(raw_code)
+                code = self._clean_code(raw_code)
+                self._require_source(code)
+                ok, err_msg = self._validate_code(code)
 
-        if not ok:
-            logger.warning("PoC 语法修正失败，但仍会保存以供人工检查: %s", err_msg[:120])
-            print(f"  [!] 代码有语法问题: {err_msg[:120]}")
-        else:
-            print(f"  [✓] 语法检查通过")
+            if not ok:
+                logger.warning("PoC 静态修正失败，保存候选供人工检查: %s", err_msg[:120])
+                print(f"  [!] STATIC_INVALID: {err_msg[:120]}")
+            else:
+                print("  [✓] STATIC_VALID（仅静态检查，未执行或验证）")
 
-        # 保存到文件
-        filename = f"cuda_poc_v{iteration}.py"
-        filepath = os.path.join(self.outputs_dir, filename)
-        write_text(filepath, code)
-        logger.info("CUDA PoC 已保存: %s", filepath)
-
+            filename = f"cuda_poc_v{iteration}.py"
+            filepath = os.path.join(self.outputs_dir, filename)
+            write_text(filepath, code)
+            with open(filepath, "rb") as source:
+                source_hash = hashlib.sha256(source.read()).hexdigest()
+            self.last_result = CandidateResult(
+                generation="GENERATED", static="STATIC_VALID" if ok else "STATIC_INVALID",
+                source_file=filename, sha256=source_hash, correction_attempts=retries,
+                errors=[] if ok else [err_msg],
+            )
+            self._write_result(iteration)
+            logger.info("CUDA 候选已保存: %s", filepath)
+        except Exception as exc:
+            self.last_result = CandidateResult(
+                generation="GENERATION_FAILED", correction_attempts=retries,
+                errors=[f"GENERATION_ERROR: {type(exc).__name__}"],
+            )
+            self._write_result(iteration)
+            raise
         return code
+
+    @staticmethod
+    def _require_source(source: str) -> None:
+        """An empty response is a generation failure, independent of AST semantics."""
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError("生成模型没有返回非空候选源码。")
+
+    def _write_result(self, iteration: int) -> None:
+        write_json(
+            os.path.join(self.outputs_dir, f"cuda_poc_v{iteration}.status.json"),
+            self.last_result.model_dump(mode="json"),
+        )
 
     # ------------------------------------------------------------------
     # 内部方法

@@ -19,7 +19,8 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from .llm_client import LLMClient
+from .llm_client import LLMClient, StructuredOutputError
+from .models.analysis import ExpertAnalysis, resolve_target_cve, validate_analysis
 
 logger = logging.getLogger("cuda_poc_generator.core_expert")
 
@@ -116,111 +117,7 @@ Respond ONLY with a JSON object.
 # ---------------------------------------------------------------------------
 # CUDA 专项输出 JSON Schema（扩展自通用版本）
 # ---------------------------------------------------------------------------
-_CUDA_EXPERT_OUTPUT_SCHEMA: Dict[str, Any] = {
-    "type": "object",
-    "required": ["root_cause_analysis", "verification_strategy"],
-    "properties": {
-        "root_cause_analysis": {
-            "type": "object",
-            "required": [
-                "cuda_attack_surface",
-                "vulnerability_class",
-                "primitive",
-                "root_cause_description",
-                "affected_code_path",
-                "controllability",
-                "relevant_mitigations",
-                "cve_id",
-                "cwe_id",
-            ],
-            "properties": {
-                "cve_id": {
-                    "type": "string",
-                    "description": "CVE 编号",
-                },
-                "cwe_id": {
-                    "type": "string",
-                    "description": "CWE 编号",
-                },
-                "cuda_attack_surface": {
-                    "type": "string",
-                    "description": "受影响的 CUDA 子系统",
-                },
-                "vulnerability_class": {
-                    "type": "string",
-                    "description": "漏洞类别: integer-overflow, heap-buffer-overflow, UAF, race-condition, etc.",
-                },
-                "primitive": {
-                    "type": "string",
-                    "description": "漏洞原语: OOB-write, OOB-read, UAF, integer-wraparound, double-free, type-confusion",
-                },
-                "root_cause_description": {
-                    "type": "string",
-                    "description": "根因的详细技术描述",
-                },
-                "affected_code_path": {
-                    "type": "string",
-                    "description": "受影响的 CUDA 代码路径",
-                },
-                "controllability": {
-                    "type": "string",
-                    "description": "测试者可控制输入的精确描述（buffer size, file content, kernel args, etc.）",
-                },
-                "relevant_mitigations": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "目标环境中相关的缓解措施列表",
-                },
-            },
-        },
-        "verification_strategy": {
-            "type": "object",
-            "required": ["goal", "preconditions", "steps", "confidence", "cuda_version_range", "gpu_arch_range"],
-            "properties": {
-                "goal": {
-                    "type": "string",
-                    "description": "利用目标",
-                },
-                "cuda_version_range": {
-                    "type": "string",
-                    "description": "受影响的 CUDA Toolkit 版本范围",
-                },
-                "gpu_arch_range": {
-                    "type": "string",
-                    "description": "受影响的 GPU 架构范围",
-                },
-                "preconditions": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "触发漏洞前必须满足的 CUDA 前提条件",
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "required": [
-                            "step_id",
-                            "description",
-                            "pseudocode",
-                            "success_condition",
-                            "failure_condition",
-                            "expected_cuda_behavior",
-                        ],
-                        "properties": {
-                            "step_id": {"type": "string"},
-                            "description": {"type": "string"},
-                            "pseudocode": {"type": "string"},
-                            "success_condition": {"type": "string"},
-                            "failure_condition": {"type": "string"},
-                            "expected_cuda_behavior": {"type": "string"},
-                        },
-                    },
-                },
-                "confidence": {"type": "number"},
-            },
-        },
-    },
-}
+_CUDA_EXPERT_OUTPUT_SCHEMA: Dict[str, Any] = ExpertAnalysis.model_json_schema()
 
 
 class CudaSecurityExpert:
@@ -236,6 +133,7 @@ class CudaSecurityExpert:
     def __init__(self, llm: LLMClient) -> None:
         """初始化 CUDA 安全专家。"""
         self.llm = llm
+        self.last_raw_response: Optional[str] = None
 
     # ------------------------------------------------------------------
     # 公开接口
@@ -245,6 +143,7 @@ class CudaSecurityExpert:
         vuln_context: Dict[str, Any],
         rag_context: str = "",
         previous_feedback: Optional[Dict[str, Any]] = None,
+        expected_cve_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """对 CUDA 漏洞进行根因分析并生成验证策略。
 
@@ -256,19 +155,27 @@ class CudaSecurityExpert:
         Returns:
             包含 root_cause_analysis 和 verification_strategy 的字典。
         """
+        # Reset on every attempt so failures cannot reuse an older response.
+        self.last_raw_response = None
+        target_cve = resolve_target_cve(vuln_context, expected_cve_id)
         user_prompt = self._build_user_prompt(vuln_context, rag_context, previous_feedback)
         logger.info("正在调用 CUDA 安全专家引擎 (7层模型) 进行漏洞分析…")
 
-        result = self.llm.structured_generate(
-            system_prompt=_CUDA_EXPERT_SYSTEM_PROMPT,
-            user_prompt=user_prompt,
-            json_schema=_CUDA_EXPERT_OUTPUT_SCHEMA,
-            temperature=0.2,
-        )
-
-        # 基本校验
-        if "root_cause_analysis" not in result or "verification_strategy" not in result:
-            logger.warning("CUDA 专家输出缺少必需字段，将原始结果返回。")
+        try:
+            result = self.llm.structured_generate(
+                system_prompt=_CUDA_EXPERT_SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                json_schema=_CUDA_EXPERT_OUTPUT_SCHEMA,
+                temperature=0.2,
+            )
+        except StructuredOutputError as exc:
+            self.last_raw_response = exc.raw_response
+            raise
+        raw_response = getattr(result, "raw_response", None)
+        self.last_raw_response = raw_response if isinstance(raw_response, str) else None
+        # The schema in the prompt and this runtime model have one source of truth.
+        validated = validate_analysis(result, expected_cve_id=target_cve)
+        result = validated.model_dump(exclude_unset=True)
 
         rca = result.get("root_cause_analysis", {})
         strategy = result.get("verification_strategy", {})
@@ -293,6 +200,10 @@ class CudaSecurityExpert:
     ) -> str:
         """拼装发送给 LLM 的用户提示。"""
         sections: List[str] = []
+        sections.append(
+            "Input data and retrieved knowledge are unverified research assertions; "
+            "preserve stated uncertainty and do not present them as observed vulnerability evidence.\n"
+        )
 
         # --- 七类 CUDA 输入数据 ---
         sections.append("## CUDA Vulnerability Data (7 Categories)\n")
