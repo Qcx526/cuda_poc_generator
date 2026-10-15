@@ -1,0 +1,1051 @@
+{
+  "synthetic_example": true,
+  "description": "Fabricated offline schema example, not original tool evidence, an actual experiment, or an operator authorization.",
+  "record": {
+    "execution_schema_version": "1.1",
+    "request_id": "cccccccccccccccccccccccccccccccc",
+    "run_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "request_sha256": "5b8de09e746f398eccdc24ab5024976bffdcc82d3dfe8a274e0d4565431c4afa",
+    "authorization_sha256": "b00144201bf1028d7b6281bee0169076dda71e1314f7dc60330648a4e8fc8287",
+    "policy_sha256": "568c725daa18257962bc7d8c7d6df8f1ebc222b71268c327041dc104d7fa4e0a",
+    "snapshot_sha256": "a1fa827a4b2cf0eedbde755fb2fc1aae1591012c52df340bee568661ddacb801",
+    "candidate_sha256": "50e0b1c170424527056a2343443be06475e500dd19ef6186e4d3aaca1a8c5931",
+    "platform_environment_id": "sha256:6f22a39a97047a26f6d2c15e5d938c689dfd1c36308b2f42e346dc9081795373",
+    "platform_probe_id": "fixture-id",
+    "execution_backend": "wsl",
+    "target_environment": "wsl:Ubuntu-22.04",
+    "tool_record_id": "sha256:9133958569b7d295788b11d415ff2382773ee49430faf35e683562c1c0adbd1a",
+    "tool_identity": {
+      "requested_executable": "/tools/nvdisasm",
+      "resolved_path": "/tools/nvdisasm",
+      "status": "OBSERVED",
+      "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "source": "synthetic offline identity; no tool is launched"
+    },
+    "authorization_reference": "operator-test-approval",
+    "operator_id": "synthetic-cuda-operator",
+    "action_id": "p2c-cuda-smoke-v1",
+    "status": "COMPLETED",
+    "events": [
+      {
+        "sequence": 0,
+        "state": "CREATED",
+        "observed_at": "2026-10-15T13:12:03.687001+00:00",
+        "source": "SYNTHETIC offline observation",
+        "reason": "SYNTHETIC CREATED",
+        "monotonic_ns": 276863468000001
+      },
+      {
+        "sequence": 1,
+        "state": "AUTHORIZED",
+        "observed_at": "2026-10-15T13:12:03.687001+00:00",
+        "source": "SYNTHETIC offline observation",
+        "reason": "SYNTHETIC AUTHORIZED",
+        "monotonic_ns": 276863468000002
+      },
+      {
+        "sequence": 2,
+        "state": "PREFLIGHT_READY",
+        "observed_at": "2026-10-15T13:12:03.687001+00:00",
+        "source": "SYNTHETIC offline observation",
+        "reason": "SYNTHETIC PREFLIGHT_READY",
+        "monotonic_ns": 276863468000003
+      },
+      {
+        "sequence": 3,
+        "state": "STARTING",
+        "observed_at": "2026-10-15T13:12:03.687001+00:00",
+        "source": "SYNTHETIC offline observation",
+        "reason": "SYNTHETIC STARTING",
+        "monotonic_ns": 276863468000004
+      },
+      {
+        "sequence": 4,
+        "state": "RUNNING",
+        "observed_at": "2026-10-15T13:12:03.687001+00:00",
+        "source": "SYNTHETIC offline observation",
+        "reason": "SYNTHETIC RUNNING",
+        "monotonic_ns": 276863468000005
+      },
+      {
+        "sequence": 5,
+        "state": "COMPLETED",
+        "observed_at": "2026-10-15T13:12:03.689004+00:00",
+        "source": "SYNTHETIC offline observation",
+        "reason": "SYNTHETIC COMPLETED",
+        "monotonic_ns": 276863468000006
+      }
+    ],
+    "process": {
+      "process_schema_version": "1.1",
+      "started": true,
+      "action_started": true,
+      "argv": [
+        "/tools/nvdisasm",
+        "--no-dataflow",
+        "/workspace/out/safe_smoke.cubin"
+      ],
+      "cwd": "/workspace",
+      "target_environment": "wsl:Ubuntu-22.04",
+      "tool_identity": {
+        "requested_executable": "/tools/nvdisasm",
+        "resolved_path": "/tools/nvdisasm",
+        "status": "OBSERVED",
+        "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source": "synthetic offline identity; no tool is launched"
+      },
+      "pid": 10001,
+      "pgid": 10001,
+      "session_id": 10001,
+      "start_ticks": 5000,
+      "uid": 1000,
+      "gid": 1000,
+      "cpu_usage_seconds": null,
+      "worker_pid": 100,
+      "started_at": "2026-10-15T13:12:03.688001+00:00",
+      "finished_at": "2026-10-15T13:12:03.688001+00:00",
+      "duration_seconds": 0.0,
+      "returncode": 0,
+      "linux_signal": null,
+      "timed_out": false,
+      "cancelled": false,
+      "truncated": false,
+      "capture_failed": false,
+      "resource_limit_reason": null,
+      "stdout_b64": "U3ludGhldGljIG52ZGlzYXNtIHJlbGVhc2UgMTIuOCwgVjEyLjguOTMK",
+      "stderr_b64": "",
+      "stdout_sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_size_bytes": 42,
+      "stderr_size_bytes": 0,
+      "resource_limits": {
+        "wall_time_seconds": 90.0,
+        "cpu_seconds": 45,
+        "memory_bytes": 4294967296,
+        "max_output_bytes": 32768,
+        "process_scope": "POSIX_PROCESS_GROUP",
+        "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+        "wall_clock_scope": "PER_TOOL_STEP",
+        "maximum_tool_steps": 6
+      },
+      "resources": {
+        "status": "ENFORCED",
+        "wall_watchdog": true,
+        "output_cap": true,
+        "process_group": true,
+        "cpu_seconds": 45,
+        "memory_bytes": 4294967296,
+        "verification_source": "SYNTHETIC offline resource observations",
+        "cgroup_v2_status": "NOT_CHECKED",
+        "cgroup_v2_detail": "not checked",
+        "gpu_vram_limit": "NOT_IMPLEMENTED",
+        "network_isolation": "NOT_IMPLEMENTED"
+      },
+      "cleanup": {
+        "status": "CONFIRMED",
+        "termination_method": "NONE",
+        "parent_reaped": true,
+        "group_absent": true,
+        "descendants_absent": true,
+        "checked_at": "2026-10-15T13:12:03.688001+00:00",
+        "source": "SYNTHETIC offline cleanup observations",
+        "observed_descendant_pids": [],
+        "remaining_pids": [],
+        "diagnostics": []
+      },
+      "diagnostics": [
+        "SYNTHETIC process; no native tool was started"
+      ],
+      "actual_tool_identity": {
+        "requested_executable": "/tools/nvdisasm",
+        "resolved_path": "/tools/nvdisasm",
+        "status": "OBSERVED",
+        "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source": "synthetic offline identity; no tool is launched"
+      },
+      "launcher_tool_identity": {
+        "requested_executable": "/tools/python3.10",
+        "resolved_path": "/tools/python3.10",
+        "status": "OBSERVED",
+        "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source": "synthetic offline identity; no tool is launched"
+      },
+      "launcher_argv": [
+        "/tools/python3.10",
+        "-I",
+        "-c",
+        "SYNTHETIC_NOT_EXECUTED"
+      ],
+      "ppid": null,
+      "started_monotonic_ns": null,
+      "finished_monotonic_ns": null,
+      "descendant_identities": []
+    },
+    "cuda_smoke": {
+      "cuda_smoke_schema_version": "1.0",
+      "action_id": "p2c-cuda-smoke-v1",
+      "source_sha256": "50e0b1c170424527056a2343443be06475e500dd19ef6186e4d3aaca1a8c5931",
+      "source_file": "safe_smoke.cu",
+      "arch": "sm_75",
+      "tool_versions": {
+        "cuobjdump": {
+          "schema_version": "1.0",
+          "run_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "record_id": "sha256:443e9d008b13b00b2b021059af657bc5fc4b06053315647a9e679496f3b92a56",
+          "argv": [
+            "/tools/cuobjdump",
+            "--version"
+          ],
+          "cwd": "/synthetic",
+          "target_environment": "wsl:Ubuntu-22.04",
+          "platform_type": "wsl",
+          "start_status": "STARTED",
+          "end_status": "NORMAL_EXIT",
+          "returncode": 0,
+          "linux_signal": null,
+          "windows_exception_code": null,
+          "timed_out": false,
+          "truncated": false,
+          "capture_failed": false,
+          "started_at": "2026-10-14T00:00:00+00:00",
+          "finished_at": "2026-10-14T00:00:01+00:00",
+          "duration_seconds": 1.0,
+          "resource_limits": {
+            "timeout_seconds": 3.0,
+            "max_output_bytes": 4096,
+            "termination_scope": "POSIX_PROCESS_GROUP",
+            "memory_bytes": null,
+            "cpu_seconds": null,
+            "memory_limit_status": "NOT_ENFORCED",
+            "cpu_limit_status": "NOT_ENFORCED"
+          },
+          "stdout_b64": "U3ludGhldGljIGN1b2JqZHVtcCByZWxlYXNlIDEyLjgsIFYxMi44LjkzCg==",
+          "stderr_b64": "",
+          "stdout_sha256": "80ea4b6518454f5b2306314b7f449231ebaa008383d78c790c17cd502e307098",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdin_sha256": null,
+          "stdin_size_bytes": 0,
+          "command_identity": {
+            "source": "synthetic fixture",
+            "argv_sha256": "cc5f0cdba31f7660c075e67c35ac73b83ec02a1bb1eee51ffeec480e324a7cc3"
+          },
+          "tool_identity": {
+            "requested_executable": "/tools/cuobjdump",
+            "resolved_path": "/tools/cuobjdump",
+            "status": "OBSERVED",
+            "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source": "synthetic offline identity; no tool is launched"
+          },
+          "diagnostics": [],
+          "candidate_execution_status": "NOT_EXECUTED",
+          "verification_status": "NOT_VERIFIED",
+          "evidence_directory": "/synthetic/not-a-real-record"
+        },
+        "nvcc": {
+          "schema_version": "1.0",
+          "run_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "record_id": "sha256:9133958569b7d295788b11d415ff2382773ee49430faf35e683562c1c0adbd1a",
+          "argv": [
+            "/tools/nvcc",
+            "--version"
+          ],
+          "cwd": "/synthetic",
+          "target_environment": "wsl:Ubuntu-22.04",
+          "platform_type": "wsl",
+          "start_status": "STARTED",
+          "end_status": "NORMAL_EXIT",
+          "returncode": 0,
+          "linux_signal": null,
+          "windows_exception_code": null,
+          "timed_out": false,
+          "truncated": false,
+          "capture_failed": false,
+          "started_at": "2026-10-14T00:00:00+00:00",
+          "finished_at": "2026-10-14T00:00:01+00:00",
+          "duration_seconds": 1.0,
+          "resource_limits": {
+            "timeout_seconds": 3.0,
+            "max_output_bytes": 4096,
+            "termination_scope": "POSIX_PROCESS_GROUP",
+            "memory_bytes": null,
+            "cpu_seconds": null,
+            "memory_limit_status": "NOT_ENFORCED",
+            "cpu_limit_status": "NOT_ENFORCED"
+          },
+          "stdout_b64": "U3ludGhldGljIG52Y2MgcmVsZWFzZSAxMi44LCBWMTIuOC45Mwo=",
+          "stderr_b64": "",
+          "stdout_sha256": "c4a54bdd86e9da7a7cc1828b3ffb23fa6d5665707ee5ac5da960751049ee52a2",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdin_sha256": null,
+          "stdin_size_bytes": 0,
+          "command_identity": {
+            "source": "synthetic fixture",
+            "argv_sha256": "505dc379f4d474d4fc97faa13f37492df20f1c9caeabd5db95300b003b14a340"
+          },
+          "tool_identity": {
+            "requested_executable": "/tools/nvcc",
+            "resolved_path": "/tools/nvcc",
+            "status": "OBSERVED",
+            "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source": "synthetic offline identity; no tool is launched"
+          },
+          "diagnostics": [],
+          "candidate_execution_status": "NOT_EXECUTED",
+          "verification_status": "NOT_VERIFIED",
+          "evidence_directory": "/synthetic/not-a-real-record"
+        },
+        "nvdisasm": {
+          "schema_version": "1.0",
+          "run_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "record_id": "sha256:f14d8377c1430a485222c84b308c26e499af5c626fa0770fd5c92e499e58a992",
+          "argv": [
+            "/tools/nvdisasm",
+            "--version"
+          ],
+          "cwd": "/synthetic",
+          "target_environment": "wsl:Ubuntu-22.04",
+          "platform_type": "wsl",
+          "start_status": "STARTED",
+          "end_status": "NORMAL_EXIT",
+          "returncode": 0,
+          "linux_signal": null,
+          "windows_exception_code": null,
+          "timed_out": false,
+          "truncated": false,
+          "capture_failed": false,
+          "started_at": "2026-10-14T00:00:00+00:00",
+          "finished_at": "2026-10-14T00:00:01+00:00",
+          "duration_seconds": 1.0,
+          "resource_limits": {
+            "timeout_seconds": 3.0,
+            "max_output_bytes": 4096,
+            "termination_scope": "POSIX_PROCESS_GROUP",
+            "memory_bytes": null,
+            "cpu_seconds": null,
+            "memory_limit_status": "NOT_ENFORCED",
+            "cpu_limit_status": "NOT_ENFORCED"
+          },
+          "stdout_b64": "U3ludGhldGljIG52ZGlzYXNtIHJlbGVhc2UgMTIuOCwgVjEyLjguOTMK",
+          "stderr_b64": "",
+          "stdout_sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdin_sha256": null,
+          "stdin_size_bytes": 0,
+          "command_identity": {
+            "source": "synthetic fixture",
+            "argv_sha256": "65bc4a95b9b6dea447368ada53235bca060b05691095732878fc4f62afc34e4d"
+          },
+          "tool_identity": {
+            "requested_executable": "/tools/nvdisasm",
+            "resolved_path": "/tools/nvdisasm",
+            "status": "OBSERVED",
+            "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source": "synthetic offline identity; no tool is launched"
+          },
+          "diagnostics": [],
+          "candidate_execution_status": "NOT_EXECUTED",
+          "verification_status": "NOT_VERIFIED",
+          "evidence_directory": "/synthetic/not-a-real-record"
+        }
+      },
+      "steps": [
+        {
+          "step_id": "nvcc_version",
+          "state": "COMPLETED",
+          "process": {
+            "process_schema_version": "1.1",
+            "started": true,
+            "action_started": true,
+            "argv": [
+              "/tools/nvcc",
+              "--version"
+            ],
+            "cwd": "/workspace",
+            "target_environment": "wsl:Ubuntu-22.04",
+            "tool_identity": {
+              "requested_executable": "/tools/nvcc",
+              "resolved_path": "/tools/nvcc",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "pid": 10001,
+            "pgid": 10001,
+            "session_id": 10001,
+            "start_ticks": 5000,
+            "uid": 1000,
+            "gid": 1000,
+            "cpu_usage_seconds": null,
+            "worker_pid": 100,
+            "started_at": "2026-10-15T13:12:03.687001+00:00",
+            "finished_at": "2026-10-15T13:12:03.687001+00:00",
+            "duration_seconds": 0.0,
+            "returncode": 0,
+            "linux_signal": null,
+            "timed_out": false,
+            "cancelled": false,
+            "truncated": false,
+            "capture_failed": false,
+            "resource_limit_reason": null,
+            "stdout_b64": "U3ludGhldGljIG52Y2MgcmVsZWFzZSAxMi44LCBWMTIuOC45Mwo=",
+            "stderr_b64": "",
+            "stdout_sha256": "c4a54bdd86e9da7a7cc1828b3ffb23fa6d5665707ee5ac5da960751049ee52a2",
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_size_bytes": 38,
+            "stderr_size_bytes": 0,
+            "resource_limits": {
+              "wall_time_seconds": 90.0,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "max_output_bytes": 32768,
+              "process_scope": "POSIX_PROCESS_GROUP",
+              "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+              "wall_clock_scope": "PER_TOOL_STEP",
+              "maximum_tool_steps": 6
+            },
+            "resources": {
+              "status": "ENFORCED",
+              "wall_watchdog": true,
+              "output_cap": true,
+              "process_group": true,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "verification_source": "SYNTHETIC offline resource observations",
+              "cgroup_v2_status": "NOT_CHECKED",
+              "cgroup_v2_detail": "not checked",
+              "gpu_vram_limit": "NOT_IMPLEMENTED",
+              "network_isolation": "NOT_IMPLEMENTED"
+            },
+            "cleanup": {
+              "status": "CONFIRMED",
+              "termination_method": "NONE",
+              "parent_reaped": true,
+              "group_absent": true,
+              "descendants_absent": true,
+              "checked_at": "2026-10-15T13:12:03.687001+00:00",
+              "source": "SYNTHETIC offline cleanup observations",
+              "observed_descendant_pids": [],
+              "remaining_pids": [],
+              "diagnostics": []
+            },
+            "diagnostics": [
+              "SYNTHETIC process; no native tool was started"
+            ],
+            "actual_tool_identity": {
+              "requested_executable": "/tools/nvcc",
+              "resolved_path": "/tools/nvcc",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_tool_identity": {
+              "requested_executable": "/tools/python3.10",
+              "resolved_path": "/tools/python3.10",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_argv": [
+              "/tools/python3.10",
+              "-I",
+              "-c",
+              "SYNTHETIC_NOT_EXECUTED"
+            ],
+            "ppid": null,
+            "started_monotonic_ns": null,
+            "finished_monotonic_ns": null,
+            "descendant_identities": []
+          },
+          "tool_result": null
+        },
+        {
+          "step_id": "cuobjdump_version",
+          "state": "COMPLETED",
+          "process": {
+            "process_schema_version": "1.1",
+            "started": true,
+            "action_started": true,
+            "argv": [
+              "/tools/cuobjdump",
+              "--version"
+            ],
+            "cwd": "/workspace",
+            "target_environment": "wsl:Ubuntu-22.04",
+            "tool_identity": {
+              "requested_executable": "/tools/cuobjdump",
+              "resolved_path": "/tools/cuobjdump",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "pid": 10001,
+            "pgid": 10001,
+            "session_id": 10001,
+            "start_ticks": 5000,
+            "uid": 1000,
+            "gid": 1000,
+            "cpu_usage_seconds": null,
+            "worker_pid": 100,
+            "started_at": "2026-10-15T13:12:03.688001+00:00",
+            "finished_at": "2026-10-15T13:12:03.688001+00:00",
+            "duration_seconds": 0.0,
+            "returncode": 0,
+            "linux_signal": null,
+            "timed_out": false,
+            "cancelled": false,
+            "truncated": false,
+            "capture_failed": false,
+            "resource_limit_reason": null,
+            "stdout_b64": "U3ludGhldGljIGN1b2JqZHVtcCByZWxlYXNlIDEyLjgsIFYxMi44LjkzCg==",
+            "stderr_b64": "",
+            "stdout_sha256": "80ea4b6518454f5b2306314b7f449231ebaa008383d78c790c17cd502e307098",
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_size_bytes": 43,
+            "stderr_size_bytes": 0,
+            "resource_limits": {
+              "wall_time_seconds": 90.0,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "max_output_bytes": 32768,
+              "process_scope": "POSIX_PROCESS_GROUP",
+              "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+              "wall_clock_scope": "PER_TOOL_STEP",
+              "maximum_tool_steps": 6
+            },
+            "resources": {
+              "status": "ENFORCED",
+              "wall_watchdog": true,
+              "output_cap": true,
+              "process_group": true,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "verification_source": "SYNTHETIC offline resource observations",
+              "cgroup_v2_status": "NOT_CHECKED",
+              "cgroup_v2_detail": "not checked",
+              "gpu_vram_limit": "NOT_IMPLEMENTED",
+              "network_isolation": "NOT_IMPLEMENTED"
+            },
+            "cleanup": {
+              "status": "CONFIRMED",
+              "termination_method": "NONE",
+              "parent_reaped": true,
+              "group_absent": true,
+              "descendants_absent": true,
+              "checked_at": "2026-10-15T13:12:03.688001+00:00",
+              "source": "SYNTHETIC offline cleanup observations",
+              "observed_descendant_pids": [],
+              "remaining_pids": [],
+              "diagnostics": []
+            },
+            "diagnostics": [
+              "SYNTHETIC process; no native tool was started"
+            ],
+            "actual_tool_identity": {
+              "requested_executable": "/tools/cuobjdump",
+              "resolved_path": "/tools/cuobjdump",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_tool_identity": {
+              "requested_executable": "/tools/python3.10",
+              "resolved_path": "/tools/python3.10",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_argv": [
+              "/tools/python3.10",
+              "-I",
+              "-c",
+              "SYNTHETIC_NOT_EXECUTED"
+            ],
+            "ppid": null,
+            "started_monotonic_ns": null,
+            "finished_monotonic_ns": null,
+            "descendant_identities": []
+          },
+          "tool_result": null
+        },
+        {
+          "step_id": "nvdisasm_version",
+          "state": "COMPLETED",
+          "process": {
+            "process_schema_version": "1.1",
+            "started": true,
+            "action_started": true,
+            "argv": [
+              "/tools/nvdisasm",
+              "--version"
+            ],
+            "cwd": "/workspace",
+            "target_environment": "wsl:Ubuntu-22.04",
+            "tool_identity": {
+              "requested_executable": "/tools/nvdisasm",
+              "resolved_path": "/tools/nvdisasm",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "pid": 10001,
+            "pgid": 10001,
+            "session_id": 10001,
+            "start_ticks": 5000,
+            "uid": 1000,
+            "gid": 1000,
+            "cpu_usage_seconds": null,
+            "worker_pid": 100,
+            "started_at": "2026-10-15T13:12:03.688001+00:00",
+            "finished_at": "2026-10-15T13:12:03.688001+00:00",
+            "duration_seconds": 0.0,
+            "returncode": 0,
+            "linux_signal": null,
+            "timed_out": false,
+            "cancelled": false,
+            "truncated": false,
+            "capture_failed": false,
+            "resource_limit_reason": null,
+            "stdout_b64": "U3ludGhldGljIG52ZGlzYXNtIHJlbGVhc2UgMTIuOCwgVjEyLjguOTMK",
+            "stderr_b64": "",
+            "stdout_sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf",
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_size_bytes": 42,
+            "stderr_size_bytes": 0,
+            "resource_limits": {
+              "wall_time_seconds": 90.0,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "max_output_bytes": 32768,
+              "process_scope": "POSIX_PROCESS_GROUP",
+              "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+              "wall_clock_scope": "PER_TOOL_STEP",
+              "maximum_tool_steps": 6
+            },
+            "resources": {
+              "status": "ENFORCED",
+              "wall_watchdog": true,
+              "output_cap": true,
+              "process_group": true,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "verification_source": "SYNTHETIC offline resource observations",
+              "cgroup_v2_status": "NOT_CHECKED",
+              "cgroup_v2_detail": "not checked",
+              "gpu_vram_limit": "NOT_IMPLEMENTED",
+              "network_isolation": "NOT_IMPLEMENTED"
+            },
+            "cleanup": {
+              "status": "CONFIRMED",
+              "termination_method": "NONE",
+              "parent_reaped": true,
+              "group_absent": true,
+              "descendants_absent": true,
+              "checked_at": "2026-10-15T13:12:03.688001+00:00",
+              "source": "SYNTHETIC offline cleanup observations",
+              "observed_descendant_pids": [],
+              "remaining_pids": [],
+              "diagnostics": []
+            },
+            "diagnostics": [
+              "SYNTHETIC process; no native tool was started"
+            ],
+            "actual_tool_identity": {
+              "requested_executable": "/tools/nvdisasm",
+              "resolved_path": "/tools/nvdisasm",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_tool_identity": {
+              "requested_executable": "/tools/python3.10",
+              "resolved_path": "/tools/python3.10",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_argv": [
+              "/tools/python3.10",
+              "-I",
+              "-c",
+              "SYNTHETIC_NOT_EXECUTED"
+            ],
+            "ppid": null,
+            "started_monotonic_ns": null,
+            "finished_monotonic_ns": null,
+            "descendant_identities": []
+          },
+          "tool_result": null
+        },
+        {
+          "step_id": "compile",
+          "state": "COMPLETED",
+          "process": {
+            "process_schema_version": "1.1",
+            "started": true,
+            "action_started": true,
+            "argv": [
+              "/tools/nvcc",
+              "--cubin",
+              "--gpu-architecture=sm_75",
+              "--std=c++14",
+              "--compiler-bindir=/tools/g++",
+              "--output-file",
+              "/workspace/out/safe_smoke.cubin",
+              "/workspace/safe_smoke.cu"
+            ],
+            "cwd": "/workspace",
+            "target_environment": "wsl:Ubuntu-22.04",
+            "tool_identity": {
+              "requested_executable": "/tools/nvcc",
+              "resolved_path": "/tools/nvcc",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "pid": 10001,
+            "pgid": 10001,
+            "session_id": 10001,
+            "start_ticks": 5000,
+            "uid": 1000,
+            "gid": 1000,
+            "cpu_usage_seconds": null,
+            "worker_pid": 100,
+            "started_at": "2026-10-15T13:12:03.688001+00:00",
+            "finished_at": "2026-10-15T13:12:03.688001+00:00",
+            "duration_seconds": 0.0,
+            "returncode": 0,
+            "linux_signal": null,
+            "timed_out": false,
+            "cancelled": false,
+            "truncated": false,
+            "capture_failed": false,
+            "resource_limit_reason": null,
+            "stdout_b64": "U3ludGhldGljIG52Y2MgcmVsZWFzZSAxMi44LCBWMTIuOC45Mwo=",
+            "stderr_b64": "",
+            "stdout_sha256": "c4a54bdd86e9da7a7cc1828b3ffb23fa6d5665707ee5ac5da960751049ee52a2",
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_size_bytes": 38,
+            "stderr_size_bytes": 0,
+            "resource_limits": {
+              "wall_time_seconds": 90.0,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "max_output_bytes": 32768,
+              "process_scope": "POSIX_PROCESS_GROUP",
+              "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+              "wall_clock_scope": "PER_TOOL_STEP",
+              "maximum_tool_steps": 6
+            },
+            "resources": {
+              "status": "ENFORCED",
+              "wall_watchdog": true,
+              "output_cap": true,
+              "process_group": true,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "verification_source": "SYNTHETIC offline resource observations",
+              "cgroup_v2_status": "NOT_CHECKED",
+              "cgroup_v2_detail": "not checked",
+              "gpu_vram_limit": "NOT_IMPLEMENTED",
+              "network_isolation": "NOT_IMPLEMENTED"
+            },
+            "cleanup": {
+              "status": "CONFIRMED",
+              "termination_method": "NONE",
+              "parent_reaped": true,
+              "group_absent": true,
+              "descendants_absent": true,
+              "checked_at": "2026-10-15T13:12:03.688001+00:00",
+              "source": "SYNTHETIC offline cleanup observations",
+              "observed_descendant_pids": [],
+              "remaining_pids": [],
+              "diagnostics": []
+            },
+            "diagnostics": [
+              "SYNTHETIC process; no native tool was started"
+            ],
+            "actual_tool_identity": {
+              "requested_executable": "/tools/nvcc",
+              "resolved_path": "/tools/nvcc",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_tool_identity": {
+              "requested_executable": "/tools/python3.10",
+              "resolved_path": "/tools/python3.10",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_argv": [
+              "/tools/python3.10",
+              "-I",
+              "-c",
+              "SYNTHETIC_NOT_EXECUTED"
+            ],
+            "ppid": null,
+            "started_monotonic_ns": null,
+            "finished_monotonic_ns": null,
+            "descendant_identities": []
+          },
+          "tool_result": null
+        },
+        {
+          "step_id": "cuobjdump",
+          "state": "COMPLETED",
+          "process": {
+            "process_schema_version": "1.1",
+            "started": true,
+            "action_started": true,
+            "argv": [
+              "/tools/cuobjdump",
+              "--dump-elf",
+              "/workspace/out/safe_smoke.cubin"
+            ],
+            "cwd": "/workspace",
+            "target_environment": "wsl:Ubuntu-22.04",
+            "tool_identity": {
+              "requested_executable": "/tools/cuobjdump",
+              "resolved_path": "/tools/cuobjdump",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "pid": 10001,
+            "pgid": 10001,
+            "session_id": 10001,
+            "start_ticks": 5000,
+            "uid": 1000,
+            "gid": 1000,
+            "cpu_usage_seconds": null,
+            "worker_pid": 100,
+            "started_at": "2026-10-15T13:12:03.688001+00:00",
+            "finished_at": "2026-10-15T13:12:03.688001+00:00",
+            "duration_seconds": 0.0,
+            "returncode": 0,
+            "linux_signal": null,
+            "timed_out": false,
+            "cancelled": false,
+            "truncated": false,
+            "capture_failed": false,
+            "resource_limit_reason": null,
+            "stdout_b64": "U3ludGhldGljIGN1b2JqZHVtcCByZWxlYXNlIDEyLjgsIFYxMi44LjkzCg==",
+            "stderr_b64": "",
+            "stdout_sha256": "80ea4b6518454f5b2306314b7f449231ebaa008383d78c790c17cd502e307098",
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_size_bytes": 43,
+            "stderr_size_bytes": 0,
+            "resource_limits": {
+              "wall_time_seconds": 90.0,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "max_output_bytes": 32768,
+              "process_scope": "POSIX_PROCESS_GROUP",
+              "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+              "wall_clock_scope": "PER_TOOL_STEP",
+              "maximum_tool_steps": 6
+            },
+            "resources": {
+              "status": "ENFORCED",
+              "wall_watchdog": true,
+              "output_cap": true,
+              "process_group": true,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "verification_source": "SYNTHETIC offline resource observations",
+              "cgroup_v2_status": "NOT_CHECKED",
+              "cgroup_v2_detail": "not checked",
+              "gpu_vram_limit": "NOT_IMPLEMENTED",
+              "network_isolation": "NOT_IMPLEMENTED"
+            },
+            "cleanup": {
+              "status": "CONFIRMED",
+              "termination_method": "NONE",
+              "parent_reaped": true,
+              "group_absent": true,
+              "descendants_absent": true,
+              "checked_at": "2026-10-15T13:12:03.688001+00:00",
+              "source": "SYNTHETIC offline cleanup observations",
+              "observed_descendant_pids": [],
+              "remaining_pids": [],
+              "diagnostics": []
+            },
+            "diagnostics": [
+              "SYNTHETIC process; no native tool was started"
+            ],
+            "actual_tool_identity": {
+              "requested_executable": "/tools/cuobjdump",
+              "resolved_path": "/tools/cuobjdump",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_tool_identity": {
+              "requested_executable": "/tools/python3.10",
+              "resolved_path": "/tools/python3.10",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_argv": [
+              "/tools/python3.10",
+              "-I",
+              "-c",
+              "SYNTHETIC_NOT_EXECUTED"
+            ],
+            "ppid": null,
+            "started_monotonic_ns": null,
+            "finished_monotonic_ns": null,
+            "descendant_identities": []
+          },
+          "tool_result": null
+        },
+        {
+          "step_id": "nvdisasm",
+          "state": "COMPLETED",
+          "process": {
+            "process_schema_version": "1.1",
+            "started": true,
+            "action_started": true,
+            "argv": [
+              "/tools/nvdisasm",
+              "--no-dataflow",
+              "/workspace/out/safe_smoke.cubin"
+            ],
+            "cwd": "/workspace",
+            "target_environment": "wsl:Ubuntu-22.04",
+            "tool_identity": {
+              "requested_executable": "/tools/nvdisasm",
+              "resolved_path": "/tools/nvdisasm",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "pid": 10001,
+            "pgid": 10001,
+            "session_id": 10001,
+            "start_ticks": 5000,
+            "uid": 1000,
+            "gid": 1000,
+            "cpu_usage_seconds": null,
+            "worker_pid": 100,
+            "started_at": "2026-10-15T13:12:03.688001+00:00",
+            "finished_at": "2026-10-15T13:12:03.688001+00:00",
+            "duration_seconds": 0.0,
+            "returncode": 0,
+            "linux_signal": null,
+            "timed_out": false,
+            "cancelled": false,
+            "truncated": false,
+            "capture_failed": false,
+            "resource_limit_reason": null,
+            "stdout_b64": "U3ludGhldGljIG52ZGlzYXNtIHJlbGVhc2UgMTIuOCwgVjEyLjguOTMK",
+            "stderr_b64": "",
+            "stdout_sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf",
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_size_bytes": 42,
+            "stderr_size_bytes": 0,
+            "resource_limits": {
+              "wall_time_seconds": 90.0,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "max_output_bytes": 32768,
+              "process_scope": "POSIX_PROCESS_GROUP",
+              "resource_profile": "SAFE_CUDA_TOOLCHAIN",
+              "wall_clock_scope": "PER_TOOL_STEP",
+              "maximum_tool_steps": 6
+            },
+            "resources": {
+              "status": "ENFORCED",
+              "wall_watchdog": true,
+              "output_cap": true,
+              "process_group": true,
+              "cpu_seconds": 45,
+              "memory_bytes": 4294967296,
+              "verification_source": "SYNTHETIC offline resource observations",
+              "cgroup_v2_status": "NOT_CHECKED",
+              "cgroup_v2_detail": "not checked",
+              "gpu_vram_limit": "NOT_IMPLEMENTED",
+              "network_isolation": "NOT_IMPLEMENTED"
+            },
+            "cleanup": {
+              "status": "CONFIRMED",
+              "termination_method": "NONE",
+              "parent_reaped": true,
+              "group_absent": true,
+              "descendants_absent": true,
+              "checked_at": "2026-10-15T13:12:03.688001+00:00",
+              "source": "SYNTHETIC offline cleanup observations",
+              "observed_descendant_pids": [],
+              "remaining_pids": [],
+              "diagnostics": []
+            },
+            "diagnostics": [
+              "SYNTHETIC process; no native tool was started"
+            ],
+            "actual_tool_identity": {
+              "requested_executable": "/tools/nvdisasm",
+              "resolved_path": "/tools/nvdisasm",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_tool_identity": {
+              "requested_executable": "/tools/python3.10",
+              "resolved_path": "/tools/python3.10",
+              "status": "OBSERVED",
+              "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source": "synthetic offline identity; no tool is launched"
+            },
+            "launcher_argv": [
+              "/tools/python3.10",
+              "-I",
+              "-c",
+              "SYNTHETIC_NOT_EXECUTED"
+            ],
+            "ppid": null,
+            "started_monotonic_ns": null,
+            "finished_monotonic_ns": null,
+            "descendant_identities": []
+          },
+          "tool_result": null
+        }
+      ],
+      "artifact": {
+        "file": "out/safe_smoke.cubin",
+        "size_bytes": 1280,
+        "sha256": "14ab49627750694272554004703693cae6956a40e7d456fad1b1d3ef260d023a",
+        "elf_class": 64,
+        "endianness": "little",
+        "machine": 190,
+        "elf_type": 2,
+        "structural_profile": "SYSTEM_V_ELF64",
+        "elf_version_raw": 1,
+        "osabi_raw": 0,
+        "abi_version_raw": 0,
+        "section_count": null,
+        "kernel_section_size_bytes": null
+      },
+      "kernel_execution_status": "NOT_EXECUTED",
+      "verification_status": "NOT_VERIFIED"
+    },
+    "worker_pid": 100,
+    "started_at": "2026-10-15T13:12:03.687001+00:00",
+    "finished_at": "2026-10-15T13:12:03.689004+00:00",
+    "started_monotonic_ns": 276863468000001,
+    "finished_monotonic_ns": 276863468000006,
+    "diagnostics": [
+      "SYNTHETIC example only; no tool, GPU or CVE ran"
+    ],
+    "evidence_files": [
+      "stdout.bin",
+      "stderr.bin",
+      "process_result.json",
+      "lifecycle.json"
+    ],
+    "candidate_execution_status": "NOT_EXECUTED",
+    "fixture_execution_status": "STARTED",
+    "verification_status": "NOT_VERIFIED"
+  }
+}

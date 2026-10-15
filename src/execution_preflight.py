@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 from pathlib import Path
+import time
 
 from pydantic import ValidationError
 
@@ -18,6 +19,20 @@ def _validate(model, value):
     # JSON serialization can turn a model_copy-injected True in an int field
     # into 1. Revalidate original Python types before any JSON normalization.
     return model.model_validate(value.model_dump(mode="python") if isinstance(value, model) else value)
+
+
+def target_boot_id():
+    return Path("/proc/sys/kernel/random/boot_id").read_text(encoding="ascii").strip()
+
+
+def authorization_active(authorization, *, now=None):
+    """New CUDA grants use the actual target boot clock, never a host offset."""
+    if authorization.authorization_clock == "TARGET_BOOT_MONOTONIC":
+        boot = target_boot_id()
+        return (boot == authorization.cuda_toolchain.target_boot_id
+                and authorization.not_before_monotonic_ns <= time.monotonic_ns() < authorization.expires_monotonic_ns)
+    moment = now if now is not None else datetime.now(timezone.utc)
+    return aware_time(authorization.not_before) <= moment < aware_time(authorization.expires_at)
 
 
 def _scoped_path(raw: str, root: Path, *, directory: bool = False) -> Path:
@@ -69,8 +84,12 @@ def preflight_execution(request, snapshot, tool_record, authorization, policy, *
     except (ValidationError, ValueError, TypeError, KeyError):
         return result("REJECTED", "INVALID_CONTRACT", "Request, policy, snapshot or tool record failed strict validation.")
 
-    if req.authorized_action != "FIXED_FIXTURE_CHECK" or req.tool_role != "fixture_python":
+    cuda = (req.request_schema_version == "1.2" and req.authorized_action == "SAFE_CUDA_SMOKE"
+            and req.tool_role == "nvcc" and req.fixture_id == "p2c-cuda-smoke-v1")
+    if not cuda and (req.authorized_action != "FIXED_FIXTURE_CHECK" or req.tool_role != "fixture_python"):
         return result("UNSUPPORTED", "ACTION_UNSUPPORTED", "P2-A supports only the registered harmless fixed fixture check.")
+    if cuda != (trusted.policy_schema_version == "1.1"):
+        return result("REJECTED", "POLICY_VERSION_SCOPE_MISMATCH", "Safe CUDA actions require their own explicit trusted policy version.")
     if req.execution_backend != "wsl" or trusted.execution_backend != "wsl":
         return result("UNSUPPORTED", "BACKEND_UNSUPPORTED", "P2-A fixture resource policy supports only the WSL target backend.")
     if authorization is None:
@@ -79,6 +98,9 @@ def preflight_execution(request, snapshot, tool_record, authorization, policy, *
         auth = _validate(OperatorAuthorization, authorization)
     except (ValidationError, ValueError, TypeError):
         return result("REJECTED", "AUTHORIZATION_INVALID", "Operator authorization failed strict validation.")
+    if cuda and (auth.authorization_schema_version != "1.1" or req.cuda_toolchain != auth.cuda_toolchain
+                 or req.cuda_toolchain != trusted.cuda_toolchain):
+        return result("REJECTED", "CUDA_TOOLCHAIN_SCOPE_MISMATCH", "Request, independent authorization and trusted policy must bind the identical measured CUDA toolchain and architecture.")
     if (auth.operator_id not in trusted.allowed_operator_ids
             or auth.authorization_reference not in trusted.allowed_authorization_references
             or req.authorization_reference != auth.authorization_reference):
@@ -89,7 +111,11 @@ def preflight_execution(request, snapshot, tool_record, authorization, policy, *
             or auth.tool_resolved_path != req.tool_identity.resolved_path
             or auth.tool_file_sha256 != req.tool_identity.file_sha256):
         return result("REJECTED", "AUTHORIZATION_SCOPE_MISMATCH", "Authorization does not bind this exact request, action, target, tool and limits.")
-    if not aware_time(auth.not_before) <= moment < aware_time(auth.expires_at):
+    try:
+        active = authorization_active(auth, now=moment)
+    except (OSError, ValueError):
+        return result("UNKNOWN", "AUTHORIZATION_CLOCK_UNKNOWN", "Cannot observe the actual authorization clock in the target environment.")
+    if not active:
         return result("REJECTED", "AUTHORIZATION_EXPIRED", "Authorization is expired or is not yet effective.")
 
     if (req.platform_environment_id != trusted.expected_environment_id
@@ -117,7 +143,8 @@ def preflight_execution(request, snapshot, tool_record, authorization, policy, *
     if platform.probe_status == "FAILED":
         return result("UNKNOWN", "PLATFORM_PROBE_FAILED", "Failed platform probing cannot establish execution readiness.")
     try:
-        age = (moment - aware_time(platform.metadata["started_at"])).total_seconds()
+        age = ((time.monotonic_ns() - req.cuda_toolchain.snapshot_started_monotonic_ns) / 1000000000 if cuda else
+               (moment - aware_time(platform.metadata["started_at"])).total_seconds())
     except (ValueError, TypeError, KeyError, AttributeError):
         return result("UNKNOWN", "PLATFORM_TIME_UNKNOWN", "Snapshot has no valid timezone-aware observation time.")
     if age < -5 or age > trusted.max_snapshot_age_seconds:
@@ -165,6 +192,18 @@ def preflight_execution(request, snapshot, tool_record, authorization, policy, *
     measured_tool = measured.file_sha256
     if measured.resolved_path != tool_path or measured_tool != allowed_digest:
         return result("REJECTED", "TOOL_IDENTITY_MISMATCH", "Current executable file differs from its authorized path or SHA-256.")
+    if cuda:
+        for role, expected in req.cuda_toolchain.tools.items():
+            if trusted.allowed_tools.get(expected.resolved_path) != expected.file_sha256:
+                return result("REJECTED", "CUDA_TOOL_NOT_ALLOWLISTED", "Every CUDA scope executable must have a separate trusted allowlist entry.")
+            try:
+                actual = measure_tool_identity(expected.resolved_path, source="safe CUDA preflight executable measurement")
+            except (OSError, ValueError):
+                return result("UNKNOWN", "CUDA_TOOL_IDENTITY_UNKNOWN", "Cannot measure a required CUDA executable.")
+            if actual.status != "OBSERVED":
+                return result("UNKNOWN", "CUDA_TOOL_IDENTITY_UNKNOWN", "Required CUDA executable identity is unknown.")
+            if (actual.resolved_path, actual.file_sha256) != (expected.resolved_path, expected.file_sha256):
+                return result("REJECTED", "CUDA_TOOL_IDENTITY_MISMATCH", "A CUDA toolchain file changed after authorization.")
     try:
         actual_binding = bind_candidate_to_tool(data, platform, record,
                                                expected_probe_id=trusted.expected_probe_id,

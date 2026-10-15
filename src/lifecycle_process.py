@@ -197,10 +197,26 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
     deliberately required: the subreaper setting belongs to the worker process.
     """
     from .registered_actions import get_registered_action
-
     action = get_registered_action(fixture_id)
-    limits = ExecutionResourceLimits.model_validate(limits.model_dump(mode="python")
-                                                    if isinstance(limits, ExecutionResourceLimits) else limits)
+    return _run_controlled_action(action, limits, expected_tool=expected_tool, cwd=cwd,
+                                   target_environment=target_environment, request_id=request_id, run_id=run_id,
+                                   nonce=nonce, cancellation_file=cancellation_file, on_event=on_event)
+
+
+def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environment,
+                           request_id, run_id, nonce, cancellation_file=None, on_event=None, native_plan=None):
+    """Shared private process engine; action bytes come from reviewed registries."""
+    fixture_id = action.fixture_id
+    if native_plan is not None:
+        from .cuda_process import _NativePlan
+        from .models.execution import CudaResourceLimits
+        if not isinstance(native_plan, _NativePlan):
+            raise ValueError("native tool plan must come from the fixed CUDA registry adapter")
+        limits_model = CudaResourceLimits
+    else:
+        limits_model = ExecutionResourceLimits
+    limits = limits_model.model_validate(limits.model_dump(mode="python")
+                                        if isinstance(limits, limits_model) else limits)
     expected = ToolIdentity.model_validate(expected_tool.model_dump(mode="python")
                                             if isinstance(expected_tool, ToolIdentity) else expected_tool)
     for value in (request_id, run_id, nonce):
@@ -237,9 +253,13 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
     sink_failed = False
     native_started_at = None
     process_deadline = None
+    native_tracer = None
+    launcher_identity = None
 
     def emit(kind, **details):
-        nonlocal sink_failed
+        nonlocal sink_failed, state
+        if kind == "RUNNING":
+            state = "RUNNING"
         event = {"event": kind, "observed_at": _utc(), "details": details}
         observation["events"].append(event)
         if on_event is not None and not sink_failed:
@@ -249,6 +269,7 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
                 sink_failed = True
                 observation["capture_failed"] = True
                 observation["diagnostics"].append("EVENT_SINK_FAILED: " + type(exc).__name__)
+        return not sink_failed
 
     def kill_owned_group(reason):
         nonlocal cleanup_error
@@ -268,6 +289,8 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
             # start_new_session guarantees the direct child group ID even before
             # the resource handshake. No caller-specified PGID can enter here.
             os.killpg(proc.pid, signal.SIGKILL)
+            if native_tracer is not None:
+                native_tracer.terminate_owned()
             observation["termination_method"] = "SIGKILL_PROCESS_GROUP"
             emit("GROUP_SIGNALLED", signal=signal.SIGKILL, reason=reason, pgid=proc.pid)
         except ProcessLookupError:
@@ -278,10 +301,15 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
 
     def collect_parent():
         nonlocal finished
-        if proc is None or finished:
+        if proc is None:
+            return
+        if finished:
+            if native_tracer is not None:
+                native_tracer.poll()
             return
         try:
-            pid, status, usage = os.wait4(proc.pid, os.WNOHANG)
+            pid, status, usage = (os.wait4(proc.pid, os.WNOHANG) if native_tracer is None
+                                  else native_tracer.poll())
             if pid:
                 proc.returncode = os.waitstatus_to_exitcode(status)
                 observation["returncode"] = proc.returncode
@@ -316,6 +344,7 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
         actual = measure_tool_identity(expected.resolved_path, cwd=cwd,
                                        source="P2-B executable immediately before isolated launch")
         observation["actual_tool_identity"] = actual.model_dump(mode="json")
+        launcher_identity = actual
         if (expected.status != "OBSERVED" or actual.status != "OBSERVED"
                 or actual.resolved_path != expected.resolved_path
                 or actual.file_sha256 != expected.file_sha256):
@@ -339,6 +368,8 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
         config = {"request_id": request_id, "nonce": nonce,
                   "cpu_seconds": limits.cpu_seconds, "memory_bytes": limits.memory_bytes,
                   "control_fd": child_control.fileno(), "parent_pid": os.getpid()}
+        if native_plan is not None:
+            config.update(native_plan.configuration())
         argv = [actual.resolved_path, "-I", "-c", action.source.decode("utf-8")]
         observation["argv"] = argv
         emit("STARTING", fixture_id=fixture_id)
@@ -354,6 +385,10 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 start_new_session=True, pass_fds=(child_control.fileno(),),
                                 env={"PATH": os.defpath, "LANG": "C.UTF-8"})
+        if native_plan is not None:
+            from .cuda_process import NativeCudaTracer
+            native_tracer = NativeCudaTracer(native_plan, limits, emit)
+            native_tracer.attach_created_child(proc.pid)
         child_control.close()
         child_control = None
         proc.stdin.write(json.dumps(config, sort_keys=True, separators=(",", ":")).encode("ascii"))
@@ -392,8 +427,11 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
                 kill_owned_group("wall-clock deadline")
                 stop_deadline = time.monotonic() + 2
             if finished and stop_deadline is None:
-                if not ready:
+                if not ready or (native_plan is not None and not native_tracer.native_started):
                     state = "START_FAILED"
+                elif native_tracer is not None and native_tracer.resource_limit_hit:
+                    state = "RESOURCE_LIMIT"
+                    observation["diagnostics"].append("Native tracee CPU boundary: SIGKILL and wait4 CPU use at configured per-process limit; cause not separately kernel-attested")
                 elif observation["returncode"] == 0:
                     state = "COMPLETED"
                 elif (fixture_id == "p2b-cpu-limit-v1"
@@ -506,8 +544,17 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
                             raise OSError("bound cancellation received before fixed action GO")
                         parent_control.sendall(b"GO\n")
                         ready = True
-                        state = "RUNNING"
-                        emit("RUNNING", pid=proc.pid)
+                        if native_plan is None:
+                            state = "RUNNING"
+                            emit("RUNNING", pid=proc.pid)
+                    elif proof.get("event") == "NATIVE_UNSUPPORTED" and native_plan is not None:
+                        if (set(proof) != {"event", "reason", "request_id", "nonce"}
+                                or proof.get("request_id") != request_id or proof.get("nonce") != nonce):
+                            raise OSError("native unsupported message has a different request identity")
+                        state = "UNSUPPORTED"
+                        observation["diagnostics"].append("NATIVE_SETUP_UNSUPPORTED: " + str(proof["reason"]))
+                        kill_owned_group("native enforcement setup unsupported")
+                        stop_deadline = time.monotonic() + 2
                     elif proof.get("event") == "CHILD_CREATED" and ready:
                         if (set(proof) != {"event", "request_id", "nonce", "pid"}
                                 or proof.get("request_id") != request_id or proof.get("nonce") != nonce):
@@ -531,9 +578,13 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
                     observation["diagnostics"].append("PIPE_EOF_NOT_CONFIRMED")
                 break
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+        if native_plan is not None and getattr(exc, "execution_state", None) is not None:
+            state = exc.execution_state
+            if native_tracer is not None and native_tracer.native_started and state in {"REJECTED", "UNSUPPORTED"}:
+                state = "UNKNOWN"
         observation["diagnostics"].append(type(exc).__name__ + ": " + str(exc))
         if proc is not None:
-            if state not in {"REJECTED", "TIMED_OUT", "CANCELLED", "RESOURCE_LIMIT"}:
+            if state not in {"REJECTED", "TIMED_OUT", "CANCELLED", "RESOURCE_LIMIT", "UNSUPPORTED", "UNKNOWN", "CAPTURE_FAILED"}:
                 state = "CAPTURE_FAILED" if ready else "START_FAILED"
             observation["capture_failed"] = True
             kill_owned_group("startup or capture exception")
@@ -543,7 +594,12 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
             # have disappeared. Zombies are not described as cleaned up.
             cleanup_deadline = time.monotonic() + 2
             while time.monotonic() < cleanup_deadline:
-                collect_parent()
+                try:
+                    collect_parent()
+                except OSError as exc:
+                    cleanup_error = True
+                    observation["diagnostics"].append("NATIVE_REAP_FAILED: " + str(exc))
+                    kill_owned_group("native reaping observation failure")
                 try:
                     members = _group_members(proc.pid, proc.pid)
                     for member in members:
@@ -604,13 +660,19 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
     identity = observation["process_identity"]
     enforced = observation["resource_limits_applied"] is not None
     cgroup = observation["cgroup_assessment"]
-    resources = ResourceObservation(
+    resource_model = ResourceObservation
+    process_model = ProcessObservation
+    if native_plan is not None:
+        from .models.lifecycle import CudaProcessObservation, CudaResourceObservation
+        resource_model, process_model = CudaResourceObservation, CudaProcessObservation
+    resources = resource_model(
         status="ENFORCED" if enforced else ("UNKNOWN" if proc is not None else
                                             ("UNSUPPORTED" if state == "UNSUPPORTED" else "NOT_STARTED")),
         wall_watchdog=enforced, output_cap=enforced, process_group=enforced,
         cpu_seconds=limits.cpu_seconds if enforced else None,
         memory_bytes=limits.memory_bytes if enforced else None,
-        verification_source="private child control socket, independent /proc executable identity, trusted fixed guard getrlimit",
+        verification_source=("private guard socket, kernel ptrace exec/fork stops and /proc limits, per-process CPU/AS, EXITKILL" if native_plan is not None else
+                             "private child control socket, independent /proc executable identity, trusted fixed guard getrlimit"),
         cgroup_v2_status={"OBSERVED": "OBSERVED_NOT_USED", "UNSUPPORTED": "UNAVAILABLE"}.get(cgroup["status"], "NOT_CHECKED"),
         cgroup_v2_detail=cgroup["reason"])
     descendants = sorted({event["details"]["pid"] for event in observation["events"]
@@ -629,10 +691,15 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
     if observation["truncated"]:
         resource_reason = "aggregate stdout/stderr output exceeded the configured retained byte cap"
     elif state == "RESOURCE_LIMIT":
-        resource_reason = "RLIMIT_CPU boundary: fixed CPU action SIGKILL with wait4 CPU usage within one kernel accounting tick of configured hard limit"
-    payload = {"started": proc is not None, "action_started": ready,
-               "argv": observation["argv"], "cwd": str(cwd), "target_environment": target_environment,
-               "tool_identity": observation["actual_tool_identity"] or expected.model_dump(mode="json"),
+        resource_reason = ("RLIMIT_CPU boundary inferred from traced process SIGKILL and wait4 CPU usage; wait status alone does not uniquely establish the kill cause"
+                           if native_plan is not None else
+                           "RLIMIT_CPU boundary: fixed CPU action SIGKILL with wait4 CPU usage within one kernel accounting tick of configured hard limit")
+    native_started = native_tracer is not None and native_tracer.native_started
+    payload = {"started": proc is not None, "action_started": ready if native_plan is None else native_started,
+               "argv": observation["argv"] if native_plan is None else native_plan.argv,
+               "cwd": str(cwd), "target_environment": target_environment,
+               "tool_identity": ((observation["actual_tool_identity"] or expected.model_dump(mode="json")) if native_plan is None else
+                                  native_tracer.actual_tool_identity if native_started else native_plan.expected),
                "pid": (None if proc is None else proc.pid) if identity is None else identity["pid"],
                "pgid": None if identity is None else identity["pgid"],
                "session_id": None if identity is None else identity["session_id"],
@@ -645,12 +712,19 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
                "truncated": observation["truncated"], "capture_failed": observation["capture_failed"],
                "resource_limit_reason": resource_reason, "resource_limits": limits,
                "resources": resources, "cleanup": cleanup, "diagnostics": observation["diagnostics"]}
-    if "uid" in ProcessObservation.model_fields:
+    if native_plan is not None:
+        payload.update(launcher_tool_identity=launcher_identity or expected,
+                       ppid=None if identity is None else identity["ppid"],
+                       started_monotonic_ns=int(began * 1000000000), finished_monotonic_ns=time.monotonic_ns(),
+                       launcher_argv=observation["argv"],
+                       actual_tool_identity=None if native_tracer is None else native_tracer.actual_tool_identity,
+                       descendant_identities=[] if native_tracer is None else native_tracer.records)
+    if "uid" in process_model.model_fields:
         payload["uid"] = None if identity is None else identity["uid"]
         payload["gid"] = None if identity is None else identity["gid"]
-    if "resource_usage" in ProcessObservation.model_fields:
+    if "resource_usage" in process_model.model_fields:
         payload["resource_usage"] = observation["resource_usage"]
-    if "cpu_usage_seconds" in ProcessObservation.model_fields:
+    if "cpu_usage_seconds" in process_model.model_fields:
         usage = observation["resource_usage"]
         payload["cpu_usage_seconds"] = None if usage is None else usage["user_cpu_seconds"] + usage["system_cpu_seconds"]
     for name in ("stdout", "stderr"):
@@ -658,4 +732,4 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
         payload[name + "_b64"] = base64.b64encode(raw).decode("ascii")
         payload[name + "_sha256"] = _sha(raw)
         payload[name + "_size_bytes"] = len(raw)
-    return RegisteredProcessOutcome(state=state, process=ProcessObservation.model_validate(payload))
+    return RegisteredProcessOutcome(state=state, process=process_model.model_validate(payload))

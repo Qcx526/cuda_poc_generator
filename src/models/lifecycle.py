@@ -3,12 +3,12 @@
 import base64
 import hashlib
 import json
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
-from .execution import StrictContract, ExecutionResourceLimits, aware_time
-from .tool_result import ToolIdentity
+from .execution import StrictContract, ExecutionResourceLimits, CudaResourceLimits, aware_time
+from .tool_result import ToolIdentity, ToolResult
 
 
 class LifecycleContract(StrictContract):
@@ -67,6 +67,14 @@ class LifecycleEvent(LifecycleContract):
     observed_at: str
     source: str = Field(min_length=1)
     reason: str = Field(min_length=1)
+    monotonic_ns: int | None = Field(default=None, ge=0)
+
+    @model_serializer(mode="wrap")
+    def compatible_dump(self, handler):
+        data = handler(self)
+        if self.monotonic_ns is None:
+            data.pop("monotonic_ns", None)
+        return data
 
     @model_validator(mode="after")
     def timestamp(self):
@@ -80,15 +88,21 @@ def validate_events(events: list[LifecycleEvent], final_state: str) -> None:
     if not events or events[0].state != "CREATED" or events[-1].state != final_state:
         raise ValueError("lifecycle must begin CREATED and end in the recorded status")
     previous_time = None
+    previous_monotonic = None
+    monotonic = any(event.monotonic_ns is not None for event in events)
     for index, event in enumerate(events):
         if event.sequence != index:
             raise ValueError("event sequences must be contiguous from zero")
         stamp = aware_time(event.observed_at)
-        if previous_time is not None and stamp < previous_time:
+        if monotonic and (event.monotonic_ns is None or
+                          previous_monotonic is not None and event.monotonic_ns < previous_monotonic):
+            raise ValueError("all local monotonic event observations must be present and ordered")
+        if not monotonic and previous_time is not None and stamp < previous_time:
             raise ValueError("lifecycle observation times must be ordered")
         if index:
             validate_transition(events[index - 1].state, event.state)
         previous_time = stamp
+        previous_monotonic = event.monotonic_ns
 
 
 class ResourceObservation(LifecycleContract):
@@ -181,7 +195,8 @@ class ProcessObservation(LifecycleContract):
     @model_validator(mode="after")
     def observations_match(self):
         finish = aware_time(self.finished_at)
-        if self.started_at is not None and aware_time(self.started_at) > finish:
+        if self.started_at is not None and aware_time(self.started_at) > finish and (
+                self.process_schema_version == "1.0" or getattr(self, "started_monotonic_ns", None) is None):
             raise ValueError("process finish precedes start")
         for name in ("stdout", "stderr"):
             try:
@@ -209,8 +224,114 @@ class ProcessObservation(LifecycleContract):
         return self
 
 
+class CudaResourceObservation(ResourceObservation):
+    cpu_seconds: int | None = Field(default=None, ge=1, le=60)
+    memory_bytes: int | None = Field(default=None, ge=67108864, le=8589934592)
+
+
+class CudaProcessObservation(ProcessObservation):
+    process_schema_version: Literal["1.1"] = "1.1"
+    resource_limits: CudaResourceLimits
+    resources: CudaResourceObservation
+    actual_tool_identity: ToolIdentity | None = None
+    launcher_tool_identity: ToolIdentity
+    launcher_argv: list[str] = Field(min_length=1)
+    ppid: int | None = Field(default=None, ge=0)
+    started_monotonic_ns: int | None = Field(default=None, ge=0)
+    finished_monotonic_ns: int | None = Field(default=None, ge=0)
+    descendant_identities: list[dict] = Field(default_factory=list, max_length=1024)
+
+    @model_validator(mode="after")
+    def observed_native_execution(self):
+        if (self.started_monotonic_ns is None) != (self.finished_monotonic_ns is None) or (
+                self.started_monotonic_ns is not None and self.finished_monotonic_ns < self.started_monotonic_ns):
+            raise ValueError("CUDA local monotonic start/end observations must be paired and ordered")
+        if self.action_started and (self.actual_tool_identity is None
+                or self.actual_tool_identity.status != "OBSERVED"
+                or self.actual_tool_identity.resolved_path != self.tool_identity.resolved_path
+                or self.actual_tool_identity.file_sha256 != self.tool_identity.file_sha256):
+            raise ValueError("started CUDA tool requires exact observed native executable identity")
+        return self
+
+
+class CudaBinaryArtifact(LifecycleContract):
+    file: Literal["out/safe_smoke.cubin"] = "out/safe_smoke.cubin"
+    size_bytes: int = Field(gt=0, le=16777216)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    elf_class: Literal[64] = 64
+    endianness: Literal["little"] = "little"
+    machine: Literal[190] = 190
+    elf_type: Literal[2] = 2
+    structural_profile: Literal["SYSTEM_V_ELF64", "NVCC_12_8_OBSERVED_ELF64"] = "SYSTEM_V_ELF64"
+    elf_version_raw: Literal[1, 128] = 1
+    osabi_raw: int = Field(default=0, ge=0, le=255)
+    abi_version_raw: int = Field(default=0, ge=0, le=255)
+    section_count: int | None = Field(default=None, gt=0)
+    kernel_section_size_bytes: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def explicit_profile(self):
+        if self.structural_profile == "NVCC_12_8_OBSERVED_ELF64":
+            if (self.elf_version_raw, self.osabi_raw, self.abi_version_raw) != (128, 51, 7):
+                raise ValueError("CUDA observed profile requires its exact unmodified header tuple")
+        elif self.elf_version_raw != 1:
+            raise ValueError("generic ELF retains its ordinary version requirement")
+        return self
+
+
+class CudaSmokeStep(LifecycleContract):
+    step_id: Literal["nvcc_version", "cuobjdump_version", "nvdisasm_version", "compile", "cuobjdump", "nvdisasm"]
+    state: LifecycleState
+    process: CudaProcessObservation
+    tool_result: ToolResult | None = None
+
+    @model_validator(mode="after")
+    def valid_step(self):
+        if self.state not in TERMINAL_STATES:
+            raise ValueError("a retained CUDA tool step must be terminal")
+        if self.state == "COMPLETED" and (not self.process.action_started or self.process.returncode != 0
+                or self.process.timed_out or self.process.cancelled or self.process.truncated
+                or self.process.capture_failed or self.process.cleanup.status != "CONFIRMED"):
+            raise ValueError("completed CUDA step requires observed zero exit, capture and cleanup")
+        if self.tool_result is not None and (self.tool_result.stdout_bytes() != self.process.stdout_bytes()
+                or self.tool_result.stderr_bytes() != self.process.stderr_bytes()
+                or self.tool_result.returncode != self.process.returncode
+                or self.tool_result.target_environment != self.process.target_environment):
+            raise ValueError("CUDA tool result differs from the original process observation")
+        return self
+
+
+class CudaSmokeObservation(LifecycleContract):
+    cuda_smoke_schema_version: Literal["1.0"] = "1.0"
+    action_id: Literal["p2c-cuda-smoke-v1"] = "p2c-cuda-smoke-v1"
+    source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    source_file: Literal["safe_smoke.cu"] = "safe_smoke.cu"
+    arch: str = Field(pattern=r"^sm_[0-9]{2,3}[a-z]?$", max_length=16)
+    tool_versions: dict[str, ToolResult] = Field(default_factory=dict, max_length=3)
+    steps: list[CudaSmokeStep] = Field(default_factory=list, max_length=6)
+    artifact: CudaBinaryArtifact | None = None
+    kernel_execution_status: Literal["NOT_EXECUTED"] = "NOT_EXECUTED"
+    verification_status: Literal["NOT_VERIFIED"] = "NOT_VERIFIED"
+
+    @model_validator(mode="after")
+    def scope_consistent(self):
+        if not set(self.tool_versions).issubset({"nvcc", "cuobjdump", "nvdisasm"}):
+            raise ValueError("unknown CUDA tool version role")
+        identifiers = [step.step_id for step in self.steps]
+        expected = ["nvcc_version", "cuobjdump_version", "nvdisasm_version", "compile", "cuobjdump", "nvdisasm"]
+        if identifiers != expected[:len(identifiers)]:
+            raise ValueError("CUDA tool steps must be unique and retain compile/inspect order")
+        if any(step.state != "COMPLETED" for step in self.steps[:-1]):
+            raise ValueError("a failed CUDA tool step cannot be followed by another step")
+        if self.artifact is not None and (len(self.steps) < 4 or self.steps[3].state != "COMPLETED"):
+            raise ValueError("a CUDA artifact requires successful compiler process evidence")
+        if len(self.steps) > 4 and self.artifact is None:
+            raise ValueError("native inspection requires the retained validated compiler artifact")
+        return self
+
+
 class ExecutionRecord(LifecycleContract):
-    execution_schema_version: Literal["1.0"] = "1.0"
+    execution_schema_version: Literal["1.0", "1.1"] = "1.0"
     request_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     run_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     request_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -229,22 +350,52 @@ class ExecutionRecord(LifecycleContract):
     action_id: str = Field(min_length=1)
     status: LifecycleState
     events: list[LifecycleEvent] = Field(min_length=1)
-    process: ProcessObservation | None
+    process: Annotated[CudaProcessObservation | ProcessObservation, Field(discriminator="process_schema_version")] | None
+    cuda_smoke: CudaSmokeObservation | None = None
     worker_pid: int | None = Field(default=None, gt=0)
     started_at: str
     finished_at: str
+    started_monotonic_ns: int | None = Field(default=None, ge=0)
+    finished_monotonic_ns: int | None = Field(default=None, ge=0)
     diagnostics: list[str]
     evidence_files: list[str] = Field(default_factory=list)
     candidate_execution_status: Literal["NOT_EXECUTED"] = "NOT_EXECUTED"
     fixture_execution_status: Literal["NOT_STARTED", "STARTED", "UNKNOWN"] = "NOT_STARTED"
     verification_status: Literal["NOT_VERIFIED"] = "NOT_VERIFIED"
 
+    @model_validator(mode="before")
+    @classmethod
+    def legacy_process_default(cls, value):
+        if isinstance(value, dict) and value.get("execution_schema_version", "1.0") == "1.0":
+            process = value.get("process")
+            if isinstance(process, dict) and "process_schema_version" not in process:
+                value = dict(value)
+                value["process"] = {**process, "process_schema_version": "1.0"}
+        return value
+
+    @model_serializer(mode="wrap")
+    def compatible_dump(self, handler):
+        data = handler(self)
+        if self.execution_schema_version == "1.0":
+            data.pop("cuda_smoke", None)
+            data.pop("started_monotonic_ns", None)
+            data.pop("finished_monotonic_ns", None)
+        return data
+
     @model_validator(mode="after")
     def scientific_boundaries(self):
         validate_events(self.events, self.status)
         if self.status not in TERMINAL_STATES:
             raise ValueError("persisted execution record must have a terminal state")
-        if aware_time(self.finished_at) < aware_time(self.started_at):
+        monotonic = self.started_monotonic_ns is not None and self.finished_monotonic_ns is not None
+        if (self.started_monotonic_ns is None) != (self.finished_monotonic_ns is None) or (
+                monotonic and (self.finished_monotonic_ns < self.started_monotonic_ns
+                              or self.events[0].monotonic_ns != self.started_monotonic_ns
+                              or self.events[-1].monotonic_ns != self.finished_monotonic_ns)):
+            raise ValueError("record local monotonic bounds must match ordered event observations")
+        if self.execution_schema_version == "1.0" and (monotonic or any(e.monotonic_ns is not None for e in self.events)):
+            raise ValueError("legacy records cannot acquire new clock semantics")
+        if not monotonic and aware_time(self.finished_at) < aware_time(self.started_at):
             raise ValueError("execution finish precedes start")
         if self.events[0].observed_at != self.started_at or self.events[-1].observed_at != self.finished_at:
             raise ValueError("record timestamps must match first and last lifecycle events")
@@ -252,24 +403,36 @@ class ExecutionRecord(LifecycleContract):
                 self.authorization_sha256 is None or not self.authorization_reference or not self.operator_id):
             raise ValueError("AUTHORIZED requires the separately bound authority identity")
         process = self.process
+        if self.execution_schema_version == "1.0" and (self.cuda_smoke is not None or isinstance(process, CudaProcessObservation)):
+            raise ValueError("legacy execution records cannot contain CUDA observations")
+        if self.cuda_smoke is not None and (self.action_id != self.cuda_smoke.action_id
+                or self.candidate_sha256 != self.cuda_smoke.source_sha256):
+            raise ValueError("CUDA smoke source and action must bind the exact execution record")
         if process is not None:
             if process.target_environment != self.target_environment or process.tool_identity != self.tool_identity:
                 raise ValueError("process target or actual tool identity disagrees with the record")
             if process.worker_pid != self.worker_pid:
                 raise ValueError("process and worker PID disagree")
-            if (aware_time(process.finished_at) > aware_time(self.finished_at)
+            if monotonic and isinstance(process, CudaProcessObservation) and process.started_monotonic_ns is not None:
+                if not (self.started_monotonic_ns <= process.started_monotonic_ns
+                        <= process.finished_monotonic_ns <= self.finished_monotonic_ns):
+                    raise ValueError("CUDA process monotonic observations are outside the task window")
+            elif (aware_time(process.finished_at) > aware_time(self.finished_at)
                     or (process.started_at is not None and aware_time(process.started_at) < aware_time(self.started_at))):
                 raise ValueError("process observations must lie inside the lifecycle observation window")
             if (self.fixture_execution_status == "STARTED") != process.action_started:
                 raise ValueError("fixture execution state disagrees with the observed action gate")
             if process.started and process.cleanup.status != "CONFIRMED" and self.status not in {"CLEANUP_FAILED", "UNKNOWN"}:
                 raise ValueError("unconfirmed cleanup cannot be a completed terminal result")
-            if process.action_started:
+            if process.action_started and self.cuda_smoke is None:
                 from ..registered_actions import get_registered_action
                 registered = get_registered_action(self.action_id)
                 expected_argv = [process.tool_identity.resolved_path, "-I", "-c", registered.source.decode("utf-8")]
                 if self.candidate_sha256 != registered.sha256 or process.argv != expected_argv:
                     raise ValueError("an observed action must match exact registered bytes and fixed argv")
+            elif process.action_started:
+                if not isinstance(process, CudaProcessObservation) or not self.cuda_smoke.steps or process != self.cuda_smoke.steps[-1].process:
+                    raise ValueError("CUDA record process must match its retained final tool step")
         elif self.fixture_execution_status == "STARTED":
             raise ValueError("a started fixed action requires process observations")
         elif any(event.state == "RUNNING" for event in self.events) and (
@@ -279,6 +442,10 @@ class ExecutionRecord(LifecycleContract):
                                              or process.timed_out or process.cancelled or process.truncated
                                              or process.capture_failed or process.cleanup.status != "CONFIRMED"):
             raise ValueError("COMPLETED requires an authorized observed zero exit with complete capture and cleanup")
+        if self.status == "COMPLETED" and self.cuda_smoke is not None and (
+                self.cuda_smoke.artifact is None or len(self.cuda_smoke.steps) != 6
+                or any(step.state != "COMPLETED" for step in self.cuda_smoke.steps)):
+            raise ValueError("completed CUDA smoke requires a validated artifact and all three successful tool steps")
         if self.status == "NONZERO_EXIT" and (process is None or process.returncode in (None, 0)):
             raise ValueError("NONZERO_EXIT requires an observed nonzero exit")
         if self.status == "TIMED_OUT" and (process is None or not process.timed_out):
@@ -316,18 +483,45 @@ class RemoteRecoveryCheck(LifecycleContract):
     observer_pid: int = Field(gt=0)
     observer_uid: int = Field(ge=0)
     diagnostics: list[str]
+    checked_monotonic_ns: int | None = Field(default=None, ge=0)
+    target_boot_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$")
+
+    @model_serializer(mode="wrap")
+    def compatible_dump(self, handler):
+        data = handler(self)
+        if self.checked_monotonic_ns is None and self.target_boot_id is None:
+            data.pop("checked_monotonic_ns", None)
+            data.pop("target_boot_id", None)
+        return data
 
     @model_validator(mode="after")
     def actually_observed(self):
         aware_time(self.checked_at)
+        if (self.checked_monotonic_ns is None) != (self.target_boot_id is None):
+            raise ValueError("remote monotonic observation must name its target boot")
         if self.status == "CONFIRMED" and not (self.identity_match and self.worker_alive is False
                                                 and self.group_empty is True):
             raise ValueError("remote recovery confirmation needs exact identity, dead worker and empty group")
         return self
 
 
+class NativeEvidenceVerification(LifecycleContract):
+    status: Literal["VERIFIED", "UNAVAILABLE", "INCOMPLETE", "FAILED"]
+    index_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    file_count: int = Field(ge=0, le=64)
+    size_bytes: int = Field(ge=0, le=8388608)
+    diagnostics: list[str] = Field(default_factory=list)
+
+
+class PublicationObservation(LifecycleContract):
+    file_fsync: bool
+    atomic_publication: bool
+    directory_fsync: Literal["APPLIED", "UNSUPPORTED"]
+    guarantee: Literal["FILE_FSYNC_AND_ATOMIC_PUBLICATION"] = "FILE_FSYNC_AND_ATOMIC_PUBLICATION"
+
+
 class EvidenceManifest(LifecycleContract):
-    evidence_schema_version: Literal["1.0"] = "1.0"
+    evidence_schema_version: Literal["1.0", "1.1"] = "1.0"
     request_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     run_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     execution_record_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -340,7 +534,7 @@ class EvidenceManifest(LifecycleContract):
     platform_probe_id: str = Field(min_length=1)
     tool_record_id: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     tool_file_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
-    collector_version: Literal["p2b-1.0"] = "p2b-1.0"
+    collector_version: Literal["p2b-1.0", "p2c-1.0", "p2c-1.1"] = "p2b-1.0"
     remote_status: LifecycleState
     effective_status: LifecycleState
     cleanup_confirmation: Literal["CONFIRMED", "UNKNOWN", "FAILED", "NOT_STARTED"]
@@ -348,11 +542,27 @@ class EvidenceManifest(LifecycleContract):
     capture_complete: bool
     truncated: bool
     protection: dict[str, str | bool]
+    native_evidence: NativeEvidenceVerification | None = None
+    publication: PublicationObservation | None = None
     candidate_execution_status: Literal["NOT_EXECUTED"] = "NOT_EXECUTED"
     verification_status: Literal["NOT_VERIFIED"] = "NOT_VERIFIED"
 
+    @model_serializer(mode="wrap")
+    def compatible_dump(self, handler):
+        data = handler(self)
+        if self.evidence_schema_version == "1.0":
+            data.pop("native_evidence", None)
+            data.pop("publication", None)
+        return data
+
     @model_validator(mode="after")
     def unique_safe_files(self):
+        if self.evidence_schema_version == "1.0" and (self.native_evidence is not None or self.publication is not None
+                or self.collector_version != "p2b-1.0"):
+            raise ValueError("legacy manifest cannot claim new native evidence or publication guarantees")
+        if self.evidence_schema_version == "1.1" and (self.native_evidence is None or self.publication is None
+                or self.collector_version not in {"p2c-1.0", "p2c-1.1"}):
+            raise ValueError("new manifest requires explicit native and publication observations")
         if any(key != artifact.file for key, artifact in self.artifacts.items()):
             raise ValueError("artifact dictionary keys must match exact safe filenames")
         if self.capture_complete and self.truncated:

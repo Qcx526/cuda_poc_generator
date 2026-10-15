@@ -23,6 +23,7 @@ SHN_LORESERVE = 0xFF00
 SHN_XINDEX = 0xFFFF
 SHF_INFO_LINK = 0x40
 SHF_LINK_ORDER = 0x80
+CUDA_12_8_PROFILE = "NVCC_12_8_OBSERVED_ELF64"
 
 EHDR_SHOFF = 0x28
 EHDR_SHENTSIZE = 0x3A
@@ -52,7 +53,7 @@ def _in_file(offset: int, size: int, file_size: int) -> bool:
     return offset <= file_size and size <= file_size - offset
 
 
-def _parse_validated(data: bytes) -> Tuple[List[Tuple], bytes]:
+def _parse_validated(data: bytes, *, profile=None) -> Tuple[List[Tuple], bytes]:
     """Parse the supported structural subset; all reads follow bounds checks."""
     data = _bytes(data)
     if len(data) < ELF64_EHDR_SIZE:
@@ -63,8 +64,20 @@ def _parse_validated(data: bytes) -> Tuple[List[Tuple], bytes]:
         raise ValueError("Unsupported ELF class: only ELF64 is supported")
     if data[5] != 1:
         raise ValueError("Unsupported ELF byte order: only little-endian is supported")
-    if data[6] != 1 or struct.unpack_from("<I", data, 20)[0] != 1:
-        raise ValueError("Unsupported ELF version")
+    version = struct.unpack_from("<I", data, 20)[0]
+    if profile is None:
+        if data[6] != 1 or version != 1:
+            raise ValueError("Unsupported ELF version")
+    elif profile == CUDA_12_8_PROFILE:
+        # Explicit empirical support for the unmodified fixed-source nvcc 12.8
+        # output, not a guess at the meaning of CUDA's e_version. CUDA OSABI=51
+        # and ABI=7 are also identified in LLVM BinaryFormat/ELF.h. Every ordinary
+        # width, table, name and bounds check below still applies to these bytes.
+        if (data[6:9] != bytes((1, 51, 7)) or version != 128
+                or struct.unpack_from("<HH", data, 16) != (2, 190)):
+            raise ValueError("Unsupported CUDA ELF profile tuple")
+    else:
+        raise ValueError("Unsupported explicit ELF structural profile")
     if struct.unpack_from("<H", data, 52)[0] != ELF64_EHDR_SIZE:
         raise ValueError("Invalid ELF64 e_ehsize")
 
@@ -94,6 +107,14 @@ def _parse_validated(data: bytes) -> Tuple[List[Tuple], bytes]:
         if phoff < shoff + shnum * shentsize and shoff < phend:
             raise ValueError("Program and section header tables overlap")
         reserved.append((phoff, phend, "program header table"))
+        if profile == CUDA_12_8_PROFILE:
+            for index in range(phnum):
+                program = struct.unpack_from("<IIQQQQQQ", data, phoff + index * phentsize)
+                offset, filesz, memsz, alignment = program[2], program[5], program[6], program[7]
+                if not _in_file(offset, filesz, len(data)) or filesz > memsz:
+                    raise ValueError(f"Program {index}: payload is outside file or exceeds memory size")
+                if alignment and alignment & (alignment - 1):
+                    raise ValueError(f"Program {index}: alignment must be zero or a power of two")
 
     sections = [struct.unpack_from(ELF64_SHDR_FMT, data, shoff + i * shentsize)
                 for i in range(shnum)]
@@ -148,29 +169,29 @@ def _parse_validated(data: bytes) -> Tuple[List[Tuple], bytes]:
     return sections, strtab
 
 
-def parse_all_sections(data: bytes) -> List[Tuple]:
+def parse_all_sections(data: bytes, *, profile=None) -> List[Tuple]:
     """Return all ELF64 headers; reject unsupported or unsafe input first."""
-    return _parse_validated(data)[0]
+    return _parse_validated(data, profile=profile)[0]
 
 
-def validate_elf_structure(data: bytes) -> List[str]:
+def validate_elf_structure(data: bytes, *, profile=None) -> List[str]:
     """Return [] for supported structure, otherwise explicit diagnostics.
 
     This is not a CUDA ABI validator, a loader, or a vulnerability oracle.
     Unknown processor-specific section semantics are left opaque.
     """
     try:
-        _parse_validated(data)
+        _parse_validated(data, profile=profile)
     except ValueError as exc:
         return [str(exc)]
     return []
 
 
-def find_section(data: bytes, name: str) -> Optional[Tuple[int, Tuple]]:
+def find_section(data: bytes, name: str, *, profile=None) -> Optional[Tuple[int, Tuple]]:
     """Find the first named section in a validated ELF64 input."""
     if not isinstance(name, str):
         raise ValueError("Section name must be a string")
-    sections, strtab = _parse_validated(data)
+    sections, strtab = _parse_validated(data, profile=profile)
     for idx, hdr in enumerate(sections):
         if hdr[1] != SHT_NULL and _section_name(strtab, hdr[0]) == name:
             return idx, hdr

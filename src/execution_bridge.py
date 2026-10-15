@@ -182,6 +182,8 @@ def build_execution_worker_source(payload, *, linux_project_root, worker_entrypo
     if worker_entrypoint == "lifecycle":
         from .registered_actions import REGISTERED_ACTIONS
         hashes.update({action.relative_path: action.sha256 for action in REGISTERED_ACTIONS.values()})
+        from .cuda_registry import CUDA_SMOKE_RELATIVE_PATH, CUDA_SMOKE_SHA256
+        hashes[CUDA_SMOKE_RELATIVE_PATH] = CUDA_SMOKE_SHA256
     entrypoint = "src.execution_worker" if worker_entrypoint == "fixture" else "src.lifecycle_worker"
     return ("import hashlib,importlib.abc,importlib.util,json,pathlib,sys\n"
             "ROOT=pathlib.Path(" + repr(root) + ").resolve(strict=True)\n"

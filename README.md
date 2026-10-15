@@ -14,6 +14,7 @@
 - 带字段状态、来源和内容哈希的只读平台探测；支持 Windows 经 `wsl.exe` 显式探测 WSL，并分别保存两套环境。
 - 可导入的编译、ELF 操作、反汇编工具；主流程不自动执行这些工具。
 - P1-C 底层工具使用严格 `ToolResult` 和私有原始日志；编译采用受控 argv、明确架构及参数白名单，ELF 操作严格支持 ELF64 little-endian。
+- P2-C 独立入口支持明确授权的固定无害 CUDA 编译/检查、受控进程与跨环境原始证据核验；不启动 kernel 或生成候选。
 
 ## 2. 尚未实现的功能与边界
 
@@ -226,7 +227,7 @@ gcc --version
 g++ --version
 ```
 
-P1-B 真实只读桥接观察到 WSL 的 nvcc `12.8.93`、Compute Sanitizer `2025.1.0.0`、GTX 1660 / CC `7.5`；`sm_75` 是由实测 CC 派生的 `INFERRED` 值。Windows 本机 Toolkit 为 `11.2`，不能替代 WSL 的 `12.8`。本机横幅的 `CUDA UMD Version: 13.4` 单独记录，不冒充 Driver API 或最大兼容版本。未执行编译 smoke、kernel 或 PoC，详见 [P1-B 验收](docs/P1_B_VALIDATION.md)。
+P1-B 真实只读桥接观察到 WSL 的 nvcc `12.8.93`、Compute Sanitizer `2025.1.0.0`、GTX 1660 / CC `7.5`；`sm_75` 是由实测 CC 派生的 `INFERRED` 值。Windows 本机 Toolkit 为 `11.2`，不能替代 WSL 的 `12.8`。本机横幅的 `CUDA UMD Version: 13.4` 单独记录，不冒充 Driver API 或最大兼容版本。P1-B 阶段未执行编译 smoke、kernel 或 PoC，详见 [P1-B 验收](docs/P1_B_VALIDATION.md)。
 
 后续实验必须在明确授权和隔离策略下，先审查候选、核对受影响版本与目标条件，再决定编译/执行范围。保留 argv、cwd、运行身份、超时、stdout/stderr、退出码、环境快照和哈希，目标 oracle 独立判定。CUDA 错误码、crash、sanitizer 的通用 OOB 报告都不能自动证明目标 CVE 被验证。本轮不提供默认自动运行样本的步骤。
 
@@ -247,6 +248,15 @@ P2-B 在此基础上增加固定无害动作的执行生命周期、超时/取�
 ```
 
 其他动作和取消方式见 [P2-B 生命周期合同](docs/P2_B_EXECUTION_LIFECYCLE.md)。退出 0 只代表固定任务有效完成，不能代表 CVE；非零、超时和资源限制会返回独立状态。Windows launcher 消失不能证明 Linux 已回收，未确认时保留 UNKNOWN/CLEANUP_FAILED。私有 `data/outputs/execution_lifecycle/` 保存原始证据及控制句柄，禁止提交其中的 control token/日志；[P2-B 验收](docs/P2_B_VALIDATION.md) 与 [真实联调摘要](docs/P2_B_REAL_INTEGRATION.md) 区分 Mock、无害真实运行和未执行的 CUDA 测试。
+
+P2-C 新增固定空 kernel 的编译与二进制检查入口。只有操作者明确授权后才调用 WSL 的 nvcc/cuobjdump/nvdisasm；不运行编译产物、不接受候选源码或自由 flags。Windows 项目根目录执行，项目 WSL 路径及批准引用填写实际值：
+
+```powershell
+.\.venv\Scripts\python.exe -m src.cuda_smoke --help
+.\.venv\Scripts\python.exe -m src.cuda_smoke --authorize-safe-cuda-smoke --backend wsl --authorization-reference "your-approval-record" --operator-id "your-operator-id" --linux-project-root "<项目的 WSL 路径>"
+```
+
+架构取新鲜 GPU/nvcc 观测，CUDA 工具使用单独的 4 GiB 每进程地址空间策略；这不是 VRAM 限额或 GPU 沙箱。原始 Linux 文件经独立 STATUS 重读，再与 Windows 保存字节核验；未确认回收或原件不可访问时不会宣称完整成功。正常 CLI 返回报告目录，只有执行完成且原件 VERIFIED 才退出 0。合同、真实工具版本/哈希、失败诊断及双环境结果见 [P2-C 集成合同](docs/P2_C_CUDA_INTEGRATION.md)、[验收](docs/P2_C_VALIDATION.md)、[真实联调](docs/P2_C_REAL_INTEGRATION.md)。候选仍 NOT_EXECUTED，CVE 仍 NOT_VERIFIED。
 
 ## 13. 常见问题与测试状态
 

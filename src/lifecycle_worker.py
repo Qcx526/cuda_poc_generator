@@ -7,8 +7,9 @@ import os
 from pathlib import Path
 import re
 import sys
+import time
 
-from .execution_preflight import preflight_execution
+from .execution_preflight import preflight_execution, authorization_active
 from .execution_worker import _snapshot, contract_digest, resource_capabilities
 from .models.execution import ExecutionRequest, OperatorAuthorization, PreflightPolicy, request_sha256, snapshot_sha256, aware_time
 from .models.lifecycle import ExecutionRecord, LifecycleEvent
@@ -87,7 +88,12 @@ def _control(payload):
                 or lease["target_environment"] != canonical_target_environment()
                 or lease["worker"]["uid"] != os.getuid() or lease["boot_id"] != _boot_id()):
             raise ValueError("control identity mismatch")
-        if payload["operation"] == "CANCEL":
+        clock_fields = ({"checked_monotonic_ns": time.monotonic_ns(), "target_boot_id": _boot_id()}
+                        if lease.get("cuda_clock") else {})
+        record = None
+        if (folder / "execution_record.json").exists():
+            record = ExecutionRecord.model_validate(_read_json(folder / "execution_record.json")).model_dump(mode="json")
+        if payload["operation"] == "CANCEL" and record is None:
             cancel = {"request_id": lease["request_id"], "run_id": lease["run_id"],
                       "nonce": lease["nonce"], "action": "CANCEL"}
             try:
@@ -95,9 +101,6 @@ def _control(payload):
             except FileExistsError:
                 if _read_json(folder / "cancel.json", 4096) != cancel:
                     raise ValueError("conflicting cancellation")
-        record = None
-        if (folder / "execution_record.json").exists():
-            record = ExecutionRecord.model_validate(_read_json(folder / "execution_record.json")).model_dump(mode="json")
         try:
             current = _identity(lease["worker"]["pid"])
             worker_alive = all(current[key] == lease["worker"][key] for key in
@@ -105,16 +108,25 @@ def _control(payload):
         except (FileNotFoundError, ProcessLookupError):
             worker_alive = False
         process = lease.get("process")
+        if lease.get("active_spawn_pending"):
+            recovery = RemoteRecoveryCheck(request_id=lease["request_id"], run_id=lease["run_id"], checked_at=utc_now(),
+                **clock_fields,
+                worker_alive=worker_alive, group_empty=None, identity_match=True, status="UNKNOWN",
+                observer_pid=os.getpid(), observer_uid=os.getuid(), diagnostics=["SPAWN_IDENTITY_UNKNOWN"])
+            return record, recovery.model_dump(mode="json"), []
         no_process_confirmed = (record is not None and record["process"] is not None and not record["process"]["started"])
         if process is None and lease.get("spawn_intent") and not no_process_confirmed:
             recovery = RemoteRecoveryCheck(request_id=lease["request_id"], run_id=lease["run_id"], checked_at=utc_now(),
+                                             **clock_fields,
                                              worker_alive=worker_alive, group_empty=None, identity_match=True,
                                              status="UNKNOWN", observer_pid=os.getpid(), observer_uid=os.getuid(),
                                              diagnostics=["SPAWN_IDENTITY_UNKNOWN"])
             return record, recovery.model_dump(mode="json"), []
-        members = _group_members(process["pgid"], process["session_id"]) if process is not None else []
+        groups = lease.get("processes", [process] if process is not None else [])
+        members = sorted({pid for group in groups for pid in _group_members(group["pgid"], group["session_id"])})
         confirmed = not worker_alive and not members
         recovery = RemoteRecoveryCheck(
+            **clock_fields,
             request_id=lease["request_id"], run_id=lease["run_id"], checked_at=utc_now(),
             worker_alive=worker_alive, group_empty=not members, identity_match=True,
             status="CONFIRMED" if confirmed else ("UNKNOWN" if worker_alive else "FAILED"),
@@ -133,7 +145,7 @@ def handle_worker(payload, *, project_root=None):
                           ("run_id", r"[0-9a-f]{32}"), ("control_token", r"[0-9a-f]{64}")):
         if not isinstance(payload[name], str) or not re.fullmatch(pattern, payload[name]):
             raise ValueError("invalid lifecycle identity")
-    if payload["operation"] not in {"EXECUTE", "STATUS", "CANCEL"}:
+    if payload["operation"] not in {"EXECUTE", "STATUS", "CANCEL", "DESCRIBE_CUDA"}:
         raise ValueError("unregistered lifecycle operation")
     packet = {"schema_version": "1.0", "operation": payload["operation"], "nonce": payload["nonce"],
               "request_id": payload["request_id"], "run_id": payload["run_id"], "worker_exit_code": 0,
@@ -144,11 +156,27 @@ def handle_worker(payload, *, project_root=None):
         return packet
     packet["target_environment"] = canonical_target_environment()
     packet["worker_identity"] = _identity(os.getpid())
+    if payload["operation"] == "DESCRIBE_CUDA":
+        if any(payload[name] is not None for name in ("request", "authorization", "policy", "snapshot", "tool_record")):
+            packet["diagnostics"] = ["DESCRIPTION_HAS_EXECUTION_INPUTS"]
+            return packet
+        from .cuda_smoke_worker import describe_cuda_smoke
+        packet["cuda_description"] = describe_cuda_smoke(
+            Path(project_root or Path(__file__).resolve().parent.parent).resolve(strict=True), task_root())
+        return packet
     if payload["operation"] != "EXECUTE":
         if any(payload[name] is not None for name in ("request", "authorization", "policy", "snapshot", "tool_record")):
             packet["diagnostics"] = ["CONTROL_HAS_EXECUTION_INPUTS"]
             return packet
         packet["record"], packet["recovery"], packet["diagnostics"] = _control(payload)
+        if packet["record"] is not None and packet["record"].get("execution_schema_version") == "1.1":
+            try:
+                from .native_evidence import export_native_evidence
+                original = ExecutionRecord.model_validate(packet["record"])
+                packet["native_evidence"] = export_native_evidence(
+                    task_root() / payload["run_id"], original).model_dump(mode="json")
+            except (OSError, ValueError):
+                packet["diagnostics"].append("NATIVE_EVIDENCE_RECHECK_FAILED")
         return packet
 
     req = ExecutionRequest.model_validate(payload["request"])
@@ -158,22 +186,36 @@ def handle_worker(payload, *, project_root=None):
     tool = ToolResult.model_validate(payload["tool_record"])
     if req.request_id != payload["request_id"]:
         raise ValueError("task request identity mismatch")
+    cuda = req.request_schema_version == "1.2"
     events = [LifecycleEvent(sequence=0, state="CREATED", observed_at=utc_now(),
-                              source="WSL lifecycle worker", reason="Validated request received")]
+        source="WSL lifecycle worker", reason="Validated request received",
+        **({"monotonic_ns": time.monotonic_ns()} if cuda else {}))]
     process = None
     folder = None
     lease = None
     native_events = []
     gate_failures = []
+    cuda_smoke = None
+    if cuda:
+        from .models.lifecycle import CudaSmokeObservation
+        cuda_smoke = CudaSmokeObservation(source_sha256=req.candidate_sha256, arch=req.cuda_toolchain.arch,
+                                          tool_versions=req.cuda_toolchain.version_records)
 
     def event(state, reason):
         events.append(LifecycleEvent(sequence=len(events), state=state, observed_at=utc_now(),
-                                     source="WSL lifecycle worker", reason=reason))
+            source="WSL lifecycle worker", reason=reason,
+            **({"monotonic_ns": time.monotonic_ns()} if cuda else {})))
 
     def finish(state, diagnostics):
         actual_tool = process.tool_identity if process is not None else req.tool_identity
         event(state, "; ".join(diagnostics) if diagnostics else "Observed terminal process and cleanup state")
+        if cuda and any(aware_time(events[i].observed_at) < aware_time(events[i - 1].observed_at)
+                        for i in range(1, len(events))):
+            diagnostics = [*diagnostics, "WALL_CLOCK_REGRESSION_OBSERVED_LOCAL_MONOTONIC_ORDER_RETAINED"]
         record = ExecutionRecord(
+            execution_schema_version="1.1" if cuda else "1.0", cuda_smoke=cuda_smoke,
+            **({"started_monotonic_ns": events[0].monotonic_ns,
+                "finished_monotonic_ns": events[-1].monotonic_ns} if cuda else {}),
             request_id=req.request_id, run_id=payload["run_id"], request_sha256=request_sha256(req),
             authorization_sha256=None if auth is None else contract_digest(OperatorAuthorization, auth),
             policy_sha256=contract_digest(PreflightPolicy, policy), snapshot_sha256=snapshot_sha256(snapshot),
@@ -198,6 +240,14 @@ def handle_worker(payload, *, project_root=None):
                     stream.flush()
                     os.fsync(stream.fileno())
             _write_json(folder / "execution_record.json", packet["record"])
+            if cuda:
+                from .native_evidence import export_native_evidence
+                try:
+                    native = export_native_evidence(folder, record)
+                    packet["native_evidence"] = native.model_dump(mode="json")
+                    _write_json(folder / "native_bundle.json", packet["native_evidence"])
+                except (OSError, ValueError):
+                    packet["diagnostics"].append("NATIVE_EVIDENCE_EXPORT_FAILED")
         return packet
 
     try:
@@ -214,9 +264,25 @@ def handle_worker(payload, *, project_root=None):
                  "control_token_sha256": hashlib.sha256(payload["control_token"].encode("ascii")).hexdigest(),
                  "target_environment": packet["target_environment"], "worker": packet["worker_identity"],
                  "boot_id": _boot_id(), "process": None, "spawn_intent": False}
+        if cuda:
+            lease["cuda_clock"] = {"source": "CLOCK_MONOTONIC within target boot", "boot_id": lease["boot_id"]}
         _write_json(folder / "lease.json", lease)
-        for name, model in (("request.json", req), ("authorization.json", auth), ("policy.json", policy), ("snapshot.json", snapshot)):
+        for name, model in (("request.json", req), ("authorization.json", auth), ("policy.json", policy), ("snapshot.json", snapshot),
+                            *(([("tool_record.json", tool)]) if cuda else [])):
             _write_json(folder / name, None if model is None else model.model_dump(mode="json"))
+        if cuda:
+            from .cuda_registry import CUDA_SMOKE_RELATIVE_PATH, CUDA_SMOKE_SOURCE
+            registered_source = root / CUDA_SMOKE_RELATIVE_PATH
+            if registered_source.is_symlink() or registered_source.read_bytes() != CUDA_SMOKE_SOURCE:
+                return finish("REJECTED", ["REGISTERED_CUDA_SOURCE_IDENTITY_MISMATCH"])
+            work = folder / "work"
+            work.mkdir(mode=0o700, exist_ok=False)
+            (work / "out").mkdir(mode=0o700, exist_ok=False)
+            with (work / "safe_smoke.cu").open("xb") as stream:
+                stream.write(CUDA_SMOKE_SOURCE)
+                stream.flush()
+                os.fsync(stream.fileno())
+            (work / "safe_smoke.cu").chmod(0o600)
     except FileExistsError:
         folder = None
         return finish("REJECTED", ["TASK_ID_CONFLICT"])
@@ -224,10 +290,19 @@ def handle_worker(payload, *, project_root=None):
         folder = None
         return finish("UNKNOWN", ["PRIVATE_TASK_STORAGE_UNAVAILABLE"])
     try:
-        action = get_registered_action(req.fixture_id)
+        if cuda:
+            from .cuda_registry import get_cuda_smoke_action
+            action = get_cuda_smoke_action()
+        else:
+            action = get_registered_action(req.fixture_id)
     except ValueError:
         return finish("UNSUPPORTED", ["ACTION_NOT_REGISTERED"])
-    if (req.request_schema_version != "1.1" or req.authorized_action != "FIXED_FIXTURE_CHECK" or req.tool_role != "fixture_python"
+    cuda_scope_ok = (cuda and req.authorized_action == "SAFE_CUDA_SMOKE" and req.tool_role == "nvcc"
+        and req.fixture_id == action.fixture_id and req.cwd == str(folder / "work")
+        and req.candidate_path == str(folder / "work" / "safe_smoke.cu")
+        and req.candidate_sha256 == action.sha256 and policy.scope_root == req.cwd
+        and policy.fixture_hashes == {action.fixture_id: action.sha256})
+    if not cuda_scope_ok and (req.request_schema_version != "1.1" or req.authorized_action != "FIXED_FIXTURE_CHECK" or req.tool_role != "fixture_python"
             or req.candidate_path != str(root / action.relative_path) or req.cwd != str(root)
             or req.candidate_sha256 != action.sha256 or policy.scope_root != str(root)
             or policy.fixture_hashes != {action.fixture_id: action.sha256}):
@@ -240,14 +315,24 @@ def handle_worker(payload, *, project_root=None):
     elif actual_support["status"] != "OBSERVED":
         actual_policy["resource_support"] = actual_support
     try:
-        current = _snapshot(packet["target_environment"])
+        if cuda:
+            from .cuda_smoke_worker import cuda_snapshot
+            current = cuda_snapshot(packet["target_environment"])
+        else:
+            current = _snapshot(packet["target_environment"])
         if current.environment_id != req.platform_environment_id:
             return finish("REJECTED", ["CURRENT_TARGET_IDENTITY_MISMATCH"])
         actual_python = measure_tool_identity(sys.executable, cwd=root)
         if actual_python.status != "OBSERVED":
             return finish("UNKNOWN", ["WORKER_TOOL_IDENTITY_UNKNOWN"])
-        if (actual_python.resolved_path, actual_python.file_sha256) != (req.tool_identity.resolved_path, req.tool_identity.file_sha256):
+        expected_python = req.cuda_toolchain.tools["guard_python"] if cuda else req.tool_identity
+        if (actual_python.resolved_path, actual_python.file_sha256) != (expected_python.resolved_path, expected_python.file_sha256):
             return finish("REJECTED", ["WORKER_TOOL_IDENTITY_MISMATCH"])
+        if cuda:
+            from .cuda_registry import select_cuda_arch
+            from .cuda_smoke_worker import validate_cuda_versions
+            select_cuda_arch(req.cuda_toolchain.arch, current, expected_nvcc_path=req.tool_identity.resolved_path)
+            validate_cuda_versions(req.cuda_toolchain, current)
         checked = preflight_execution(req, snapshot, tool, auth, actual_policy,
                                       observed_platform_type="wsl", observed_target_environment=packet["target_environment"])
         _write_json(folder / "preflight.json", checked.model_dump(mode="json"))
@@ -259,8 +344,7 @@ def handle_worker(payload, *, project_root=None):
     event("PREFLIGHT_READY", "Target files, identities and supported resource policy checked")
 
     def observed(kind, details):
-        if kind in {"STARTING", "RESOURCE_READY"} and not (
-                aware_time(auth.not_before) <= datetime.now(timezone.utc) < aware_time(auth.expires_at)):
+        if kind in {"STARTING", "RESOURCE_READY", "TOOL_EXEC_READY"} and not authorization_active(auth, now=datetime.now(timezone.utc)):
             gate_failures.append("AUTHORIZATION_EXPIRED_AT_GATE")
             native_events.append({"kind": "AUTHORIZATION_GATE_REJECTED", "observed_at": utc_now(),
                                   "details": {"code": "AUTHORIZATION_EXPIRED_AT_GATE", "gate": kind}})
@@ -276,24 +360,36 @@ def handle_worker(payload, *, project_root=None):
         if kind in {"STARTING", "WORKER_CHILD_STARTED"}:
             if kind == "STARTING":
                 lease["spawn_intent"] = True
+                if cuda:
+                    lease["active_spawn_pending"] = True
             else:
                 lease["process"] = details
+                if cuda:
+                    lease.setdefault("processes", []).append(details)
+                    lease["active_spawn_pending"] = False
             update = folder / "lease.next.json"
             _write_json(update, lease)
             os.replace(update, folder / "lease.json")
         if kind in {"STARTING", "RUNNING"}:
-            event(kind, "Observed registered process " + kind.lower())
+            if not cuda or all(entry.state != kind for entry in events):
+                event(kind, "Observed registered process " + kind.lower())
 
     from .lifecycle_process import run_registered_action
     try:
-        outcome = run_registered_action(req.fixture_id, req.resource_limits, expected_tool=req.tool_identity,
+        if cuda:
+            from .cuda_smoke_worker import run_cuda_workflow
+            outcome = run_cuda_workflow(req, auth, current, folder, nonce=payload["nonce"], on_event=observed, save_json=_write_json)
+            cuda_smoke = outcome.smoke
+        else:
+            outcome = run_registered_action(req.fixture_id, req.resource_limits, expected_tool=req.tool_identity,
                                          cwd=req.cwd, target_environment=packet["target_environment"],
                                          request_id=req.request_id, run_id=payload["run_id"], nonce=payload["nonce"],
                                          cancellation_file=folder / "cancel.json", on_event=observed)
         process = outcome.process
         if gate_failures and not process.action_started:
-            return finish("REJECTED", gate_failures + process.diagnostics)
-        return finish(outcome.state, process.diagnostics)
+            return finish("UNKNOWN" if cuda and any(e.state == "RUNNING" for e in events) else "REJECTED",
+                          gate_failures + process.diagnostics)
+        return finish(outcome.state, outcome.diagnostics if cuda else process.diagnostics)
     except (OSError, ValueError):
         # A runner failure cannot establish cleanup or execution success.
         return finish("UNKNOWN", ["RUNNER_OR_EVIDENCE_FAILURE"])

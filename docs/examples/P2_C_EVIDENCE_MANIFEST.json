@@ -1,0 +1,296 @@
+{
+  "synthetic_example": true,
+  "description": "Fabricated offline schema example, not original tool evidence, an actual experiment, or an operator authorization.",
+  "manifest": {
+    "evidence_schema_version": "1.1",
+    "request_id": "cccccccccccccccccccccccccccccccc",
+    "run_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "execution_record_sha256": "db4e499ecab7e756d1ea5e0894be746ec25f92872aad1f7b9c9b792e84effba4",
+    "request_sha256": "5b8de09e746f398eccdc24ab5024976bffdcc82d3dfe8a274e0d4565431c4afa",
+    "authorization_sha256": "b00144201bf1028d7b6281bee0169076dda71e1314f7dc60330648a4e8fc8287",
+    "policy_sha256": "568c725daa18257962bc7d8c7d6df8f1ebc222b71268c327041dc104d7fa4e0a",
+    "snapshot_sha256": "a1fa827a4b2cf0eedbde755fb2fc1aae1591012c52df340bee568661ddacb801",
+    "candidate_sha256": "50e0b1c170424527056a2343443be06475e500dd19ef6186e4d3aaca1a8c5931",
+    "platform_environment_id": "sha256:6f22a39a97047a26f6d2c15e5d938c689dfd1c36308b2f42e346dc9081795373",
+    "platform_probe_id": "fixture-id",
+    "tool_record_id": "sha256:9133958569b7d295788b11d415ff2382773ee49430faf35e683562c1c0adbd1a",
+    "tool_file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "collector_version": "p2c-1.1",
+    "remote_status": "COMPLETED",
+    "effective_status": "COMPLETED",
+    "cleanup_confirmation": "CONFIRMED",
+    "artifacts": {
+      "binding_tool_result.json": {
+        "file": "binding_tool_result.json",
+        "size_bytes": 1819,
+        "sha256": "4dc1f6e4151d0932af50431fd96dd00f4a406a41330aebca126bf73834c629f7"
+      },
+      "execution_record.json": {
+        "file": "execution_record.json",
+        "size_bytes": 39701,
+        "sha256": "29180aba89966749b00e39da65be6c181a954b74efea6c03e10611aeaa407558"
+      },
+      "execution_request.json": {
+        "file": "execution_request.json",
+        "size_bytes": 10400,
+        "sha256": "d594b4b114086b0c6a051d8f5ffe702767a8784643185bfe2e439c997f8b2322"
+      },
+      "lifecycle.json": {
+        "file": "lifecycle.json",
+        "size_bytes": 1381,
+        "sha256": "8e1eb098ac44f3f32ff750528929172e437e4e538830d9813cdefaac5f86c0af"
+      },
+      "native_authorization.json": {
+        "file": "native_authorization.json",
+        "size_bytes": 7779,
+        "sha256": "afe5636e66cb6e27aaf437d4a20bee019dadc73621f6548b2b47b25296e84cdc"
+      },
+      "native_evidence_index.json": {
+        "file": "native_evidence_index.json",
+        "size_bytes": 6820,
+        "sha256": "7f5c9c5a7e8f9364c90ff63ec4ce13d3229fdb07110c31cd7bc71d2a85ff2d4a"
+      },
+      "native_execution_record.json": {
+        "file": "native_execution_record.json",
+        "size_bytes": 29969,
+        "sha256": "679423b9eb04d350b2d1b7d02f51b4a4fc921509eeac210a90775be873eab48c"
+      },
+      "native_lease.json": {
+        "file": "native_lease.json",
+        "size_bytes": 214,
+        "sha256": "5b83ccc1a2eff6c86c9cef8dd8138e8e651cc29194c1cbc98e853c35d57ba999"
+      },
+      "native_policy.json": {
+        "file": "native_policy.json",
+        "size_bytes": 8229,
+        "sha256": "b46e760f99985bb09c273642d9ce5ac282bf05f7be8b679ea7c206758ed77b59"
+      },
+      "native_preflight.json": {
+        "file": "native_preflight.json",
+        "size_bytes": 448,
+        "sha256": "e8cbae24e42a7eac71137cd810c5eaf07237453b2500a2daa39f696fb6106221"
+      },
+      "native_request.json": {
+        "file": "native_request.json",
+        "size_bytes": 8534,
+        "sha256": "4ae7071845d7182654a026bf45e12ad89640d971a4deee5a60acfb969e7b642e"
+      },
+      "native_snapshot.json": {
+        "file": "native_snapshot.json",
+        "size_bytes": 5361,
+        "sha256": "200a8eefb5da7f53b4246ace7523724f6c4938df52455cc523c012c848462471"
+      },
+      "native_stderr.bin": {
+        "file": "native_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_stdout.bin": {
+        "file": "native_stdout.bin",
+        "size_bytes": 42,
+        "sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf"
+      },
+      "native_steps_compile_process_result.json": {
+        "file": "native_steps_compile_process_result.json",
+        "size_bytes": 3048,
+        "sha256": "fc11acffcbd9e9e7496525bd0ddc41367cb26fc252a3aae816027ada243328f6"
+      },
+      "native_steps_compile_stderr.bin": {
+        "file": "native_steps_compile_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_steps_compile_stdout.bin": {
+        "file": "native_steps_compile_stdout.bin",
+        "size_bytes": 38,
+        "sha256": "c4a54bdd86e9da7a7cc1828b3ffb23fa6d5665707ee5ac5da960751049ee52a2"
+      },
+      "native_steps_cuobjdump_process_result.json": {
+        "file": "native_steps_cuobjdump_process_result.json",
+        "size_bytes": 2964,
+        "sha256": "9c682cd28af56e6601fb3b0d3838a222f5d5f8aa2b94ebdc4a8de0f35ef033b0"
+      },
+      "native_steps_cuobjdump_stderr.bin": {
+        "file": "native_steps_cuobjdump_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_steps_cuobjdump_stdout.bin": {
+        "file": "native_steps_cuobjdump_stdout.bin",
+        "size_bytes": 43,
+        "sha256": "80ea4b6518454f5b2306314b7f449231ebaa008383d78c790c17cd502e307098"
+      },
+      "native_steps_cuobjdump_version_process_result.json": {
+        "file": "native_steps_cuobjdump_version_process_result.json",
+        "size_bytes": 2928,
+        "sha256": "ca917c0a1ef4753731501fc11b9e31a53766b28c991a3abaea5cc749e12aa9d1"
+      },
+      "native_steps_cuobjdump_version_stderr.bin": {
+        "file": "native_steps_cuobjdump_version_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_steps_cuobjdump_version_stdout.bin": {
+        "file": "native_steps_cuobjdump_version_stdout.bin",
+        "size_bytes": 43,
+        "sha256": "80ea4b6518454f5b2306314b7f449231ebaa008383d78c790c17cd502e307098"
+      },
+      "native_steps_nvcc_version_process_result.json": {
+        "file": "native_steps_nvcc_version_process_result.json",
+        "size_bytes": 2895,
+        "sha256": "ba8764f64d5cf1608819edf9b4873fc18efc9008635aa6bf639540e965927859"
+      },
+      "native_steps_nvcc_version_stderr.bin": {
+        "file": "native_steps_nvcc_version_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_steps_nvcc_version_stdout.bin": {
+        "file": "native_steps_nvcc_version_stdout.bin",
+        "size_bytes": 38,
+        "sha256": "c4a54bdd86e9da7a7cc1828b3ffb23fa6d5665707ee5ac5da960751049ee52a2"
+      },
+      "native_steps_nvdisasm_process_result.json": {
+        "file": "native_steps_nvdisasm_process_result.json",
+        "size_bytes": 2958,
+        "sha256": "be872cfc6fef7be1959429fc7eb1aca676be66f27079518d67dd0c0f405c0de0"
+      },
+      "native_steps_nvdisasm_stderr.bin": {
+        "file": "native_steps_nvdisasm_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_steps_nvdisasm_stdout.bin": {
+        "file": "native_steps_nvdisasm_stdout.bin",
+        "size_bytes": 42,
+        "sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf"
+      },
+      "native_steps_nvdisasm_version_process_result.json": {
+        "file": "native_steps_nvdisasm_version_process_result.json",
+        "size_bytes": 2919,
+        "sha256": "88c67fceea70db17a6f94dc364d9c3d03d575cf5f668bdad8e8607335cf93e9a"
+      },
+      "native_steps_nvdisasm_version_stderr.bin": {
+        "file": "native_steps_nvdisasm_version_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_steps_nvdisasm_version_stdout.bin": {
+        "file": "native_steps_nvdisasm_version_stdout.bin",
+        "size_bytes": 42,
+        "sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf"
+      },
+      "native_tool_record.json": {
+        "file": "native_tool_record.json",
+        "size_bytes": 1675,
+        "sha256": "d23c2c03262f7891d2286aeec25cab7f981df3c48aee4ef9086594760a066b84"
+      },
+      "native_work_out_safe_smoke.cubin": {
+        "file": "native_work_out_safe_smoke.cubin",
+        "size_bytes": 1280,
+        "sha256": "14ab49627750694272554004703693cae6956a40e7d456fad1b1d3ef260d023a"
+      },
+      "native_work_safe_smoke.cu": {
+        "file": "native_work_safe_smoke.cu",
+        "size_bytes": 205,
+        "sha256": "50e0b1c170424527056a2343443be06475e500dd19ef6186e4d3aaca1a8c5931"
+      },
+      "native_worker_events.jsonl": {
+        "file": "native_worker_events.jsonl",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "operator_authorization.json": {
+        "file": "operator_authorization.json",
+        "size_bytes": 9555,
+        "sha256": "bf8694607c3eaefc18da23df549843da31a8276d82c9f010d84d7d888662c6b3"
+      },
+      "platform_snapshot.json": {
+        "file": "platform_snapshot.json",
+        "size_bytes": 6843,
+        "sha256": "19ab9784754c5e0fc71db2e53820cb9b790238b3b07ae2ccf49d84f8f325c28a"
+      },
+      "preflight_policy.json": {
+        "file": "preflight_policy.json",
+        "size_bytes": 10099,
+        "sha256": "bbe334c5564e085389be153ae4316566f4eba2c1e7cc0670383aa1203a4c6410"
+      },
+      "process_result.json": {
+        "file": "process_result.json",
+        "size_bytes": 3288,
+        "sha256": "8a436a3fe8228378d57279269ed344d4dd414939302441875da254770f7e6577"
+      },
+      "recovery_packet.json": {
+        "file": "recovery_packet.json",
+        "size_bytes": 156059,
+        "sha256": "f689f0a63a531f7f2eec13bcbfd9e02d94f212ef4ac3e70fee083d81ac8784db"
+      },
+      "recovery_stderr.bin": {
+        "file": "recovery_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "recovery_stdout.bin": {
+        "file": "recovery_stdout.bin",
+        "size_bytes": 156059,
+        "sha256": "f689f0a63a531f7f2eec13bcbfd9e02d94f212ef4ac3e70fee083d81ac8784db"
+      },
+      "recovery_transport_result.json": {
+        "file": "recovery_transport_result.json",
+        "size_bytes": 209820,
+        "sha256": "0bacffaa405b11ad46393b7e6074ac06983d0eb2181e9237b9eed3550e19a792"
+      },
+      "stderr.bin": {
+        "file": "stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout.bin": {
+        "file": "stdout.bin",
+        "size_bytes": 42,
+        "sha256": "4c01a9b9db6018aa5c98db865eaac4f98d80fecf3d8fbce730ed6958ff3f50cf"
+      },
+      "transport_result.json": {
+        "file": "transport_result.json",
+        "size_bytes": 209296,
+        "sha256": "ed6036920e160ec92badfa88058df3e56617f9ac472248523cbf363cf26c07f7"
+      },
+      "transport_stderr.bin": {
+        "file": "transport_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transport_stdout.bin": {
+        "file": "transport_stdout.bin",
+        "size_bytes": 155666,
+        "sha256": "51551b693177d2eece2ca347baa8365614f6468dad847aa477f7225a41cb1f60"
+      },
+      "worker_packet.json": {
+        "file": "worker_packet.json",
+        "size_bytes": 155666,
+        "sha256": "51551b693177d2eece2ca347baa8365614f6468dad847aa477f7225a41cb1f60"
+      }
+    },
+    "capture_complete": true,
+    "truncated": false,
+    "protection": {
+      "method": "protected Windows DACL: current process user and SYSTEM",
+      "status": "APPLIED"
+    },
+    "native_evidence": {
+      "status": "VERIFIED",
+      "index_sha256": "7f5c9c5a7e8f9364c90ff63ec4ce13d3229fdb07110c31cd7bc71d2a85ff2d4a",
+      "file_count": 31,
+      "size_bytes": 81694,
+      "diagnostics": []
+    },
+    "publication": {
+      "file_fsync": true,
+      "atomic_publication": true,
+      "directory_fsync": "UNSUPPORTED",
+      "guarantee": "FILE_FSYNC_AND_ATOMIC_PUBLICATION"
+    },
+    "candidate_execution_status": "NOT_EXECUTED",
+    "verification_status": "NOT_VERIFIED"
+  }
+}

@@ -8,7 +8,7 @@ import time
 from typing import Literal
 import uuid
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 
 from .execution_bridge import build_execution_worker_source, _linux_root
 from .execution_worker import contract_digest
@@ -36,7 +36,7 @@ class WorkerIdentity(BaseModel):
 class LifecyclePacket(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True, allow_inf_nan=False)
     schema_version: Literal["1.0"]
-    operation: Literal["EXECUTE", "STATUS", "CANCEL"]
+    operation: Literal["EXECUTE", "STATUS", "CANCEL", "DESCRIBE_CUDA"]
     nonce: str = Field(pattern=r"^[0-9a-f]{32}$")
     request_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     run_id: str = Field(pattern=r"^[0-9a-f]{32}$")
@@ -49,6 +49,16 @@ class LifecyclePacket(BaseModel):
     diagnostics: list[str]
     candidate_execution_status: Literal["NOT_EXECUTED"]
     verification_status: Literal["NOT_VERIFIED"]
+    cuda_description: dict | None = None
+    native_evidence: dict | None = None
+
+    @model_serializer(mode="wrap")
+    def compatible_dump(self, handler):
+        data = handler(self)
+        for key in ("cuda_description", "native_evidence"):
+            if data[key] is None:
+                data.pop(key)
+        return data
 
     @field_validator("worker_exit_code", mode="before")
     @classmethod
@@ -59,6 +69,20 @@ class LifecyclePacket(BaseModel):
 
     @model_validator(mode="after")
     def identities(self):
+        if self.cuda_description is not None:
+            from .cuda_smoke_worker import CudaSmokeDescription
+            description = CudaSmokeDescription.model_validate(self.cuda_description)
+            if self.operation != "DESCRIBE_CUDA" or self.record is not None:
+                raise ValueError("CUDA description cannot dispatch an execution")
+            if description.snapshot is not None and description.snapshot.metadata.get("environment_label") not in (None, self.target_environment):
+                raise ValueError("CUDA description belongs to a foreign environment")
+        if self.native_evidence is not None:
+            from .native_evidence import NativeEvidenceBundle
+            native = NativeEvidenceBundle.model_validate(self.native_evidence)
+            if self.record is None or self.record.execution_schema_version != "1.1":
+                raise ValueError("native evidence requires its corresponding new execution record")
+            if native.index.request_id != self.request_id or native.index.run_id != self.run_id:
+                raise ValueError("native evidence belongs to another request or run")
         if self.record is not None and (self.record.request_id != self.request_id or self.record.run_id != self.run_id
                                         or self.record.target_environment != self.target_environment):
             raise ValueError("lifecycle record belongs to another task or target")
@@ -107,7 +131,21 @@ def parse_lifecycle_packet(raw, *, operation, nonce, request_id, run_id, target_
                 raise ValueError("record changed its exact bound execution request")
             if record.process is not None and record.process.action_started:
                 process = record.process
-                if (process.cwd != req.cwd or process.resource_limits != req.resource_limits
+                if req.request_schema_version == "1.2":
+                    from .cuda_registry import build_cuda_step_argv
+                    if record.cuda_smoke is None or record.cuda_smoke.arch != req.cuda_toolchain.arch:
+                        raise ValueError("CUDA observation changed its authorized architecture")
+                    for step in record.cuda_smoke.steps:
+                        role = "nvcc" if step.step_id == "compile" else step.step_id.removesuffix("_version")
+                        expected_tool = req.cuda_toolchain.tools[role]
+                        observed = step.process
+                        if (observed.cwd != req.cwd or observed.resource_limits != req.resource_limits
+                                or observed.target_environment != target_environment
+                                or observed.argv != build_cuda_step_argv(step.step_id, req.cuda_toolchain.tools, req.cuda_toolchain.arch, req.cwd)
+                                or (observed.tool_identity.resolved_path, observed.tool_identity.file_sha256)
+                                != (expected_tool.resolved_path, expected_tool.file_sha256)):
+                            raise ValueError("CUDA step changed fixed argv, actual tool, target or limits")
+                elif (process.cwd != req.cwd or process.resource_limits != req.resource_limits
                         or process.tool_identity.resolved_path != req.tool_identity.resolved_path
                         or process.tool_identity.file_sha256 != req.tool_identity.file_sha256):
                     raise ValueError("native process changed tool, working directory or limits")
@@ -154,7 +192,9 @@ def _transport(payload, handle, *, expected_request=None, artifact_root=None):
     diagnostics = []
     try:
         record = run_tool([executable, "--distribution", handle.distro, "--user", handle.user,
-                           "--exec", handle.linux_python, "-I", "-"], timeout_seconds=120 if payload["operation"] == "EXECUTE" else 30,
+                           "--exec", handle.linux_python, "-I", "-"], timeout_seconds=(300 if expected_request is not None
+                           and expected_request.request_schema_version == "1.2" else 120) if payload["operation"] == "EXECUTE"
+                           else 60 if payload["operation"] == "DESCRIBE_CUDA" else 30,
                           max_output_bytes=16777216, input_bytes=source, artifact_root=artifact_root,
                           allowed_tool_identities={} if launcher.status != "OBSERVED" else {launcher.resolved_path: launcher.file_sha256},
                           command_source="fixed registered P2-B lifecycle " + payload["operation"])
@@ -176,6 +216,19 @@ def _transport(payload, handle, *, expected_request=None, artifact_root=None):
     return record, packet, diagnostics
 
 
+def describe_cuda_smoke_wsl(*, distro="Ubuntu-22.04", user="pocdev",
+                            linux_python="/home/pocdev/.venvs/cuda-poc-generator/bin/python",
+                            linux_project_root, artifact_root=None):
+    """Fixed read-only CUDA description; never accepts source, argv or flags."""
+    handle = TaskHandle(request_id=uuid.uuid4().hex, run_id=uuid.uuid4().hex,
+        control_token=uuid.uuid4().hex + uuid.uuid4().hex, distro=distro, user=user,
+        linux_python=linux_python, linux_project_root=linux_project_root)
+    payload = {"operation": "DESCRIBE_CUDA", "nonce": uuid.uuid4().hex,
+        "request_id": handle.request_id, "run_id": handle.run_id, "control_token": handle.control_token,
+        "request": None, "authorization": None, "policy": None, "snapshot": None, "tool_record": None}
+    return _transport(payload, handle, artifact_root=artifact_root)
+
+
 def control_task_wsl(handle, *, operation="STATUS", expected_request=None, artifact_root=None):
     if operation not in {"STATUS", "CANCEL"}:
         raise ValueError("only scoped status and cancellation are supported")
@@ -189,6 +242,7 @@ def control_task_wsl(handle, *, operation="STATUS", expected_request=None, artif
 def _unknown_record(req, auth, policy, snapshot, handle, diagnostics):
     now = datetime.now(timezone.utc).isoformat()
     return ExecutionRecord(
+        execution_schema_version="1.1" if req.request_schema_version == "1.2" else "1.0",
         request_id=req.request_id, run_id=handle.run_id, request_sha256=request_sha256(req),
         authorization_sha256=None if auth is None else contract_digest(OperatorAuthorization, auth),
         policy_sha256=contract_digest(PreflightPolicy, policy), snapshot_sha256=snapshot_sha256(snapshot),

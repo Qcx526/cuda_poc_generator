@@ -58,6 +58,23 @@ def build_operator_context(description, action_id, *, operator_id, authorization
     return req, grant, policy, snapshot, tool
 
 
+def persist_task_handle(handle, output_root=None):
+    """Protect a scoped operator capability without printing its token."""
+    from .lifecycle_artifacts import default_lifecycle_output_root
+    root = Path(output_root) if output_root is not None else default_lifecycle_output_root()
+    folder = root / "controls" / handle.run_id
+    protect_directory(folder)
+    control_file = folder / "operator_handle.json"
+    fd = os.open(control_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "wb") as stream:
+        stream.write((json.dumps(handle.model_dump(mode="json"), sort_keys=True) + "\n").encode("utf-8"))
+        stream.flush()
+        os.fsync(stream.fileno())
+    if os.name != "nt":
+        control_file.chmod(0o600)
+    return control_file
+
+
 def run_authorized_action(*, authorize_fixed_actions, action_id, authorization_reference, operator_id,
                           linux_project_root, distro="Ubuntu-22.04", user="pocdev",
                           linux_python="/home/pocdev/.venvs/cuda-poc-generator/bin/python",
@@ -79,18 +96,7 @@ def run_authorized_action(*, authorize_fixed_actions, action_id, authorization_r
     control_file = None
     def retain_handle(handle):
         nonlocal control_file
-        from .lifecycle_artifacts import default_lifecycle_output_root
-        root = Path(output_root) if output_root is not None else default_lifecycle_output_root()
-        folder = root / "controls" / handle.run_id
-        protect_directory(folder)
-        control_file = folder / "operator_handle.json"
-        fd = os.open(control_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        with os.fdopen(fd, "wb") as stream:
-            stream.write((json.dumps(handle.model_dump(mode="json"), sort_keys=True) + "\n").encode("utf-8"))
-            stream.flush()
-            os.fsync(stream.fileno())
-        if os.name != "nt":
-            control_file.chmod(0o600)
+        control_file = persist_task_handle(handle, output_root)
     result = run_task_wsl(req, grant, policy, snapshot, tool, cancel_after_seconds=cancel_after_seconds,
                           on_task_created=retain_handle, **options)
     folder = write_execution_evidence(output_root, result, request=req, authorization=grant, policy=policy,
