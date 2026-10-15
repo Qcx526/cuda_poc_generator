@@ -170,13 +170,19 @@ def _linux_root(value):
     return str(PurePosixPath(value))
 
 
-def build_execution_worker_source(payload, *, linux_project_root):
+def build_execution_worker_source(payload, *, linux_project_root, worker_entrypoint="fixture"):
     """Pin Python source files to this reviewed host checkout before importing."""
     root = _linux_root(linux_project_root)
+    if worker_entrypoint not in {"fixture", "lifecycle"}:
+        raise ValueError("unregistered worker entry point")
     host_root = Path(__file__).resolve().parent.parent
     hashes = {path.relative_to(host_root).as_posix(): digest_bytes(path.read_bytes())
               for path in sorted((host_root / "src").rglob("*.py"))}
     hashes[FIXTURE_RELATIVE_PATH] = FIXTURE_SHA256
+    if worker_entrypoint == "lifecycle":
+        from .registered_actions import REGISTERED_ACTIONS
+        hashes.update({action.relative_path: action.sha256 for action in REGISTERED_ACTIONS.values()})
+    entrypoint = "src.execution_worker" if worker_entrypoint == "fixture" else "src.lifecycle_worker"
     return ("import hashlib,importlib.abc,importlib.util,json,pathlib,sys\n"
             "ROOT=pathlib.Path(" + repr(root) + ").resolve(strict=True)\n"
             "HASHES=json.loads(" + repr(json.dumps(hashes, sort_keys=True)) + ")\n"
@@ -203,7 +209,7 @@ def build_execution_worker_source(payload, *, linux_project_root):
             "        if selected not in SOURCES: raise ImportError('unmeasured src module')\n"
             "        return importlib.util.spec_from_loader(fullname,VerifiedLoader(selected),is_package=selected==package)\n"
             "sys.meta_path.insert(0,VerifiedFinder())\n"
-            "from src.execution_worker import main\n"
+            "from " + entrypoint + " import main\n"
             "PAYLOAD=json.loads(" + repr(json.dumps(payload, ensure_ascii=True, allow_nan=False)) + ")\n"
             "raise SystemExit(main(PAYLOAD,project_root=ROOT))\n").encode("utf-8")
 

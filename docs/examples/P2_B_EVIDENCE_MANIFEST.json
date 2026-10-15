@@ -1,0 +1,123 @@
+{
+  "synthetic_example": true,
+  "description": "Fabricated offline schema example only. No process/GPU/CVE experiment occurred; this is not raw execution evidence or an operator authorization.",
+  "manifest": {
+    "evidence_schema_version": "1.0",
+    "request_id": "cccccccccccccccccccccccccccccccc",
+    "run_id": "33333333333333333333333333333333",
+    "execution_record_sha256": "472c11fc28017e414a1005dd41ce798f679264ae28c6f222f01c134576c2c7ae",
+    "request_sha256": "77904eeca2889e5c8719e2be14ba8cb5e8c0e9eaa787c73931078e08d2ff2c00",
+    "authorization_sha256": "e76e4fcf5e6e5c0f9b71a5bdf959f1120cc99146d0bacb78d7f32d45396bf315",
+    "policy_sha256": "d376023ebd521330a88976f3a139ac2c6b80b8da6c6c2c052df7080af0c2fe6b",
+    "snapshot_sha256": "3b13fd1355e86fbcc2c13c16d73c550e32f2c05caff45a589d0b28b57cd99e30",
+    "candidate_sha256": "a69c83e61b0fc66ed5b776e2c7ac45d801578be2ed6ebc189f21455f9dcf1bf5",
+    "platform_environment_id": "sha256:ab244d1fa9da12a0b2eac13e13332bfbe6e7089c9c880e09eea03c0ccc05d8e5",
+    "platform_probe_id": "fixture-id",
+    "tool_record_id": "sha256:cca04f5944c741aed035cad908f3db624cb45b66ab655280be285cc009117985",
+    "tool_file_sha256": "3fde1dc95ad24c6e740e7c2f6b340bc4d0ba3cbee5cbfbc3186ec04b2208d6b2",
+    "collector_version": "p2b-1.0",
+    "remote_status": "COMPLETED",
+    "effective_status": "COMPLETED",
+    "cleanup_confirmation": "CONFIRMED",
+    "artifacts": {
+      "binding_tool_result.json": {
+        "file": "binding_tool_result.json",
+        "size_bytes": 1755,
+        "sha256": "a9d745f358d2f6d9262aa1e492471ee503887dd1f260bdce62e8eb49fc330ca5"
+      },
+      "execution_record.json": {
+        "file": "execution_record.json",
+        "size_bytes": 8477,
+        "sha256": "856706dd70bb309b43b5ab763637b5db866f1d28c113dd5e4bc5e8111bf642ee"
+      },
+      "execution_request.json": {
+        "file": "execution_request.json",
+        "size_bytes": 1954,
+        "sha256": "c38a7a0c2e30c196aad769ebf69c3c3ed30398b8cf9fe060a06aae26053c894d"
+      },
+      "lifecycle.json": {
+        "file": "lifecycle.json",
+        "size_bytes": 1075,
+        "sha256": "2a347589ad14dcbe6dc7734d7d610efc9716782ba0dd3a0ad8f6ebe15d54521e"
+      },
+      "operator_authorization.json": {
+        "file": "operator_authorization.json",
+        "size_bytes": 933,
+        "sha256": "f786f4c60f9556154c76328ce9ce93d8938f5abe2ab1c6a8a5e95373c4287abd"
+      },
+      "platform_snapshot.json": {
+        "file": "platform_snapshot.json",
+        "size_bytes": 7686,
+        "sha256": "0abbb7eb0a7b938f4988be955c2aff0a52b0d3bd4c07772c22fc9b17de2dec72"
+      },
+      "preflight_policy.json": {
+        "file": "preflight_policy.json",
+        "size_bytes": 1264,
+        "sha256": "ca957a916a00cca5f881eb30f10dcbcb2688b9a7c6b9336631c90dfd093d6ddd"
+      },
+      "process_result.json": {
+        "file": "process_result.json",
+        "size_bytes": 5445,
+        "sha256": "20ac838e1d9f03b2cd75614e8f11c2ae5e3d77533cba64a87adf2f6f39470bec"
+      },
+      "recovery_packet.json": {
+        "file": "recovery_packet.json",
+        "size_bytes": 8291,
+        "sha256": "93e88d289edc4db88227f606d3321c658fdb94028980e2557f694f01e2ab6dc6"
+      },
+      "recovery_stderr.bin": {
+        "file": "recovery_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "recovery_stdout.bin": {
+        "file": "recovery_stdout.bin",
+        "size_bytes": 8291,
+        "sha256": "93e88d289edc4db88227f606d3321c658fdb94028980e2557f694f01e2ab6dc6"
+      },
+      "recovery_transport_result.json": {
+        "file": "recovery_transport_result.json",
+        "size_bytes": 12796,
+        "sha256": "fbcd0747db2eab3abbd4f37022c27a8aa6353a8fd386ae102cb08ab1e170fe9e"
+      },
+      "stderr.bin": {
+        "file": "stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout.bin": {
+        "file": "stdout.bin",
+        "size_bytes": 33,
+        "sha256": "9a502e273fc8a096446d6aafb0204a8bf3d0893fdafe02062ee30c7e894990cc"
+      },
+      "transport_result.json": {
+        "file": "transport_result.json",
+        "size_bytes": 12396,
+        "sha256": "9ee96973f874eaaa9114837316999371a4d36acf846ac03d01071a27ed1fa805"
+      },
+      "transport_stderr.bin": {
+        "file": "transport_stderr.bin",
+        "size_bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transport_stdout.bin": {
+        "file": "transport_stdout.bin",
+        "size_bytes": 7990,
+        "sha256": "56c743e5bbe7837e57b7143bc3ade6247ae3506e14ade983284053bc1ba05fb7"
+      },
+      "worker_packet.json": {
+        "file": "worker_packet.json",
+        "size_bytes": 7990,
+        "sha256": "56c743e5bbe7837e57b7143bc3ade6247ae3506e14ade983284053bc1ba05fb7"
+      }
+    },
+    "capture_complete": true,
+    "truncated": false,
+    "protection": {
+      "method": "protected Windows DACL: current process user and SYSTEM",
+      "status": "APPLIED"
+    },
+    "candidate_execution_status": "NOT_EXECUTED",
+    "verification_status": "NOT_VERIFIED"
+  }
+}

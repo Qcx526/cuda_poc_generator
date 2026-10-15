@@ -198,7 +198,7 @@ python main.py --cve-id CVE-2024-0124 --no-rag --target-backend wsl --wsl-distro
 | `cuda_poc_v1.status.json` | 生成、静态、执行、验证四组独立状态及候选哈希 |
 | `cuda_run_v1.json` | 当前调用的完整/失败状态与有效产物引用；`COMPLETE` 不表示漏洞成功 |
 
-同一 CVE 的重复生成仍会覆盖当前 `v1` 元数据；请用不同 `--output-dir` 保留完整版本。每次调用有新 `run_id`，失败会更新报告及候选状态，旧源码/旧合格分析保留，并标为 `preexisting_artifacts`，不引用为当前成功。输入无效时报告位于输出根目录。默认输出被 Git 忽略；自定义目录也必须保护原文及私有资料。尚无执行证据系统，`run_id` 只标识生成调用。任意输出目录的工具 import 固定回溯问题仍未修复。
+同一 CVE 的重复生成仍会覆盖当前 `v1` 元数据；请用不同 `--output-dir` 保留完整版本。每次调用有新 `run_id`，失败会更新报告及候选状态，旧源码/旧合格分析保留，并标为 `preexisting_artifacts`，不引用为当前成功。输入无效时报告位于输出根目录。默认输出被 Git 忽略；自定义目录也必须保护原文及私有资料。该生成目录不含实际执行证据，此处 `run_id` 仅标识生成调用；固定无害动作的独立执行证据见下文 P2-B。任意输出目录的工具 import 固定回溯问题仍未修复。
 
 ## 12. 正式只读平台探测与后续实验
 
@@ -238,6 +238,15 @@ P2-A 新增独立的受控请求、操作者授权、身份绑定和 Preflight�
 ```
 
 未给授权 flag 时不启动通信。该命令没有任意候选或 argv 参数，不编译 CUDA；资源不能落实、目标冲突、工具身份不符或快照过期都阻断 fixture。原始证据默认保存在 Git 忽略的私有 `data/outputs/execution_preflight/`，不要把这些目录上传。请求/授权/policy 摘要、原始字节、manifest 和确定性 Markdown 的合同见 [P2-A 执行前置合同](docs/P2_A_EXECUTION_CONTRACT.md)，真实联调见 [独立报告](docs/P2_A_REAL_INTEGRATION.md)。
+
+P2-B 在此基础上增加固定无害动作的执行生命周期、超时/取消、进程组与后代回收、独立 WSL STATUS、ExecutionRecord 和可离线重建的证据报告。仅支持代码注册表中的正常/非零/超时/超量输出/子进程清理及 CPU 测试，生成候选继续 `NOT_EXECUTED`，漏洞状态继续 `NOT_VERIFIED`。操作者明确授权固定测试时使用：
+
+```powershell
+.\.venv\Scripts\python.exe -m src.lifecycle_cli --help
+.\.venv\Scripts\python.exe -m src.lifecycle_cli --authorize-fixed-actions --action p2b-normal-v1 --authorization-reference "your-approval-record" --operator-id "your-operator-id" --linux-project-root "/mnt/f/qcx/code/cuda_poc_generator"
+```
+
+其他动作和取消方式见 [P2-B 生命周期合同](docs/P2_B_EXECUTION_LIFECYCLE.md)。退出 0 只代表固定任务有效完成，不能代表 CVE；非零、超时和资源限制会返回独立状态。Windows launcher 消失不能证明 Linux 已回收，未确认时保留 UNKNOWN/CLEANUP_FAILED。私有 `data/outputs/execution_lifecycle/` 保存原始证据及控制句柄，禁止提交其中的 control token/日志；[P2-B 验收](docs/P2_B_VALIDATION.md) 与 [真实联调摘要](docs/P2_B_REAL_INTEGRATION.md) 区分 Mock、无害真实运行和未执行的 CUDA 测试。
 
 ## 13. 常见问题与测试状态
 

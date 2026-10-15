@@ -1,0 +1,165 @@
+{
+  "synthetic_example": true,
+  "description": "Fabricated offline schema example only. No process/GPU/CVE experiment occurred; this is not raw execution evidence or an operator authorization.",
+  "record": {
+    "execution_schema_version": "1.0",
+    "request_id": "cccccccccccccccccccccccccccccccc",
+    "run_id": "33333333333333333333333333333333",
+    "request_sha256": "77904eeca2889e5c8719e2be14ba8cb5e8c0e9eaa787c73931078e08d2ff2c00",
+    "authorization_sha256": "e76e4fcf5e6e5c0f9b71a5bdf959f1120cc99146d0bacb78d7f32d45396bf315",
+    "policy_sha256": "d376023ebd521330a88976f3a139ac2c6b80b8da6c6c2c052df7080af0c2fe6b",
+    "snapshot_sha256": "3b13fd1355e86fbcc2c13c16d73c550e32f2c05caff45a589d0b28b57cd99e30",
+    "candidate_sha256": "a69c83e61b0fc66ed5b776e2c7ac45d801578be2ed6ebc189f21455f9dcf1bf5",
+    "platform_environment_id": "sha256:ab244d1fa9da12a0b2eac13e13332bfbe6e7089c9c880e09eea03c0ccc05d8e5",
+    "platform_probe_id": "fixture-id",
+    "execution_backend": "wsl",
+    "target_environment": "wsl:Ubuntu-22.04",
+    "tool_record_id": "sha256:cca04f5944c741aed035cad908f3db624cb45b66ab655280be285cc009117985",
+    "tool_identity": {
+      "requested_executable": "/tools/python3.10",
+      "resolved_path": "/tools/python3.10",
+      "status": "OBSERVED",
+      "file_sha256": "3fde1dc95ad24c6e740e7c2f6b340bc4d0ba3cbee5cbfbc3186ec04b2208d6b2",
+      "source": "synthetic fixture"
+    },
+    "authorization_reference": "operator-test-approval",
+    "operator_id": "test-operator",
+    "action_id": "p2b-normal-v1",
+    "status": "COMPLETED",
+    "events": [
+      {
+        "sequence": 0,
+        "state": "CREATED",
+        "observed_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline test",
+        "reason": "synthetic CREATED"
+      },
+      {
+        "sequence": 1,
+        "state": "AUTHORIZED",
+        "observed_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline test",
+        "reason": "synthetic AUTHORIZED"
+      },
+      {
+        "sequence": 2,
+        "state": "PREFLIGHT_READY",
+        "observed_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline test",
+        "reason": "synthetic PREFLIGHT_READY"
+      },
+      {
+        "sequence": 3,
+        "state": "STARTING",
+        "observed_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline test",
+        "reason": "synthetic STARTING"
+      },
+      {
+        "sequence": 4,
+        "state": "RUNNING",
+        "observed_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline test",
+        "reason": "synthetic RUNNING"
+      },
+      {
+        "sequence": 5,
+        "state": "COMPLETED",
+        "observed_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline test",
+        "reason": "synthetic COMPLETED"
+      }
+    ],
+    "process": {
+      "process_schema_version": "1.0",
+      "started": true,
+      "action_started": true,
+      "argv": [
+        "/tools/python3.10",
+        "-I",
+        "-c",
+        "\"\"\"Fixed harmless P2-B resource-gated test program; no CUDA/network.\"\"\"\nimport ctypes\nimport json\nimport os\nimport resource\nimport signal\nimport socket\nimport sys\nimport time\n\nconfig = json.loads(sys.stdin.buffer.read(4097))\nif set(config) != {\"request_id\", \"nonce\", \"cpu_seconds\", \"memory_bytes\", \"control_fd\", \"parent_pid\"}:\n    raise ValueError(\"invalid fixed action configuration\")\nif (type(config[\"cpu_seconds\"]) is not int or not 1 <= config[\"cpu_seconds\"] <= 30\n        or type(config[\"memory_bytes\"]) is not int\n        or not 67108864 <= config[\"memory_bytes\"] <= 1073741824\n        or type(config[\"control_fd\"]) is not int or config[\"control_fd\"] < 3\n        or type(config[\"parent_pid\"]) is not int or config[\"parent_pid\"] < 1):\n    raise ValueError(\"invalid fixed action resource bounds\")\nfor name in (\"request_id\", \"nonce\"):\n    if (not isinstance(config[name], str) or len(config[name]) != 32\n            or any(char not in \"0123456789abcdef\" for char in config[name])):\n        raise ValueError(\"invalid fixed action identity\")\n\ndef arm_parent_death_signal(expected_parent):\n    libc = ctypes.CDLL(None, use_errno=True)\n    if libc.prctl(1, signal.SIGKILL, 0, 0, 0) != 0:\n        raise OSError(ctypes.get_errno(), \"PR_SET_PDEATHSIG failed\")\n    actual = ctypes.c_int()\n    if libc.prctl(2, ctypes.byref(actual), 0, 0, 0) != 0 or actual.value != signal.SIGKILL:\n        raise RuntimeError(\"parent-death signal could not be confirmed\")\n    if os.getppid() != expected_parent:\n        raise RuntimeError(\"trusted parent changed before parent-death signal was armed\")\n    return actual.value\n\nparent_death_signal = arm_parent_death_signal(config[\"parent_pid\"])\nresource.setrlimit(resource.RLIMIT_CPU, (config[\"cpu_seconds\"],) * 2)\nresource.setrlimit(resource.RLIMIT_AS, (config[\"memory_bytes\"],) * 2)\nif (resource.getrlimit(resource.RLIMIT_CPU) != (config[\"cpu_seconds\"],) * 2\n        or resource.getrlimit(resource.RLIMIT_AS) != (config[\"memory_bytes\"],) * 2):\n    raise RuntimeError(\"resource bounds were not applied\")\ncontrol = socket.socket(fileno=config[\"control_fd\"])\ndef notify(message):\n    message.update(request_id=config[\"request_id\"], nonce=config[\"nonce\"])\n    control.sendall((json.dumps(message, sort_keys=True, separators=(\",\", \":\")) + \"\\n\").encode(\"utf-8\"))\nwith open(\"/proc/self/stat\", \"r\", encoding=\"ascii\") as stream:\n    start_ticks = int(stream.read().rsplit(\") \", 1)[1].split()[19])\nnotify({\"event\": \"RESOURCE_READY\", \"pid\": os.getpid(), \"pgid\": os.getpgrp(),\n        \"session_id\": os.getsid(0), \"start_ticks\": start_ticks,\n        \"cpu_seconds\": config[\"cpu_seconds\"], \"memory_bytes\": config[\"memory_bytes\"],\n        \"parent_pid\": config[\"parent_pid\"], \"parent_death_signal\": parent_death_signal})\ncontrol.settimeout(5)\ngate = b\"\"\nwhile len(gate) < 3:\n    block = control.recv(3 - len(gate))\n    if not block:\n        break\n    gate += block\nif gate != b\"GO\\n\":\n    raise RuntimeError(\"trusted parent did not authorize the action gate\")\ncontrol.settimeout(None)\nprint(\"P2-B harmless normal exit\", flush=True)\ncontrol.close()\n"
+      ],
+      "cwd": "/workspace",
+      "target_environment": "wsl:Ubuntu-22.04",
+      "tool_identity": {
+        "requested_executable": "/tools/python3.10",
+        "resolved_path": "/tools/python3.10",
+        "status": "OBSERVED",
+        "file_sha256": "3fde1dc95ad24c6e740e7c2f6b340bc4d0ba3cbee5cbfbc3186ec04b2208d6b2",
+        "source": "synthetic fixture"
+      },
+      "pid": 110,
+      "pgid": 110,
+      "session_id": 110,
+      "start_ticks": 900,
+      "uid": 1000,
+      "gid": 1000,
+      "cpu_usage_seconds": null,
+      "worker_pid": 100,
+      "started_at": "2026-10-14T00:00:02+00:00",
+      "finished_at": "2026-10-14T00:00:02+00:00",
+      "duration_seconds": 0.0,
+      "returncode": 0,
+      "linux_signal": null,
+      "timed_out": false,
+      "cancelled": false,
+      "truncated": false,
+      "capture_failed": false,
+      "resource_limit_reason": null,
+      "stdout_b64": "c3ludGhldGljIGhhcm1sZXNzIGFjdGlvbiBvdXRwdXQK",
+      "stderr_b64": "",
+      "stdout_sha256": "9a502e273fc8a096446d6aafb0204a8bf3d0893fdafe02062ee30c7e894990cc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_size_bytes": 33,
+      "stderr_size_bytes": 0,
+      "resource_limits": {
+        "wall_time_seconds": 3.0,
+        "cpu_seconds": 1,
+        "memory_bytes": 134217728,
+        "max_output_bytes": 4096,
+        "process_scope": "POSIX_PROCESS_GROUP"
+      },
+      "resources": {
+        "status": "ENFORCED",
+        "wall_watchdog": true,
+        "output_cap": true,
+        "process_group": true,
+        "cpu_seconds": 1,
+        "memory_bytes": 134217728,
+        "verification_source": "synthetic offline resource observation",
+        "cgroup_v2_status": "NOT_CHECKED",
+        "cgroup_v2_detail": "not checked",
+        "gpu_vram_limit": "NOT_IMPLEMENTED",
+        "network_isolation": "NOT_IMPLEMENTED"
+      },
+      "cleanup": {
+        "status": "CONFIRMED",
+        "termination_method": "NONE",
+        "parent_reaped": true,
+        "group_absent": true,
+        "descendants_absent": true,
+        "checked_at": "2026-10-14T00:00:02+00:00",
+        "source": "synthetic offline cleanup observation",
+        "observed_descendant_pids": [],
+        "remaining_pids": [],
+        "diagnostics": []
+      },
+      "diagnostics": []
+    },
+    "worker_pid": 100,
+    "started_at": "2026-10-14T00:00:02+00:00",
+    "finished_at": "2026-10-14T00:00:02+00:00",
+    "diagnostics": [
+      "Synthetic observations only"
+    ],
+    "evidence_files": [
+      "stdout.bin",
+      "stderr.bin",
+      "lifecycle.json"
+    ],
+    "candidate_execution_status": "NOT_EXECUTED",
+    "fixture_execution_status": "STARTED",
+    "verification_status": "NOT_VERIFIED"
+  }
+}

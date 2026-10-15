@@ -46,7 +46,7 @@ class ExecutionResourceLimits(StrictContract):
 
 
 class ExecutionRequest(StrictContract):
-    request_schema_version: Literal["1.0"] = "1.0"
+    request_schema_version: Literal["1.0", "1.1"] = "1.0"
     request_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     candidate_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     platform_environment_id: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
@@ -58,7 +58,7 @@ class ExecutionRequest(StrictContract):
     tool_identity: ToolIdentity
     binding: CandidateToolBinding
     resource_limits: ExecutionResourceLimits
-    expected_artifacts: list[Literal["stdout.bin", "stderr.bin", "tool_result.json"]] = Field(min_length=3, max_length=3)
+    expected_artifacts: list[Literal["stdout.bin", "stderr.bin", "tool_result.json", "process_result.json"]] = Field(min_length=3, max_length=3)
     candidate_path: str = Field(min_length=1, max_length=4096)
     cwd: str = Field(min_length=1, max_length=4096)
     input_files: list[str] = Field(default_factory=list, max_length=16)
@@ -70,8 +70,10 @@ class ExecutionRequest(StrictContract):
             value = getattr(self, name)
             if not value.strip() or "\0" in value:
                 raise ValueError(name + " must be nonblank and contain no NUL")
-        if set(self.expected_artifacts) != {"stdout.bin", "stderr.bin", "tool_result.json"}:
-            raise ValueError("expected artifacts must include each fixed evidence file exactly once")
+        process_artifact = "tool_result.json" if self.request_schema_version == "1.0" else "process_result.json"
+        if set(self.expected_artifacts) != {"stdout.bin", "stderr.bin", process_artifact}:
+            raise ValueError("expected artifacts must include stdout.bin, stderr.bin and " + process_artifact
+                             + " exactly once for request schema " + self.request_schema_version)
         if len(set(self.input_files)) != len(self.input_files):
             raise ValueError("duplicate input files")
         for path in (self.candidate_path, self.cwd, *self.input_files):

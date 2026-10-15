@@ -202,7 +202,7 @@ def handle_worker(payload, *, project_root=None):
     if (req.tool_identity.resolved_path != actual_python.resolved_path
             or req.tool_identity.file_sha256 != actual_python.file_sha256):
         return fail("REJECTED", "WORKER_PYTHON_IDENTITY_MISMATCH")
-    if (req.fixture_id != FIXTURE_ID or req.candidate_sha256 != FIXTURE_SHA256
+    if (req.request_schema_version != "1.0" or req.fixture_id != FIXTURE_ID or req.candidate_sha256 != FIXTURE_SHA256
             or req.candidate_path != str(fixture) or req.cwd != str(root)
             or policy.scope_root != str(root) or policy.fixture_hashes != {FIXTURE_ID: FIXTURE_SHA256}):
         return fail("REJECTED", "FIXED_REGISTRY_SCOPE_MISMATCH")
