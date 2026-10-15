@@ -1,0 +1,52 @@
+{
+  "synthetic_example": true,
+  "note": "Offline schema example only; not an operator authorization or observed execution.",
+  "execution_request": {
+    "request_schema_version": "1.0",
+    "request_id": "cccccccccccccccccccccccccccccccc",
+    "candidate_sha256": "073421764478f91a48c867d5f18f176339a5f0d6b1305ac37f0889bba2d3760a",
+    "platform_environment_id": "sha256:ab244d1fa9da12a0b2eac13e13332bfbe6e7089c9c880e09eea03c0ccc05d8e5",
+    "platform_probe_id": "fixture-id",
+    "execution_backend": "wsl",
+    "authorized_action": "FIXED_FIXTURE_CHECK",
+    "authorization_reference": "operator-test-approval",
+    "tool_role": "fixture_python",
+    "tool_identity": {
+      "requested_executable": "/tools/python3.10",
+      "resolved_path": "/tools/python3.10",
+      "status": "OBSERVED",
+      "file_sha256": "3fde1dc95ad24c6e740e7c2f6b340bc4d0ba3cbee5cbfbc3186ec04b2208d6b2",
+      "source": "synthetic fixture"
+    },
+    "binding": {
+      "schema_version": "1.0",
+      "candidate_sha256": "073421764478f91a48c867d5f18f176339a5f0d6b1305ac37f0889bba2d3760a",
+      "platform_environment_id": "sha256:ab244d1fa9da12a0b2eac13e13332bfbe6e7089c9c880e09eea03c0ccc05d8e5",
+      "platform_probe_id": "fixture-id",
+      "execution_backend": "wsl",
+      "platform_type": "wsl",
+      "target_environment": "wsl:Ubuntu-22.04",
+      "tool_record_id": "sha256:cca04f5944c741aed035cad908f3db624cb45b66ab655280be285cc009117985",
+      "tool_run_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tool_file_sha256": "3fde1dc95ad24c6e740e7c2f6b340bc4d0ba3cbee5cbfbc3186ec04b2208d6b2",
+      "tool_resolved_path": "/tools/python3.10",
+      "tool_command_argv_sha256": "631cd0858b012b786ad185919da71c7f5faa8c9303e13db09e04de4625a16e94"
+    },
+    "resource_limits": {
+      "wall_time_seconds": 3.0,
+      "cpu_seconds": 1,
+      "memory_bytes": 134217728,
+      "max_output_bytes": 4096,
+      "process_scope": "POSIX_PROCESS_GROUP"
+    },
+    "expected_artifacts": [
+      "stdout.bin",
+      "stderr.bin",
+      "tool_result.json"
+    ],
+    "candidate_path": "/workspace/tests/fixtures/execution/p2_fixed_print.py",
+    "cwd": "/workspace",
+    "input_files": [],
+    "fixture_id": "p2-fixed-print-v1"
+  }
+}

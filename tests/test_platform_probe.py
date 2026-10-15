@@ -50,7 +50,8 @@ def packet(*, probe_id="fixture-id", nonce="fixture-nonce", backend="wsl", gpu=b
         return record(name, argv, text, rc=rc, environment=kw["environment"])
     request = {"probe_id": probe_id, "nonce": nonce, "execution_backend": backend,
                "environment_label": "wsl:Ubuntu-22.04" if backend == "wsl" else "local"}
-    with patch.object(worker, "_find_tool", side_effect=lambda name: None if name in missing else "/tools/" + name), \
+    with patch.dict(worker.os.environ, {"WSL_DISTRO_NAME": "Ubuntu-22.04"}), \
+            patch.object(worker, "_find_tool", side_effect=lambda name: None if name in missing else "/tools/" + name), \
             patch.object(worker.platform, "system", return_value="Linux"), \
             patch.object(worker.platform, "release", return_value="6.6-microsoft-standard-WSL2"), \
             patch.object(worker.platform, "machine", return_value="x86_64"), \

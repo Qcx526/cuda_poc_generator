@@ -230,6 +230,15 @@ P1-B 真实只读桥接观察到 WSL 的 nvcc `12.8.93`、Compute Sanitizer `202
 
 后续实验必须在明确授权和隔离策略下，先审查候选、核对受影响版本与目标条件，再决定编译/执行范围。保留 argv、cwd、运行身份、超时、stdout/stderr、退出码、环境快照和哈希，目标 oracle 独立判定。CUDA 错误码、crash、sanitizer 的通用 OOB 报告都不能自动证明目标 CVE 被验证。本轮不提供默认自动运行样本的步骤。
 
+P2-A 新增独立的受控请求、操作者授权、身份绑定和 Preflight。只开放固定无害 Python fixture，用于 Windows→WSL 通信与资源限制核对；不会执行生成候选。需要操作者明确授权时，可在 Windows PowerShell 运行下列独立入口（Linux checkout 路径必须按实际位置填写，授权引用应指向自己的批准记录）：
+
+```powershell
+.\.venv\Scripts\python.exe -m src.fixture_smoke --help
+.\.venv\Scripts\python.exe -m src.fixture_smoke --authorize-fixed-fixture --authorization-reference "your-approval-record" --operator-id "your-operator-id" --linux-project-root "/mnt/f/qcx/code/cuda_poc_generator"
+```
+
+未给授权 flag 时不启动通信。该命令没有任意候选或 argv 参数，不编译 CUDA；资源不能落实、目标冲突、工具身份不符或快照过期都阻断 fixture。原始证据默认保存在 Git 忽略的私有 `data/outputs/execution_preflight/`，不要把这些目录上传。请求/授权/policy 摘要、原始字节、manifest 和确定性 Markdown 的合同见 [P2-A 执行前置合同](docs/P2_A_EXECUTION_CONTRACT.md)，真实联调见 [独立报告](docs/P2_A_REAL_INTEGRATION.md)。
+
 ## 13. 常见问题与测试状态
 
 - `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。
@@ -244,7 +253,7 @@ P1-B 真实只读桥接观察到 WSL 的 nvcc `12.8.93`、Compute Sanitizer `202
 
 P1-A 新增严格合同与阻断、原文保留及独立状态回归，双环境验收见 [P1-A 交付记录](docs/P1_A_VALIDATION.md)。非 JSON、截断、额外杂文、重复键、NaN/Infinity、字段缺失/类型错误、步骤 ID 或目标 CVE 冲突均会失败；没有结构纠正重试（0次），供应商请求沿用既有有界重试。
 
-P1-B 见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)；P1-C 工具修复、双环境测试和未检查项见 [工具合同](docs/P1_C_TOOL_CONTRACT.md)、[验收记录](docs/P1_C_VALIDATION.md)。后续 P2 在授权后接入有界 WSL 编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。
+P1-B 见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)；P1-C 工具修复、双环境测试和未检查项见 [工具合同](docs/P1_C_TOOL_CONTRACT.md)、[验收记录](docs/P1_C_VALIDATION.md)。P2-A 的双环境测试、身份负例与真实固定 fixture 结果见 [验收记录](docs/P2_A_VALIDATION.md)。后续 P2 才接入经授权和隔离的候选编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。
 
 ## 14. 安全边界、来源与许可证说明
 

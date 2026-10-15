@@ -47,7 +47,7 @@ def _collect_local(probe_id, nonce, timeout_seconds, max_output_bytes):
                "environment_label": "local", "command_timeout_seconds": 3,
                "total_budget_seconds": max(0.1, min(40, timeout_seconds - 2)), "max_output_bytes": 32768}
     allowed = {"PATH", "SYSTEMROOT", "COMSPEC", "WINDIR", "TEMP", "TMP", "HOME", "LANG", "LC_ALL",
-               "PROGRAMFILES", "PROGRAMFILES(X86)", "CUDA_PATH", "CUDA_ROOT", "CUDA_HOME"}
+               "PROGRAMFILES", "PROGRAMFILES(X86)", "CUDA_PATH", "CUDA_ROOT", "CUDA_HOME", "WSL_DISTRO_NAME"}
     env = {key: value for key, value in os.environ.items() if key.upper() in allowed}
     record = run_bounded([sys.executable, "-I", "-"], timeout_seconds=timeout_seconds,
                          max_output_bytes=max_output_bytes, input_bytes=build_worker_source(request),

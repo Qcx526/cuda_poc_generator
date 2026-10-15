@@ -104,11 +104,16 @@ class PlatformSnapshot(BaseModel):
                 raise ValueError(f"metadata.{name} must be a nonblank string")
         if any(source.environment != self.metadata["environment_label"] for source in self.provenance.values()):
             raise ValueError("provenance belongs to a different environment")
-        for name in ("platform_classification", "backend_selection", "reported_cuda_umd_version"):
+        for name in ("platform_classification", "backend_selection", "reported_cuda_umd_version", "wsl_distribution"):
             if name in self.metadata:
                 entry = PlatformField.model_validate(self.metadata[name])
                 self._check_sources(f"metadata.{name}", entry)
                 self._text(f"metadata.{name}", entry)
+                if name == "wsl_distribution" and (self.platform_type != "wsl" or entry.status != "OBSERVED"
+                        or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_. -]{0,127}", entry.value)
+                        or entry.value != entry.value.strip()
+                        or self.metadata["environment_label"] != "wsl:" + entry.value):
+                    raise ValueError("observed WSL distribution disagrees with the snapshot target")
         for name in self.__class__.model_fields:
             item = getattr(self, name)
             if isinstance(item, PlatformField):

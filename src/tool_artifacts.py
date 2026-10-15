@@ -43,7 +43,7 @@ def write_tool_evidence(folder: Path, result: ToolResult, protection: dict) -> d
     """Persist retained bytes and a manifest, including failed process observations."""
     # A frozen model still contains Python list fields; revalidate its canonical
     # content before persistence rather than trusting a mutated/model_copy object.
-    result = ToolResult.model_validate(result.model_dump(mode="json"))
+    result = ToolResult.model_validate(result.model_dump(mode="python"))
     folder = folder.resolve()
     if folder != Path(result.evidence_directory).resolve():
         raise ValueError("tool evidence destination does not match result")

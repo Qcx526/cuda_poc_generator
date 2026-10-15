@@ -30,9 +30,15 @@ def _load_function(filename, name):
 
 
 if "run_bounded" not in globals():
-    run_bounded = _load_function("probe_process.py", "run_bounded")
+    if __package__:
+        from .probe_process import run_bounded
+    else:
+        run_bounded = _load_function("probe_process.py", "run_bounded")
 if "compute_environment_id" not in globals():
-    compute_environment_id = _load_function("platform_identity.py", "compute_environment_id")
+    if __package__:
+        from .platform_identity import compute_environment_id
+    else:
+        compute_environment_id = _load_function("platform_identity.py", "compute_environment_id")
 
 
 def field(status="UNKNOWN", value=None, sources=(), method="not observed"):
@@ -101,7 +107,22 @@ def probe_platform(request, runner=None):
     backend = request.get("execution_backend", request.get("backend", "local"))
     if backend not in ("local", "wsl"):
         raise ValueError("execution_backend must be local or wsl")
+    host_os = platform.system()
+    kernel = platform.version() if host_os == "Windows" else platform.release()
+    is_wsl = host_os == "Linux" and "microsoft" in kernel.lower()
+    platform_type = "wsl" if is_wsl else ("windows" if host_os == "Windows" else "linux")
     environment = str(request.get("environment_label", backend))
+    distro = None
+    if is_wsl:
+        distro = os.environ.get("WSL_DISTRO_NAME", "")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_. -]{0,127}", distro) or distro != distro.strip():
+            raise ValueError("WSL distribution identity is unavailable or malformed")
+        actual_environment = "wsl:" + distro
+        if environment not in {"local", "wsl", actual_environment}:
+            raise ValueError("requested probe target differs from the observed WSL distribution")
+        environment = actual_environment
+    elif backend == "wsl" or environment.startswith("wsl:"):
+        raise ValueError("WSL request reached a non-WSL environment")
     timeout = float(request.get("command_timeout_seconds", request.get("timeout_seconds", 3)))
     limit = int(request.get("max_output_bytes", 32768))
     budget = float(request.get("total_budget_seconds", 40))
@@ -136,10 +157,6 @@ def probe_platform(request, runner=None):
 
     source("python_stdlib", "sys.version / platform module")
     source("filesystem", "existing executable discovery in this environment")
-    host_os = platform.system()
-    kernel = platform.version() if host_os == "Windows" else platform.release()
-    is_wsl = host_os == "Linux" and "microsoft" in kernel.lower()
-    platform_type = "wsl" if is_wsl else ("windows" if host_os == "Windows" else "linux")
     snapshot = {
         "schema_version": "1.0",
         "platform_type": platform_type,
@@ -164,6 +181,10 @@ def probe_platform(request, runner=None):
                      "backend_selection": field("CONFIGURED", backend, [], "explicit dispatcher selection"),
                      "smoke_test": "NOT_RUN", "execution": "NOT_EXECUTED", "verification": "NOT_VERIFIED"},
     }
+    if distro is not None:
+        source("wsl_environment", "read current-process WSL_DISTRO_NAME")
+        snapshot["metadata"]["wsl_distribution"] = observed(
+            distro, ["wsl_environment"], "WSL distribution process environment; not hardware attestation")
     if host_os == "Linux":
         try:
             release_bytes = Path("/etc/os-release").read_bytes()

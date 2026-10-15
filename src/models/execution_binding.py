@@ -50,9 +50,9 @@ def bind_candidate_to_tool(candidate_bytes: bytes, snapshot: PlatformSnapshot | 
     """
     if not isinstance(candidate_bytes, bytes) or not candidate_bytes:
         raise ValueError("candidate bytes must be a nonempty byte string")
-    platform = PlatformSnapshot.model_validate(snapshot.model_dump(mode="json") if
+    platform = PlatformSnapshot.model_validate(snapshot.model_dump(mode="python") if
                                                isinstance(snapshot, PlatformSnapshot) else snapshot)
-    tool = ToolResult.model_validate(tool_result.model_dump(mode="json") if
+    tool = ToolResult.model_validate(tool_result.model_dump(mode="python") if
                                     isinstance(tool_result, ToolResult) else tool_result)
     if platform.metadata["probe_id"] != expected_probe_id or tool.record_id != expected_tool_record_id:
         raise ValueError("binding records do not match expected identities")
