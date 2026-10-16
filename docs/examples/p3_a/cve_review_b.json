@@ -1,0 +1,135 @@
+[
+  {
+    "cve_id": "CVE-2024-0124",
+    "cwe": ["CWE-416"],
+    "component": "nvdisasm (NVIDIA CUDA Toolkit)",
+    "entry": "The nvdisasm ELF-file parsing interface; vendor text also contains the spelling nvdisam.",
+    "mechanism": "Vendor-described read of freed memory while parsing a malformed ELF file. Exact allocation/free/use path is not established by the retrieved sources.",
+    "expected_behavior": "Objective freed-memory-read evidence attributable to this target parsing path; generic crash or nonzero exit is insufficient.",
+    "affected_release_text": "CUDA Toolkit releases up to and including 12.6U1, Windows and Linux; this is a product-release range, not a standalone nvdisasm build-number range.",
+    "fix_release_text": "CUDA Toolkit 12.6U2 (the 12.6.2 release-notes archive identifies Update 2).",
+    "current_12_8_eligibility": "INELIGIBLE",
+    "unknowns": [
+      "Exact root-cause function, freed object identity and lifetime are not disclosed in the retrieved vendor/CNA material.",
+      "Original input hypotheses about repeated sections, sh_link/sh_info, debug sections and pointer-clearing fixes lack support from the retrieved authoritative sources.",
+      "The input's Windows CUDA 11.2 tested_environment is an unverified source assertion, not the current WSL platform observation.",
+      "No local CVE experiment, affected/fixed differential or root-cause verification was performed."
+    ],
+    "sources": [
+      {
+        "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5577",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "Details row for CVE-2024-0124 and Security Updates table: component, CWE-416, affected releases and fixed release. Browser text fetched; raw bytes were not measured."
+      },
+      {
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/0xxx/CVE-2024-0124.json",
+        "kind": "CNA_RECORD",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "0e4742db914df8761951a53f8de6fa027d622ed7047df4f4a648d74abdbf52c4",
+        "support": "NVIDIA CNA /containers/cna/affected/0, /descriptions/0 and /problemTypes/0: same affected range, freed-memory-read description and CWE-416; /metrics/0 gives CVSS 3.3. Raw HTTPS bytes fetched (5714 bytes)."
+      },
+      {
+        "url": "https://docs.nvidia.com/cuda/archive/12.6.2/cuda-toolkit-release-notes/index.html",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "Release title maps this archive to CUDA 12.6 Update 2; component table explains independent component versioning. No vulnerability-specific patch implementation is inferred."
+      }
+    ]
+  },
+  {
+    "cve_id": "CVE-2025-23308",
+    "cwe": ["CWE-122"],
+    "component": "nvdisasm (NVIDIA CUDA Toolkit)",
+    "entry": "nvdisasm ELF REL-section parsing, as described by the public Talos technical report.",
+    "mechanism": "Vendor: heap-based buffer overflow. Talos: inconsistent relocation allocation/write bounds in a confirmed nvdisasm 12.9.88 build. Those build-specific technical observations are not local measurements.",
+    "expected_behavior": "Objective heap out-of-bounds-write evidence bound to the specified REL parser root cause, target build and input identity; sanitizer text or ordinary crash alone is insufficient.",
+    "affected_release_text": "NVIDIA vendor/CNA: CUDA Toolkit releases before 13.0 on Windows and Linux. Talos primary report confirms standalone nvdisasm 12.9.88; its roundup article separately mentions 12.8.90. Do not substitute either component build for the product-release range.",
+    "fix_release_text": "CUDA Toolkit 13.0. Talos records vendor patch disclosure on 2025-09-23; this does not establish a locally observed patch diff.",
+    "current_12_8_eligibility": "UNKNOWN",
+    "unknowns": [
+      "The recorded WSL Toolkit 12.8 release matches the vendor's broad affected range, but exact local root-cause applicability and trigger prerequisites have not been independently confirmed.",
+      "Vendor coverage says Windows/Linux; WSL-specific vulnerable-path behavior has not been demonstrated in this phase.",
+      "Talos primary report lists nvdisasm 12.9.88; its roundup lists 12.8.90. Preserve each source's build scope; do not infer that these are mutually exclusive affected versions or select a unique tested build.",
+      "Vendor/CNA CVSS is 3.3 while Talos CVSS is 7.8. The original input's 7.8 is a public technical-source rating, not a replacement for the vendor rating; neither rating is an Oracle predicate.",
+      "The original input labels component build 12.9.88 as a Toolkit upper bound. That mixed version space is not a qualified machine-readable affected-release rule.",
+      "The exact remediation code and earliest introduced build are unknown; input patch hypotheses are not a reviewed code diff.",
+      "No local CVE experiment or affected/fixed differential was performed."
+    ],
+    "sources": [
+      {
+        "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5661",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "CVE-2025-23308 details and Security Updates table support the component, CWE-122, affected Toolkit release range and 13.0 update. Vendor score is 3.3. Browser text fetched; raw bytes were not measured."
+      },
+      {
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/23xxx/CVE-2025-23308.json",
+        "kind": "CNA_RECORD",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "bc1e3dd76da98a3b4c66de6976219ba68b9aa4747c1f3d7940d2f4529e099b6e",
+        "support": "NVIDIA CNA /containers/cna/affected/0 and /problemTypes/0: affected Toolkit <13.0, Windows/Linux and CWE-122; /metrics/0 gives CVSS 3.3. Raw HTTPS bytes fetched (6411 bytes); record updated 2026-02-26."
+      },
+      {
+        "url": "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2204",
+        "kind": "PUBLIC_TECHNICAL_ANALYSIS",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "Confirmed Vulnerable Versions: nvdisasm 12.9.88. Technical report attributes heap write to REL parsing and provides its own third-party diagnostic observation. CVSS 7.8. Browser text fetched; no local experiment or raw response-byte hash."
+      },
+      {
+        "url": "https://blog.talosintelligence.com/nvidia-and-adobe-vulnerabilities/",
+        "kind": "PUBLIC_TECHNICAL_ANALYSIS",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "The October 1, 2025 roundup names nvdisasm 12.8.90 for TALOS-2025-2204, unlike the primary report's confirmed build 12.9.88. This is retained as source-specific scope, not promoted to a local observation."
+      }
+    ]
+  },
+  {
+    "cve_id": "CVE-2025-23339",
+    "cwe": ["CWE-121"],
+    "component": "cuobjdump (NVIDIA CUDA Toolkit)",
+    "entry": "cuobjdump parsing DWARF debug abbreviation information in CUDA fatbin/cubin input, described by Talos with the dump-ELF interface.",
+    "mechanism": "Vendor: stack-based buffer overflow. Talos: insufficiently bounded DWARF abbreviation-table processing in a confirmed cuobjdump 12.8.55 build. Published analysis is not a local trace.",
+    "expected_behavior": "Objective stack out-of-bounds-write evidence bound to the specified DWARF parser root cause, target build and input identity; a generic signal or successful tool exit does not prove this CVE.",
+    "affected_release_text": "NVIDIA vendor/CNA: CUDA Toolkit releases before 13.0 on Windows and Linux. Talos confirmed standalone cuobjdump 12.8.55; broad release coverage does not prove a particular local root-cause observation.",
+    "fix_release_text": "CUDA Toolkit 13.0. Talos records vendor patch disclosure on 2025-09-23; exact fix implementation is not established by the retrieved report.",
+    "current_12_8_eligibility": "UNKNOWN",
+    "unknowns": [
+      "The recorded WSL Toolkit 12.8 release matches the vendor's broad affected range, but local cuobjdump 12.8.90 is not the Talos confirmed build 12.8.55 and no local root-cause observation was collected.",
+      "Vendor coverage says Windows/Linux; WSL-specific trigger prerequisites have not been independently confirmed.",
+      "Vendor/CNA CVSS is 3.3 while Talos CVSS is 7.8; preserve source attribution rather than silently replacing the vendor score.",
+      "Original input fixed_code_summary/fix_mechanism asserts exact patch behavior without a retrieved fixed-build code diff; that claim remains unknown.",
+      "The earliest introduced version is not established by the retrieved material.",
+      "Old Windows CUDA 11.2 and driver assertions in the input are not current WSL observations and do not bind the local target tool.",
+      "No local CVE experiment or affected/fixed differential was performed."
+    ],
+    "sources": [
+      {
+        "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5661",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "CVE-2025-23339 details and Security Updates table support the component, CWE-121, affected Toolkit release range and 13.0 update. Vendor score is 3.3. Browser text fetched; raw bytes were not measured."
+      },
+      {
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/23xxx/CVE-2025-23339.json",
+        "kind": "CNA_RECORD",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "9011f4af57c107a502ce912d143d12a407d7c940ce9998f937169e2100297f9f",
+        "support": "NVIDIA CNA /containers/cna/affected/0 and /problemTypes/0: affected Toolkit <13.0, Windows/Linux and CWE-121; /metrics/0 gives CVSS 3.3. Raw HTTPS bytes fetched (6426 bytes); record updated 2026-02-26."
+      },
+      {
+        "url": "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2155",
+        "kind": "PUBLIC_TECHNICAL_ANALYSIS",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": null,
+        "support": "Confirmed Vulnerable Versions: cuobjdump 12.8.55. Report attributes stack overwrite to DWARF debug abbreviations and contains third-party debugger observations, not this repository's raw evidence. CVSS 7.8. Browser text fetched; raw response bytes not measured."
+      }
+    ]
+  }
+]

@@ -1,0 +1,275 @@
+{
+  "label": "SYNTHETIC",
+  "scenario": "positive",
+  "plan": {
+    "plan_schema_version": "1.0",
+    "oracle_id": "SYNTHETIC-five-category-oracle-v1",
+    "cve_id": "CVE-2099-0001",
+    "domain": "SYNTHETIC",
+    "standard_id": "SYNTHETIC_ALL_REQUIRED_V1",
+    "verification_standard": "SYNTHETIC: every necessary category must have bound exact-field evidence.",
+    "review_reference": "SYNTHETIC_TEST_REVIEW_ONLY",
+    "bindings": {
+      "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "platform_probe_id": "synthetic-probe-v1",
+      "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "tool_sha256": {
+        "fixture": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    },
+    "conditions": [
+      {
+        "condition_id": "environment",
+        "category": "ENVIRONMENT",
+        "predicate_type": "EQUALS",
+        "subject": "synthetic.environment",
+        "expected_value": "12.8.90",
+        "expected_relation": "EQUALS",
+        "minimum_inclusive": null,
+        "maximum_exclusive": null,
+        "applicability": "APPLICABLE",
+        "required": true,
+        "requirement": {
+          "evidence_type": "PLATFORM",
+          "evidence_source": "SYNTHETIC",
+          "method": "SYNTHETIC_FACT",
+          "scope": "SYNTHETIC",
+          "reference_ids": [
+            "environment-evidence"
+          ],
+          "completeness_required": true
+        },
+        "provenance": [
+          "synthetic-reviewed-test-rule-v1"
+        ],
+        "evaluation_status": "PENDING"
+      },
+      {
+        "condition_id": "identity",
+        "category": "IDENTITY",
+        "predicate_type": "EQUALS",
+        "subject": "synthetic.identity",
+        "expected_value": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "expected_relation": "EQUALS",
+        "minimum_inclusive": null,
+        "maximum_exclusive": null,
+        "applicability": "APPLICABLE",
+        "required": true,
+        "requirement": {
+          "evidence_type": "IDENTITY",
+          "evidence_source": "SYNTHETIC",
+          "method": "SYNTHETIC_FACT",
+          "scope": "SYNTHETIC",
+          "reference_ids": [
+            "identity-evidence"
+          ],
+          "completeness_required": true
+        },
+        "provenance": [
+          "synthetic-reviewed-test-rule-v1"
+        ],
+        "evaluation_status": "PENDING"
+      },
+      {
+        "condition_id": "entry",
+        "category": "ENTRY_BEHAVIOR",
+        "predicate_type": "EQUALS",
+        "subject": "synthetic.entry",
+        "expected_value": "SYNTHETIC_REVIEWED_ENTRY",
+        "expected_relation": "EQUALS",
+        "minimum_inclusive": null,
+        "maximum_exclusive": null,
+        "applicability": "APPLICABLE",
+        "required": true,
+        "requirement": {
+          "evidence_type": "PROCESS",
+          "evidence_source": "SYNTHETIC",
+          "method": "SYNTHETIC_FACT",
+          "scope": "SYNTHETIC",
+          "reference_ids": [
+            "entry-evidence"
+          ],
+          "completeness_required": true
+        },
+        "provenance": [
+          "synthetic-reviewed-test-rule-v1"
+        ],
+        "evaluation_status": "PENDING"
+      },
+      {
+        "condition_id": "anomaly",
+        "category": "ANOMALY",
+        "predicate_type": "EQUALS",
+        "subject": "synthetic.anomaly",
+        "expected_value": "SYNTHETIC_BOUND_MEMORY_WRITE",
+        "expected_relation": "EQUALS",
+        "minimum_inclusive": null,
+        "maximum_exclusive": null,
+        "applicability": "APPLICABLE",
+        "required": true,
+        "requirement": {
+          "evidence_type": "PROCESS",
+          "evidence_source": "SYNTHETIC",
+          "method": "SYNTHETIC_FACT",
+          "scope": "SYNTHETIC",
+          "reference_ids": [
+            "anomaly-evidence"
+          ],
+          "completeness_required": true
+        },
+        "provenance": [
+          "synthetic-reviewed-test-rule-v1"
+        ],
+        "evaluation_status": "PENDING"
+      },
+      {
+        "condition_id": "root_cause",
+        "category": "ROOT_CAUSE",
+        "predicate_type": "EQUALS",
+        "subject": "synthetic.root_cause",
+        "expected_value": "SYNTHETIC_ROOT_CAUSE_BOUND",
+        "expected_relation": "EQUALS",
+        "minimum_inclusive": null,
+        "maximum_exclusive": null,
+        "applicability": "APPLICABLE",
+        "required": true,
+        "requirement": {
+          "evidence_type": "ROOT_CAUSE",
+          "evidence_source": "SYNTHETIC",
+          "method": "SYNTHETIC_FACT",
+          "scope": "SYNTHETIC",
+          "reference_ids": [
+            "root_cause-evidence"
+          ],
+          "completeness_required": true
+        },
+        "provenance": [
+          "synthetic-reviewed-test-rule-v1"
+        ],
+        "evaluation_status": "PENDING"
+      }
+    ],
+    "references": [
+      {
+        "reference_id": "environment-evidence",
+        "domain": "SYNTHETIC",
+        "cve_id": "CVE-2099-0001",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "artifact_file": "fixture.json",
+        "artifact_sha256": "e24dcde7a4a3d69defb63d20b53d887176cca718239387866192eec43e026652",
+        "json_pointer": "/environment/version",
+        "original_source": "SYNTHETIC_FIXTURE",
+        "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "platform_probe_id": "synthetic-probe-v1",
+        "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "tool_role": "fixture",
+        "tool_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "collection_method": "p3a-synthetic-1.0",
+        "scope": "SYNTHETIC",
+        "evidence_type": "PLATFORM"
+      },
+      {
+        "reference_id": "identity-evidence",
+        "domain": "SYNTHETIC",
+        "cve_id": "CVE-2099-0001",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "artifact_file": "fixture.json",
+        "artifact_sha256": "e24dcde7a4a3d69defb63d20b53d887176cca718239387866192eec43e026652",
+        "json_pointer": "/identity/candidate_sha256",
+        "original_source": "SYNTHETIC_FIXTURE",
+        "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "platform_probe_id": "synthetic-probe-v1",
+        "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "tool_role": "fixture",
+        "tool_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "collection_method": "p3a-synthetic-1.0",
+        "scope": "SYNTHETIC",
+        "evidence_type": "IDENTITY"
+      },
+      {
+        "reference_id": "entry-evidence",
+        "domain": "SYNTHETIC",
+        "cve_id": "CVE-2099-0001",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "artifact_file": "fixture.json",
+        "artifact_sha256": "e24dcde7a4a3d69defb63d20b53d887176cca718239387866192eec43e026652",
+        "json_pointer": "/entry/path",
+        "original_source": "SYNTHETIC_FIXTURE",
+        "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "platform_probe_id": "synthetic-probe-v1",
+        "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "tool_role": "fixture",
+        "tool_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "collection_method": "p3a-synthetic-1.0",
+        "scope": "SYNTHETIC",
+        "evidence_type": "PROCESS"
+      },
+      {
+        "reference_id": "anomaly-evidence",
+        "domain": "SYNTHETIC",
+        "cve_id": "CVE-2099-0001",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "artifact_file": "fixture.json",
+        "artifact_sha256": "e24dcde7a4a3d69defb63d20b53d887176cca718239387866192eec43e026652",
+        "json_pointer": "/anomaly/kind",
+        "original_source": "SYNTHETIC_FIXTURE",
+        "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "platform_probe_id": "synthetic-probe-v1",
+        "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "tool_role": "fixture",
+        "tool_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "collection_method": "p3a-synthetic-1.0",
+        "scope": "SYNTHETIC",
+        "evidence_type": "PROCESS"
+      },
+      {
+        "reference_id": "root_cause-evidence",
+        "domain": "SYNTHETIC",
+        "cve_id": "CVE-2099-0001",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "artifact_file": "fixture.json",
+        "artifact_sha256": "e24dcde7a4a3d69defb63d20b53d887176cca718239387866192eec43e026652",
+        "json_pointer": "/root_cause/binding",
+        "original_source": "SYNTHETIC_FIXTURE",
+        "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "platform_probe_id": "synthetic-probe-v1",
+        "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "tool_role": "fixture",
+        "tool_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "collection_method": "p3a-synthetic-1.0",
+        "scope": "SYNTHETIC",
+        "evidence_type": "ROOT_CAUSE"
+      }
+    ],
+    "source_ids": [
+      "synthetic-reviewed-test-rule-v1"
+    ]
+  },
+  "artifacts": {
+    "fixture.json": "{\"anomaly\":{\"crashed\":false,\"exit_code\":0,\"kind\":\"SYNTHETIC_BOUND_MEMORY_WRITE\",\"sanitizer\":\"SYNTHETIC_SANITIZER_ERROR\"},\"entry\":{\"path\":\"SYNTHETIC_REVIEWED_ENTRY\"},\"environment\":{\"version\":\"12.8.90\"},\"fixed_version\":{\"difference_observed\":true,\"root_cause_bound\":false},\"identity\":{\"candidate_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"},\"root_cause\":{\"binding\":\"SYNTHETIC_ROOT_CAUSE_BOUND\"},\"scalars\":{\"boolean\":true,\"float\":1.0,\"integer\":1,\"string\":\"1\"}}"
+  },
+  "binding": {
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "platform_environment_id": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "platform_probe_id": "synthetic-probe-v1",
+    "snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "candidate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "tool_sha256": {
+      "fixture": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  }
+}

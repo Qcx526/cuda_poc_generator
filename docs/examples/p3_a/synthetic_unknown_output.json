@@ -1,0 +1,83 @@
+{
+  "result_schema_version": "1.0",
+  "oracle_id": "SYNTHETIC-five-category-oracle-v1",
+  "cve_id": "CVE-2099-0001",
+  "domain": "SYNTHETIC",
+  "plan_sha256": "6a4f939fc2d973482793db096e02490fa6c80f10408f271f284e89d17f7be357",
+  "corpus_manifest_sha256": null,
+  "eligibility": {
+    "cve_id": "CVE-2099-0001",
+    "status": "UNKNOWN",
+    "reasons": [
+      "environment: required evidence reference is missing"
+    ],
+    "execution_authorized": false
+  },
+  "conditions": [
+    {
+      "condition_id": "environment",
+      "status": "UNKNOWN",
+      "reason": "required evidence reference is missing",
+      "reference_ids": [],
+      "observed_values": []
+    },
+    {
+      "condition_id": "identity",
+      "status": "SATISFIED",
+      "reason": "typed equality against original structured field",
+      "reference_ids": [
+        "identity-evidence"
+      ],
+      "observed_values": [
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      ]
+    },
+    {
+      "condition_id": "entry",
+      "status": "SATISFIED",
+      "reason": "typed equality against original structured field",
+      "reference_ids": [
+        "entry-evidence"
+      ],
+      "observed_values": [
+        "SYNTHETIC_REVIEWED_ENTRY"
+      ]
+    },
+    {
+      "condition_id": "anomaly",
+      "status": "SATISFIED",
+      "reason": "typed equality against original structured field",
+      "reference_ids": [
+        "anomaly-evidence"
+      ],
+      "observed_values": [
+        "SYNTHETIC_BOUND_MEMORY_WRITE"
+      ]
+    },
+    {
+      "condition_id": "root_cause",
+      "status": "SATISFIED",
+      "reason": "typed equality against original structured field",
+      "reference_ids": [
+        "root_cause-evidence"
+      ],
+      "observed_values": [
+        "SYNTHETIC_ROOT_CAUSE_BOUND"
+      ]
+    }
+  ],
+  "condition_status": "UNKNOWN",
+  "verdict": "UNKNOWN",
+  "real_cve_verification": "NOT_VERIFIED",
+  "reasons": [
+    "insufficient eligibility or necessary objective evidence"
+  ],
+  "limitations": [
+    "No generated candidate or real CVE is executed by this Oracle.",
+    "Exit zero, crash, signal and Sanitizer messages alone never establish a specific CVE.",
+    "Integrity hashes are not signatures or proof of a trustworthy collector/host.",
+    "SYNTHETIC VERIFIED proves only offline rule behavior; real CVE remains NOT_VERIFIED.",
+    "Production root-cause assessors and affected/fixed differential standards are not implemented."
+  ],
+  "observed_context": {}
+}

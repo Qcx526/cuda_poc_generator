@@ -1,0 +1,378 @@
+[
+  {
+    "cve_id": "CVE-2022-21821",
+    "cwe": [
+      "CWE-1285",
+      "CWE-190"
+    ],
+    "component": [
+      "NVIDIA CUDA Toolkit cuobjdump"
+    ],
+    "entry": "Local invocation of standalone cuobjdump on attacker-supplied corrupted input; exact format/subpath not established by reviewed primary sources.",
+    "mechanism": "Vendor description: integer overflow. CNA weakness classification: CWE-1285. Detailed allocation and write chain UNKNOWN.",
+    "expected_behavior": "Vendor describes possible code execution, denial of service and confidentiality/integrity impact; an observed crash alone does not bind this CVE.",
+    "affected_release_text": "Toolkit Windows/Linux: all versions prior to 11.6 Update 2.",
+    "fix_release_text": "11.6 Update 2 (Toolkit release; component build mapping not reviewed).",
+    "current_12_8_eligibility": "INELIGIBLE",
+    "eligibility_scope": "Only the identity-bound measured P2-C 12.8-series cuobjdump; other installed copies UNKNOWN.",
+    "unknowns": [
+      "Exact vulnerable function and input format subpath.",
+      "Specific integer operation, buffer allocation and corruption chain.",
+      "Input field/byte constraints and root-cause binding method.",
+      "Patch location and component-build-to-Toolkit-update mapping.",
+      "Classification consistency: original input CWE-190 differs from CNA CWE-1285."
+    ],
+    "source_conflicts": [
+      {
+        "subject": "cwe",
+        "input_value": "CWE-190",
+        "input_path": "5_vulnerability_type.json#/vulnerability_type/cwe_id",
+        "source_value": "CWE-1285",
+        "source_id": "cna-2022-21821",
+        "source_path": "/containers/cna/problemTypes/0/descriptions/0/cweId",
+        "resolution": "CONFLICT; retain both provenance records; no silent overwrite."
+      }
+    ],
+    "unverified_input_assertions": [
+      "ELF64/cubin-specific section manipulation.",
+      "Integer overflow leads to undersized heap allocation and subsequent heap write.",
+      "Deterministic reproduction without heap grooming.",
+      "Linux kernel listed as affected component."
+    ],
+    "sources": [
+      {
+        "source_id": "nvidia-5334",
+        "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5334",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "23cc2d0bab533f2deb27dea616b51cbea81d25ee186304a3afffdc6f432aa709",
+        "size_bytes": 33377,
+        "support": "PUBLIC_SOURCE_SUPPORTED",
+        "supported_claims": [
+          "component",
+          "entry",
+          "general mechanism",
+          "affected Toolkit release range",
+          "updated Toolkit release",
+          "possible impact",
+          "standalone-tool/runtime distinction"
+        ]
+      },
+      {
+        "source_id": "cna-2022-21821",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2022/21xxx/CVE-2022-21821.json",
+        "kind": "CNA_RECORD",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "20f72d762dbf466fa94016804f145694080b05b66b81e8d62f47bc00f3901170",
+        "size_bytes": 7034,
+        "support": "PUBLIC_SOURCE_SUPPORTED",
+        "supported_claims": [
+          "affected Toolkit release range",
+          "general mechanism",
+          "CWE-1285",
+          "possible impact"
+        ]
+      }
+    ],
+    "reviewed_on": "2026-10-16",
+    "review_kind": "PUBLIC_SOURCE_DESK_REVIEW_NOT_CVE_REPRODUCTION",
+    "root_cause_verification_method": "UNKNOWN",
+    "original_input_sources": [
+      {
+        "source_file": "data/inputs/CVE-2022-21821/1_os_environment.json",
+        "sha256": "d76bc7857a7b20ceaad7bf7a5f8e9866d85393cf5fe97543b458133fa3010511",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2022-21821/2_cuda_environment.json",
+        "sha256": "94e83aaca16372a0d0edf470242cfa70fec8932dd5849ca08f81c7a9a2b8c69f",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2022-21821/3_affected_component.json",
+        "sha256": "eccfef65a884a24268999c56f5d43bbbea3cb0c47e4aeff1e7f764c735af0793",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2022-21821/4_attack_surface.json",
+        "sha256": "46e719704e8b5a1c581bc2f3679a506c0741ab5d672aff9bcfb7ba5cd62833c5",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2022-21821/5_vulnerability_type.json",
+        "sha256": "b41651b44a4c7bf77a7ebc13742bf5a8dbaf6a6f68e776c7886dd0d16fc3f206",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2022-21821/6_impact_controllability.json",
+        "sha256": "2f22aa94eff2a6b1b04a5a24e2b1fed7944526188fd000182a555739676905fa",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2022-21821/7_root_cause.json",
+        "sha256": "27b5f4b13e6fd8e41ac4665b6ad7e525731467f9b68b9e555b677c2b37eeb828",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      }
+    ]
+  },
+  {
+    "cve_id": "CVE-2023-0196",
+    "cwe": [
+      "CWE-476"
+    ],
+    "component": [
+      "NVIDIA CUDA Toolkit cuobjdump"
+    ],
+    "entry": "Local cuobjdump invocation on an ill-formed binary; exact malformed structure and format subpath UNKNOWN.",
+    "mechanism": "NULL pointer dereference; precise pointer origin and triggering field UNKNOWN.",
+    "expected_behavior": "Limited denial of service; source CVSS confidentiality/integrity impacts NONE. A generic crash is insufficient root-cause evidence.",
+    "affected_release_text": "Toolkit Windows/Linux: all versions prior to 12.1.",
+    "fix_release_text": "Toolkit 12.1.",
+    "current_12_8_eligibility": "INELIGIBLE",
+    "eligibility_scope": "Only the identity-bound measured P2-C 12.8-series cuobjdump; other installed copies UNKNOWN.",
+    "unknowns": [
+      "Exact malformed binary fields and vulnerable function.",
+      "Pointer origin, code path and patch location.",
+      "Root-cause binding and target-input validation method."
+    ],
+    "source_conflicts": [
+      {
+        "subject": "cvss_confidentiality_impact",
+        "input_value": "C:L",
+        "input_path": "5_vulnerability_type.json#/vulnerability_type/cvss_vector",
+        "source_value": "C:N",
+        "source_id": "cna-2023-0196",
+        "source_path": "/containers/cna/metrics/0/cvssV3_1/vectorString",
+        "resolution": "CONFLICT; original input root-cause text itself also says no confidentiality impact."
+      }
+    ],
+    "unverified_input_assertions": [
+      "sh_offset outside file or section references non-existent data are actual CVE trigger.",
+      "ELF64/cubin restriction.",
+      "Deterministic reproduction without heap grooming."
+    ],
+    "sources": [
+      {
+        "source_id": "nvidia-5446",
+        "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5446",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "acd42bd2c326cbccc4b3f8d447294ffd09d265f4e1bfe9877e7927613af4225f",
+        "size_bytes": 32915,
+        "support": "PUBLIC_SOURCE_SUPPORTED",
+        "supported_claims": [
+          "component",
+          "entry",
+          "general mechanism",
+          "CWE-476",
+          "affected Toolkit release range",
+          "updated Toolkit release",
+          "limited DoS impact"
+        ]
+      },
+      {
+        "source_id": "cna-2023-0196",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/0xxx/CVE-2023-0196.json",
+        "kind": "CNA_RECORD",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "3483e07a7c6f81b884cbbf97e609a6e1d8060cbf9aa8a9c5faa4496d18c56261",
+        "size_bytes": 6178,
+        "support": "PUBLIC_SOURCE_SUPPORTED",
+        "supported_claims": [
+          "component",
+          "entry",
+          "general mechanism",
+          "CWE-476",
+          "affected Toolkit release range",
+          "limited DoS",
+          "CVSS confidentiality NONE"
+        ]
+      }
+    ],
+    "reviewed_on": "2026-10-16",
+    "review_kind": "PUBLIC_SOURCE_DESK_REVIEW_NOT_CVE_REPRODUCTION",
+    "root_cause_verification_method": "UNKNOWN",
+    "original_input_sources": [
+      {
+        "source_file": "data/inputs/CVE-2023-0196/1_os_environment.json",
+        "sha256": "692c4a24fe91b20a7001da1f8144cba4deac0cb342f76e87c7dbb48af6c2c266",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2023-0196/2_cuda_environment.json",
+        "sha256": "3b93523364f3599ffe58864d925d0e15b40879de9a8d5c8c28dc14d04dfd6363",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2023-0196/3_affected_component.json",
+        "sha256": "c66f8e58f0d540540446a8d7882ecffbc3e4ce8a86b3cd53eda1d0d2b416d9f0",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2023-0196/4_attack_surface.json",
+        "sha256": "1f5279e6525491c58e600f8082df1786c16dc973ec8eccc2eaea11312ce934e0",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2023-0196/5_vulnerability_type.json",
+        "sha256": "d4b7e024229f591e28222cba3b85c8e2d416b4a4686b4c4db1523ca19a895a22",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2023-0196/6_impact_controllability.json",
+        "sha256": "1a5cc4a844d1f2023125a5a5ca1efeb9cf30c3c882794d0deaa620b50a3c1733",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2023-0196/7_root_cause.json",
+        "sha256": "e8b1f3227e73934dc079692e5c656c5dbc863398c4b7fce9803072316c854887",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      }
+    ]
+  },
+  {
+    "cve_id": "CVE-2024-0076",
+    "cwe": [
+      "CWE-125"
+    ],
+    "component": [
+      "NVIDIA CUDA Toolkit cuobjdump",
+      "NVIDIA CUDA Toolkit nvdisasm"
+    ],
+    "entry": "User runs cuobjdump or nvdisasm against a malformed ELF file. These are separate executables, not a literal combined command.",
+    "mechanism": "Out-of-bounds read classification; exact field and internal read path UNKNOWN.",
+    "expected_behavior": "Partial denial of service; reviewed vendor/CNA sources do not establish information disclosure.",
+    "affected_release_text": "Toolkit Windows/Linux: all versions prior to Toolkit v12.4.",
+    "fix_release_text": "Vendor update column: Toolkit v12.4U1. Boundary at 12.4/component builds remains UNKNOWN until release/update mapping is reviewed.",
+    "current_12_8_eligibility": "INELIGIBLE",
+    "eligibility_scope": "Only the identity-bound measured P2-C 12.8-series cuobjdump/nvdisasm; 12.4 boundary and other installed copies UNKNOWN.",
+    "unknowns": [
+      "12.4 versus 12.4U1 fix boundary and component build mapping.",
+      "Exact out-of-bounds read function, input field and patch.",
+      "Root-cause binding and target-input validation method.",
+      "Information disclosure assertion is unsupported by reviewed primary sources."
+    ],
+    "source_conflicts": [
+      {
+        "subject": "affected_vs_updated_boundary",
+        "input_value": "All versions prior to Toolkit 12.4",
+        "input_path": "3_affected_component.json#/version_range",
+        "source_value": "Affected prior to v12.4; Updated Version v12.4U1",
+        "source_id": "nvidia-5517",
+        "source_path": "Security Updates table",
+        "resolution": "UNKNOWN at 12.4 boundary; retain both exact release labels."
+      },
+      {
+        "subject": "confidentiality_impact",
+        "input_value": "Information disclosure / C:L",
+        "input_path": "5_vulnerability_type.json#/vulnerability_type/cvss_vector",
+        "source_value": "Partial DoS / C:N",
+        "source_id": "cna-2024-0076",
+        "source_path": "/containers/cna/metrics/0/cvssV3_1/vectorString",
+        "resolution": "CONFLICT; OOB classification does not itself prove information disclosure."
+      }
+    ],
+    "unverified_input_assertions": [
+      "sh_size or sh_offset specifically controls the vulnerable read.",
+      "Heap data leakage.",
+      "Deterministic reproduction without heap grooming."
+    ],
+    "sources": [
+      {
+        "source_id": "nvidia-5517",
+        "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5517",
+        "kind": "VENDOR_ADVISORY",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "d5317534498e0eb600b33ce85e87a0040ba6799208fe397f6e5a5d34b5b7d517",
+        "size_bytes": 34469,
+        "support": "PUBLIC_SOURCE_SUPPORTED",
+        "supported_claims": [
+          "component",
+          "malformed ELF entry",
+          "CWE-125",
+          "affected Toolkit release label",
+          "updated Toolkit release label",
+          "partial DoS impact"
+        ]
+      },
+      {
+        "source_id": "cna-2024-0076",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/0xxx/CVE-2024-0076.json",
+        "kind": "CNA_RECORD",
+        "retrieved_at": "2026-10-16",
+        "content_sha256": "fa9f693a0f986132c773b35e0744713eebcc3ed95f1805a5176677f9347a7ab2",
+        "size_bytes": 6101,
+        "support": "PUBLIC_SOURCE_SUPPORTED",
+        "supported_claims": [
+          "component",
+          "malformed ELF entry",
+          "CWE-125",
+          "affected Toolkit release range",
+          "partial DoS",
+          "CVSS confidentiality NONE"
+        ]
+      }
+    ],
+    "reviewed_on": "2026-10-16",
+    "review_kind": "PUBLIC_SOURCE_DESK_REVIEW_NOT_CVE_REPRODUCTION",
+    "root_cause_verification_method": "UNKNOWN",
+    "original_input_sources": [
+      {
+        "source_file": "data/inputs/CVE-2024-0076/1_os_environment.json",
+        "sha256": "78c117983a32f14caa8de9eeac2432c35f8d1261a2bd4e386ad828ff75dab440",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2024-0076/2_cuda_environment.json",
+        "sha256": "d2c62657ee54bcf789de5b016f6360fe7cfba98845c792860011282a6aa445e6",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2024-0076/3_affected_component.json",
+        "sha256": "74d3191b1d88052085c0feffed03f10a23cefdcd5e9a43bd75969677d764bc63",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2024-0076/4_attack_surface.json",
+        "sha256": "6100edfc5a4eeeeb3a7ae22e0eb63208d94ca296226fc0ee8fe92bcf5a53be44",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2024-0076/5_vulnerability_type.json",
+        "sha256": "45b8ded6ce15e760d315e20922d4ce0da837f67fbf5678f2a82b93c6fde9d5cc",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2024-0076/6_impact_controllability.json",
+        "sha256": "652d07761c39ca760ada707b6c8d9844c1980496a23ec5948e4aa6be8a1a3d0b",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      },
+      {
+        "source_file": "data/inputs/CVE-2024-0076/7_root_cause.json",
+        "sha256": "e4733f6265b5434c5a54d0b2183f622b4b435a724c1893071fb7ef23dc7611de",
+        "assertion_kind": "INPUT_ASSERTION",
+        "verification": "UNVERIFIED"
+      }
+    ]
+  }
+]

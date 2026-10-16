@@ -15,10 +15,11 @@
 - 可导入的编译、ELF 操作、反汇编工具；主流程不自动执行这些工具。
 - P1-C 底层工具使用严格 `ToolResult` 和私有原始日志；编译采用受控 argv、明确架构及参数白名单，ELF 操作严格支持 ELF64 little-endian。
 - P2-C 独立入口支持明确授权的固定无害 CUDA 编译/检查、受控进程与跨环境原始证据核验；不启动 kernel 或生成候选。
+- P3-A 独立离线 Oracle 提供六例公开资料审查、严格触发条件/证据引用、环境资格与确定性报告。仅合成测试域开放规则 `VERIFIED`；真实 CVE 仍为 `NOT_VERIFIED`，未实现生产根因验证器。见 [合同与命令](docs/P3_A_ORACLE_CONTRACT.md)、[六例资格](docs/P3_A_CVE_ELIGIBILITY.md)、[实际验收](docs/P3_A_VALIDATION.md)。
 
 ## 2. 尚未实现的功能与边界
 
-主流程没有自动 CUDA 编译、PoC 执行、Compute Sanitizer 验证、运行反馈迭代、CVE 成功 oracle 或 benchmark。`iteration` 配置是保留的历史接口，当前不控制循环；静态纠正也不是运行反馈。
+主流程没有自动 CUDA 编译、PoC 执行、Compute Sanitizer 验证、运行反馈迭代、真实 CVE 成功 Oracle 或 benchmark。P3-A 只建立独立离线条件合同和合成规则判定。`iteration` 配置是保留的历史接口，当前不控制循环；静态纠正也不是运行反馈。
 
 P1-A 已接入严格输入与分析合同：JSON/schema/CVE 不合格会失败，不再传入代码生成。结构合法仍不能证明模型根因、输入资料或拟定策略属实。AST 通过不代表依赖可导入、CUDA API 正确、可以运行或漏洞触发；静态纠正最终失败仍保存候选，并明确标为 `STATIC_INVALID`、`NOT_EXECUTED`、`NOT_VERIFIED`。
 
@@ -266,13 +267,13 @@ P2-C 新增固定空 kernel 的编译与二进制检查入口。只有操作者�
 - RAG DLL/模型加载问题：检查 CPU torch 与 Python 的版本兼容性，或临时使用 `--no-rag`；不要盲目强制重装 GPU 软件。
 - WSL 工具缺失：检查已安装工具的 Linux 路径和 PATH，Windows 路径不能替代 Linux 动态库。
 - `WSL_UNAVAILABLE` / `WSL_DISTRO_NOT_FOUND`：检查已启用的 `wsl.exe` 和发行版名称；超时或无效响应查看本次私有 `probe_result.json`，不会复用历史快照。
-- 不要自动运行 `_diag.py`：这是历史联网诊断脚本，会进行真实模型请求且包含旧模型配方。`_check_rel.py` 是历史 CUDA 编译脚本，也不属于离线测试。
+- 历史临时诊断脚本 `_diag.py`、`_check_rel.py` 已按维护者要求移除；正式离线测试使用上述 pytest 命令。
 
 逐项 PASS/FAILED/NOT_CHECKED、修改前后对比见 [P0 验收记录](docs/P0_VALIDATION.md)。离线 Mock 通过只能证明这些接线和静态行为；真实 LLM、RAG、Tavily 和漏洞触发不在本轮通过范围。P1-B 另行完成真实 GPU/工具只读查询和 Windows → WSL 通信，结果不等于 CUDA 执行成功。
 
 P1-A 新增严格合同与阻断、原文保留及独立状态回归，双环境验收见 [P1-A 交付记录](docs/P1_A_VALIDATION.md)。非 JSON、截断、额外杂文、重复键、NaN/Infinity、字段缺失/类型错误、步骤 ID 或目标 CVE 冲突均会失败；没有结构纠正重试（0次），供应商请求沿用既有有界重试。
 
-P1-B 见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)；P1-C 工具修复、双环境测试和未检查项见 [工具合同](docs/P1_C_TOOL_CONTRACT.md)、[验收记录](docs/P1_C_VALIDATION.md)。P2-A 的双环境测试、身份负例与真实固定 fixture 结果见 [验收记录](docs/P2_A_VALIDATION.md)。后续 P2 才接入经授权和隔离的候选编译/执行；P3 实现目标 oracle；P4 有界反馈；P5 建立可复现 benchmark。
+P1-B 见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)；P1-C 工具修复、双环境测试和未检查项见 [工具合同](docs/P1_C_TOOL_CONTRACT.md)、[验收记录](docs/P1_C_VALIDATION.md)。P2-A 的双环境测试、身份负例与真实固定 fixture 结果见 [验收记录](docs/P2_A_VALIDATION.md)。P2-B/P2-C 已提供固定无害动作和真实工具证据；P3-A 已建立离线 Oracle 合同。经授权的候选执行准入、真实根因验证、受影响/修复差分仍待独立审查；P4 有界反馈、P5 benchmark 尚未实现。
 
 ## 14. 安全边界、来源与许可证说明
 
