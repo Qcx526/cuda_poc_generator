@@ -54,6 +54,7 @@ class CudaPipeline:
         self.code_gen = None
         self._outputs_dir = outputs_dir
         self.last_run = None
+        self.archive_artifacts = False  # frozen v1 API; main.py enables formal archives
 
     def _initialize_components(self, outputs_dir: str) -> None:
         if self.llm is None:
@@ -71,6 +72,7 @@ class CudaPipeline:
         output_dir: Optional[str] = None,
         target_backend: Optional[str] = None,
         wsl_distro: Optional[str] = None,
+        archive_artifacts: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Normalize inputs, validate analysis, then save an unexecuted candidate.
 
@@ -78,6 +80,9 @@ class CudaPipeline:
         report before raising, so the CLI exits unsuccessfully. Existing v1
         sources are retained and never cited as current successful artifacts.
         """
+        archive_artifacts = self.archive_artifacts if archive_artifacts is None else archive_artifacts
+        if type(archive_artifacts) is not bool:
+            raise ValueError("archive_artifacts must be a bool")
         base_dir = Path(output_dir or self._outputs_dir)
         ensure_dir(str(base_dir))
         self._print_banner()
@@ -124,6 +129,16 @@ class CudaPipeline:
             write_json(str(target_dir / "cuda_poc_v1.status.json"), report["candidate"])
             report["artifacts"]["candidate_status"] = artifact("cuda_poc_v1.status.json")
             write_json(str(target_dir / "cuda_run_v1.json"), report)
+            # Immutable per-run research archive; v1 generation files and their
+            # scientific status/hash semantics remain unchanged.
+            if archive_artifacts and bundle.is_valid and bundle.cve_id:
+                from .artifact_packaging import create_generation_run
+                inputs_path = input_dir or str(self.cfg.resolve_path(self.cfg.paths.get("inputs_dir", "data/inputs")))
+                create_generation_run(bundle.cve_id, run_id, target_dir, report,
+                                      output_root=base_dir, input_directory=inputs_path)
+            elif archive_artifacts:
+                from .report_locale import write_report_view, _json
+                write_report_view(base_dir / "generation_runs" / run_id / "reports", "GENERATION", {"generation.json": _json(report)})
             return report
 
         manifest = bundle.model_dump(mode="json")

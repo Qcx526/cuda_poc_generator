@@ -16,6 +16,8 @@
 - P1-C 底层工具使用严格 `ToolResult` 和私有原始日志；编译采用受控 argv、明确架构及参数白名单，ELF 操作严格支持 ELF64 little-endian。
 - P2-C 独立入口支持明确授权的固定无害 CUDA 编译/检查、受控进程与跨环境原始证据核验；不启动 kernel 或生成候选。
 - P3-A 独立离线 Oracle 提供六例公开资料审查、严格触发条件/证据引用、环境资格与确定性报告。仅合成测试域开放规则 `VERIFIED`；真实 CVE 仍为 `NOT_VERIFIED`，未实现生产根因验证器。见 [合同与命令](docs/P3_A_ORACLE_CONTRACT.md)、[六例资格](docs/P3_A_CVE_ELIGIBILITY.md)、[实际验收](docs/P3_A_VALIDATION.md)。
+- P3-B 增加主机侧 Memcheck XML v4 证据解析、A～F 准备条件、固定 Windows→WSL 诊断能力探测；未认证导入和合成数据不能升级为真实 CVE 证据。见 [专项证据](docs/P3_B_HOST_PARSER_EVIDENCE.md)、[可行性矩阵](docs/P3_B_FEASIBILITY.md)。
+- 新正式报告默认简体中文 UTF-8；main.py 默认按 `data/outputs/<CVE>/runs/<run_id>/` 保存独立研究归档，支持中文导航 ZIP、包外 SHA 和离线校验。旧 v1 API/英文完整性载体保留，历史原件不改。见 [语言合同](docs/REPORT_LOCALE_CONTRACT.md)、[归档合同](docs/CVE_ARTIFACT_PACKAGING.md)、[P3-B 验收](docs/P3_B_VALIDATION.md)。
 
 ## 2. 尚未实现的功能与边界
 
@@ -276,6 +278,19 @@ P1-A 新增严格合同与阻断、原文保留及独立状态回归，双环境
 P1-B 见 [平台合同](docs/P1_B_PLATFORM_CONTRACT.md)、[验收记录](docs/P1_B_VALIDATION.md)；P1-C 工具修复、双环境测试和未检查项见 [工具合同](docs/P1_C_TOOL_CONTRACT.md)、[验收记录](docs/P1_C_VALIDATION.md)。P2-A 的双环境测试、身份负例与真实固定 fixture 结果见 [验收记录](docs/P2_A_VALIDATION.md)。P2-B/P2-C 已提供固定无害动作和真实工具证据；P3-A 已建立离线 Oracle 合同。经授权的候选执行准入、真实根因验证、受影响/修复差分仍待独立审查；P4 有界反馈、P5 benchmark 尚未实现。
 
 ## 14. 安全边界、来源与许可证说明
+
+P3-B 的诊断、资料归档与离线验证可从 Windows venv 使用：
+
+```powershell
+.\.venv\Scripts\python.exe -m src.host_diagnostics_probe --backend wsl
+$p3bRunId = [guid]::NewGuid().ToString("N")
+.\.venv\Scripts\python.exe -m src.artifact_cli import-review --cve CVE-2025-23308 --run-id $p3bRunId
+.\.venv\Scripts\python.exe -m src.artifact_cli package --cve CVE-2025-23308 --run-id $p3bRunId
+.\.venv\Scripts\python.exe -m src.artifact_cli verify --package <zip-path> --expected-sha256 <independently-checked-package-sha256>
+.\.venv\Scripts\python.exe -m src.report_cli --help
+```
+
+尖括号参数是模板。版本探测只运行固定 `--version`；资料包有七维原始副本和中文审查报告，执行与 Oracle 部分明确未执行/未评估。`INTEGRITY_VERIFIED` 不是 CVE `VERIFIED`。两个目标的根因和修复差分未完成，真实实验隔离/准备仍为 `UNSUPPORTED`。Synthetic、通用探测和固定 smoke 不归入真实 CVE 实验包。包目录示例、实际 ZIP 哈希与重建结果见 [中文归档验收](docs/P3_B_PACKAGING_VALIDATION.md)。
 
 仅用于经过授权的安全研究和防御验证。不得自动运行真实漏洞 PoC、提权或破坏性样本；不得把模型结论当客观证据；不得提交 API Key、私有日志、GPU UUID 或主机绝对路径。
 

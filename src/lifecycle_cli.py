@@ -88,8 +88,10 @@ def run_authorized_action(*, authorize_fixed_actions, action_id, authorization_r
     options = {"distro": distro, "user": user, "linux_python": linux_python, "linux_project_root": linux_project_root}
     described = describe_fixed_fixture_wsl(**options)
     readiness = write_readiness_evidence(None, described)
+    from .report_locale import write_execution_view_from_archive
+    readiness_view = write_execution_view_from_archive(readiness)
     if described["packet"] is None or described["packet"]["status"] != "DESCRIBED":
-        return {"effective_state": "UNKNOWN", "readiness_report": str(readiness / "report.md"),
+        return {"effective_state": "UNKNOWN", "readiness_report": str(readiness_view / "report.zh-CN.md"), "report_locale": "zh-CN",
                 "candidate_execution_status": "NOT_EXECUTED", "verification_status": "NOT_VERIFIED"}
     req, grant, policy, snapshot, tool = build_operator_context(described["packet"], action_id,
         operator_id=operator_id, authorization_reference=authorization_reference, cancellation_test=cancel_after_seconds is not None)
@@ -103,14 +105,18 @@ def run_authorized_action(*, authorize_fixed_actions, action_id, authorization_r
                                        snapshot=snapshot, binding_tool_result=tool)
     checked = read_execution_evidence(folder, expected_request_id=req.request_id, expected_run_id=result["record"]["run_id"])
     manifest = checked["manifest"]
+    view = write_execution_view_from_archive(folder,source_domain="RECORDED_EXECUTION")
     return {"request_id": req.request_id, "run_id": result["record"]["run_id"], "action_id": action_id,
             "remote_state": result["record"]["status"], "effective_state": manifest.effective_status,
             "cleanup_confirmation": manifest.cleanup_confirmation, "evidence_directory": str(folder),
+            "report": str(view / "report.zh-CN.md"), "report_locale": "zh-CN",
             "control_handle_file": str(control_file),
             "candidate_execution_status": "NOT_EXECUTED", "verification_status": "NOT_VERIFIED"}
 
 
 def main(argv=None):
+    from .report_locale import configure_utf8_stdio, failure_with_legacy_zh
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description="Authorized registered harmless Windows-to-WSL lifecycle check; no candidate execution")
     parser.add_argument("--authorize-fixed-actions", action="store_true")
     parser.add_argument("--action", required=True, choices=tuple(REGISTERED_ACTIONS))
@@ -131,18 +137,19 @@ def main(argv=None):
     except LifecycleDispatchError as exc:
         # If the storage device is unavailable, keep a deterministic in-memory
         # report on stderr instead of inventing an on-disk evidence success.
-        print(exc.report, file=sys.stderr)
+        print(failure_with_legacy_zh(exc.report,exc.record), file=sys.stderr)
         return 1
     except EvidenceWriteError as exc:
         observed = exc.record
-        print("# P2-B evidence persistence failure\n\nStatus: UNKNOWN\nStorage: INCOMPLETE\n"
+        legacy=("# P2-B evidence persistence failure\n\nStatus: UNKNOWN\nStorage: INCOMPLETE\n"
               + ("Request: " + observed.request_id + "\nRun: " + observed.run_id
                  + "\nRemote recorded status: " + observed.status + "\n" if observed is not None else "")
               + "\nThe evidence manifest could not be committed. No persisted evidence success is claimed."
-              + "\nCandidate execution: NOT_EXECUTED. CVE verification: NOT_VERIFIED.\n", file=sys.stderr)
+              + "\nCandidate execution: NOT_EXECUTED. CVE verification: NOT_VERIFIED.\n")
+        print(failure_with_legacy_zh(legacy,observed),file=sys.stderr)
         return 1
     except (ValueError, OSError) as exc:
-        print("Controlled lifecycle check failed: " + str(exc), file=sys.stderr)
+        print(failure_with_legacy_zh(type(exc).__name__+": "+str(exc)), file=sys.stderr)
         return 1
     print(json.dumps(result, ensure_ascii=False))
     return 0 if result["effective_state"] == "COMPLETED" else 1

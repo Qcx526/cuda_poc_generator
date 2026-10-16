@@ -102,10 +102,18 @@ def run_platform_probe(*, backend="local", distro="Ubuntu-22.04",
     result["run_directory"] = str(folder)
     if result["snapshot"] is not None:
         result["snapshot"]["metadata"]["record_directory"] = str(folder)
+    # Frozen v1 evidence/report bytes stay intact. New formal presentation is a
+    # separate versioned Chinese view, with its own source-byte integrity index.
+    from .report_locale import write_report_view, _json
+    view = write_report_view(Path(root) / "report_views" / probe_id, "PLATFORM", {"platform.json": _json(result)},source_domain="READ_ONLY_CAPABILITY")
+    result["report_locale"] = "zh-CN"
+    result["report"] = str(view / "report.zh-CN.md")
     return result
 
 
 def main():
+    from .report_locale import configure_utf8_stdio, failure_with_legacy_zh
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description="Read-only platform probe; never executes CUDA or PoCs")
     parser.add_argument("--backend", choices=("local", "wsl"), default="local")
     parser.add_argument("--distro", default="Ubuntu-22.04")
@@ -120,9 +128,9 @@ def main():
                                     user=args.wsl_user, timeout_seconds=args.timeout,
                                     max_output_bytes=args.max_output_bytes, output_root=args.output_root)
     except (ValueError, OSError) as exc:
-        print("[ERROR] Read-only probe failed: " + str(exc), file=sys.stderr)
+        print(failure_with_legacy_zh(type(exc).__name__+": "+str(exc)), file=sys.stderr)
         return 1
-    print(f"Read-only probe: {result['status']}; records: {result['run_directory']}")
+    print(f"只读探测：{result['status']}；原始记录：{result['run_directory']}；中文报告：{result['report']}")
     print("NOT_EXECUTED / NOT_VERIFIED")
     return 1 if result["status"] == "FAILED" else 0
 

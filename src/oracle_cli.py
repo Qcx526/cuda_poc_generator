@@ -10,6 +10,7 @@ from .oracle import evaluate_oracle
 from .oracle_catalog import COARSE_UPPER, load_reviewed_claim, smoke_review_plan
 from .oracle_evidence import EvidenceCorpus, load_p2c_evidence, _strict_json
 from .oracle_report import rebuild_oracle_report, save_oracle_report
+from .report_locale import save_localized_oracle_report, render_oracle_zh
 
 
 def _read_plan(path):
@@ -20,6 +21,8 @@ def _read_plan(path):
 
 
 def main(argv=None):
+    from .report_locale import configure_utf8_stdio
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description="P3-A offline Oracle; no process, model or CVE execution")
     commands = parser.add_subparsers(dest="command", required=True)
     catalog = commands.add_parser("claim", help="read reviewed public-source assertions plus original P1-A hashes")
@@ -47,7 +50,13 @@ def main(argv=None):
             print(load_reviewed_claim(args.cve).model_dump_json(indent=2))
             return 0
         if args.command == "rebuild-report":
-            print(rebuild_oracle_report(args.report_dir), end="")
+            rebuild_oracle_report(args.report_dir)  # frozen v1 integrity first
+            folder=Path(args.report_dir)
+            plan=_read_plan(folder/"plan.json")
+            from .models.oracle import OracleResult, VulnerabilityClaim
+            result=OracleResult.model_validate(_strict_json((folder/"result.json").read_bytes()))
+            claim=VulnerabilityClaim.model_validate(_strict_json((folder/"claim.json").read_bytes())) if (folder/"claim.json").exists() else None
+            print(render_oracle_zh(plan,result,claim),end="")
             return 0
         if args.command == "synthetic":
             case_path = Path(args.case)
@@ -63,6 +72,7 @@ def main(argv=None):
                 artifacts={name: raw.encode("utf-8") for name, raw in case["artifacts"].items()})
             result = evaluate_oracle(plan, corpus, trusted_plan_sha256=args.trusted_plan_sha256)
             save_oracle_report(args.report_dir, plan, result)
+            save_localized_oracle_report(str(args.report_dir)+".zh-CN",plan,result)
             print(result.model_dump_json(indent=2))
             return 2 if result.condition_status == "CONFLICT" else 0
         corpus = load_p2c_evidence(args.evidence, expected_manifest_sha256=args.manifest_sha256)
@@ -76,6 +86,7 @@ def main(argv=None):
         plan = _read_plan(args.plan)
         result = evaluate_oracle(plan, corpus, trusted_plan_sha256=args.trusted_plan_sha256)
         save_oracle_report(args.report_dir, plan, result, load_reviewed_claim(plan.cve_id))
+        save_localized_oracle_report(str(args.report_dir)+".zh-CN",plan,result,load_reviewed_claim(plan.cve_id))
         print(json.dumps({"eligibility": result.eligibility.status, "condition_status": result.condition_status,
                           "verdict": result.verdict, "real_cve_verification": result.real_cve_verification}))
         # An exit code expresses evaluation/report completion, never CVE success.

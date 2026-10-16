@@ -96,6 +96,7 @@ def main() -> None:
         # CLI help and input checks also work before dependencies are installed.
         from src.pipeline import CudaPipeline
         pipeline = CudaPipeline(config_path=args.config)
+        pipeline.archive_artifacts = True
         options = {}
         if args.target_backend is not None:
             options["target_backend"] = args.target_backend

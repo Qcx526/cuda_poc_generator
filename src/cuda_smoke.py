@@ -77,10 +77,12 @@ def run_safe_cuda_smoke(*, authorize_safe_cuda_smoke, authorization_reference, o
     transport, packet, diagnostics = describe_cuda_smoke_wsl(**options)
     from .lifecycle_artifacts import write_cuda_readiness_evidence
     readiness = write_cuda_readiness_evidence(output_root, transport, packet, diagnostics)
+    from .report_locale import write_execution_view_from_archive
+    readiness_view = write_execution_view_from_archive(readiness)
     description = None if packet is None else packet.get("cuda_description")
     if description is None or description["status"] != "DESCRIBED":
         return {"effective_state": "UNKNOWN" if description is None else description["status"],
-            "readiness_report": str(readiness / "report.md"), "candidate_execution_status": "NOT_EXECUTED",
+            "readiness_report": str(readiness_view / "report.zh-CN.md"), "report_locale": "zh-CN", "candidate_execution_status": "NOT_EXECUTED",
             "verification_status": "NOT_VERIFIED"}
     run_id = uuid.uuid4().hex
     req, grant, policy, snapshot, tool = build_cuda_operator_context(description, run_id=run_id,
@@ -94,15 +96,18 @@ def run_safe_cuda_smoke(*, authorize_safe_cuda_smoke, authorization_reference, o
         policy=policy, snapshot=snapshot, binding_tool_result=tool)
     checked = read_execution_evidence(folder, expected_request_id=req.request_id, expected_run_id=run_id)
     manifest = checked["manifest"]
+    view = write_execution_view_from_archive(folder,source_domain="RECORDED_EXECUTION")
     return {"request_id": req.request_id, "run_id": run_id, "action_id": CUDA_SMOKE_ID,
         "remote_state": checked["record"].status, "effective_state": manifest.effective_status,
         "cleanup_confirmation": manifest.cleanup_confirmation,
         "native_evidence": manifest.native_evidence.status,
-        "evidence_directory": str(folder), "report": str(folder / "report.md"),
+        "evidence_directory": str(folder), "report": str(view / "report.zh-CN.md"), "report_locale": "zh-CN",
         "control_handle_file": str(control), "candidate_execution_status": "NOT_EXECUTED", "verification_status": "NOT_VERIFIED"}
 
 
 def main(argv=None):
+    from .report_locale import configure_utf8_stdio, failure_with_legacy_zh
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description="Explicitly authorized fixed CUDA compile/inspect in WSL; never launches a kernel or PoC")
     parser.add_argument("--authorize-safe-cuda-smoke", action="store_true")
     parser.add_argument("--backend", choices=["wsl"], default="wsl")
@@ -121,16 +126,17 @@ def main(argv=None):
             linux_project_root=args.linux_project_root, backend=args.backend, distro=args.distro,
             user=args.wsl_user, linux_python=args.linux_python, arch=args.arch, output_root=args.output_root)
     except LifecycleDispatchError as exc:
-        print(exc.report, file=sys.stderr)
+        print(failure_with_legacy_zh(exc.report,exc.record), file=sys.stderr)
         return 1
     except EvidenceWriteError as exc:
         record = exc.record
-        print("CUDA smoke evidence storage INCOMPLETE; no persisted success is claimed."
+        legacy=("CUDA smoke evidence storage INCOMPLETE; no persisted success is claimed."
               + (" Remote recorded status: " + record.status if record is not None else "")
-              + " Candidate NOT_EXECUTED; CVE NOT_VERIFIED.", file=sys.stderr)
+              + " Candidate NOT_EXECUTED; CVE NOT_VERIFIED.")
+        print(failure_with_legacy_zh(legacy,record),file=sys.stderr)
         return 1
     except (OSError, ValueError) as exc:
-        print("Fixed safe CUDA smoke failed: " + str(exc), file=sys.stderr)
+        print(failure_with_legacy_zh(type(exc).__name__+": "+str(exc)), file=sys.stderr)
         return 1
     print(json.dumps(result, ensure_ascii=False))
     return 0 if result["effective_state"] == "COMPLETED" and result.get("native_evidence") == "VERIFIED" else 1
