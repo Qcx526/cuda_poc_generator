@@ -18,6 +18,7 @@
 - P3-A 独立离线 Oracle 提供六例公开资料审查、严格触发条件/证据引用、环境资格与确定性报告。仅合成测试域开放规则 `VERIFIED`；真实 CVE 仍为 `NOT_VERIFIED`，未实现生产根因验证器。见 [合同与命令](docs/P3_A_ORACLE_CONTRACT.md)、[六例资格](docs/P3_A_CVE_ELIGIBILITY.md)、[实际验收](docs/P3_A_VALIDATION.md)。
 - P3-B 增加主机侧 Memcheck XML v4 证据解析、A～F 准备条件、固定 Windows→WSL 诊断能力探测；未认证导入和合成数据不能升级为真实 CVE 证据。见 [专项证据](docs/P3_B_HOST_PARSER_EVIDENCE.md)、[可行性矩阵](docs/P3_B_FEASIBILITY.md)。
 - 新正式报告默认简体中文 UTF-8；main.py 默认按 `data/outputs/<CVE>/runs/<run_id>/` 保存独立研究归档，支持中文导航 ZIP、包外 SHA 和离线校验。旧 v1 API/英文完整性载体保留，历史原件不改。见 [语言合同](docs/REPORT_LOCALE_CONTRACT.md)、[归档合同](docs/CVE_ARTIFACT_PACKAGING.md)、[P3-B 验收](docs/P3_B_VALIDATION.md)。
+- P3-C 支持显式 `--package`，将本轮生成、中文归档、ZIP 和独立校验串联，输出 ZIP 路径与包外 SHA；失败不引用旧 run。固定 CPU 诊断仅提供准备/阻断和无 CVE 的离线 XML 接口，未获安装或执行授权，真实 Memcheck 联调仍为 NOT_CHECKED。见 [交付合同](docs/P3_C_PACKAGING.md)、[诊断准备](docs/P3_C_REAL_DIAGNOSTIC.md)、[验收](docs/P3_C_VALIDATION.md)。
 
 ## 2. 尚未实现的功能与边界
 
@@ -119,6 +120,8 @@ WSL Remote 工作区中通过 **Python: Select Interpreter** 指定 `/home/pocde
 原 requirements 中未直接使用的 `langchain` 聚合包、community、text-splitters、rich、click 不再强制安装；实际需要的 LangSmith/tiktoken 仍由 LangChain 引入。Tavily 补上单独 extra。`requirements.txt` 保留旧式完整安装入口（RAG + search），可能下载较多依赖；推荐按需安装。
 
 ## 8. API Key 与模型配置
+
+`llm.model_name` 是模型名，`llm.api_base` 是 API 地址，`llm.api_key_env` 是保存密钥的环境变量名称。当前默认 YAML 的三项同名 `CPG_*` 写法采用有限兼容规则：有标准环境覆盖时使用覆盖值，缺失时采用已发布默认值并给出中文警告。其他普通字符串不会自动展开；推荐显式引用 `{env: MY_SETTING, default: "value"}`，实际密钥仍留在未跟踪的 `.env`。精确语义、优先级与七项旧失败的修复见 [配置兼容合同](docs/P3_C_CONFIG_COMPATIBILITY.md)。
 
 仅在本地创建 `.env`，不要把真实密钥填进 `.env.example`：
 
@@ -291,6 +294,10 @@ $p3bRunId = [guid]::NewGuid().ToString("N")
 ```
 
 尖括号参数是模板。版本探测只运行固定 `--version`；资料包有七维原始副本和中文审查报告，执行与 Oracle 部分明确未执行/未评估。`INTEGRITY_VERIFIED` 不是 CVE `VERIFIED`。两个目标的根因和修复差分未完成，真实实验隔离/准备仍为 `UNSUPPORTED`。Synthetic、通用探测和固定 smoke 不归入真实 CVE 实验包。包目录示例、实际 ZIP 哈希与重建结果见 [中文归档验收](docs/P3_B_PACKAGING_VALIDATION.md)。
+
+需要生成后自动交付时，可使用 `python main.py --cve-id CVE-2025-23308 --no-rag --package`；该命令正常使用会调用配置的模型，本阶段只以 Mock 验收。候选仍不运行，原六份 v1 产物保留，并额外保存本轮 `runs/<run_id>/`、`packages/<CVE>_<run_id>.zip` 及包外中文交付回执。没有 `--package` 时不自动创建 ZIP。旧 Python API 默认布局不变。
+
+未获授权的无害主机诊断只能准备或离线解析：`python -m src.host_diagnostic_tasks --help`。准备状态为 REJECTED，缺工具、授权、隔离及资源适配均不降级放行；通用档案不绑定 CVE。详见 [P3-C 真实诊断准备](docs/P3_C_REAL_DIAGNOSTIC.md)。
 
 仅用于经过授权的安全研究和防御验证。不得自动运行真实漏洞 PoC、提权或破坏性样本；不得把模型结论当客观证据；不得提交 API Key、私有日志、GPU UUID 或主机绝对路径。
 

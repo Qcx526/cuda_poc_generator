@@ -55,6 +55,8 @@ class CudaPipeline:
         self._outputs_dir = outputs_dir
         self.last_run = None
         self.archive_artifacts = False  # frozen v1 API; main.py enables formal archives
+        self.package_artifacts = False
+        self.last_delivery = None
 
     def _initialize_components(self, outputs_dir: str) -> None:
         if self.llm is None:
@@ -73,6 +75,7 @@ class CudaPipeline:
         target_backend: Optional[str] = None,
         wsl_distro: Optional[str] = None,
         archive_artifacts: Optional[bool] = None,
+        package_artifacts: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Normalize inputs, validate analysis, then save an unexecuted candidate.
 
@@ -80,9 +83,15 @@ class CudaPipeline:
         report before raising, so the CLI exits unsuccessfully. Existing v1
         sources are retained and never cited as current successful artifacts.
         """
+        self.last_delivery = None  # Also clear stale delivery on invalid arguments.
         archive_artifacts = self.archive_artifacts if archive_artifacts is None else archive_artifacts
         if type(archive_artifacts) is not bool:
             raise ValueError("archive_artifacts must be a bool")
+        package_artifacts = self.package_artifacts if package_artifacts is None else package_artifacts
+        if type(package_artifacts) is not bool:
+            raise ValueError("package_artifacts must be a bool")
+        if package_artifacts:
+            archive_artifacts = True
         base_dir = Path(output_dir or self._outputs_dir)
         ensure_dir(str(base_dir))
         self._print_banner()
@@ -131,7 +140,24 @@ class CudaPipeline:
             write_json(str(target_dir / "cuda_run_v1.json"), report)
             # Immutable per-run research archive; v1 generation files and their
             # scientific status/hash semantics remain unchanged.
-            if archive_artifacts and bundle.is_valid and bundle.cve_id:
+            if package_artifacts:
+                from .generation_delivery import deliver_generation, save_delivery_receipt, GenerationDelivery
+                inputs_path = input_dir or str(self.cfg.resolve_path(self.cfg.paths.get("inputs_dir", "data/inputs")))
+                delivery = deliver_generation(run_record=report, source_directory=target_dir,
+                    output_root=base_dir, input_directory=inputs_path,
+                    cve_id=bundle.cve_id if bundle.is_valid else None)
+                self.last_delivery = delivery.model_dump(mode="json")
+                try:
+                    save_delivery_receipt(delivery, output_root=base_dir)
+                except (OSError, ValueError, RuntimeError) as delivery_exc:
+                    failed = {**self.last_delivery, "package_status": "FAILED",
+                              "package_path": None, "package_sha256": None, "manifest_sha256": None,
+                              "error_type": type(delivery_exc).__name__,
+                              "explanation_zh": "交付回执未完整保存，不能确认本轮交付成功；原始材料及已写文件保留。"}
+                    self.last_delivery = GenerationDelivery.model_validate(failed).model_dump(mode="json")
+                if status == "COMPLETE" and self.last_delivery["package_status"] != "INTEGRITY_VERIFIED":
+                    raise RuntimeError("本轮归档或 ZIP 交付不完整，请核对 delivery_attempts 中文报告；未回退到历史 run。")
+            elif archive_artifacts and bundle.is_valid and bundle.cve_id:
                 from .artifact_packaging import create_generation_run
                 inputs_path = input_dir or str(self.cfg.resolve_path(self.cfg.paths.get("inputs_dir", "data/inputs")))
                 create_generation_run(bundle.cve_id, run_id, target_dir, report,

@@ -14,6 +14,7 @@
 import logging
 import math
 import os
+import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -27,6 +28,15 @@ except ImportError:
 from .utils import resolve_project_root
 
 logger = logging.getLogger("cuda_poc_generator.config_loader")
+
+# Only these exact, field-specific legacy placeholders have compatibility
+# semantics. Arbitrary uppercase strings remain ordinary YAML values.
+_LEGACY_LLM_PLACEHOLDERS = {
+    "model_name": ("CPG_LLM_MODEL_NAME", "deepseek-flash"),
+    "api_base": ("CPG_LLM_API_BASE", "https://api.deepseek.com"),
+    "api_key_env": ("CPG_LLM_API_KEY_ENV", "DEEPSEEK_API_KEY"),
+}
+_ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 
 
 class ConfigLoader:
@@ -57,11 +67,60 @@ class ConfigLoader:
             # YAML exceptions can include local configuration contents; do not echo them.
             raise ValueError("配置 YAML 语法错误，请检查配置文件的缩进和字段格式。") from None
         self.config: Dict[str, Any] = {} if loaded is None else loaded
+        self.configuration_diagnostics: list[dict[str, str]] = []
         self._validate_sections()
 
         # 用环境变量覆盖部分配置
         self._apply_env_overrides()
+        self._resolve_llm_references()
         self._validate_config()
+
+    def _resolve_llm_references(self) -> None:
+        """Resolve bounded LLM references without expanding ordinary strings.
+
+        Standard CPG overrides were applied first. Explicit reference mappings
+        have the form {env: NAME, default: VALUE}; {literal: VALUE} escapes the
+        three documented legacy placeholder strings. Values are never evaluated
+        as shell text and reference expansion is deliberately non-recursive.
+        """
+        for field, (legacy_name, published_default) in _LEGACY_LLM_PLACEHOLDERS.items():
+            if field not in self.llm:
+                continue
+            value = self.llm[field]
+            # An override is already a final value, not reference syntax. In
+            # particular api_key_env names the variable containing the key.
+            if legacy_name in os.environ:
+                continue
+            if isinstance(value, dict):
+                if set(value) == {"literal"}:
+                    resolved = value["literal"]
+                    code = "EXPLICIT_LITERAL"
+                else:
+                    if not {"env"} <= set(value) <= {"env", "default"}:
+                        raise ValueError(f"配置字段 llm.{field} 的环境变量引用格式无效。")
+                    name = value["env"]
+                    if not isinstance(name, str) or _ENVIRONMENT_NAME.fullmatch(name) is None:
+                        raise ValueError(f"配置字段 llm.{field} 的环境变量名称无效。")
+                    if "default" in value and (
+                            not isinstance(value["default"], str) or not value["default"].strip()):
+                        raise ValueError(f"配置字段 llm.{field} 的引用默认值必须为非空字符串。")
+                    resolved = os.environ.get(name, value.get("default"))
+                    if resolved is None:
+                        raise ValueError(f"配置字段 llm.{field} 的显式环境变量引用未设置且没有默认值。")
+                    code = "EXPLICIT_ENVIRONMENT_REFERENCE"
+                if not isinstance(resolved, str) or not resolved.strip():
+                    raise ValueError(f"配置字段 llm.{field} 的引用结果必须为非空字符串。")
+                self.llm[field] = resolved
+                self.configuration_diagnostics.append({"field": f"llm.{field}", "code": code})
+            elif value == legacy_name:
+                self.llm[field] = published_default
+                self.configuration_diagnostics.append({
+                    "field": f"llm.{field}", "code": "LEGACY_PLACEHOLDER_DEFAULT",
+                })
+                logger.warning(
+                    "配置字段 llm.%s 使用历史 CPG 占位符且未设置对应覆盖；"
+                    "采用已发布默认值。建议使用明确值或 {env: NAME, default: VALUE}。", field,
+                )
 
     def _load_project_dotenv(self) -> None:
         """仅在实例化时加载项目根 .env，保留已设置的进程环境变量。"""

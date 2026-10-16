@@ -42,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dir", type=str, default=None, help="输入目录（与 --cve-id 互斥）")
     parser.add_argument("--output-dir", type=str, default=None, help="输出目录")
     parser.add_argument("--no-rag", action="store_true", default=False, help="禁用 RAG")
+    parser.add_argument("--package", action="store_true", default=False,
+                        help="为本轮生成产物创建中文 CVE/run 归档和 ZIP，并独立校验；不执行候选")
     parser.add_argument("--target-backend", choices=["local", "wsl"], default=None, help="目标平台：当前宿主或显式 WSL 只读探测")
     parser.add_argument("--wsl-distro", default=None, help="显式 WSL 发行版，例如 Ubuntu-22.04")
     parser.add_argument("--log-level", type=str, default="INFO",
@@ -97,6 +99,7 @@ def main() -> None:
         from src.pipeline import CudaPipeline
         pipeline = CudaPipeline(config_path=args.config)
         pipeline.archive_artifacts = True
+        pipeline.package_artifacts = args.package
         options = {}
         if args.target_backend is not None:
             options["target_backend"] = args.target_backend
@@ -105,6 +108,13 @@ def main() -> None:
                 raise ValueError("--wsl-distro 需要显式 --target-backend wsl。")
             options["wsl_distro"] = args.wsl_distro
         pipeline.run(input_dir=input_dir, output_dir=args.output_dir, **options)
+        if args.package:
+            delivery = pipeline.last_delivery
+            if not delivery or delivery.get("package_status") != "INTEGRITY_VERIFIED":
+                raise RuntimeError("本轮 ZIP 交付未完整完成，请核对中文失败报告；未使用旧 run 替代。")
+            print(f"[交付] 本轮 ZIP：{delivery['package_path']}")
+            print(f"[交付] 包外 SHA-256：{delivery['package_sha256']}")
+            print("[交付] INTEGRITY_VERIFIED；NOT_EXECUTED / NOT_VERIFIED。")
     except ImportError:
         print('[ERROR] 缺少运行依赖。请在项目 venv 中执行: python -m pip install -e "."')
         sys.exit(1)

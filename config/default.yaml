@@ -9,9 +9,9 @@
 # 兼容旧的 DEEPSEEK_KEY；其他端点需显式指定自己的 api_key_env。
 # 模型以服务商当前可用配置为准，可由 CPG_LLM_MODEL_NAME 覆盖。
 llm:
-  model_name: "deepseek-flash"
-  api_base: "https://api.deepseek.com"
-  api_key_env: "DEEPSEEK_API_KEY"
+  model_name: "CPG_LLM_MODEL_NAME"
+  api_base: "CPG_LLM_API_BASE"
+  api_key_env: "CPG_LLM_API_KEY_ENV"
   temperature: 0.3
   max_tokens: 4096  # 输出上限；长代码可能截断，需人工检查。
   timeout: 600      # 单次请求读取超时（秒），不是全部重试的总时限。

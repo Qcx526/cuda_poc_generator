@@ -2,6 +2,7 @@
 * text=auto
 *.py text eol=lf
 tests/fixtures/cuda/*.cu text eol=lf
+tests/fixtures/host_diagnostics/*.c text eol=lf
 *.md text eol=lf
 *.json text eol=lf
 *.yaml text eol=lf
