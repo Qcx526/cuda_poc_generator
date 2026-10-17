@@ -15,6 +15,99 @@ from .models.tool_result import ToolResult
 from .tools.process import current_platform_type
 
 
+def fixed_memcheck_task_root():
+    return Path.home() / ".local" / "state" / "cuda-poc-generator" / "memcheck_tasks"
+
+
+def preflight_fixed_memcheck(request, authorization, policy, description, *, project_root):
+    """Versioned fixed-CPU admission. READY permits the resource guard only.
+
+    It never asserts that limits/isolation have been applied. The sandbox guard
+    and host /proc check must confirm them before the native execution gate.
+    Existing P2 request/action semantics remain unchanged.
+    """
+    from .models.memcheck import (MemcheckRequest, MemcheckAuthorization, MemcheckPolicy,
+                                  MemcheckDescription)
+    from .models.lifecycle import canonical_sha256
+    from .memcheck_registry import fixed_source
+    from .tools.process import canonical_target_environment, measure_tool_identity
+    checked = datetime.now(timezone.utc).isoformat()
+    request_id = None
+    measured_source = measured_tool = None
+    def outcome(status, code=None, message=None):
+        return PreflightResult(request_id=request_id, status=status, checked_at=checked,
+            diagnostics=[] if code is None else [{"code": code, "message": message}],
+            measured_candidate_sha256=measured_source, measured_tool_sha256=measured_tool)
+    try:
+        req = _validate(MemcheckRequest, request)
+        request_id = req.request_id
+        trusted = _validate(MemcheckPolicy, policy)
+        desc = _validate(MemcheckDescription, description)
+        if authorization is None:
+            return outcome("REJECTED", "AUTHORIZATION_MISSING", "固定诊断必须由操作者或可信策略独立授权。")
+        auth = _validate(MemcheckAuthorization, authorization)
+    except (ValueError, TypeError, KeyError):
+        return outcome("REJECTED", "MEMCHECK_CONTRACT_INVALID", "固定诊断请求、授权、策略或平台描述未通过严格校验。")
+    if desc.status != "DESCRIBED" or desc.snapshot is None:
+        return outcome("UNKNOWN", "MEMCHECK_DESCRIPTION_UNKNOWN", "平台和工具身份尚未建立。")
+    if (auth.operator_id not in trusted.allowed_operator_ids or auth.authorization_reference not in trusted.allowed_authorization_references
+            or auth.authorization_reference != req.authorization_reference):
+        return outcome("REJECTED", "AUTHORIZATION_UNTRUSTED", "授权操作者或引用不在独立可信策略中。")
+    digest = canonical_sha256(req)
+    if (digest != auth.request_sha256 or digest != trusted.request_sha256
+            or (auth.request_id, auth.run_id, auth.task_id) != (req.request_id, req.run_id, req.task_id)):
+        return outcome("REJECTED", "AUTHORIZATION_SCOPE_MISMATCH", "授权没有绑定本次固定任务、工具、平台和资源限制。")
+    if req.description_sha256 != canonical_sha256(desc) or trusted.description_sha256 != req.description_sha256:
+        return outcome("REJECTED", "DESCRIPTION_IDENTITY_CONFLICT", "请求改变了独立平台描述。")
+    from . import memcheck_sandbox
+    if (req.collector_sha256 != desc.collector_sha256 or
+            hashlib.sha256(Path(memcheck_sandbox.__file__).read_bytes()).hexdigest() != req.collector_sha256):
+        return outcome("REJECTED", "COLLECTOR_IDENTITY_MISMATCH", "固定采集 guard 的字节身份发生变化。")
+    if (req.tools != desc.tools or req.helper_images != desc.helper_images or req.resource_limits != trusted.resource_limits
+            or trusted.allowed_images != {**{t.resolved_path:t.file_sha256 for t in desc.tools.values()}, **desc.helper_images}):
+        return outcome("REJECTED", "MEMCHECK_TOOL_POLICY_CONFLICT", "工具、固定资源 profile 或助手允许列表不一致。")
+    if (req.platform_environment_id != desc.snapshot.environment_id or req.platform_probe_id != desc.snapshot.metadata["probe_id"]
+            or req.snapshot_sha256 != snapshot_sha256(desc.snapshot) or req.target_environment != desc.target_environment
+            or trusted.native_task_root != desc.native_task_root):
+        return outcome("REJECTED", "TARGET_IDENTITY_MISMATCH", "平台快照、目标和固定工作区不一致。")
+    try:
+        if current_platform_type() != "wsl" or canonical_target_environment() != req.target_environment:
+            return outcome("REJECTED", "ACTUAL_TARGET_MISMATCH", "实际 worker 不属于授权 WSL 目标。")
+        boot, now_ns = target_boot_id(), time.monotonic_ns()
+        if (boot != desc.target_boot_id or req.target_boot_id != boot or auth.target_boot_id != boot
+                or req.observed_monotonic_ns != desc.observed_monotonic_ns):
+            return outcome("REJECTED", "TARGET_BOOT_MISMATCH", "授权、平台和当前 WSL boot 身份冲突。")
+        if not auth.not_before_monotonic_ns <= now_ns < auth.expires_monotonic_ns:
+            return outcome("REJECTED", "AUTHORIZATION_EXPIRED", "固定诊断授权已过期或尚未生效。")
+        age = (now_ns - desc.observed_monotonic_ns) / 1000000000
+        if not 0 <= age <= trusted.max_description_age_seconds:
+            return outcome("REJECTED", "PLATFORM_SNAPSHOT_STALE", "平台和工具描述已过期。")
+        expected_root = fixed_memcheck_task_root()
+        if Path(trusted.native_task_root) != expected_root or any(p.is_symlink() for p in (expected_root, *expected_root.parents)):
+            return outcome("REJECTED", "MEMCHECK_SCOPE_INVALID", "任务范围不属于固定用户工作目录。")
+        measured_source = hashlib.sha256(fixed_source(req.task_id, project_root)).hexdigest()
+        if measured_source != req.source_sha256:
+            return outcome("REJECTED", "FIXTURE_HASH_MISMATCH", "固定源码不符合授权 SHA-256。")
+        for path, expected in trusted.allowed_images.items():
+            measured = measure_tool_identity(path, source="fixed Memcheck preflight executable measurement")
+            if measured.status != "OBSERVED":
+                return outcome("UNKNOWN", "TOOL_IDENTITY_UNKNOWN", "无法实际测量必须工具的字节身份。")
+            if measured.resolved_path != path or measured.file_sha256 != expected:
+                return outcome("REJECTED", "TOOL_IDENTITY_MISMATCH", "工具文件被替换或其路径/hash 与允许列表不同。")
+        measured_tool = req.tools["valgrind_launcher"].file_sha256
+        import resource
+        for kind, value in ((resource.RLIMIT_CPU, req.resource_limits.cpu_seconds),
+                            (resource.RLIMIT_AS, req.resource_limits.memory_bytes),
+                            (resource.RLIMIT_FSIZE, req.resource_limits.max_file_bytes),
+                            (resource.RLIMIT_NOFILE, req.resource_limits.max_open_files)):
+            hard = resource.getrlimit(kind)[1]
+            if hard != resource.RLIM_INFINITY and hard < value:
+                return outcome("UNSUPPORTED", "RESOURCE_PROFILE_UNSUPPORTED", "继承的硬限制无法实施本次固定资源 profile。")
+    except (OSError, ValueError, KeyError, ImportError):
+        return outcome("UNKNOWN", "MEMCHECK_PREFLIGHT_OBSERVATION_FAILED", "目标、工具、源码或资源 API 的只读测量失败。")
+    return outcome("READY")
+
+
 def _validate(model, value):
     # JSON serialization can turn a model_copy-injected True in an int field
     # into 1. Revalidate original Python types before any JSON normalization.

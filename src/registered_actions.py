@@ -8,6 +8,10 @@ from dataclasses import dataclass
 import hashlib
 from types import MappingProxyType
 
+# Separate versioned admission route; these C inputs are not Python registry
+# actions and cannot be dispatched by the historical run_registered_action.
+from .memcheck_registry import MEMCHECK_TASKS, get_memcheck_task
+
 
 _GUARD = b'''"""Fixed harmless P2-B resource-gated test program; no CUDA/network."""
 import ctypes

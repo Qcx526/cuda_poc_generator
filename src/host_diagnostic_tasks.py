@@ -1,7 +1,7 @@
-"""Fixed CPU diagnostic preparation and offline XML parsing. No launcher here.
+"""Fixed CPU diagnostic preparation, offline parsing and explicit fixed dispatch.
 
-P2's live allowlist is intentionally unchanged: without authorized/validated
-Memcheck resource and isolation profiles every preparation remains blocked.
+Historical preparation/import contracts keep their meanings. The separate
+run-fixed command uses the versioned P3-D authorization and runtime resource gate.
 """
 
 import argparse
@@ -353,7 +353,7 @@ def read_harmless_evidence(directory, *, expected_manifest_sha256):
 
 def main(argv=None):
     configure_utf8_stdio()
-    parser = argparse.ArgumentParser(description="固定无害 CPU 诊断准备；不启动程序、不安装工具")
+    parser = argparse.ArgumentParser(description="固定 CPU 诊断准备、离线复核及显式授权的 Windows→WSL Memcheck；不执行候选")
     commands = parser.add_subparsers(dest="command", required=True)
     prepare = commands.add_parser("prepare", help="根据已保存只读探测形成中文阻断报告")
     prepare.add_argument("--probe-dir", required=True)
@@ -373,8 +373,36 @@ def main(argv=None):
     verify = commands.add_parser("verify", help="独立原始证据重解析并重建中文报告")
     verify.add_argument("--directory", required=True)
     verify.add_argument("--manifest-sha256", required=True)
+    from .memcheck_registry import MEMCHECK_TASKS
+    run = commands.add_parser("run-fixed", help="显式授权后运行注册的固定 CPU Memcheck 任务")
+    run.add_argument("--task", choices=sorted(MEMCHECK_TASKS), required=True)
+    run.add_argument("--authorize-fixed-memcheck", action="store_true")
+    run.add_argument("--operator-id", required=True)
+    run.add_argument("--authorization-reference", required=True)
+    run.add_argument("--linux-project-root", required=True)
+    run.add_argument("--distro", default="Ubuntu-22.04")
+    run.add_argument("--wsl-user", default="pocdev")
+    run.add_argument("--linux-python", default="/home/pocdev/.venvs/cuda-poc-generator/bin/python")
+    run.add_argument("--output-root", default="data/outputs/fixed_memcheck")
+    fixed_verify = commands.add_parser("verify-fixed", help="离线重新打开固定诊断全部原件、重解析并重建中文报告")
+    fixed_verify.add_argument("--directory", required=True)
+    fixed_verify.add_argument("--manifest-sha256", required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "run-fixed":
+            from .fixed_memcheck import run_fixed_memcheck_wsl
+            import json
+            result = run_fixed_memcheck_wsl(args.task, authorize_fixed_memcheck=args.authorize_fixed_memcheck,
+                operator_id=args.operator_id, authorization_reference=args.authorization_reference,
+                linux_project_root=args.linux_project_root, distro=args.distro, user=args.wsl_user,
+                linux_python=args.linux_python, output_root=args.output_root)
+            print(json.dumps(result,ensure_ascii=False))
+            return 0 if result["effective_state"] == "COMPLETED" and result.get("parse_status") == "PARSED" else 2
+        if args.command == "verify-fixed":
+            from .memcheck_evidence import read_memcheck_evidence, render_memcheck_report
+            evidence = read_memcheck_evidence(args.directory, expected_manifest_sha256=args.manifest_sha256)
+            print(render_memcheck_report(evidence),end="")
+            return 0 if evidence.parse_status == "PARSED" else 2
         if args.command == "rebuild":
             print(rebuild_preparation(args.directory, expected_preparation_sha256=args.expected_sha256), end="")
             return 0
@@ -396,7 +424,7 @@ def main(argv=None):
         print(f"准备记录原始字节 SHA-256：{digest_bytes(_json(record))}")
         return 2
     except (ValueError, OSError, RuntimeError) as exc:
-        print(f"诊断准备或重建失败：{type(exc).__name__}；没有启动诊断进程。")
+        print(f"诊断请求处理失败：{type(exc).__name__}；启动与回收状态以独立执行记录为准。")
         return 1
 
 

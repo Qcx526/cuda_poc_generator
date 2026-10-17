@@ -18,7 +18,8 @@
 - P3-A 独立离线 Oracle 提供六例公开资料审查、严格触发条件/证据引用、环境资格与确定性报告。仅合成测试域开放规则 `VERIFIED`；真实 CVE 仍为 `NOT_VERIFIED`，未实现生产根因验证器。见 [合同与命令](docs/P3_A_ORACLE_CONTRACT.md)、[六例资格](docs/P3_A_CVE_ELIGIBILITY.md)、[实际验收](docs/P3_A_VALIDATION.md)。
 - P3-B 增加主机侧 Memcheck XML v4 证据解析、A～F 准备条件、固定 Windows→WSL 诊断能力探测；未认证导入和合成数据不能升级为真实 CVE 证据。见 [专项证据](docs/P3_B_HOST_PARSER_EVIDENCE.md)、[可行性矩阵](docs/P3_B_FEASIBILITY.md)。
 - 新正式报告默认简体中文 UTF-8；main.py 默认按 `data/outputs/<CVE>/runs/<run_id>/` 保存独立研究归档，支持中文导航 ZIP、包外 SHA 和离线校验。旧 v1 API/英文完整性载体保留，历史原件不改。见 [语言合同](docs/REPORT_LOCALE_CONTRACT.md)、[归档合同](docs/CVE_ARTIFACT_PACKAGING.md)、[P3-B 验收](docs/P3_B_VALIDATION.md)。
-- P3-C 支持显式 `--package`，将本轮生成、中文归档、ZIP 和独立校验串联，输出 ZIP 路径与包外 SHA；失败不引用旧 run。固定 CPU 诊断仅提供准备/阻断和无 CVE 的离线 XML 接口，未获安装或执行授权，真实 Memcheck 联调仍为 NOT_CHECKED。见 [交付合同](docs/P3_C_PACKAGING.md)、[诊断准备](docs/P3_C_REAL_DIAGNOSTIC.md)、[验收](docs/P3_C_VALIDATION.md)。
+- P3-C 支持显式 `--package`，将本轮生成、中文归档、ZIP 和独立校验串联，输出 ZIP 路径与包外 SHA；失败不引用旧 run。见 [交付合同](docs/P3_C_PACKAGING.md)、[诊断准备](docs/P3_C_REAL_DIAGNOSTIC.md)、[验收](docs/P3_C_VALIDATION.md)。
+- P3-D-R1 增加独立授权的固定无害 CPU Memcheck 动作。Windows→WSL 实测已完成正常与受控异常两轮：保存原始 XML、进程身份、资源/回收结果，离线重读并生成中文报告。仅支持两份冻结 fixture，生成的 PoC 和真实 CVE 输入仍不执行。见 [固定诊断合同](docs/P3_D_R1_MEMCHECK_CONTRACT.md)和[实测验收](docs/P3_D_R1_VALIDATION.md)。
 
 ## 2. 尚未实现的功能与边界
 
@@ -264,6 +265,8 @@ P2-C 新增固定空 kernel 的编译与二进制检查入口。只有操作者�
 
 架构取新鲜 GPU/nvcc 观测，CUDA 工具使用单独的 4 GiB 每进程地址空间策略；这不是 VRAM 限额或 GPU 沙箱。原始 Linux 文件经独立 STATUS 重读，再与 Windows 保存字节核验；未确认回收或原件不可访问时不会宣称完整成功。正常 CLI 返回报告目录，只有执行完成且原件 VERIFIED 才退出 0。合同、真实工具版本/哈希、失败诊断及双环境结果见 [P2-C 集成合同](docs/P2_C_CUDA_INTEGRATION.md)、[验收](docs/P2_C_VALIDATION.md)、[真实联调](docs/P2_C_REAL_INTEGRATION.md)。候选仍 NOT_EXECUTED，CVE 仍 NOT_VERIFIED。
 
+P3-D-R2 补充了独立的 `cuobjdump 12.8.55-1` 固定工具身份档案和只读候选预检。`python -m src.cve_lab preflight ...` 只校验已归档生成 run、源码 SHA-256 与 WSL 目标身份，不执行候选；任意 `cuda_poc_v1.py` 的执行仍为 UNSUPPORTED。另有 Windows→WSL 固定无害动作传输和真实 `cuobjdump` 工具链 smoke 记录，均不包含 CVE 输入或 GPU kernel。详见 [P3-D-R2 执行合同](docs/P3_D_R2_EXECUTION_CONTRACT.md)及[验收记录](docs/P3_D_R2_VALIDATION.md)。
+
 ## 13. 常见问题与测试状态
 
 - `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。
@@ -297,7 +300,14 @@ $p3bRunId = [guid]::NewGuid().ToString("N")
 
 需要生成后自动交付时，可使用 `python main.py --cve-id CVE-2025-23308 --no-rag --package`；该命令正常使用会调用配置的模型，本阶段只以 Mock 验收。候选仍不运行，原六份 v1 产物保留，并额外保存本轮 `runs/<run_id>/`、`packages/<CVE>_<run_id>.zip` 及包外中文交付回执。没有 `--package` 时不自动创建 ZIP。旧 Python API 默认布局不变。
 
-未获授权的无害主机诊断只能准备或离线解析：`python -m src.host_diagnostic_tasks --help`。准备状态为 REJECTED，缺工具、授权、隔离及资源适配均不降级放行；通用档案不绑定 CVE。详见 [P3-C 真实诊断准备](docs/P3_C_REAL_DIAGNOSTIC.md)。
+固定无害 CPU 诊断需操作者明确授权、实测工具身份和可落实的资源/隔离门禁。Windows `.venv` 可使用以下固定入口；`verify-fixed` 只读取原始档案并按外部固定的清单 SHA-256 独立重建中文报告：
+
+```powershell
+.\.venv\Scripts\python.exe -m src.host_diagnostic_tasks run-fixed --task p3c-normal-v1 --authorize-fixed-memcheck --operator-id "your-operator-id" --authorization-reference "your-fixed-diagnostic-approval" --linux-project-root "<项目的 WSL 路径>"
+.\.venv\Scripts\python.exe -m src.host_diagnostic_tasks verify-fixed --directory "data/outputs/fixed_memcheck/<run_id>" --manifest-sha256 "<independently-pinned-manifest-sha256>"
+```
+
+正常 fixture 的真实闭环通过后，才能在匹配授权下运行 `p3c-invalid-write-v1`。档案位于 `data/outputs/fixed_memcheck/`，与 CVE 实验归档分离。Memcheck 的错误类别仅是固定无害程序的诊断观察，真实 CVE 结论保持 `NOT_VERIFIED`。
 
 仅用于经过授权的安全研究和防御验证。不得自动运行真实漏洞 PoC、提权或破坏性样本；不得把模型结论当客观证据；不得提交 API Key、私有日志、GPU UUID 或主机绝对路径。
 

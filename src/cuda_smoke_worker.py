@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import shutil
 import sys
 import time
 
-from pydantic import Field
+from pydantic import Field, model_serializer, model_validator
 
 from .cuda_registry import (CUDA_SMOKE_ID, CUDA_SMOKE_SOURCE, CUDA_SMOKE_SHA256,
                             CUDA_SMOKE_RELATIVE_PATH, select_cuda_arch, observe_smoke_cubin)
@@ -23,6 +23,12 @@ from .models.execution import StrictContract, CudaToolchainScope, ResourceSuppor
 from .models.lifecycle import CudaSmokeObservation, CudaSmokeStep, CudaBinaryArtifact
 from .models.platform import PlatformSnapshot
 from .tools.process import canonical_target_environment, measure_tool_identity, run_tool
+
+
+# The sidecar package checksum identifies its archive.  This pins the extracted
+# executable measured during the reviewed Windows-to-WSL smoke; a version
+# string alone is insufficient identity for a target binary.
+CUOBJDUMP_12_8_55_1_SHA256 = "ad1d0f0699f46603416eb58e7b9fdf9a293e95f9312c9df7fd6fda56a6c30d41"
 
 
 @contextmanager
@@ -50,7 +56,8 @@ def cuda_snapshot(target):
 
 
 class CudaSmokeDescription(StrictContract):
-    description_schema_version: str = Field(pattern=r"^1\.0$")
+    description_schema_version: str = Field(pattern=r"^1\.[01]$")
+    tool_profile: str = Field(pattern=r"^(system-toolkit|cuobjdump-12\.8\.55-1)$", default="system-toolkit")
     status: str = Field(pattern=r"^(DESCRIBED|UNKNOWN|UNSUPPORTED|REJECTED)$")
     snapshot: PlatformSnapshot | None
     scope: CudaToolchainScope | None
@@ -59,8 +66,84 @@ class CudaSmokeDescription(StrictContract):
     resource_support: ResourceSupport
     diagnostics: list[str]
 
+    @model_validator(mode="after")
+    def versioned_profile(self):
+        expected = "1.0" if self.tool_profile == "system-toolkit" else "1.1"
+        if self.description_schema_version != expected:
+            raise ValueError("CUDA description schema and fixed tool profile disagree")
+        return self
 
-def validate_cuda_versions(scope, snapshot):
+    @model_serializer(mode="wrap")
+    def preserve_default_shape(self, handler):
+        data = handler(self)
+        if self.tool_profile == "system-toolkit":
+            data.pop("tool_profile", None)
+        return data
+
+
+def _sidecar_cuobjdump_path():
+    """The only alternate host parser admitted by this smoke workflow."""
+    return (Path.home() / ".local" / "share" / "cuda-poc-generator" / "toolchains"
+            / "cuobjdump-12.8.55" / "root" / "usr" / "local" / "cuda-12.8" / "bin" / "cuobjdump")
+
+
+def _canonical_target_file(path):
+    """Validate the canonical POSIX spelling already returned by target measurement."""
+    raw = str(path)
+    selected = PurePosixPath(raw)
+    if not selected.is_absolute() or ".." in selected.parts or "\\" in raw:
+        raise ValueError("target tool path is not a canonical absolute POSIX path")
+    return str(selected)
+
+
+def infer_cuobjdump_profile(scope):
+    """Accept only the system sibling or the independently installed sidecar."""
+    actual = _canonical_target_file(scope.tools["cuobjdump"].resolved_path)
+    nvcc = PurePosixPath(scope.tools["nvcc"].resolved_path)
+    system = _canonical_target_file(nvcc.parent / "cuobjdump")
+    if actual == system:
+        return "system-toolkit"
+    try:
+        sidecar = _canonical_target_file(_sidecar_cuobjdump_path())
+    except (OSError, ValueError):
+        sidecar = None
+    if sidecar is not None and actual == sidecar:
+        return "cuobjdump-12.8.55-1"
+    raise ValueError("cuobjdump path is outside registered tool profiles")
+
+
+def registered_sidecar_cuobjdump_identity_matches(tool, version_text, *, target_task_root=None):
+    """Match remote POSIX identity without using the Windows controller's HOME.
+
+    A controller may supply the native task root from the measured description.
+    Its fixed lifecycle suffix must match before deriving the remote home; local
+    WSL callers retain the original Path.home-based identity check.
+    """
+    if getattr(tool, "status", None) != "OBSERVED":
+        return False
+    if getattr(tool, "file_sha256", None) != CUOBJDUMP_12_8_55_1_SHA256:
+        return False
+    try:
+        if target_task_root is None:
+            expected = _canonical_target_file(_sidecar_cuobjdump_path())
+        else:
+            root = PurePosixPath(_canonical_target_file(target_task_root))
+            suffix = (".local", "state", "cuda-poc-generator", "lifecycle_tasks")
+            if str(root) != str(target_task_root) or tuple(root.parts[-4:]) != suffix:
+                return False
+            remote_home = root.parents[3]
+            if remote_home == PurePosixPath("/"):
+                return False
+            expected = str(remote_home / ".local" / "share" / "cuda-poc-generator" / "toolchains"
+                           / "cuobjdump-12.8.55" / "root" / "usr" / "local" / "cuda-12.8" / "bin" / "cuobjdump")
+        actual = _canonical_target_file(tool.resolved_path)
+    except (AttributeError, OSError, TypeError, ValueError):
+        return False
+    return (actual == expected and "V12.8.55" in version_text
+            and "Build cuda_12.8.r12.8/compiler.35351055_0" in version_text)
+
+
+def validate_cuda_versions(scope, snapshot, *, tool_profile="system-toolkit"):
     """This first integration deliberately supports the measured 12.8 family."""
     for role, record in scope.version_records.items():
         text = (record.stdout_bytes() + record.stderr_bytes()).decode("utf-8", errors="replace")
@@ -72,11 +155,25 @@ def validate_cuda_versions(scope, snapshot):
     if (snapshot.cuda_toolkit_version.status != "OBSERVED"
             or re.fullmatch(r"12\.8(?:\.[0-9]+)?", str(snapshot.cuda_toolkit_version.value)) is None):
         raise ValueError("toolkit observation does not establish CUDA 12.8")
+    if tool_profile == "cuobjdump-12.8.55-1":
+        tool = scope.tools["cuobjdump"]
+        version = (scope.version_records["cuobjdump"].stdout_bytes()
+                   + scope.version_records["cuobjdump"].stderr_bytes()).decode("utf-8", errors="replace")
+        if not registered_sidecar_cuobjdump_identity_matches(tool, version):
+            raise ValueError("sidecar cuobjdump identity is not the registered CUDA 12.8.55 build")
+    elif tool_profile != "system-toolkit":
+        raise ValueError("unregistered CUDA tool profile")
+    elif infer_cuobjdump_profile(scope) != "system-toolkit":
+        raise ValueError("system cuobjdump is not the nvcc sibling bound by the platform profile")
 
 
-def describe_cuda_smoke(root, native_root):
+def describe_cuda_smoke(root, native_root, *, tool_profile="system-toolkit"):
     """Only fixed read-only snapshot/version queries; no compiler input supplied."""
-    data = {"description_schema_version": "1.0", "status": "UNKNOWN", "snapshot": None,
+    if tool_profile not in {"system-toolkit", "cuobjdump-12.8.55-1"}:
+        raise ValueError("unregistered CUDA tool profile")
+    data = {"description_schema_version": "1.0" if tool_profile == "system-toolkit" else "1.1",
+            "tool_profile": tool_profile,
+            "status": "UNKNOWN", "snapshot": None,
             "scope": None, "native_task_root": str(native_root), "source_sha256": CUDA_SMOKE_SHA256,
             "resource_support": resource_capabilities(), "diagnostics": []}
     try:
@@ -97,6 +194,22 @@ def describe_cuda_smoke(root, native_root):
         for role in ("cuobjdump", "nvdisasm"):
             tools[role] = measure_tool_identity(str(Path(nvcc.resolved_path).parent / role),
                                                 source="fixed CUDA toolkit sibling executable")
+        if tool_profile == "cuobjdump-12.8.55-1":
+            sidecar = _sidecar_cuobjdump_path()
+            if sidecar.is_symlink() or not sidecar.is_file():
+                data.update(status="UNSUPPORTED", diagnostics=["REGISTERED_CUOBJDUMP_12_8_55_MISSING"])
+                return CudaSmokeDescription.model_validate(data).model_dump(mode="json")
+            tools["cuobjdump"] = measure_tool_identity(str(sidecar),
+                source="registered isolated cuobjdump 12.8.55-1 sidecar")
+            measured = tools["cuobjdump"]
+            if measured.status != "OBSERVED":
+                data.update(status="UNKNOWN", diagnostics=["REGISTERED_CUOBJDUMP_IDENTITY_UNAVAILABLE"])
+                return CudaSmokeDescription.model_validate(data).model_dump(mode="json")
+            if (measured.file_sha256 != CUOBJDUMP_12_8_55_1_SHA256
+                    or _canonical_target_file(measured.resolved_path)
+                    != _canonical_target_file(sidecar)):
+                data.update(status="REJECTED", diagnostics=["REGISTERED_CUOBJDUMP_BINARY_HASH_MISMATCH"])
+                return CudaSmokeDescription.model_validate(data).model_dump(mode="json")
         compiler = shutil.which("g++", path="/usr/bin:/bin")
         if compiler is None:
             data.update(status="UNSUPPORTED", diagnostics=["HOST_COMPILER_MISSING"])
@@ -124,7 +237,7 @@ def describe_cuda_smoke(root, native_root):
         arch = select_cuda_arch(None, snapshot, expected_nvcc_path=nvcc.resolved_path)
         scope = CudaToolchainScope(arch=arch, tools=tools, version_records=versions, target_boot_id=boot_id,
                                    snapshot_started_monotonic_ns=snapshot_started_ns, observed_monotonic_ns=time.monotonic_ns())
-        validate_cuda_versions(scope, snapshot)
+        validate_cuda_versions(scope, snapshot, tool_profile=tool_profile)
         data.update(status="DESCRIBED", scope=scope.model_dump(mode="json"))
     except FileNotFoundError:
         data.update(status="UNSUPPORTED", diagnostics=["REGISTERED_SOURCE_OR_REQUIRED_TOOL_MISSING"])

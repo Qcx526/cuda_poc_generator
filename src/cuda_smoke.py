@@ -65,7 +65,8 @@ def build_cuda_operator_context(description, *, run_id, operator_id, authorizati
 
 def run_safe_cuda_smoke(*, authorize_safe_cuda_smoke, authorization_reference, operator_id,
                         linux_project_root, backend="wsl", distro="Ubuntu-22.04", user="pocdev",
-                        linux_python="/home/pocdev/.venvs/cuda-poc-generator/bin/python", arch=None, output_root=None):
+                        linux_python="/home/pocdev/.venvs/cuda-poc-generator/bin/python", arch=None, output_root=None,
+                        cuobjdump_profile="system-toolkit"):
     if authorize_safe_cuda_smoke is not True:
         raise ValueError("explicit operator authorization for the fixed safe CUDA smoke is required")
     if backend != "wsl":
@@ -73,8 +74,10 @@ def run_safe_cuda_smoke(*, authorize_safe_cuda_smoke, authorization_reference, o
     for value in (authorization_reference, operator_id):
         if not isinstance(value, str) or not value.strip() or len(value) > 128 or any(c in value for c in "\0\n\r"):
             raise ValueError("operator and authorization reference must be nonblank single-line identifiers")
+    if cuobjdump_profile not in {"system-toolkit", "cuobjdump-12.8.55-1"}:
+        raise ValueError("unregistered cuobjdump tool profile")
     options = {"distro": distro, "user": user, "linux_python": linux_python, "linux_project_root": linux_project_root}
-    transport, packet, diagnostics = describe_cuda_smoke_wsl(**options)
+    transport, packet, diagnostics = describe_cuda_smoke_wsl(**options, tool_profile=cuobjdump_profile)
     from .lifecycle_artifacts import write_cuda_readiness_evidence
     readiness = write_cuda_readiness_evidence(output_root, transport, packet, diagnostics)
     from .report_locale import write_execution_view_from_archive
@@ -118,13 +121,16 @@ def main(argv=None):
     parser.add_argument("--wsl-user", default="pocdev")
     parser.add_argument("--linux-python", default="/home/pocdev/.venvs/cuda-poc-generator/bin/python")
     parser.add_argument("--arch", default=None, help="Optional explicit target; must equal observed GPU/nvcc target")
+    parser.add_argument("--cuobjdump-profile", choices=["system-toolkit", "cuobjdump-12.8.55-1"],
+                        default="system-toolkit", help="Select only the registered system or isolated 12.8.55-1 cuobjdump profile")
     parser.add_argument("--output-root", default=None)
     args = parser.parse_args(argv)
     try:
         result = run_safe_cuda_smoke(authorize_safe_cuda_smoke=args.authorize_safe_cuda_smoke,
             authorization_reference=args.authorization_reference, operator_id=args.operator_id,
             linux_project_root=args.linux_project_root, backend=args.backend, distro=args.distro,
-            user=args.wsl_user, linux_python=args.linux_python, arch=args.arch, output_root=args.output_root)
+            user=args.wsl_user, linux_python=args.linux_python, arch=args.arch, output_root=args.output_root,
+            cuobjdump_profile=args.cuobjdump_profile)
     except LifecycleDispatchError as exc:
         print(failure_with_legacy_zh(exc.report,exc.record), file=sys.stderr)
         return 1

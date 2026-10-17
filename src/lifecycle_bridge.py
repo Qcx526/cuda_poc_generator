@@ -218,15 +218,25 @@ def _transport(payload, handle, *, expected_request=None, artifact_root=None):
 
 def describe_cuda_smoke_wsl(*, distro="Ubuntu-22.04", user="pocdev",
                             linux_python="/home/pocdev/.venvs/cuda-poc-generator/bin/python",
-                            linux_project_root, artifact_root=None):
-    """Fixed read-only CUDA description; never accepts source, argv or flags."""
+                            linux_project_root, artifact_root=None, tool_profile="system-toolkit"):
+    """Fixed read-only CUDA description with a separately registered tool profile."""
+    if tool_profile not in {"system-toolkit", "cuobjdump-12.8.55-1"}:
+        raise ValueError("unregistered CUDA tool profile")
     handle = TaskHandle(request_id=uuid.uuid4().hex, run_id=uuid.uuid4().hex,
         control_token=uuid.uuid4().hex + uuid.uuid4().hex, distro=distro, user=user,
         linux_python=linux_python, linux_project_root=linux_project_root)
     payload = {"operation": "DESCRIBE_CUDA", "nonce": uuid.uuid4().hex,
         "request_id": handle.request_id, "run_id": handle.run_id, "control_token": handle.control_token,
         "request": None, "authorization": None, "policy": None, "snapshot": None, "tool_record": None}
-    return _transport(payload, handle, artifact_root=artifact_root)
+    if tool_profile != "system-toolkit":
+        payload["tool_profile"] = tool_profile
+    transport, packet, diagnostics = _transport(payload, handle, artifact_root=artifact_root)
+    if packet is not None and packet.get("cuda_description") is not None:
+        from .cuda_smoke_worker import CudaSmokeDescription
+        description = CudaSmokeDescription.model_validate(packet["cuda_description"])
+        if description.tool_profile != tool_profile:
+            return transport, None, [*diagnostics, "CUDA_TOOL_PROFILE_RESPONSE_MISMATCH"]
+    return transport, packet, diagnostics
 
 
 def control_task_wsl(handle, *, operation="STATUS", expected_request=None, artifact_root=None):

@@ -139,7 +139,8 @@ def _control(payload):
 
 def handle_worker(payload, *, project_root=None):
     required = {"operation", "nonce", "request_id", "run_id", "control_token", "request", "authorization", "policy", "snapshot", "tool_record"}
-    if not isinstance(payload, dict) or set(payload) != required:
+    allowed = required | {"tool_profile"}
+    if not isinstance(payload, dict) or set(payload) not in (required, allowed):
         raise ValueError("invalid lifecycle worker envelope")
     for name, pattern in (("nonce", r"[0-9a-f]{32}"), ("request_id", r"[0-9a-f]{32}"),
                           ("run_id", r"[0-9a-f]{32}"), ("control_token", r"[0-9a-f]{64}")):
@@ -147,6 +148,11 @@ def handle_worker(payload, *, project_root=None):
             raise ValueError("invalid lifecycle identity")
     if payload["operation"] not in {"EXECUTE", "STATUS", "CANCEL", "DESCRIBE_CUDA"}:
         raise ValueError("unregistered lifecycle operation")
+    if "tool_profile" in payload and payload["operation"] != "DESCRIBE_CUDA":
+        raise ValueError("tool profile selection is valid only for read-only CUDA description")
+    tool_profile = payload.get("tool_profile", "system-toolkit")
+    if tool_profile not in {"system-toolkit", "cuobjdump-12.8.55-1"}:
+        raise ValueError("unregistered CUDA tool profile")
     packet = {"schema_version": "1.0", "operation": payload["operation"], "nonce": payload["nonce"],
               "request_id": payload["request_id"], "run_id": payload["run_id"], "worker_exit_code": 0,
               "target_environment": None, "worker_identity": None, "record": None, "recovery": None,
@@ -162,7 +168,8 @@ def handle_worker(payload, *, project_root=None):
             return packet
         from .cuda_smoke_worker import describe_cuda_smoke
         packet["cuda_description"] = describe_cuda_smoke(
-            Path(project_root or Path(__file__).resolve().parent.parent).resolve(strict=True), task_root())
+            Path(project_root or Path(__file__).resolve().parent.parent).resolve(strict=True), task_root(),
+            tool_profile=tool_profile)
         return packet
     if payload["operation"] != "EXECUTE":
         if any(payload[name] is not None for name in ("request", "authorization", "policy", "snapshot", "tool_record")):
@@ -330,9 +337,10 @@ def handle_worker(payload, *, project_root=None):
             return finish("REJECTED", ["WORKER_TOOL_IDENTITY_MISMATCH"])
         if cuda:
             from .cuda_registry import select_cuda_arch
-            from .cuda_smoke_worker import validate_cuda_versions
+            from .cuda_smoke_worker import validate_cuda_versions, infer_cuobjdump_profile
             select_cuda_arch(req.cuda_toolchain.arch, current, expected_nvcc_path=req.tool_identity.resolved_path)
-            validate_cuda_versions(req.cuda_toolchain, current)
+            selected_profile = infer_cuobjdump_profile(req.cuda_toolchain)
+            validate_cuda_versions(req.cuda_toolchain, current, tool_profile=selected_profile)
         checked = preflight_execution(req, snapshot, tool, auth, actual_policy,
                                       observed_platform_type="wsl", observed_target_environment=packet["target_environment"])
         _write_json(folder / "preflight.json", checked.model_dump(mode="json"))
