@@ -279,6 +279,8 @@ P4-C 增加离线复现证据链：`src.reproduction` 解析 PoC 自己打印的
 恶意样本，因此离线判定为 `UNKNOWN` 并提示补跑对照。见
 [复现证据合同](docs/P4_C_REPRODUCTION_EVIDENCE.md)。已用 `CVE-2025-23339` 做过两轮实测：宿主侧 6 个非恶意对照，以及 `--network none` 容器内 14 个样本的全矩阵（6 个恶意样本全部 `SIGSEGV`、基线未崩溃），判定 `SUPPORTED`；`_ctrlC` 对照同样崩溃带来的归因限制已记录在 [验收记录](docs/P4_C_VALIDATION.md)。
 
+P4-D 对三个驱动类 CVE 做了分诊：`CVE-2024-0090` 的 PoC 只有良性探测，可在本机执行，但它的版本分类器把 `551` 当成未受影响分支，给出了错误结论（NVIDIA 公告为 R555 `555.99` 之前全部受影响）；`CVE-2024-0091` 会把非法指针传给驱动 API，不在本机执行；`CVE-2024-0107` 的 PoC 在到达触发点前因 `str/bytes` 缺陷抛出异常。见 [驱动 PoC 分诊](docs/P4_D_DRIVER_POC_TRIAGE.md)。
+
 ## 13. 常见问题与测试状态
 
 - `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。
