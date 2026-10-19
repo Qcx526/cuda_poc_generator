@@ -269,6 +269,8 @@ P3-D-R2 补充了独立的 `cuobjdump 12.8.55-1` 固定工具身份档案和只�
 
 P3-D-R3 增加独立的固定无害接收文件动作：`src.cve_lab execute --mode fixed-staged-normal` 仅在明确的固定 fixture 授权下，将 Windows 传输的 `p2b-normal-v1` 精确源码落盘，并由 WSL 子进程读取该文件描述符、核对文件身份和 SHA-256 后运行。`src.cve_lab evaluate` 可离线重读本轮证据并重建中文报告。两者都不执行已生成的 LLM PoC；生成候选继续 `NOT_EXECUTED`，指定 CVE 继续 `NOT_VERIFIED`。本轮目标 cuobjdump+Memcheck 自动诊断子任务受到安全审查阻断，尚无该链路的实测结果。接口和实际验收状态见 [P3-D-R3 合同](docs/P3_D_R3_EXECUTION.md)、[验收记录](docs/P3_D_R3_VALIDATION.md)。
 
+P4-A 增加只读的目标环境档案：`src/target_profile.py` 从七维输入派生 `USERLAND_TOOL / GPU_LIBRARY / NETWORK_SERVICE / DRIVER` 四类，以及对应的隔离档位与自动化上限；它不启动进程、不探测宿主，也不授予执行权。本地 23 个 CVE 归为 16 / 2 / 1 / 4，其中 4 个驱动类在本机已修复、不可复现。见 [环境档案与靶场分档](docs/P4_A_TARGET_ENVIRONMENT.md)。
+
 ## 13. 常见问题与测试状态
 
 - `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。
