@@ -81,7 +81,7 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    `nvdisasm --version`, `cuobjdump --version`, or any CUDA tool, NEVER assume
    a specific output format (e.g. "Version 12.5.0" vs "V12.5.39" vs
    "release 12.5"). ALWAYS use the generic fallback pattern:
-   `re.search(r'(\d+)\.(\d+)\.?(\d+)?', output)`
+   `re.search(r'(\\d+)\\.(\\d+)\\.?(\\d+)?', output)`
    This single pattern works on ALL CUDA tool version outputs. If you need
    to extract tool-specific info, also print the full --version output at
    startup for the user to inspect.
@@ -432,14 +432,16 @@ class CudaCodeGenerator:
             return False, f"SyntaxError at line {e.lineno}: {e.msg}"
 
         # ---- 1. struct format checks (existing) ----
+        # Match the three real call spellings: pack / pack_into / unpack. The
+        # earlier "pack\(?_?into" form could only match pack_into, so plain
+        # struct.pack("") and struct.pack("<") were never rejected.
+        struct_call = r"(?:pack_into|unpack|pack)\s*\("
         for i, line in enumerate(code.split("\n"), 1):
-            if "struct.pack" not in line and "struct.pack_into" not in line and "struct.unpack" not in line:
+            if not re.search(r"struct\.(?:pack_into|unpack|pack)\s*\(", line):
                 continue
-            if re.search(r"pack\(?_?into\s*\(\s*['\"]\s*['\"]\s*,", line) or \
-               re.search(r"unpack\s*\(\s*['\"]\s*['\"]\s*,", line):
+            if re.search(struct_call + r"\s*['\"]\s*['\"]\s*,", line):
                 return False, f"Line {i}: struct format empty — {line.strip()[:80]}"
-            if re.search(r"pack\(?_?into\s*\(\s*['\"]([@=<>!]?)['\"]\s*,", line) or \
-               re.search(r"unpack\s*\(\s*['\"]([@=<>!]?)['\"]\s*,", line):
+            if re.search(struct_call + r"\s*['\"][@=<>!]?['\"]\s*,", line):
                 return False, f"Line {i}: struct format missing type code — {line.strip()[:80]}"
 
         # ---- 2. missing-import detection (new) ----

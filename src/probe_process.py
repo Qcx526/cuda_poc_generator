@@ -27,6 +27,7 @@ def run_bounded(argv, timeout_seconds=10, max_output_bytes=1048576, input_bytes=
     readers_failed = threading.Event()
     proc = None
     status, returncode, timed_out = "START_FAILED", None, False
+    capture_failed = False
 
     def read_stream(stream, name):
         try:
@@ -79,9 +80,14 @@ def run_bounded(argv, timeout_seconds=10, max_output_bytes=1048576, input_bytes=
         returncode = proc.wait(timeout=2)
         for thread in threads:
             thread.join(timeout=0.5)
+        # Capture completeness never outranks the termination cause: a killed
+        # timeout can leave a pipe reader lagging, and classifying that as
+        # CAPTURE_FAILED would misreport a real timeout. Mirrors the ordered
+        # precedence in models.tool_result.classify_returncode.
+        capture_failed = any(thread.is_alive() for thread in threads) or readers_failed.is_set()
         if exceeded.is_set():
             status = "OUTPUT_LIMIT"
-        elif any(thread.is_alive() for thread in threads) or readers_failed.is_set():
+        elif not timed_out and capture_failed:
             status = "CAPTURE_FAILED"
     except (OSError, subprocess.SubprocessError):
         status = "START_FAILED" if proc is None else "CAPTURE_FAILED"
@@ -106,7 +112,7 @@ def run_bounded(argv, timeout_seconds=10, max_output_bytes=1048576, input_bytes=
               "status": status, "returncode": returncode, "started_at": started,
               "finished_at": datetime.now(timezone.utc).isoformat(),
               "duration_seconds": time.monotonic() - begin, "timed_out": timed_out,
-              "truncated": exceeded.is_set()}
+              "capture_failed": capture_failed, "truncated": exceeded.is_set()}
     result["input_sha256"] = None if input_bytes is None else hashlib.sha256(input_bytes).hexdigest()
     result["input_size_bytes"] = 0 if input_bytes is None else len(input_bytes)
     with lock:

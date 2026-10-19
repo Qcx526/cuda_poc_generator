@@ -347,6 +347,18 @@ class TestInputsAndGeneration(OfflineTestCase):
         self.assertEqual(error, "")
         self.assertFalse(self.codegen_module.CudaCodeGenerator._validate_code("def invalid(:\n")[0])
 
+    def test_static_validation_rejects_empty_and_prefix_only_struct_formats(self):
+        validate = self.codegen_module.CudaCodeGenerator._validate_code
+        for source in ('import struct\nstruct.pack("", 1)\n',
+                       "import struct\nstruct.pack('<', 1)\n",
+                       'import struct\nstruct.pack_into("", buf, 0, 1)\n',
+                       'import struct\nstruct.unpack("", b"")\n'):
+            ok, error = validate(source)
+            self.assertFalse(ok, source)
+            self.assertIn("struct format", error)
+        # A complete format string remains statically acceptable.
+        self.assertTrue(validate("import struct\nstruct.pack('<I', 1)\n")[0])
+
     def test_generation_saves_harmless_candidate_and_limits_static_correction(self):
         fake = self.fake_llm()
         fake.chat.side_effect = ["def invalid(:\n", SAFE_CODE]

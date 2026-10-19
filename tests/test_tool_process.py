@@ -76,7 +76,10 @@ class TestToolProcess(ToolProcessTestCase):
         self.assertEqual(result.stdout_bytes(), b"")
 
     def test_timeout_records_raw_prefix(self):
-        result = self.run_python("import os,time; os.write(1,b'before-timeout'); time.sleep(10)", timeout_seconds=0.2)
+        # The budget must exceed interpreter startup on the host under test;
+        # a shorter one kills the child before it can emit the prefix and would
+        # assert a host-speed property rather than prefix retention.
+        result = self.run_python("import os,time; os.write(1,b'before-timeout'); time.sleep(10)", timeout_seconds=2.0)
         self.assertEqual(result.end_status, "TIMED_OUT")
         self.assertTrue(result.timed_out)
         self.assertEqual(result.stdout_bytes(), b"before-timeout")
