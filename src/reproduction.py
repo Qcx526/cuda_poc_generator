@@ -113,22 +113,23 @@ def is_crash_exit(code: int) -> bool:
 
 
 def _label(artifact: str) -> RunLabel:
-    """Distinguish a benign baseline from a one-variable mechanism control.
+    """Classify by what the artifact contains, then by what the run probes.
 
-    ``benign*`` is the only artifact that must not crash: it answers "does the
-    tool crash on ordinary input at all". ``_ctrl*`` files each change exactly
-    one property and may legitimately crash; folding them into the baseline
-    would both weaken the baseline and hide a real observation.
+    Precedence is content first: ``_ctrl_size_restored_malicious_*`` still holds
+    the malicious payload and must count as a malicious sample, not as a
+    mechanism control. A pure ``benign*`` name is the baseline; otherwise a
+    ``ctrl*`` name is a one-variable probe. ``benign`` inside a control name
+    (``_ctrlD_benign_content_at_eof``) does not make it the baseline.
     """
     lowered = artifact.lower()
-    # "ctrl" wins over "benign": a control that happens to carry benign content
-    # is still a one-variable probe, not the baseline.
+    # "payload" is deliberately not a malicious marker: "_ctrlE_zero_payload"
+    # is a control whose payload is empty.
+    if "malicious" in lowered or "exploit" in lowered:
+        return "MALICIOUS"
+    if "benign" in lowered and "ctrl" not in lowered and "control" not in lowered:
+        return "BENIGN"
     if "ctrl" in lowered or "control" in lowered:
         return "CONTROL"
-    if "benign" in lowered:
-        return "BENIGN"
-    if "malicious" in lowered or "poc" in lowered or "payload" in lowered:
-        return "MALICIOUS"
     return "UNKNOWN"
 
 
@@ -181,9 +182,29 @@ def parse_log_file(path: str, **kwargs: Any) -> ReproductionEvidence:
     return evidence.model_copy(update={"source_log_sha256": hashlib.sha256(raw).hexdigest()})
 
 
+def evidence_from_runs(*, runs: List[Dict[str, Any]], source_sha256: str,
+                       steps: Optional[List[StepEvent]] = None,
+                       target_version_in_range: Optional[bool] = None,
+                       root_cause_proof_recorded: bool = False) -> ReproductionEvidence:
+    """Build evidence from structured runs when there is no ``[CUDA_STEP]`` log.
+
+    A container harness reports ``artifact -> exit=N`` lines rather than PoC step
+    events. The digest must still cover the raw harness output, so the caller
+    passes it in; no observation is inferred from a summary.
+    """
+    base = ReproductionEvidence(
+        source_log_sha256=source_sha256,
+        steps=[] if steps is None else list(steps),
+        runs=[],
+        target_version_in_range=target_version_in_range,
+        root_cause_proof_recorded=root_cause_proof_recorded,
+    )
+    return attach_runs(base, runs)
+
+
 def attach_runs(evidence: ReproductionEvidence,
                 runs: List[Dict[str, Any]]) -> ReproductionEvidence:
-    """Attach runs recorded outside the log, e.g. benign controls run separately.
+    """Attach runs recorded outside the log, e.g. controls run separately.
 
     Each item needs ``artifact`` and ``exit_code``. The label is derived from the
     artifact name with the same rule as the log parser, so a control cannot be

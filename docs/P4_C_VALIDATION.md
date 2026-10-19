@@ -1,22 +1,22 @@
-# P4-C 验收记录：CVE-2025-23339 对照实测
+# P4-C 验收记录：CVE-2025-23339 对照与容器实测
 
 报告语言：`zh-CN`。本文件只记录本轮实际执行与客观结果。所有退出码来自
-`src.tools.process.run_tool` 的原始证据，未做人工改写。
+`src.tools.process.run_tool` 或容器内 shell 的 `$?`，未做人工改写。
 
 ## 1. 环境（实测）
 
-| 项 | 值 |
-|---|---|
-| GPU | NVIDIA GeForce GTX 1660（Turing，sm_75） |
-| 驱动 | 551.61 |
-| Toolchain | `CUDA v11.2`，`nvcc 11.2.152` |
-| 被测工具 | `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\bin\cuobjdump.exe` |
-| 工具 SHA-256 | `da9f5983bd9c003d6b468b4ba66c6f496fa9e340ccf6051331c2102e8a198e6b` |
-| 命令 | `cuobjdump --dump-elf <artifact>` |
+| 项 | 宿主（Windows） | 容器（Linux） |
+|---|---|---|
+| 平台 | Windows 10 19045，GTX 1660（Turing） | `nvidia/cuda:11.2.2-devel-ubuntu20.04` |
+| 镜像 digest | — | `sha256:65879f7299f35cd232f3b54e24081d569db2be1f31820728aef8a44240a305a8` |
+| 驱动 | 551.61 | 未挂载 GPU（`WARNING: NVIDIA Driver was not detected`） |
+| Toolkit | CUDA 11.2，`nvcc 11.2.152` | CUDA 11.2.2，`nvcc 11.2.152` |
+| 被测工具 SHA-256 | `da9f5983…a198e6b`（Windows cuobjdump.exe） | `564fd4fc…8d9f63b7`（Linux cuobjdump） |
+| 命令 | `cuobjdump --dump-elf <artifact>` | 同左 |
 
-## 2. 对照执行结果
+## 2. 宿主侧对照（6 个非恶意样本）
 
-对 6 个**非恶意**样本执行，超时 60 s，单次输出上限 1 MiB：
+超时 60 s、输出上限 1 MiB、原始证据落 `data/outputs/control_runs/<run_id>/`：
 
 | 样本 | 退出码 | 结果 |
 |---|---|---|
@@ -27,50 +27,56 @@
 | `_ctrlD_benign_content_at_eof.cubin` | 0 | NORMAL_EXIT |
 | `_ctrlE_zero_payload.cubin` | 0 | NORMAL_EXIT |
 
-原始证据：`data/outputs/control_runs/<run_id>/`（Git 忽略），索引在
-`data/outputs/CVE-2025-23339/controls_evidence.json`。
+## 3. 容器内全矩阵（同一构建、隔离执行）
 
-## 3. 判定
+隔离参数：`--network none --cap-drop ALL --security-opt no-new-privileges
+--read-only --tmpfs /tmp --pids-limit 128 --memory 1g --cpus 1`，样本目录只读挂载。
+原始输出：`data/outputs/CVE-2025-23339/container_run/raw/matrix.txt`。
 
-把上表作为外部对照附加到历史运行日志后：
+| 样本 | 退出码 |
+|---|---|
+| `benign.cubin` | 0 |
+| `base.cubin` | 0 |
+| `template.cubin` | 0 |
+| `_ctrlB_offset_restored.cubin` | 0 |
+| `_ctrlD_benign_content_at_eof.cubin` | 0 |
+| `_ctrlA_zero_content.cubin` | 1（错误返回，非崩溃） |
+| `_ctrlE_zero_payload.cubin` | 1（错误返回，非崩溃） |
+| `_ctrlC_size_shrunk.cubin` | **139（SIGSEGV）** |
+| `malicious.cubin` | **139** |
+| `malicious_41414141.cubin` | **139** |
+| `malicious_42424242.cubin` | **139** |
+| `_ctrl_size_restored_malicious.cubin` | **139** |
+| `_ctrl_size_restored_malicious_41414141.cubin` | **139** |
+| `_ctrl_size_restored_malicious_42424242.cubin` | **139** |
 
-```text
-判定：SUPPORTED
-受控样本：2 个，崩溃 2 个
-良性基线：1 个，崩溃 0 个
-机制对照：5 个，崩溃 1 个
-```
-
-理由：受控样本崩溃、基线未崩溃、版本在区间内；但**机制对照 `_ctrlC` 同样崩溃**，
-说明该崩溃不独属于恶意载荷，单一变量的隔离结论未成立。
+判定：`SUPPORTED`——受控样本 6/6 崩溃、良性基线未崩溃、版本在区间内；
+机制对照 1/5 同样崩溃，归因限制保留。
 
 ## 4. 本轮的真实发现
 
-`_ctrlC_size_shrunk.cubin` 是把声明的 section size 改回去的对照，它**依然崩溃**。
-
-这与该 CVE 的根因描述一致：解析循环的终止条件取自输入数据自身，`sh_size`
-并不构成上界。但它同时意味着：
-
-- 仅凭"恶意样本崩了"无法把崩溃归因到 LEB128 载荷本身；
-- 需要一个能把 `_ctrlC` 与 `malicious_*` 区分开的观测（RIP 是否落在可控值上）。
-
-因此判定停在 `SUPPORTED`，没有、也不会升级为 `VERIFIED`。
+1. **`_ctrlC_size_shrunk.cubin` 在两个平台都崩溃**（Windows `0xC0000005`、Linux `SIGSEGV`）。
+   它把声明 size 改回原值仍然崩，与该 CVE 的根因描述一致：循环终止条件取自输入数据
+   自身，`sh_size` 不是上界。但这意味着"恶意样本崩了"不能单独归因到 LEB128 载荷。
+2. **`_ctrl_size_restored_malicious_*` 同样崩溃**，进一步说明声明 size 不构成保护。
+3. **对照集并非全部独立**：`_ctrlA_zero_content` 与 `_ctrlE_zero_payload` 的 SHA-256
+   完全相同（`245cde44…3012e`），`template.cubin` 与 `benign.cubin` 相同
+   （`6395873f…35df`）。实际独立变量少于文件数，报告不按文件个数夸大观测数。
+4. **平台差异**：`_ctrlA/_ctrlE` 在 Windows 返回 0，在 Linux 返回 1。两者都不是崩溃，
+   但说明同一工具的不同平台构建对同一输入的错误路径不同。
 
 ## 5. 已知限制（必须随结论一起引用）
 
-1. **构建号不一致**：历史日志的崩溃来自 `cuobjdump 11.2.0`（2020-11-30 构建），
-   本轮对照跑在重装后的 `11.2.152`（U2）上。两者是同一受影响区间内的不同构建，
-   严格对照应在同一构建上重跑恶意样本。
-2. **未执行恶意样本**：本轮只跑 6 个非恶意样本；`malicious_*` 与
-   `_ctrl_size_restored_malicious_*` 均未执行。
-3. **无寄存器级证据**：日志里 `S07 confirm return-address control — OK` 是 PoC
-   自述，不是调试器观测；`root_cause_proof_recorded` 保持 `False`。
-4. **无隔离**：本轮直接在宿主运行 `cuobjdump`，没有容器或沙箱；仅因样本非恶意
-   才可接受。
+1. **平台不同**：历史崩溃来自 Windows `cuobjdump 11.2.0`；本轮容器是 **Linux**
+   `cuobjdump 11.2.152`。工具版本对齐到 11.2.x，但二进制不同，属**跨平台独立复现**，
+   不是同一二进制的重复实验。
+2. **无寄存器级证据**：未采集 RIP，无法证明 `0x41414141` 控制流劫持；
+   `root_cause_proof_recorded` 保持 `False`。
+3. **容器未挂 GPU**：本轮目标是用户态工具，不需要 GPU；GPU 相关系列仍待单独验证。
 
 ## 6. 下一步
 
-1. 在同一构建（11.2.152）上重跑恶意样本，消除构建号差异。
-2. 在隔离环境（容器）中执行，并采集崩溃时的寄存器/RIP，作为根因级证据。
-3. 若 `_ctrlC` 与 `malicious_*` 的 RIP 可从输入推出且不同，则 `_ctrlC` 的崩溃
-   属于另一条路径，可恢复单变量隔离结论；否则应重新设计对照集。
+1. 在容器镜像里加入 `gdb`，对 `malicious_41414141.cubin` 取崩溃时的 RIP，
+   判断是否落在可控地址上。
+2. 用 RIP 区分 `_ctrlC` 与 `malicious_*` 的路径；若两者 RIP 不同，可恢复单变量隔离结论。
+3. 把上述流程固化为 `src/container_runner.py`，使任意 CVE 都能重复这条链路。

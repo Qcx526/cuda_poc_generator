@@ -61,6 +61,12 @@ class TestParsing(unittest.TestCase):
                           "benign.cubin -> exit=0\n")
         self.assertEqual([run.label for run in result.runs], ["CONTROL", "BENIGN"])
 
+    def test_size_restored_malicious_variant_stays_malicious(self):
+        # It carries the payload; "ctrl" in the name only names the experiment.
+        result = evidence("_ctrl_size_restored_malicious_41414141.cubin -> exit=139\n")
+        self.assertEqual(result.runs[0].label, "MALICIOUS")
+        self.assertTrue(result.runs[0].crashed)
+
     def test_crash_exit_codes_are_recognised_by_fault_not_by_nonzero(self):
         self.assertTrue(is_crash_exit(CRASH))
         self.assertTrue(is_crash_exit(139))

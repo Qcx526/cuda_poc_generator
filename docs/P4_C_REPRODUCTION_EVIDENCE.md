@@ -54,18 +54,30 @@ python -m src.reproduction --log <run.log> --controls <controls.json> --out <dir
 
 ## 4. 样本标签由文件名决定，调用方不能重标
 
-判断顺序固定，`ctrl` 优先于 `benign`：
+判断顺序固定，**内容标记优先于实验标记**：
 
 | 文件名 | 标签 | 含义 |
 |---|---|---|
-| `_ctrl*` / `control*` | `CONTROL` | 单变量机制对照，允许崩溃，只作观测 |
-| `benign*` | `BENIGN` | 基线，必须不崩溃 |
-| `malicious*` / `poc*` / `payload*` | `MALICIOUS` | 受控样本 |
+| 含 `malicious` / `exploit` | `MALICIOUS` | 受控样本（含 `_ctrl_size_restored_malicious_*`） |
+| 含 `benign` 且不含 `ctrl` | `BENIGN` | 基线，必须不崩溃 |
+| 含 `ctrl` / `control` | `CONTROL` | 单变量机制对照，允许崩溃，只作观测 |
 | 其余 | `UNKNOWN` | 不计入任何一侧 |
 
-`_ctrlD_benign_content_at_eof.cubin` 同时含 `ctrl` 与 `benign`，按顺序归为 `CONTROL`。
+两条容易错的边界，已写成回归用例：
+
+- `_ctrl_size_restored_malicious_*` 同时含 `ctrl` 与 `malicious`，但它**携带恶意载荷**，
+  必须计为受控样本，不能算机制对照。
+- `_ctrlD_benign_content_at_eof` 含 `benign`，但它是"良性内容"对照，不是基线。
+- `_ctrlE_zero_payload` 含 `payload`，但它是**零载荷**对照；`payload` 因此不作恶意标记。
+
 外部附加的对照结果走同一规则，因此调用者无法把良性文件声明成受控样本，
 也无法把机制对照伪装成基线。
+
+## 4.1 没有 `[CUDA_STEP]` 日志时
+
+容器 harness 只输出 `<artifact> -> exit=N`，没有 PoC 步骤事件。
+此时用 `evidence_from_runs(runs=..., source_sha256=<raw 输出哈希>)` 构造证据；
+`source_log_sha256` 必须覆盖 harness 的原始输出，不得用摘要文件的哈希顶替。
 
 ## 5. 崩溃判定
 

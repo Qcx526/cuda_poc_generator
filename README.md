@@ -277,7 +277,7 @@ P4-C 增加离线复现证据链：`src.reproduction` 解析 PoC 自己打印的
 `exit=` 记录，按固定顺序判定 `SUPPORTED / NOT_VERIFIED / UNKNOWN` 并渲染中文报告。
 它**要求良性对照**才能给出 `SUPPORTED`，且不产出 CVE 级 `VERIFIED`；历史日志只记录了
 恶意样本，因此离线判定为 `UNKNOWN` 并提示补跑对照。见
-[复现证据合同](docs/P4_C_REPRODUCTION_EVIDENCE.md)。已用 `CVE-2025-23339` 的 6 个非恶意样本做过对照实测，判定 `SUPPORTED`；其中 `_ctrlC` 对照同样崩溃，归因限制已记录在 [验收记录](docs/P4_C_VALIDATION.md)。
+[复现证据合同](docs/P4_C_REPRODUCTION_EVIDENCE.md)。已用 `CVE-2025-23339` 做过两轮实测：宿主侧 6 个非恶意对照，以及 `--network none` 容器内 14 个样本的全矩阵（6 个恶意样本全部 `SIGSEGV`、基线未崩溃），判定 `SUPPORTED`；`_ctrlC` 对照同样崩溃带来的归因限制已记录在 [验收记录](docs/P4_C_VALIDATION.md)。
 
 ## 13. 常见问题与测试状态
 
