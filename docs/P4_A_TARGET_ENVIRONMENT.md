@@ -80,7 +80,7 @@
 | 证据绑定 | 镜像 digest + 容器 ID + 工具 SHA | 只有当前发行版状态 |
 | 隔离原语 | `--network none --read-only --cap-drop ALL --pids-limit` 现成 | 依赖发行版配置 |
 | GPU | `--gpus` + nvidia-container-toolkit | 绑定宿主驱动 |
-| 当前可用性 | **未安装** | 存在，但本会话被安全策略禁止调用 |
+| 当前可用性 | 已安装 4.95（CLI 29.8.2），引擎需人工启动 | 存在，但本会话被安全策略禁止调用 |
 
 因此：**执行平面用 Docker，平台指纹继续用现有的 Windows→WSL 探测链。**
 两者不冲突——`platform_probe` 负责"目标是什么"，容器负责"在哪跑"。
@@ -112,7 +112,10 @@ Docker 未安装时，`CONTAINER_*` 档位返回 `BACKEND_UNAVAILABLE`，不得�
 
 ## 9. 本轮未做的事
 
-- 未安装 Docker，未构建任何镜像，未运行任何容器。
+- Docker Desktop 4.95 已安装（CLI 29.8.2），但引擎未启动：其 WSL2 后端会调用
+  `wsl.exe`，而本会话的安全策略禁止该程序。需要由操作者手动启动一次 Docker Desktop，
+  或从"安全中心 → 命令安全 → 程序黑名单"移除 `wsl.exe`。
+- 未构建任何镜像，未运行任何容器。
 - 未执行任何真实漏洞样本或生成候选。
 - 未把原工程的 17 个 CVE 输入迁入本仓库（属私有研究资料，需单独决定）。
 - 未验证 `CONTAINER_GPU` 在本机单卡环境下的设备复位能力。

@@ -271,6 +271,8 @@ P3-D-R3 增加独立的固定无害接收文件动作：`src.cve_lab execute --m
 
 P4-A 增加只读的目标环境档案：`src/target_profile.py` 从七维输入派生 `USERLAND_TOOL / GPU_LIBRARY / NETWORK_SERVICE / DRIVER` 四类，以及对应的隔离档位与自动化上限；它不启动进程、不探测宿主，也不授予执行权。本地 23 个 CVE 归为 16 / 2 / 1 / 4，其中 4 个驱动类在本机已修复、不可复现。见 [环境档案与靶场分档](docs/P4_A_TARGET_ENVIRONMENT.md)。
 
+P4-B 给出复现所需的精确版本清单：本机 `CUDA 11.2` 已覆盖全部 16 个工具链 CVE 的受影响区间；3 个驱动 CVE 需要降到 550 分支（有蓝屏风险，建议第二台机器）；`CVE-2026-24191` 只影响 Maxwell/Volta/Pascal，GTX 1660（Turing）天然不匹配。文档同时指出 `nvdisasm 12.8.90` 在 NVIDIA 公开组件表中不存在，不得当作可获取版本。见 [版本清单](docs/P4_B_VERSION_MATRIX.md)。
+
 ## 13. 常见问题与测试状态
 
 - `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。
