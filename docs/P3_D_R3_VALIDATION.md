@@ -11,7 +11,7 @@
 | C：真实候选预检 | 只读核对已归档生成 run 的 CVE、源码、模型/静态状态和平台工具身份；缺少可加载候选源码时明确阻断 | 资料审查 run 被 `preflight` 按身份拒绝；当前无可加载候选源码，真实生成候选的目标观测未检查 |
 | Windows 入口 | 固定动作 CLI 的参数和退出状态与实际行为一致；无授权或身份失败不启动远端文件 | `execute` 固定动作和 `evaluate` 离线重建实测 PASS，未知模式/缺授权离线负例 PASS |
 | 双环境回归 | Windows Python 3.12 与 WSL Python 3.10 全量离线测试；新拒绝场景和原 P0～P3-D-R2 回归 | Windows 1225 passed / 66 skipped / 0 failed；WSL 1285 passed / 6 skipped / 0 failed |
-| Git 交付 | 审查工作区、敏感信息、diff 和远端同步，仅对验收通过的工程文件正常提交推送 | 待验收 |
+| Git 交付 | 审查工作区、敏感信息、diff 和远端同步，仅对验收通过的工程文件正常提交推送 | PASS：实现提交 `0e045fe` 已推送 `origin/main`；历史草稿和私有证据未提交 |
 
 上述“待”状态表示**尚未检查**，并非 PASS。若实际 preflight 拒绝或执行端无法证实资源、身份和回收，应保存阻断记录并保持对应项失败或未检查。
 
@@ -48,9 +48,9 @@
 | Python 语法检查 | PASS：86 个 Python 源文件 AST 解析 | PASS：86 个 Python 源文件 AST 解析 | AST 检查不写缓存；Windows `compileall` 曾因既有 pycache 写入 WinError 5 未完成 |
 | `src.cve_lab` CLI 参数/拒绝路径 | PASS | 不适用 | `--help`、未知模式/缺授权离线负例、真实固定 `execute` 与独立 `evaluate` |
 | 证据清单重读、报告逐字节重建 | PASS：拒绝轮次与完整固定轮次 | NOT_CHECKED | `src.cve_lab evaluate --archive <本地 run 目录>` 返回完整性 `VERIFIED`，同时保留各自执行状态 |
-| Git diff、敏感信息、远端同步 | 待提交前复核 | 不适用 | 仅提交本轮明确列出的工程文件；历史草稿及私有证据排除 |
+| Git diff、敏感信息、远端同步 | PASS：15 个本轮工程文件通过 diff/凭证模式检查；推送成功 | 不适用 | 提交前 `HEAD` 与 `origin/main` 均为基线 `81443b0f8f013003ab26fe538aa1dc5bac74cd85`；实现提交 `0e045fe` 已正常推送 |
 
-实际 `commit SHA` 和 `origin/main` 同步结果待验收后从 Git 读取，不预填。两份既有未跟踪历史草稿 `docs/P3_D_EXECUTION.md`、`docs/P3_D_REAL_VALIDATION.md` 和私有原始证据不纳入本轮提交。
+实现提交为 `0e045fe`（`feat: add fixed staged fixture execution contract`），正常推送 `origin/main` 成功。提交范围为本轮 15 个工程文件；两份既有未跟踪历史草稿 `docs/P3_D_EXECUTION.md`、`docs/P3_D_REAL_VALIDATION.md` 和私有原始证据均未纳入提交。
 
 ## 5. 仍未实施或未获授权的工作
 
