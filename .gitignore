@@ -55,6 +55,9 @@ secrets/
 # Runtime outputs only: do not ignore data/, source CUDA files or fixtures
 data/outputs/*
 !data/outputs/.gitkeep
+# Private reproduction references: real PoCs, cubins and crash logs. They are
+# inputs to comparison runs and must never be published.
+data/reference/
 data/knowledge_bases/.chromadb/
 .chromadb/
 logs/

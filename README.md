@@ -273,6 +273,12 @@ P4-A 增加只读的目标环境档案：`src/target_profile.py` 从七维输入
 
 P4-B 给出复现所需的精确版本清单：本机 `CUDA 11.2` 已覆盖全部 16 个工具链 CVE 的受影响区间；3 个驱动 CVE 需要降到 550 分支（有蓝屏风险，建议第二台机器）；`CVE-2026-24191` 只影响 Maxwell/Volta/Pascal，GTX 1660（Turing）天然不匹配。文档同时指出 `nvdisasm 12.8.90` 在 NVIDIA 公开组件表中不存在，不得当作可获取版本。见 [版本清单](docs/P4_B_VERSION_MATRIX.md)。
 
+P4-C 增加离线复现证据链：`src.reproduction` 解析 PoC 自己打印的 `[CUDA_STEP]` 与
+`exit=` 记录，按固定顺序判定 `SUPPORTED / NOT_VERIFIED / UNKNOWN` 并渲染中文报告。
+它**要求良性对照**才能给出 `SUPPORTED`，且不产出 CVE 级 `VERIFIED`；历史日志只记录了
+恶意样本，因此离线判定为 `UNKNOWN` 并提示补跑对照。见
+[复现证据合同](docs/P4_C_REPRODUCTION_EVIDENCE.md)。
+
 ## 13. 常见问题与测试状态
 
 - `--help` 现在可在未安装第三方依赖时运行；真正生成仍须安装核心依赖。

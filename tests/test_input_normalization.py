@@ -37,12 +37,12 @@ class InputNormalizationTests(unittest.TestCase):
     def codes(self, result):
         return {diagnostic.code for diagnostic in result.diagnostics}
 
-    def test_all_six_cases_42_files_normalize_without_changes(self):
-        files = sorted(INPUT_ROOT.glob("CVE-*/*.json"))
-        self.assertEqual(len(files), 42)
-        before = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
+    def test_every_case_and_its_seven_files_normalize_without_changes(self):
         cases = sorted(INPUT_ROOT.glob("CVE-*"))
-        self.assertEqual(len(cases), 6)
+        self.assertTrue(cases, "no CVE input directories found")
+        files = sorted(INPUT_ROOT.glob("CVE-*/*.json"))
+        self.assertEqual(len(files), 7 * len(cases))
+        before = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
         checked = 0
         for case in cases:
             with self.subTest(case=case.name):
@@ -65,7 +65,7 @@ class InputNormalizationTests(unittest.TestCase):
                     checked += 1
                 self.assertTrue(result.provenance)
                 self.assertTrue(all(item.verification == "unverified" for item in result.provenance))
-        self.assertEqual(checked, 42)
+        self.assertEqual(checked, 7 * len(cases))
         self.assertEqual(before, {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in files})
 
     def test_flat_wrapped_equivalence(self):

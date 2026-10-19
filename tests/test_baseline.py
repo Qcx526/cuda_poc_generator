@@ -286,9 +286,9 @@ class TestLLMConfigurationAndRetry(OfflineTestCase):
 
 
 class TestInputsAndGeneration(OfflineTestCase):
-    def test_all_six_cases_and_42_json_files_load_without_data_loss(self):
+    def test_every_case_and_its_seven_json_files_load_without_data_loss(self):
         cases = sorted((PROJECT_ROOT / "data" / "inputs").glob("CVE-*"))
-        self.assertEqual(len(cases), 6)
+        self.assertTrue(cases, "no CVE input directories found")
         loader = self.loader_module.CudaDataLoader(self.config())
         count = 0
         for case in cases:
@@ -301,7 +301,7 @@ class TestInputsAndGeneration(OfflineTestCase):
                     self.assertEqual(raw["cve_id"], case.name)
                     self.assertEqual(loaded[key], raw)
                     count += 1
-        self.assertEqual(count, 42)
+        self.assertEqual(count, 7 * len(cases))
 
     def test_missing_and_malformed_json_have_current_empty_boundary(self):
         loader = self.loader_module.CudaDataLoader(self.config())

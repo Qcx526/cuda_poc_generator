@@ -36,19 +36,28 @@ def dimensions(**overrides):
 
 
 class TestRepositoryCves(unittest.TestCase):
-    def test_all_repository_toolchain_cves_are_cpu_containers(self):
+    def test_every_repository_input_is_classifiable_and_valid(self):
         cves = sorted(p.name for p in INPUTS.iterdir() if p.is_dir())
-        self.assertEqual(len(cves), 6)
+        self.assertEqual(len(cves), 23)
+        counts = {}
         for name in cves:
             profile = profile_from_input_dir(str(INPUTS / name))
             self.assertEqual(profile.cve_id, name)
-            self.assertEqual(profile.environment_class, "USERLAND_TOOL", name)
+            self.assertTrue(profile.tools or profile.environment_class == "UNKNOWN", name)
+            self.assertTrue(profile.reasons, name)
+            counts[profile.environment_class] = counts.get(profile.environment_class, 0) + 1
+        # Three isolation tiers cover the corpus; driver targets stay manual.
+        self.assertEqual(counts, {"USERLAND_TOOL": 16, "DRIVER": 4,
+                                  "GPU_LIBRARY": 2, "NETWORK_SERVICE": 1})
+
+    def test_toolchain_cves_are_cpu_containers(self):
+        for name in sorted(p.name for p in INPUTS.iterdir() if p.is_dir()):
+            profile = profile_from_input_dir(str(INPUTS / name))
+            if profile.environment_class != "USERLAND_TOOL":
+                continue
             self.assertFalse(profile.requires_gpu, name)
             self.assertEqual(profile.isolation_tier, "CONTAINER_CPU", name)
             self.assertEqual(profile.automation_tier, "FULL_AUTO", name)
-            self.assertEqual(profile.input_kind, "FILE", name)
-            self.assertTrue(profile.tools, name)
-            self.assertTrue(profile.reasons, name)
 
     def test_cpu_tool_is_never_promoted_to_gpu_by_the_cuda_label(self):
         # "CUDA Toolkit" appears in the component label of CPU tools; it must

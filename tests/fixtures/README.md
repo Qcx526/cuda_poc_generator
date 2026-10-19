@@ -19,3 +19,16 @@ Negative tests modify fresh copies in memory and never execute malformed files.
 
 For Mock CUDA-tool tests, changing `e_machine` to EM_CUDA creates a synthetic
 structural fixture; that change does not make the payload a genuine cubin.
+
+# Reproduction log fixture
+
+`execution/cve_2025_23339_sanitized.run.log` is derived from a real
+`CVE-2025-23339` run recorded on the author's machine (`cuobjdump 11.2` on
+Windows). Absolute project paths were replaced with `<redacted-project-root>`;
+no other line was edited. The original log, the generated PoC and the cubin
+samples stay in the git-ignored `data/reference/` directory and are never
+published.
+
+The fixture contains only text. It is parsed by `src/reproduction.py`, which
+never executes anything named in it. Its step events and two crash exits are
+asserted in `tests/test_reproduction.py`.
