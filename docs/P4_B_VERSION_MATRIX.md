@@ -175,6 +175,25 @@ DDU 清理后重装 617.42。CUDA Toolkit 可以并存，不需要卸载。
 
 ## 8. 本轮未做的事
 
-- 未安装 CUDA 12.8，未降级驱动，未安装 Nsight Systems。
-- 未运行任何真实样本；本机仍为 `CUDA 11.2` + 驱动 `617.42`。
-- 上表中的"建议目标版本"仅为版本约束推导，未经安装验证。
+- 未安装 CUDA 12.4 / 12.8，未安装 Nsight Systems。
+- 未运行任何真实漏洞样本。
+
+## 9. 本机当前实测状态（2026-10-19）
+
+驱动已降级、CUDA 已重装，以下为**实测值**，替换此前的推导：
+
+| 项 | 值 |
+|---|---|
+| GPU | NVIDIA GeForce GTX 1660（Turing，sm_75） |
+| 驱动 | **551.61**（`nvidia-smi` 实测） |
+| CUDA Toolkit | `v11.2`，`nvcc` / `cuobjdump` / `nvdisasm` 均为 **11.2.152**（build `compiler.29618528_0`） |
+| 运行时库 | `cudart64_110.dll`、`cudart.lib`、`cudart_static.lib` 均在 |
+| 头文件 / 库 | `include` 148 项、`lib/x64` 30 项 |
+| 空 kernel 编译 | `nvcc -cubin -G -arch=sm_75` 成功，产物 40,616 字节 |
+| `compute-sanitizer.exe` | **不存在**（11.2 Windows 侧只有旧的 `cuda-memcheck.exe`） |
+| Nsight Systems | 未安装（仅 `CVE-2025-33231` 需要） |
+
+注意：重装把 `cuobjdump` 从 11.2.0（2020-11-30 构建）换成了 11.2.152（U2）。
+构建号变化意味着旧的工具哈希与任何基于旧构建的证据都需要重算；
+U2 仍在所有相关 CVE 的受影响区间内（最早的修复点是 11.6 Update 2）。
+`nvcc` 编译时会尝试读取注册表探测 Visual Studio，被沙箱拦截时不影响 `-cubin` 产物。
