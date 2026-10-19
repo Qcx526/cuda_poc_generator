@@ -41,6 +41,8 @@ _ABSOLUTE_PATH = re.compile(r"(?:[A-Za-z]:\\[^\s\"'<>|]*|/(?:home|mnt|tmp|var)/[
 _CRASH_CODES = {0xC0000005, 0xC000001D, 0xC0000094, 0xC00000FD, 0xC0000409, 0xC0000374}
 # Shell-style signal exits on POSIX (128 + signal).
 _CRASH_SIGNAL_EXITS = {134, 136, 137, 139, 143}
+# subprocess reports the same faults as -signal: SIGILL/SIGABRT/SIGBUS/SIGFPE/SIGSEGV.
+_FATAL_SIGNALS = {4, 6, 7, 8, 11}
 
 
 class StepEvent(BaseModel):
@@ -106,7 +108,14 @@ def _normalise_newlines(text: str) -> str:
 
 
 def is_crash_exit(code: int) -> bool:
-    """Recognise a fatal fault exit, not a normal error return."""
+    """Recognise a fatal fault exit, not a normal error return.
+
+    Two conventions reach this function: a shell reports ``128 + signal`` while
+    ``subprocess`` reports ``-signal``. Both must be recognised, otherwise a
+    Linux segfault (-11) would look like an ordinary failure.
+    """
+    if code < 0:
+        return -code in _FATAL_SIGNALS
     if code in _CRASH_SIGNAL_EXITS:
         return True
     return (code & 0xFFFFFFFF) in _CRASH_CODES
@@ -220,8 +229,22 @@ def attach_runs(evidence: ReproductionEvidence,
             raise ValueError("external run artifact must be a non-blank string")
         if type(code) is not int:
             raise ValueError("external run exit_code must be an int")
+        derived = _label(artifact)
+        explicit = item.get("label")
+        if explicit is not None:
+            # A harness may know the role of an artifact whose name carries no
+            # marker (e.g. "poc_shsize_12.cubin"). It may only supply a label
+            # when the name itself does not already resolve to one, so a
+            # recognised benign file can never be relabelled as malicious.
+            if explicit not in ("MALICIOUS", "BENIGN", "CONTROL"):
+                raise ValueError("external label must be MALICIOUS, BENIGN or CONTROL")
+            if derived != "UNKNOWN":
+                raise ValueError("cannot override a recognisable artifact label")
+            label = explicit
+        else:
+            label = derived
         extra.append(ArtifactRun(artifact=artifact, exit_code=code,
-                                 crashed=is_crash_exit(code), label=_label(artifact)))
+                                 crashed=is_crash_exit(code), label=label))
     return evidence.model_copy(update={"runs": list(evidence.runs) + extra})
 
 
@@ -271,6 +294,12 @@ def decide(evidence: ReproductionEvidence) -> ReproductionResult:
     if benign_crashes:
         return result("UNKNOWN", [
             f"良性基线中有 {benign_crashes} 个样本同样崩溃；样本不具区分力"])
+    if control and control_crashes == len(control):
+        # Every one-variable control crashed: the claimed trigger window is not
+        # supported, even though the malicious samples did crash.
+        return result("UNKNOWN", [
+            f"机制对照 {control_crashes}/{len(control)} 全部崩溃；"
+            "所声称的触发条件未得到支持，崩溃不可归因于受控变量"])
     reasons = [
         f"受控样本 {malicious_crashes}/{len(malicious)} 个产生崩溃退出码",
         f"良性基线 {len(benign)} 个全部未崩溃",

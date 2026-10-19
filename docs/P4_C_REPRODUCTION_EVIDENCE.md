@@ -42,9 +42,11 @@ python -m src.reproduction --log <run.log> --controls <controls.json> --out <dir
 4. 受控样本零崩溃 → `NOT_VERIFIED`，并列出失败步骤
 5. 无**良性基线**（`benign*`）→ `UNKNOWN`（要求补跑基线）
 6. 良性基线也崩溃 → `UNKNOWN`（样本不具区分力）
-7. 其余 → `SUPPORTED`
+7. 机制对照**全部**崩溃 → `UNKNOWN`（所声称的触发条件不成立）
+8. 其余 → `SUPPORTED`
 
-第 5、6 条是本模块的核心：**没有基线对照的崩溃只能算"观察到崩溃"，不能算"复现了漏洞"**。
+第 5–7 条是本模块的核心：**没有基线的崩溃只能算"观察到崩溃"，不能算"复现了漏洞"**；
+**对照组全崩则说明触发条件本身站不住**，即使恶意样本确实崩了。
 `CVE-2025-23339` 的历史日志只记录了恶意样本，因此离线判定结果是 `UNKNOWN`——
 这是正确结论，不是缺陷。
 
@@ -73,6 +75,10 @@ python -m src.reproduction --log <run.log> --controls <controls.json> --out <dir
 外部附加的对照结果走同一规则，因此调用者无法把良性文件声明成受控样本，
 也无法把机制对照伪装成基线。
 
+**例外**：`poc_shsize_12.cubin` 这类文件名不携带任何语义。调用方只有在名称本身
+解析为 `UNKNOWN` 时才可显式给 `label`；已能识别的名称（含 `benign`/`malicious`/`ctrl`）
+拒绝改写，避免用显式标签绕过上面的防伪规则。
+
 ## 4.1 没有 `[CUDA_STEP]` 日志时
 
 容器 harness 只输出 `<artifact> -> exit=N`，没有 PoC 步骤事件。
@@ -83,7 +89,11 @@ python -m src.reproduction --log <run.log> --controls <controls.json> --out <dir
 
 识别的是**故障退出码**而非任意非零：Windows NTSTATUS
 （`0xC0000005` / `0xC000001D` / `0xC0000094` / `0xC00000FD` / `0xC0000409` / `0xC0000374`）
-与 POSIX 信号退出（134/136/137/139/143）。`exit=1`、`exit=2` 不算崩溃。
+与 POSIX 信号退出（134/136/137/139/143）。
+
+**两种约定都要认**：shell 报告 `128 + signal`（SIGSEGV = 139），
+而 `subprocess` 报告 `-signal`（SIGSEGV = -11）。只认前者会把所有 Linux 崩溃
+误判为"未崩溃"——本轮实际踩到过。`exit=1`、`exit=2` 不算崩溃。
 
 ## 6. 证据绑定与脱敏
 

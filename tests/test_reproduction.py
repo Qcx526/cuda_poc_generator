@@ -74,6 +74,13 @@ class TestParsing(unittest.TestCase):
         self.assertFalse(is_crash_exit(1))
         self.assertFalse(is_crash_exit(2))
 
+    def test_negative_signal_codes_are_recognised(self):
+        # subprocess reports a segfault as -11, not as 139.
+        self.assertTrue(is_crash_exit(-11))
+        self.assertTrue(is_crash_exit(-6))
+        self.assertFalse(is_crash_exit(-1))
+        self.assertFalse(is_crash_exit(-9))
+
     def test_absolute_paths_are_redacted(self):
         text = r"wrote C:\Users\alice\out\x.cubin and /home/bob/out/y.cubin"
         redacted = redact_paths(text)
@@ -122,17 +129,30 @@ class TestVerdictRules(unittest.TestCase):
         self.assertTrue(any("未采集寄存器" in reason for reason in result.reasons))
 
     def test_crashing_mechanism_control_is_reported_but_does_not_block(self):
-        # A one-variable control crashing shows the crash is not payload-exclusive;
-        # that is a caveat on attribution, not a false-positive signal.
+        # One control crashing among several shows the crash is not
+        # payload-exclusive; that is a caveat on attribution, not a
+        # false-positive signal.
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
         with_controls = attach_runs(base, [
             {"artifact": "benign.cubin", "exit_code": 0},
+            {"artifact": "_ctrlA_zero_content.cubin", "exit_code": 0},
             {"artifact": "_ctrlC_size_shrunk.cubin", "exit_code": CRASH},
         ])
         result = decide(with_controls)
         self.assertEqual(result.verdict, "SUPPORTED")
         self.assertEqual(result.control_crashes, 1)
         self.assertTrue(any("不独属于恶意载荷" in reason for reason in result.reasons))
+
+    def test_all_controls_crashing_refutes_the_claimed_trigger(self):
+        base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
+        attached = attach_runs(base, [
+            {"artifact": "benign.cubin", "exit_code": 0},
+            {"artifact": "poc_shsize_12.cubin", "exit_code": CRASH, "label": "CONTROL"},
+            {"artifact": "poc_shsize_24.cubin", "exit_code": CRASH, "label": "CONTROL"},
+        ])
+        result = decide(attached)
+        self.assertEqual(result.verdict, "UNKNOWN")
+        self.assertIn("全部崩溃", result.reasons[0])
 
     def test_benign_baseline_that_also_crashes_removes_discriminating_power(self):
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
@@ -188,8 +208,18 @@ class TestExternalRuns(unittest.TestCase):
 
     def test_caller_cannot_relabel_a_benign_file_as_malicious(self):
         base = evidence("")
-        attached = attach_runs(base, [{"artifact": "benign.cubin", "exit_code": 0}])
-        self.assertEqual(attached.runs[0].label, "BENIGN")
+        with self.assertRaises(ValueError):
+            attach_runs(base, [{"artifact": "benign.cubin", "exit_code": 0, "label": "MALICIOUS"}])
+
+    def test_explicit_label_is_allowed_only_for_an_unrecognisable_name(self):
+        attached = attach_runs(evidence(""), [
+            {"artifact": "poc_shsize_12.cubin", "exit_code": 139, "label": "CONTROL"}])
+        self.assertEqual(attached.runs[0].label, "CONTROL")
+
+    def test_explicit_label_must_be_a_known_role(self):
+        with self.assertRaises(ValueError):
+            attach_runs(evidence(""), [
+                {"artifact": "poc_shsize_12.cubin", "exit_code": 0, "label": "WHATEVER"}])
 
 
 class TestReport(unittest.TestCase):
