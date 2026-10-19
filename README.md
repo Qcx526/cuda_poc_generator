@@ -317,6 +317,6 @@ $p3bRunId = [guid]::NewGuid().ToString("N")
 
 仅用于经过授权的安全研究和防御验证。不得自动运行真实漏洞 PoC、提权或破坏性样本；不得把模型结论当客观证据；不得提交 API Key、私有日志、GPU UUID 或主机绝对路径。
 
-本工程继承原有 CUDA 专项系统，并保留原 README 所述 `universal_poc_generator` 设计来源、七层分析、RAG、Prompt、辅助工具及生成能力。保留源码中的作者标识 `CUDA Security Research Framework` 和原免责声明；项目维护仓库为 [Qcx526/cuda_poc_generator](https://github.com/Qcx526/cuda_poc_generator)。
+本工程继承原有 CUDA 专项系统，并保留原 README 所述 `universal_poc_generator` 设计来源、七层分析、RAG、Prompt、辅助工具及生成能力。保留源码中的作者标识 `CUDA Security Research Framework` 和原免责声明；项目维护仓库为 [Qcx526/cuda_poc_generator](https://github.com/Qcx526/cuda_poc_generator)。主线选择、同源关系与外部数据的迁移规则见 [主线与数据迁移](docs/REPOSITORY_MAINLINE.md)。
 
 原 README 的许可证说明为“本项目仅供授权安全研究使用”；仓库未提供独立 `LICENSE` 文件。本轮不新增或推断其他开源许可证。
