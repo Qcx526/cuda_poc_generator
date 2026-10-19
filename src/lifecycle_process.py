@@ -115,6 +115,7 @@ def _set_subreaper(value):
 class RegisteredProcessOutcome:
     state: str
     process: ProcessObservation
+    observation: dict | None = None
 
     @property
     def stdout(self):
@@ -204,9 +205,14 @@ def run_registered_action(fixture_id, limits, *, expected_tool, cwd, target_envi
 
 
 def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environment,
-                           request_id, run_id, nonce, cancellation_file=None, on_event=None, native_plan=None):
+                           request_id, run_id, nonce, cancellation_file=None, on_event=None, native_plan=None,
+                           staged_plan=None):
     """Shared private process engine; action bytes come from reviewed registries."""
     fixture_id = action.fixture_id
+    if staged_plan is not None:
+        from .staged_fixture_process import _StagedHarmlessPlan
+        if not isinstance(staged_plan, _StagedHarmlessPlan) or fixture_id != "p2b-normal-v1" or native_plan is not None:
+            raise ValueError("staged plans are reserved for the frozen harmless normal fixture")
     if native_plan is not None:
         from .cuda_process import _NativePlan
         from .models.execution import CudaResourceLimits
@@ -247,6 +253,7 @@ def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environ
     selector = None
     parent_control = child_control = None
     ready = False
+    staged_ready = False
     finished = False
     control_buffer = bytearray()
     cleanup_error = False
@@ -370,7 +377,13 @@ def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environ
                   "control_fd": child_control.fileno(), "parent_pid": os.getpid()}
         if native_plan is not None:
             config.update(native_plan.configuration())
-        argv = [actual.resolved_path, "-I", "-c", action.source.decode("utf-8")]
+        if staged_plan is None:
+            argv = [actual.resolved_path, "-I", "-c", action.source.decode("utf-8")]
+        else:
+            argv = [actual.resolved_path, "-I", "-c", staged_plan.bootstrap(
+                control_fd=child_control.fileno(), limits=limits, request_id=request_id,
+                run_id=run_id, nonce=nonce)]
+            emit("STAGED_FILE_PINNED", **staged_plan.source_observation)
         observation["argv"] = argv
         emit("STARTING", fixture_id=fixture_id)
         if sink_failed:
@@ -383,7 +396,8 @@ def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environ
         process_deadline = time.monotonic() + limits.wall_time_seconds
         proc = subprocess.Popen(argv, shell=False, cwd=str(cwd), stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                start_new_session=True, pass_fds=(child_control.fileno(),),
+                                start_new_session=True, pass_fds=((child_control.fileno(),) if staged_plan is None
+                                    else (child_control.fileno(), staged_plan.source_fd)),
                                 env={"PATH": os.defpath, "LANG": "C.UTF-8"})
         if native_plan is not None:
             from .cuda_process import NativeCudaTracer
@@ -492,7 +506,15 @@ def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environ
                         # dead executable or release GO after termination began.
                         emit("CONTROL_MESSAGE_AFTER_STOP", message=proof)
                         continue
-                    if proof.get("event") == "RESOURCE_READY" and not ready:
+                    if (proof.get("event") == "STAGED_SOURCE_READY" and staged_plan is not None
+                            and not staged_ready and not ready):
+                        staged_plan.verify_proof(proof, request_id=request_id, run_id=run_id,
+                            nonce=nonce, pid=proc.pid)
+                        staged_ready = True
+                        emit("STAGED_SOURCE_READY", **proof)
+                    elif proof.get("event") == "RESOURCE_READY" and not ready:
+                        if staged_plan is not None and not staged_ready:
+                            raise OSError("resource gate arrived without the received-file identity proof")
                         if set(proof) != {"event", "request_id", "nonce", "pid", "pgid", "session_id",
                                           "start_ticks", "cpu_seconds", "memory_bytes", "parent_pid",
                                           "parent_death_signal"}:
@@ -732,4 +754,4 @@ def _run_controlled_action(action, limits, *, expected_tool, cwd, target_environ
         payload[name + "_b64"] = base64.b64encode(raw).decode("ascii")
         payload[name + "_sha256"] = _sha(raw)
         payload[name + "_size_bytes"] = len(raw)
-    return RegisteredProcessOutcome(state=state, process=process_model.model_validate(payload))
+    return RegisteredProcessOutcome(state=state, process=process_model.model_validate(payload), observation=observation)

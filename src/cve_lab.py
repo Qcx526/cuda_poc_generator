@@ -1,4 +1,4 @@
-"""Windows entry points for read-only candidate admission and fixed safe target smoke."""
+"""Windows CVE intake and separately authorized fixed harmless integration checks."""
 
 import argparse
 import json
@@ -57,7 +57,9 @@ def preflight_candidate(*, cve_id, generation_run_id, linux_project_root, output
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="CVE lab: fail-closed candidate preflight; no candidate execution")
+    from .report_locale import configure_utf8_stdio
+    configure_utf8_stdio()
+    parser = argparse.ArgumentParser(description="CVE 归档预检与单独授权的固定无害 WSL 测试")
     commands = parser.add_subparsers(dest="command", required=True)
     preflight = commands.add_parser("preflight", help="verify current archived generation run and observe WSL target")
     preflight.add_argument("--cve", required=True)
@@ -67,11 +69,41 @@ def main(argv=None):
     preflight.add_argument("--distro", default="Ubuntu-22.04")
     preflight.add_argument("--wsl-user", default="pocdev")
     preflight.add_argument("--linux-python", default="/home/pocdev/.venvs/cuda-poc-generator/bin/python")
+    execute = commands.add_parser("execute", help="仅运行已审核固定无害接收文件；不运行 LLM PoC")
+    execute.add_argument("--mode", choices=["fixed-staged-normal"], required=True)
+    execute.add_argument("--authorize-fixed-fixture", action="store_true")
+    execute.add_argument("--operator-id", required=True)
+    execute.add_argument("--authorization-reference", required=True)
+    execute.add_argument("--linux-project-root", required=True)
+    execute.add_argument("--outputs-root", default="data/outputs/p3d_r3_staged_fixture")
+    execute.add_argument("--distro", default="Ubuntu-22.04")
+    execute.add_argument("--wsl-user", default="pocdev")
+    execute.add_argument("--linux-python", default="/home/pocdev/.venvs/cuda-poc-generator/bin/python")
+    evaluate = commands.add_parser("evaluate", help="离线核验固定无害执行原件并重建中文结论")
+    evaluate.add_argument("--archive", required=True, help="本轮固定无害执行证据目录")
     args = parser.parse_args(argv)
     try:
+        if args.command == "execute":
+            from .staged_fixture import run_staged_fixture_wsl
+            result = run_staged_fixture_wsl(authorize_fixed_fixture=args.authorize_fixed_fixture,
+                operator_id=args.operator_id, authorization_reference=args.authorization_reference,
+                linux_project_root=args.linux_project_root, output_root=args.outputs_root,
+                distro=args.distro, user=args.wsl_user, linux_python=args.linux_python)
+            fields = ("request_id", "run_id", "transfer_id", "status", "cleanup_status",
+                "fixed_source_execution_status", "candidate_execution_status", "verification_status",
+                "source_sha256", "manifest_sha256", "evidence_dir", "report_path", "diagnostics")
+            print(json.dumps({name: result.get(name) for name in fields}, ensure_ascii=False, default=str))
+            return 0 if result.get("status") == "COMPLETED" else 2
+        if args.command == "evaluate":
+            from .staged_fixture import evaluate_staged_fixture_archive
+            result = evaluate_staged_fixture_archive(args.archive)
+            fields = ("integrity_status", "status", "request_id", "run_id",
+                "manifest_sha256", "report_sha256")
+            print(json.dumps({name: result.get(name) for name in fields}, ensure_ascii=False, default=str))
+            return 0 if result.get("integrity_status") == "VERIFIED" else 2
         result, output = preflight_candidate(cve_id=args.cve, generation_run_id=args.run_id,
-            linux_project_root=args.linux_project_root, outputs_root=args.outputs_root,
-            distro=args.distro, user=args.wsl_user, linux_python=args.linux_python)
+                linux_project_root=args.linux_project_root, outputs_root=args.outputs_root,
+                distro=args.distro, user=args.wsl_user, linux_python=args.linux_python)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         print("候选预检失败：" + type(exc).__name__ + "：" + str(exc), file=sys.stderr)
         return 2

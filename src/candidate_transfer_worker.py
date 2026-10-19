@@ -80,7 +80,7 @@ def receive_registered_candidate(payload):
     return response
 
 
-def main(payload):
+def main(payload, *, project_root=None):
     response = receive_registered_candidate(payload)
     sys.stdout.buffer.write((json.dumps(response, ensure_ascii=False, sort_keys=True, allow_nan=False) + "\n").encode("utf-8"))
     sys.stdout.buffer.flush()

@@ -173,13 +173,14 @@ def _linux_root(value):
 def build_execution_worker_source(payload, *, linux_project_root, worker_entrypoint="fixture"):
     """Pin Python source files to this reviewed host checkout before importing."""
     root = _linux_root(linux_project_root)
-    if worker_entrypoint not in {"fixture", "lifecycle", "memcheck"}:
+    if worker_entrypoint not in {"fixture", "lifecycle", "memcheck", "candidate_transfer",
+                                 "staged_fixture"}:
         raise ValueError("unregistered worker entry point")
     host_root = Path(__file__).resolve().parent.parent
     hashes = {path.relative_to(host_root).as_posix(): digest_bytes(path.read_bytes())
               for path in sorted((host_root / "src").rglob("*.py"))}
     hashes[FIXTURE_RELATIVE_PATH] = FIXTURE_SHA256
-    if worker_entrypoint == "lifecycle":
+    if worker_entrypoint in {"lifecycle", "candidate_transfer", "staged_fixture"}:
         from .registered_actions import REGISTERED_ACTIONS
         hashes.update({action.relative_path: action.sha256 for action in REGISTERED_ACTIONS.values()})
         from .cuda_registry import CUDA_SMOKE_RELATIVE_PATH, CUDA_SMOKE_SHA256
@@ -189,7 +190,8 @@ def build_execution_worker_source(payload, *, linux_project_root, worker_entrypo
         hashes.update({"tests/fixtures/host_diagnostics/" + task.source_file: task.source_sha256
                        for task in MEMCHECK_TASKS.values()})
     entrypoint = {"fixture": "src.execution_worker", "lifecycle": "src.lifecycle_worker",
-                  "memcheck": "src.memcheck_worker"}[worker_entrypoint]
+                  "memcheck": "src.memcheck_worker", "candidate_transfer": "src.candidate_transfer_worker",
+                  "staged_fixture": "src.staged_fixture_worker"}[worker_entrypoint]
     return ("import hashlib,importlib.abc,importlib.util,json,pathlib,sys\n"
             "ROOT=pathlib.Path(" + repr(root) + ").resolve(strict=True)\n"
             "HASHES=json.loads(" + repr(json.dumps(hashes, sort_keys=True)) + ")\n"

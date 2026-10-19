@@ -197,7 +197,7 @@ def transfer_registered_candidate_wsl(*, action_id, linux_project_root, output_r
     from .registered_actions import get_registered_action
     from .tools.process import measure_tool_identity, run_tool
     from .wsl_bridge import validate_wsl_options
-    from .execution_bridge import _linux_root
+    from .execution_bridge import _linux_root, build_execution_worker_source
 
     if action_id != "p2b-normal-v1":
         raise ValueError("only the reviewed p2b-normal-v1 transfer is supported in this phase")
@@ -209,15 +209,15 @@ def transfer_registered_candidate_wsl(*, action_id, linux_project_root, output_r
         "request_id": request_id, "transfer_id": transfer_id, "action_id": action_id,
         "source_b64": base64.b64encode(action.source).decode("ascii"), "source_sha256": action.sha256}
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False)
-    bootstrap = ("import sys,json,base64; sys.path.insert(0," + repr(project_root) + "); "
-        "from src.candidate_transfer_worker import main; "
-        "raise SystemExit(main(json.loads(base64.b64decode(" + repr(base64.b64encode(encoded.encode()).decode())
-        + ").decode('utf-8'))))\n").encode("utf-8")
+    bootstrap = build_execution_worker_source(payload, linux_project_root=project_root,
+                                               worker_entrypoint="candidate_transfer")
     launcher = measure_tool_identity("wsl.exe", source="Windows fixed candidate transfer WSL launcher")
-    result = run_tool([launcher.resolved_path or "wsl.exe", "--distribution", distro, "--user", user,
+    if launcher.status != "OBSERVED":
+        raise ValueError("Windows WSL launcher identity is unavailable; fixed transfer cannot start")
+    result = run_tool([launcher.resolved_path, "--distribution", distro, "--user", user,
                        "--exec", linux_python, "-I", "-"], timeout_seconds=30, max_output_bytes=65536,
                       input_bytes=bootstrap, command_source="fixed registered harmless candidate byte transfer only",
-                      allowed_tool_identities={} if launcher.status != "OBSERVED" else {launcher.resolved_path: launcher.file_sha256},
+                      allowed_tool_identities={launcher.resolved_path: launcher.file_sha256},
                       artifact_root=Path(output_root) / "transports")
     if not result.ok or result.truncated or result.capture_failed:
         raise RuntimeError("WSL candidate staging transport did not complete with bounded full capture")
