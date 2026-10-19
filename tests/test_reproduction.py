@@ -48,12 +48,18 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(events[0].status, "FAIL")
         self.assertEqual(events[0].detail, "bad leb128")
 
-    def test_control_artifacts_are_labelled_benign(self):
+    def test_control_artifacts_are_labelled_apart_from_the_benign_baseline(self):
         result = evidence("_ctrlA_zero_content.cubin -> exit=0\n"
                           "benign.cubin -> exit=0\n"
                           "malicious_41414141.cubin -> exit=3221225477 (crash)\n")
         labels = [run.label for run in result.runs]
-        self.assertEqual(labels, ["BENIGN", "BENIGN", "MALICIOUS"])
+        self.assertEqual(labels, ["CONTROL", "BENIGN", "MALICIOUS"])
+
+    def test_control_with_benign_content_is_still_a_control(self):
+        # "_ctrlD_benign_content_at_eof" must not be counted as the baseline.
+        result = evidence("_ctrlD_benign_content_at_eof.cubin -> exit=0\n"
+                          "benign.cubin -> exit=0\n")
+        self.assertEqual([run.label for run in result.runs], ["CONTROL", "BENIGN"])
 
     def test_crash_exit_codes_are_recognised_by_fault_not_by_nonzero(self):
         self.assertTrue(is_crash_exit(CRASH))
@@ -94,9 +100,9 @@ class TestVerdictRules(unittest.TestCase):
         # cannot exclude "this tool crashes on any input".
         result = decide(parse_log_file(str(SANITIZED_LOG), target_version_in_range=True))
         self.assertEqual(result.verdict, "UNKNOWN")
-        self.assertIn("缺少良性对照", result.reasons[0])
+        self.assertIn("缺少良性基线", result.reasons[0])
 
-    def test_crash_with_clean_controls_is_supported(self):
+    def test_crash_with_clean_baseline_is_supported(self):
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
         with_controls = attach_runs(base, [
             {"artifact": "benign.cubin", "exit_code": 0},
@@ -104,16 +110,37 @@ class TestVerdictRules(unittest.TestCase):
         ])
         result = decide(with_controls)
         self.assertEqual(result.verdict, "SUPPORTED")
-        self.assertEqual(result.benign_runs, 2)
+        self.assertEqual(result.benign_runs, 1)
         self.assertEqual(result.benign_crashes, 0)
+        self.assertEqual(result.control_runs, 1)
         self.assertTrue(any("未采集寄存器" in reason for reason in result.reasons))
 
-    def test_control_that_also_crashes_removes_discriminating_power(self):
+    def test_crashing_mechanism_control_is_reported_but_does_not_block(self):
+        # A one-variable control crashing shows the crash is not payload-exclusive;
+        # that is a caveat on attribution, not a false-positive signal.
+        base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
+        with_controls = attach_runs(base, [
+            {"artifact": "benign.cubin", "exit_code": 0},
+            {"artifact": "_ctrlC_size_shrunk.cubin", "exit_code": CRASH},
+        ])
+        result = decide(with_controls)
+        self.assertEqual(result.verdict, "SUPPORTED")
+        self.assertEqual(result.control_crashes, 1)
+        self.assertTrue(any("不独属于恶意载荷" in reason for reason in result.reasons))
+
+    def test_benign_baseline_that_also_crashes_removes_discriminating_power(self):
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
         with_controls = attach_runs(base, [{"artifact": "benign.cubin", "exit_code": CRASH}])
         result = decide(with_controls)
         self.assertEqual(result.verdict, "UNKNOWN")
         self.assertIn("不具区分力", result.reasons[0])
+
+    def test_control_only_without_a_baseline_stays_unknown(self):
+        base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
+        attached = attach_runs(base, [{"artifact": "_ctrlA_zero_content.cubin", "exit_code": 0}])
+        result = decide(attached)
+        self.assertEqual(result.verdict, "UNKNOWN")
+        self.assertIn("缺少良性基线", result.reasons[0])
 
     def test_out_of_range_target_is_not_a_failed_reproduction(self):
         result = decide(parse_log_file(str(SANITIZED_LOG), target_version_in_range=False))

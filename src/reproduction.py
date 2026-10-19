@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 StepStatus = Literal["START", "OK", "FAIL"]
-RunLabel = Literal["MALICIOUS", "BENIGN", "UNKNOWN"]
+RunLabel = Literal["MALICIOUS", "BENIGN", "CONTROL", "UNKNOWN"]
 Verdict = Literal["SUPPORTED", "NOT_VERIFIED", "UNKNOWN"]
 
 _STEP = re.compile(
@@ -91,6 +91,8 @@ class ReproductionResult(BaseModel):
     malicious_crashes: int
     benign_runs: int
     benign_crashes: int
+    control_runs: int = 0
+    control_crashes: int = 0
 
 
 def redact_paths(text: str) -> str:
@@ -111,8 +113,19 @@ def is_crash_exit(code: int) -> bool:
 
 
 def _label(artifact: str) -> RunLabel:
+    """Distinguish a benign baseline from a one-variable mechanism control.
+
+    ``benign*`` is the only artifact that must not crash: it answers "does the
+    tool crash on ordinary input at all". ``_ctrl*`` files each change exactly
+    one property and may legitimately crash; folding them into the baseline
+    would both weaken the baseline and hide a real observation.
+    """
     lowered = artifact.lower()
-    if "benign" in lowered or "ctrl" in lowered or "control" in lowered:
+    # "ctrl" wins over "benign": a control that happens to carry benign content
+    # is still a one-variable probe, not the baseline.
+    if "ctrl" in lowered or "control" in lowered:
+        return "CONTROL"
+    if "benign" in lowered:
         return "BENIGN"
     if "malicious" in lowered or "poc" in lowered or "payload" in lowered:
         return "MALICIOUS"
@@ -192,25 +205,32 @@ def attach_runs(evidence: ReproductionEvidence,
 
 
 def decide(evidence: ReproductionEvidence) -> ReproductionResult:
-    """Apply ordered rules; controls and version eligibility are mandatory.
+    """Apply ordered rules; a benign baseline and version eligibility are mandatory.
 
     The order matters: an out-of-range target must never be reported as a
-    failed reproduction, and a control that crashes removes discriminating
-    power even when the malicious sample crashed as intended.
+    failed reproduction, and a benign baseline that crashes removes
+    discriminating power even when the malicious sample crashed as intended.
+
+    A crashing ``_ctrl*`` mechanism probe is reported but does not by itself
+    disqualify the observation: it shows the crash is not exclusive to the
+    payload, which is exactly why the verdict stays at SUPPORTED.
     """
     steps = evidence.steps
     runs = evidence.runs
     failed = [event.step_id for event in steps if event.status == "FAIL"]
     malicious = [run for run in runs if run.label == "MALICIOUS"]
     benign = [run for run in runs if run.label == "BENIGN"]
+    control = [run for run in runs if run.label == "CONTROL"]
     malicious_crashes = sum(1 for run in malicious if run.crashed)
     benign_crashes = sum(1 for run in benign if run.crashed)
+    control_crashes = sum(1 for run in control if run.crashed)
 
     def result(verdict: Verdict, reasons: List[str]) -> ReproductionResult:
         return ReproductionResult(
             verdict=verdict, reasons=reasons, failed_steps=failed,
             malicious_runs=len(malicious), malicious_crashes=malicious_crashes,
             benign_runs=len(benign), benign_crashes=benign_crashes,
+            control_runs=len(control), control_crashes=control_crashes,
         )
 
     if not steps and not runs:
@@ -225,16 +245,24 @@ def decide(evidence: ReproductionEvidence) -> ReproductionResult:
         return result("NOT_VERIFIED", [f"受控样本未产生崩溃退出码（{detail}）"])
     if not benign:
         return result("UNKNOWN", [
-            "缺少良性对照记录，无法排除工具本身对任意输入崩溃；"
-            "补跑 benign.cubin 与 _ctrl* 并用 --controls 附加结果后重新评估"])
+            "缺少良性基线（benign.cubin），无法排除工具对任意输入崩溃；"
+            "补跑基线并用 --controls 附加结果后重新评估"])
     if benign_crashes:
         return result("UNKNOWN", [
-            f"良性对照中有 {benign_crashes} 个样本同样崩溃；样本不具区分力"])
+            f"良性基线中有 {benign_crashes} 个样本同样崩溃；样本不具区分力"])
     reasons = [
         f"受控样本 {malicious_crashes}/{len(malicious)} 个产生崩溃退出码",
-        f"良性对照 {len(benign)} 个全部未崩溃",
+        f"良性基线 {len(benign)} 个全部未崩溃",
         "目标工具版本处于受影响区间" if evidence.target_version_in_range else "目标版本区间未提供，按未知处理",
     ]
+    if control:
+        if control_crashes:
+            crashed = ", ".join(run.artifact for run in control if run.crashed)
+            reasons.append(
+                f"机制对照 {control_crashes}/{len(control)} 个同样崩溃（{crashed}）："
+                "该崩溃不独属于恶意载荷，单一变量的隔离结论未成立")
+        else:
+            reasons.append(f"机制对照 {len(control)} 个全部未崩溃")
     if evidence.root_cause_proof_recorded:
         reasons.append("已记录根因级证据；CVE 级 VERIFIED 仍须独立验证器与人工复核")
     else:
@@ -253,7 +281,8 @@ def render_report(evidence: ReproductionEvidence, result: ReproductionResult) ->
         "",
         f"- 判定：`{result.verdict}`",
         f"- 受控样本：{result.malicious_runs} 个，其中崩溃 {result.malicious_crashes} 个",
-        f"- 良性对照：{result.benign_runs} 个，其中崩溃 {result.benign_crashes} 个",
+        f"- 良性基线：{result.benign_runs} 个，其中崩溃 {result.benign_crashes} 个",
+        f"- 机制对照：{result.control_runs} 个，其中崩溃 {result.control_crashes} 个",
         f"- 失败步骤：{', '.join(result.failed_steps) if result.failed_steps else '无'}",
         "",
         "## 判定理由",
@@ -282,7 +311,9 @@ def render_report(evidence: ReproductionEvidence, result: ReproductionResult) ->
         "",
         "## 边界",
         "",
-        "`SUPPORTED` 表示受控样本在该构建上崩溃、且良性对照未崩溃，可排除“任意输入都崩”。",
+        "`SUPPORTED` 表示受控样本在该构建上崩溃、且良性基线 `benign*` 未崩溃，可排除“任意输入都崩”。",
+        "`_ctrl*` 是单变量机制对照：它崩溃**不代表**复现失败，但说明该崩溃不独属于恶意载荷，",
+        "单一变量的隔离结论没有成立。",
         "它**不等同于** CVE 级 `VERIFIED`：后者要求针对该缺陷的必要条件集合与独立复核。",
         "本报告不产生、也不允许把复现观测升级为漏洞验证结论。",
         "",

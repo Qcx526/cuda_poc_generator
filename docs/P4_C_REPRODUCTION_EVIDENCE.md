@@ -40,19 +40,32 @@ python -m src.reproduction --log <run.log> --controls <controls.json> --out <dir
    不是复现失败；这条顺序避免把"没装对版本"记成"PoC 不行"）
 3. 无受控样本 → `UNKNOWN`
 4. 受控样本零崩溃 → `NOT_VERIFIED`，并列出失败步骤
-5. 无良性对照 → `UNKNOWN`（要求补跑 `benign.cubin` 与 `_ctrl*`）
-6. 良性对照也崩溃 → `UNKNOWN`（样本不具区分力）
+5. 无**良性基线**（`benign*`）→ `UNKNOWN`（要求补跑基线）
+6. 良性基线也崩溃 → `UNKNOWN`（样本不具区分力）
 7. 其余 → `SUPPORTED`
 
-第 5、6 条是本模块的核心：**没有对照的崩溃只能算"观察到崩溃"，不能算"复现了漏洞"**。
+第 5、6 条是本模块的核心：**没有基线对照的崩溃只能算"观察到崩溃"，不能算"复现了漏洞"**。
 `CVE-2025-23339` 的历史日志只记录了恶意样本，因此离线判定结果是 `UNKNOWN`——
 这是正确结论，不是缺陷。
 
+`_ctrl*` 属于**单变量机制对照**，与基线分开统计：它崩溃**不阻断** `SUPPORTED`，
+但必须在理由里列名，因为这说明该崩溃不独属于恶意载荷，单一变量的隔离结论未成立。
+把它和基线混为一谈，既会削弱基线，又会掩盖一个真实观测。
+
 ## 4. 样本标签由文件名决定，调用方不能重标
 
-`_ctrl*` / `benign*` → `BENIGN`，`malicious*` / `poc*` / `payload*` → `MALICIOUS`，
-其余 `UNKNOWN`。外部附加的对照结果走同一规则，因此调用者无法把良性文件
-声明成受控样本。
+判断顺序固定，`ctrl` 优先于 `benign`：
+
+| 文件名 | 标签 | 含义 |
+|---|---|---|
+| `_ctrl*` / `control*` | `CONTROL` | 单变量机制对照，允许崩溃，只作观测 |
+| `benign*` | `BENIGN` | 基线，必须不崩溃 |
+| `malicious*` / `poc*` / `payload*` | `MALICIOUS` | 受控样本 |
+| 其余 | `UNKNOWN` | 不计入任何一侧 |
+
+`_ctrlD_benign_content_at_eof.cubin` 同时含 `ctrl` 与 `benign`，按顺序归为 `CONTROL`。
+外部附加的对照结果走同一规则，因此调用者无法把良性文件声明成受控样本，
+也无法把机制对照伪装成基线。
 
 ## 5. 崩溃判定
 
