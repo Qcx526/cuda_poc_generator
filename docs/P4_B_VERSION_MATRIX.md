@@ -75,24 +75,33 @@ NVIDIA 官方组件版本表与本项目输入资料存在一处不一致，必�
 
 ## 3. 需要降级驱动：3 个（有风险）
 
-| CVE | 受影响区间（Windows） | 修复上界 | 建议目标 |
-|---|---|---|---|
-| 2024-0090 | ≥470 <470.256.02；≥535 <535.183.01；≥550 <550.90.07；≥555 <555.52.04 | 555.52.04 等 | **550.54.x** |
-| 2024-0091 | ≥550 <552.55；≥550 <550.90.07；≥555 <555.99；≥555 <555.5x | 555.99 等 | **550.54.x** |
-| 2024-0107 | ≥470 <475.14；≥535 <538.78；≥550 <552.74；≥555 <556.12 | 556.12 等 | **550.54.x**（Talos 实测 551.61） |
+先澄清一个版本号陷阱：NVIDIA 的 `550.54.14` 是 **Linux** 构建，同一分支的 **Windows**
+构建是 `551.61`（官方发布说明写作 "550.54.14(Linux)/551.61(Windows)"）。
+Windows GeForce 的版本号不能直接套用 Linux 分支号。
 
-三个 CVE 的交集是 **550 分支且低于 550.90.07**，例如 `550.54.14`。GTX 1660 属于 Turing，
-550 分支仍支持。
+| CVE | Windows GeForce 受影响区间 | 修复版本 | 建议目标 |
+|---|---|---|---|
+| 2024-0090 | R555 分支 `555.99` 之前的全部版本（含 R550/551.x） | 555.99 | **551.61** |
+| 2024-0091 | 同上（R555 分支 `555.99` 之前） | 555.99 | **551.61** |
+| 2024-0107 | R555 分支 `556.12` 之前；Talos 实测 551.61 | 556.12 | **551.61** |
+
+三个 CVE 在 Windows 上的交集是 **551.61**：它低于 0090/0091 的 555.99 上界，也低于
+0107 的 556.12 上界，并且就是 0107 的 Talos 实测版本。GTX 1660 在该驱动的支持列表内
+（GeForce 16 系列）。
+
+NVIDIA 公告中 0090/0091 的 Linux 修复号（550.90.07 / 535.183.01 / 470.256.02）
+不适用于 Windows GeForce，不要拿它们判断本机是否受影响。
 
 **风险与做法（必须遵守）**：
 
 1. 这三个是显示驱动缺陷，触发成功通常表现为**蓝屏或显示驱动重置**，不是普通进程崩溃。
-   **不要在唯一的工作机上做**；若只有一台机器，先建系统还原点并准备好安全模式卸载步骤。
-2. 卸载用 DDU（Display Driver Uninstaller）在安全模式下清理，再装 550.54.x。
-   不要直接覆盖安装，残留会导致版本判定错误。
-3. 降级后先跑一次 `nvidia-smi` 记录驱动版本，再开始实验。
-4. 回滚：DDU 清理后重装当前的 `617.42`。
-5. 降级到 550 会让 CUDA 12.8 的 GPU 运行能力失效（cuobjdump/nvdisasm 不受影响）。
+   **不要在唯一的工作机上做**；若只有一台机器，先建系统还原点并准备安全模式卸载步骤。
+2. 卸载用 DDU 在安全模式下清理，再装 551.61。不要直接覆盖安装，残留会导致版本判定错误。
+3. 安装后断开网络并关闭 NVIDIA App / GeForce Experience 的自动更新，否则驱动会被悄悄升级回去。
+4. 降级后先跑一次 `nvidia-smi` 记录驱动版本，再开始实验。
+5. 回滚：DDU 清理后重装当前的 `617.42`。
+6. 551.61 对应 CUDA 12.4 运行时上限。CUDA 12.8 的 GPU 运行能力会失效，
+   但 `cuobjdump`/`nvdisasm` 是纯 CPU 工具，不受影响。
    因此驱动实验与 GPU 库实验**不能在同一时间窗口做**。
 
 ## 4. 不可能在本机复现：1 个
@@ -117,11 +126,54 @@ GTX 1660 是 Turing（`sm_75`），即使把驱动降到受影响区间也不满
 
 1. 用现有 11.2 跑通 15 个工具链 CVE，产出第一批真实证据。
 2. 补录 `CVE-2024-0124` 的受影响版本区间（输入缺公告值）。
-3. 装 12.8 Toolkit，做版本对照（同一 PoC，两个工具版本，两份证据）。
+3. 装 12.4 Toolkit（GPU 库需要）或 12.8 Toolkit（仅用于 CPU 工具的版本对照）。
 4. 在第二台机器上做驱动类；本机只做架构匹配的排除登记。
 5. 最后做 GPU 库/服务，需要先通过设备健康检查。
 
-## 7. 本轮未做的事
+## 7. 推荐组合与官方下载
+
+没有单一组合能覆盖全部 23 个，但下面两套都远高于"只装最新版"：
+
+| 组合 | 驱动 | Toolkit | 覆盖 | 代价 |
+|---|---|---|---|---|
+| A 单机最大覆盖 | **551.61** | 11.2.2 + 12.4.0 | 21 / 23 | 有蓝屏风险；CUDA ≥12.8 的 GPU 运行失效；Triton 25.07 跑不了 |
+| B 稳妥 | 617.42（不改） | 11.2.2 + 12.8.0 | 19 / 23 | 三个驱动 CVE 需第二台机器 |
+
+A 组排除 `CVE-2026-24191`（Turing 架构不符）与 `CVE-2025-23316`（Triton 25.07 需要 ≥575 驱动）。
+B 组排除 4 个驱动类。
+
+### 7.1 下载地址
+
+| 组件 | 版本 | 链接 |
+|---|---|---|
+| GeForce 驱动 | 551.61（Win10 64-bit，634 MB） | https://www.nvidia.com/download/driverResults.aspx/221745/en-us |
+| 驱动历史归档 | — | https://www.nvidia.com/en-us/drivers/ |
+| CUDA Toolkit | 11.2 Update 2（`cuda_11.2.2_461.33_win10.exe`，2.8 GB） | https://developer.nvidia.com/cuda-11.2.2-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exelocal |
+| CUDA Toolkit | 12.4.0（Windows / x86_64 / 10 / exe local） | https://developer.nvidia.com/cuda-12-4-0-download-archive |
+| CUDA Toolkit | 12.8.0（可选，仅用 CPU 工具） | https://developer.nvidia.com/cuda-12-8-0-download-archive |
+| Toolkit 总归档 | — | https://developer.nvidia.com/cuda-toolkit-archive |
+| DDU 卸载工具 | 最新 | https://www.wagnardsoft.com/display-driver-uninstaller-DDU- |
+
+### 7.2 安装顺序与坑
+
+1. 建系统还原点，断网，关闭 NVIDIA App / GeForce Experience 的自动更新。
+2. 安全模式运行 DDU，选 GPU / NVIDIA，"Clean and restart"。
+3. 装 **551.61**，自定义安装 + 勾选"执行清洁安装"，装完重启。
+4. 装 CUDA 11.2.2，**自定义安装时取消勾选 `Display Driver`**（否则会把驱动写回 461.33）。
+5. 装 CUDA 12.4.0，同样取消勾选 `Display Driver`。
+6. 验证：
+   ```text
+   nvidia-smi                                  # 应为 551.61
+   "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\bin\cuobjdump.exe" --version
+   "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin\cuobjdump.exe" --version
+   ```
+   把两条 `--version` 的完整输出与文件 SHA-256 写进证据档案；不要只记版本号。
+
+### 7.3 回滚
+
+DDU 清理后重装 617.42。CUDA Toolkit 可以并存，不需要卸载。
+
+## 8. 本轮未做的事
 
 - 未安装 CUDA 12.8，未降级驱动，未安装 Nsight Systems。
 - 未运行任何真实样本；本机仍为 `CUDA 11.2` + 驱动 `617.42`。
