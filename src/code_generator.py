@@ -200,6 +200,12 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    record whether the vulnerable function was actually executed. Without the
    rendezvous the loop can only observe crashes, never reachability.
 
+21. **Per-artifact Observation Line (CRITICAL)**: after each artifact is run,
+   print exactly `[CPG_RUN] <artifact-name> exit=<code>` on its own line
+   (flush it). The closed-loop harness parses these lines to build the
+   differential verdict; without them the run cannot be graded and must be
+   reported as unobserved.
+
 Respond with the COMPLETE Python script only. Follow these rules STRICTLY:
 
 1. Your ENTIRE response MUST be executable Python code — the first character

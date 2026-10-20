@@ -95,6 +95,10 @@ class TestExecuteStage(unittest.TestCase):
 
 
 class TestGrader(unittest.TestCase):
+    def test_explicit_contract_line_is_preferred(self):
+        runs = parse_runs("[CPG_RUN] malicious.cubin exit=139\n[CPG_RUN] benign.cubin exit=0\n")
+        self.assertEqual([r["exit_code"] for r in runs], [139, 0])
+
     def test_runs_are_parsed_from_the_harness_convention(self):
         runs = parse_runs("malicious.cubin -> exit=139\nbenign.cubin -> exit=0\n")
         self.assertEqual([r["exit_code"] for r in runs], [139, 0])

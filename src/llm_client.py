@@ -251,8 +251,8 @@ class LLMClient:
             )
             try:
                 stream_fn = getattr(model, "stream", None)
+                pieces = []
                 if getattr(self, "streaming", False) and callable(stream_fn):
-                    pieces = []
                     metadata, extra = None, None
                     for chunk in stream_fn(lc_messages):
                         piece = getattr(chunk, "content", "")
@@ -261,7 +261,14 @@ class LLMClient:
                         metadata = metadata or getattr(chunk, "response_metadata", None)
                         extra = extra or getattr(chunk, "additional_kwargs", None)
                     content = "".join(pieces)
-                else:
+                # An endpoint (or a test double) that ignores stream=True yields
+                # no chunks at all; fall back once rather than reporting empty.
+                if not pieces and callable(stream_fn) and getattr(self, "streaming", False):
+                    resp = model.invoke(lc_messages)
+                    content = resp.content
+                    metadata = getattr(resp, "response_metadata", None)
+                    extra = getattr(resp, "additional_kwargs", None)
+                elif not getattr(self, "streaming", False):
                     resp = model.invoke(lc_messages)
                     content = resp.content
                     metadata = getattr(resp, "response_metadata", None)

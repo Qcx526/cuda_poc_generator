@@ -19,7 +19,9 @@ from .reproduction import ReproductionResult, decide, evidence_from_runs
 Runner = Callable[..., "subprocess.CompletedProcess"]
 
 _CANDIDATE = re.compile(r"Candidate saved:\s*(.+\.py)\s*$", re.MULTILINE)
-_RUN_LINE = re.compile(r"([^\s/\\]+\.(?:cubin|elf|bin|dxbc))\s*->\s*exit=(\d+)")
+# The explicit contract is primary; the arrow form stays for older candidates.
+_RUN_LINE = re.compile(r"\[CPG_RUN\]\s+(\S+)\s+exit=(\d+)")
+_LEGACY_RUN_LINE = re.compile(r"([^\s/\\]+\.(?:cubin|elf|bin|dxbc))\s*->\s*exit=(\d+)")
 
 
 @dataclass(frozen=True)
@@ -111,7 +113,7 @@ def make_execute_stage(context: StageContext,
         if context.module and context.rva and context.cdb_path:
             observe = probe or _default_probe
             observation = observe(candidate=candidate, cdb_path=context.cdb_path,
-                                  module=context.module, rva=context.rva,
+                                  expression="%s+0x%x" % (context.module, context.rva),
                                   python_exe=context.python_exe)
             output = getattr(observation, "stdout", "") or ""
             reached = getattr(observation, "reached", None)
@@ -141,11 +143,11 @@ def make_execute_stage(context: StageContext,
     return stage
 
 
-def _default_probe(*, candidate: Path, cdb_path: str, module: str, rva: int,
+def _default_probe(*, candidate: Path, cdb_path: str, expression: str,
                    python_exe: str):
     from .probe_reached import observe_candidate
     return observe_candidate(cdb_path=cdb_path, candidate=candidate,
-                             module=module, rva=rva, python_exe=python_exe)
+                             expression=expression, python_exe=python_exe)
 
 
 # -- grade ---------------------------------------------------------------
@@ -153,8 +155,12 @@ def _default_probe(*, candidate: Path, cdb_path: str, module: str, rva: int,
 
 def parse_runs(log_text: str) -> List[dict]:
     """Read ``name -> exit=N`` lines produced by the harness convention."""
+    text = log_text or ""
+    matches = list(_RUN_LINE.finditer(text))
+    if not matches:
+        matches = list(_LEGACY_RUN_LINE.finditer(text))
     return [{"artifact": match.group(1), "exit_code": int(match.group(2))}
-            for match in _RUN_LINE.finditer(log_text or "")]
+            for match in matches]
 
 
 def make_grader(project_config: LoopConfig,
