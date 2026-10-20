@@ -246,6 +246,22 @@ class TestPipelineAnalysisGate(OfflineTestCase):
             self.assertEqual(status["correction_attempts"], 2)
             self.assertTrue(status["errors"])
 
+
+    def test_codegen_model_routing_builds_a_second_client(self):
+        cfg = self.config()
+        cfg.config["llm"]["codegen_model"] = "codegen-model-x"
+        first, second = MagicMock(), MagicMock()
+        with patch.object(self.pipeline_module, "ConfigLoader", return_value=cfg), \
+                patch.object(self.pipeline_module, "LLMClient",
+                             side_effect=[first, second]) as constructor, \
+                patch.object(self.pipeline_module, "CudaCodeGenerator") as generator:
+            pipeline = self.pipeline_module.CudaPipeline()
+            pipeline._initialize_components("out")
+        self.assertEqual(constructor.call_count, 2)
+        self.assertEqual(constructor.call_args_list[1].kwargs.get("model_override"),
+                         "codegen-model-x")
+        self.assertIs(generator.call_args.args[0], second)
+
     def test_failed_second_run_does_not_reuse_prior_candidate_as_current_success(self):
         raw = json.dumps(ANALYSIS)
         with tempfile.TemporaryDirectory() as directory:

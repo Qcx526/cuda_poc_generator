@@ -157,6 +157,7 @@ class ConfigLoader:
             "CPG_LLM_API_KEY_ENV": ("llm", "api_key_env", str),
             "CPG_LLM_TEMPERATURE": ("llm", "temperature", float),
             "CPG_LLM_MAX_TOKENS":  ("llm", "max_tokens", int),
+            "CPG_LLM_CODEGEN_MODEL": ("llm", "codegen_model", str),
             "CPG_LLM_TIMEOUT":     ("llm", "timeout", int),
             "CPG_LLM_MAX_RETRIES": ("llm", "max_retries", int),
             "CPG_RAG_ENABLED":     ("rag", "enabled", self._parse_bool),

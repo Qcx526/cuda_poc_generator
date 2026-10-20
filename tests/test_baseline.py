@@ -247,6 +247,15 @@ class TestLLMConfigurationAndRetry(OfflineTestCase):
         client.streaming = True
         self.assertEqual(client.chat([{"role": "user", "content": "x"}]), "hello")
 
+
+    def test_model_override_reaches_the_provider(self):
+        os.environ["DEEPSEEK_API_KEY"] = "offline"
+        with patch.object(self.llm_module, "ChatOpenAI") as constructor:
+            client = self.llm_module.LLMClient(self.config(),
+                                               model_override="codegen-model-x")
+        self.assertEqual(client.model, "codegen-model-x")
+        self.assertEqual(constructor.call_args.kwargs["model"], "codegen-model-x")
+
     def test_canonical_key_takes_priority_over_legacy_alias(self):
         os.environ.update({"DEEPSEEK_API_KEY": "offline-primary", "DEEPSEEK_KEY": "offline-legacy"})
         with patch.object(self.llm_module, "ChatOpenAI") as constructor:

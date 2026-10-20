@@ -112,11 +112,13 @@ class LLMClient:
         chat_model: LangChain ChatOpenAI 实例。
     """
 
-    def __init__(self, cfg: ConfigLoader) -> None:
+    def __init__(self, cfg: ConfigLoader, model_override: Optional[str] = None) -> None:
         """初始化 LLM 客户端。
 
         Args:
             cfg: 全局配置加载器。
+            model_override: 覆盖配置中的模型名。模型分工时用同一个端点跑两个
+                角色（分析用推理模型，代码生成用非推理模型），避免复制整份配置。
 
         Raises:
             ImportError: 缺少 langchain 依赖时抛出。
@@ -139,7 +141,7 @@ class LLMClient:
                 "其他服务商请显式配置 llm.api_key_env 或 CPG_LLM_API_KEY_ENV。"
             )
 
-        self.model: str = llm_cfg.get("model_name", "deepseek-flash")
+        self.model: str = model_override or llm_cfg.get("model_name", "deepseek-flash")
         self.temperature: float = llm_cfg.get("temperature", 0.3)
         self.max_tokens: int = llm_cfg.get("max_tokens", 4096)
         self.max_retries: int = llm_cfg.get("max_retries", 3)

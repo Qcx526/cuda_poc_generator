@@ -12,8 +12,10 @@ llm:
   model_name: "CPG_LLM_MODEL_NAME"
   api_base: "CPG_LLM_API_BASE"
   api_key_env: "CPG_LLM_API_KEY_ENV"
+  # 可选：代码生成单独用另一个模型（留空则与 model_name 相同）
+  codegen_model: ""
   temperature: 0.3
-  max_tokens: 4096  # 输出上限；长代码可能截断，需人工检查。
+  max_tokens: 65535  # 输出上限；长代码可能截断，需人工检查。
   timeout: 600      # 单次请求读取超时（秒），不是全部重试的总时限。
   max_retries: 3    # 兼容旧字段名：当前实际表示最大尝试次数（含首次）。
   streaming: false # 保留兼容字段；当前代码未实现流式输出。

@@ -64,7 +64,12 @@ class CudaPipeline:
         if self.expert is None:
             self.expert = CudaSecurityExpert(self.llm)
         if self.code_gen is None:
-            self.code_gen = CudaCodeGenerator(self.llm, self.cuda_lib, outputs_dir)
+            # Model routing: a reasoning model can analyse well yet never finish
+            # a 600-line generation, so codegen may use its own model.
+            codegen_model = (self.cfg.config.get("llm") or {}).get("codegen_model") or ""
+            codegen_llm = (LLMClient(self.cfg, model_override=codegen_model)
+                           if codegen_model else self.llm)
+            self.code_gen = CudaCodeGenerator(codegen_llm, self.cuda_lib, outputs_dir)
         self.code_gen.outputs_dir = outputs_dir
 
     # ------------------------------------------------------------------
