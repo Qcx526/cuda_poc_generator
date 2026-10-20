@@ -100,3 +100,15 @@ SHEX: opcode 106, 256, 515, 54(MOV), 0, 2(RET), 64, 0
 - 最小 D3D11 探针：`data/reference/driver_pocs/d3d_sincos_probe.py`。
 - cdb 断点脚本：`data/reference/driver_pocs/cdb_attach.txt`。
 - 调试器：`D:\Windows Kits\10\Debuggers\x64\cdb.exe`（10.0.19041.5609）。
+
+## 8. 后续修正：观测器的一次假阳性（2026-10-20 晚些时候）
+
+实现 `reached` 观测器时，用「断点命令里打印标记」的方式判断命中，结果**全假阳性**：
+cdb 会回显 `bp ... ".echo CPG_HIT"` 这一行，标记字面量出现在回显里，解析器便以为命中了。
+一度据此得出"ps_5_0 其实走得到该路径"的错误结论；手工基准（`bp` 不带命令、进程正常退出、
+无 `Breakpoint 0 hit`）推翻了它。
+
+修正：只认 cdb 自己输出的 `Breakpoint N hit`，并以 `CPG_DONE` 作为"进程结束仍未命中"的
+兜底；已加回归用例 `test_echoed_breakpoint_command_is_not_a_hit`。
+
+**结论不变**：普通 ps_5_0 SINCOS 着色器不会执行到 `0x150315A`。第 5 节的否证成立。

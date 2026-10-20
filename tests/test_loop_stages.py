@@ -153,5 +153,68 @@ class TestRunnerWiring(unittest.TestCase):
             self.assertIn("CVE-X", path.read_text(encoding="utf-8"))
 
 
+class TestReachedProbe(unittest.TestCase):
+    def test_cdb_hit_line_is_the_only_positive_signal(self):
+        from src.probe_reached import parse_observation
+        self.assertTrue(parse_observation("Breakpoint 0 hit").reached)
+        self.assertTrue(parse_observation("Breakpoint 12 hit").reached)
+        self.assertFalse(parse_observation("... CPG_DONE ...").reached)
+        self.assertIsNone(parse_observation("no markers").reached)
+
+    def test_echoed_breakpoint_command_is_not_a_hit(self):
+        # Regression: cdb echoes the bp command, so a marker embedded in that
+        # command made every run look like a hit.
+        from src.probe_reached import parse_observation
+        text = ('0:014> bp nvgpucomp64+0x150315a ".echo CPG_HIT; q"\n'
+                "ntdll!NtTerminateProcess://nCPG_DONE//n")
+        self.assertFalse(parse_observation(text).reached)
+
+    def test_command_file_carries_module_and_rva(self):
+        from src.probe_reached import build_command_file
+        text = build_command_file("nvgpucomp64", 0x15030F1)
+        self.assertIn("bp nvgpucomp64+0x15030f1", text)
+        self.assertIn("CPG_DONE", text)
+
+    def test_ready_line_yields_the_pid(self):
+        from src.probe_reached import parse_ready
+        self.assertEqual(parse_ready("[CPG_READY] 4242"), 4242)
+        self.assertIsNone(parse_ready("paused pid=1"))
+
+    def test_execute_stage_records_the_observation(self):
+        from src.probe_reached import ReachedObservation
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = StageContext(project_root=Path("."), cve_id="CVE-X",
+                               container_image="img", workdir=Path(tmp),
+                               tier="driver_userland", module="nvgpucomp64",
+                               rva=0x15030F1, cdb_path="cdb.exe")
+            fake = lambda **kw: ReachedObservation(False, "never executed",
+                                                   "no artifacts\n")
+            state = make_execute_stage(ctx, probe=fake)(
+                LoopState(iteration=1, candidate_file=str(Path(tmp) / "poc.py")))
+            self.assertFalse(state.reached)
+            self.assertIn("never executed",
+                          Path(state.observation_file).read_text(encoding="utf-8"))
+
+    def test_controller_turns_unreached_into_path_not_reached(self):
+        from src.probe_reached import ReachedObservation
+        from src.loop_runner import build_controller
+        with tempfile.TemporaryDirectory() as tmp:
+            controller = build_controller(
+                cve_id="CVE-X", tier="driver_userland", iterations=1,
+                image="img", workdir=Path(tmp), project_root=Path("."),
+                version_in_range=True, allow_kernel=False, python_exe="python",
+                runner=lambda *a, **k: subprocess.CompletedProcess(a[0], 0, "", ""),
+                fixed_candidate=str(Path(tmp) / "poc.py"))
+            # Replace the execute stage with one that observes an unreachable target.
+            ctx = StageContext(project_root=Path("."), cve_id="CVE-X",
+                               container_image="img", workdir=Path(tmp),
+                               tier="driver_userland", module="m", rva=1,
+                               cdb_path="c")
+            fake = lambda **kw: ReachedObservation(False, "never executed", "")
+            controller.stages["execute"] = make_execute_stage(ctx, probe=fake)
+            result = controller.run()
+            self.assertEqual(result.trace[0].diagnosis_code, "PATH_NOT_REACHED")
+
+
 if __name__ == "__main__":
     unittest.main()

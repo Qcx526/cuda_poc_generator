@@ -60,6 +60,7 @@ class LoopState(BaseModel):
     grader_reasons: List[str] = Field(default_factory=list)
     stage_error: Optional[str] = None
     observation_file: Optional[str] = None
+    reached: Optional[bool] = None
     diagnosis_code: Optional[str] = None
     directive: Optional[str] = None
 
@@ -145,11 +146,13 @@ class ClosedLoopController:
             result = self.grader(state)
             diagnosis = diagnose(verdict=result.verdict,
                                  reasons=list(result.reasons),
-                                 stage_error=state.stage_error)
+                                 stage_error=state.stage_error,
+                                 reached=state.reached)
             state = LoopState(
                 iteration=iteration, candidate_file=state.candidate_file,
                 verdict=result.verdict, grader_reasons=list(result.reasons),
                 stage_error=state.stage_error,
+                reached=state.reached,
                 diagnosis_code=None if diagnosis is None else diagnosis.code,
                 directive=None if diagnosis is None else diagnosis.directive)
             trace.append(IterationRecord(

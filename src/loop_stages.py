@@ -32,6 +32,9 @@ class StageContext:
     workdir: Path
     tier: str = "userland_toolchain"
     python_exe: str = "python"
+    module: str = ""
+    rva: int = 0
+    cdb_path: str = ""
 
 
 def _default_runner(command: List[str], *, cwd: Optional[Path] = None,
@@ -86,12 +89,16 @@ def build_docker_command(context: StageContext, candidate: Path) -> List[str]:
 
 
 def make_execute_stage(context: StageContext,
-                       runner: Runner = _default_runner) -> Callable[[LoopState], LoopState]:
-    """Run the candidate where its target actually exists, then persist output.
+                       runner: Runner = _default_runner,
+                       probe: Optional[Callable[..., object]] = None
+                       ) -> Callable[[LoopState], LoopState]:
+    """Run the candidate where its target exists and record whether it reached it.
 
-    Toolchain targets run in the hardened container. Driver components run on
-    the host because D3D11/driver entry points do not exist inside a Linux
-    container; isolation there comes from the process boundary and a timeout.
+    Two observation modes:
+    - plain execution (artifact exit codes come from stdout);
+    - instrumented execution, when a module+RVA is configured: the candidate
+      rendezvouses at ``[CPG_READY]``, a breakpoint is set inside the target
+      module, and ``reached`` is recorded alongside its output.
     """
 
     def stage(state: LoopState) -> LoopState:
@@ -99,29 +106,46 @@ def make_execute_stage(context: StageContext,
             return LoopState(iteration=state.iteration,
                              stage_error="no candidate to execute")
         candidate = Path(state.candidate_file)
-        if context.tier == "userland_toolchain":
-            command = build_docker_command(context, candidate)
+        reached: Optional[bool] = None
+        detail = ""
+        if context.module and context.rva and context.cdb_path:
+            observe = probe or _default_probe
+            observation = observe(candidate=candidate, cdb_path=context.cdb_path,
+                                  module=context.module, rva=context.rva,
+                                  python_exe=context.python_exe)
+            output = getattr(observation, "stdout", "") or ""
+            reached = getattr(observation, "reached", None)
+            detail = "\n[probe_reached] %s\n" % getattr(observation, "detail", "")
+            error = None
         else:
-            command = [context.python_exe, str(candidate)]
-        completed = runner(command, timeout=1800)
+            if context.tier == "userland_toolchain":
+                command = build_docker_command(context, candidate)
+            else:
+                command = [context.python_exe, str(candidate)]
+            completed = runner(command, timeout=1800)
+            output = (completed.stdout or "") + (completed.stderr or "")
+            error = None
+            if completed.returncode != 0 and not parse_runs(completed.stdout or ""):
+                error = "executor rc=%d: %s" % (completed.returncode,
+                                                (completed.stderr or "")[-300:])
         context.workdir.mkdir(parents=True, exist_ok=True)
         log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
-        output = (completed.stdout or "") + (completed.stderr or "")
-        log.write_text(output, encoding="utf-8")
-        # A non-zero executor with no observations is a harness failure, not a
-        # statement about the target; keep the two apart so the diagnosis is
-        # actionable.
-        error = None
-        if completed.returncode != 0 and not parse_runs(completed.stdout or ""):
-            error = "executor rc=%d: %s" % (completed.returncode,
-                                            (completed.stderr or "")[-300:])
+        log.write_text(output + detail, encoding="utf-8")
         return LoopState(iteration=state.iteration,
                          candidate_file=state.candidate_file,
                          observation_file=str(log),
                          stage_error=error,
+                         reached=reached,
                          diagnosis_code=state.diagnosis_code,
                          directive=state.directive)
     return stage
+
+
+def _default_probe(*, candidate: Path, cdb_path: str, module: str, rva: int,
+                   python_exe: str):
+    from .probe_reached import observe_candidate
+    return observe_candidate(cdb_path=cdb_path, candidate=candidate,
+                             module=module, rva=rva, python_exe=python_exe)
 
 
 # -- grade ---------------------------------------------------------------
