@@ -64,6 +64,8 @@ def make_generate_stage(context: StageContext,
     def stage(state: LoopState) -> LoopState:
         command = [context.python_exe, "main.py", "--cve-id", context.cve_id,
                    "--no-rag", "--package"]
+        if state.directive:
+            command += ["--feedback", state.directive]
         completed = runner(command, cwd=context.project_root, timeout=1800)
         candidate = parse_candidate_path(completed.stdout)
         if not candidate:

@@ -42,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dir", type=str, default=None, help="输入目录（与 --cve-id 互斥）")
     parser.add_argument("--output-dir", type=str, default=None, help="输出目录")
     parser.add_argument("--no-rag", action="store_true", default=False, help="禁用 RAG")
+    parser.add_argument("--feedback", type=str, default="",
+                        help="上一轮失败的诊断指令，注入代码生成提示词")
     parser.add_argument("--package", action="store_true", default=False,
                         help="为本轮生成产物创建中文 CVE/run 归档和 ZIP，并独立校验；不执行候选")
     parser.add_argument("--target-backend", choices=["local", "wsl"], default=None, help="目标平台：当前宿主或显式 WSL 只读探测")
@@ -101,6 +103,8 @@ def main() -> None:
         pipeline.archive_artifacts = True
         pipeline.package_artifacts = args.package
         options = {}
+        if args.feedback:
+            options["feedback"] = args.feedback
         if args.target_backend is not None:
             options["target_backend"] = args.target_backend
         if args.wsl_distro is not None:

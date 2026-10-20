@@ -262,6 +262,19 @@ class TestPipelineAnalysisGate(OfflineTestCase):
                          "codegen-model-x")
         self.assertIs(generator.call_args.args[0], second)
 
+
+    def test_feedback_reaches_the_generation_prompt(self):
+        raw = json.dumps(ANALYSIS)
+        with tempfile.TemporaryDirectory() as directory:
+            outputs = Path(directory)
+            with self.pipeline(outputs, [raw, SAFE_CODE]) as (pipeline, _, _, _, _), \
+                    patch.object(self.pipeline_module.CudaCodeGenerator, "generate") as generate:
+                with self.assertRaises(RuntimeError):
+                    pipeline.run(input_dir=str(CASE_SOURCE), feedback="FIX_THE_FLAG")
+                extra = generate.call_args.kwargs.get("extra_context", "")
+                self.assertIn("FIX_THE_FLAG", extra)
+                self.assertIn("ACT ON THIS", extra)
+
     def test_failed_second_run_does_not_reuse_prior_candidate_as_current_success(self):
         raw = json.dumps(ANALYSIS)
         with tempfile.TemporaryDirectory() as directory:

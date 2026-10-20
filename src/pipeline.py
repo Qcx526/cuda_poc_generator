@@ -81,6 +81,7 @@ class CudaPipeline:
         wsl_distro: Optional[str] = None,
         archive_artifacts: Optional[bool] = None,
         package_artifacts: Optional[bool] = None,
+        feedback: str = "",
     ) -> Dict[str, Any]:
         """Normalize inputs, validate analysis, then save an unexecuted candidate.
 
@@ -263,6 +264,10 @@ class CudaPipeline:
 
         print("\n[Phase 3/3] Candidate generation and static checks only")
         extra_ctx = env_prompt_block + "\n\n" + self._target_view(rag_context[:1500], env_info) + "\n\n" + self._target_view(web_context[:1000], env_info)
+        if feedback:
+            # The closed loop's diagnosis must reach codegen; without this the
+            # loop only regenerates and never learns from the failure.
+            extra_ctx += "\n\n[PREVIOUS ATTEMPT FAILED — ACT ON THIS]\n" + feedback
         try:
             generation_context = self._target_view(vuln_context, env_info)
             generation_analysis = self._target_view(analysis, env_info)
