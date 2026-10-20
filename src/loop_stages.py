@@ -69,6 +69,12 @@ def make_generate_stage(context: StageContext,
         completed = runner(command, cwd=context.project_root, timeout=1800)
         candidate = parse_candidate_path(completed.stdout)
         if not candidate:
+            # Keep the whole subprocess output: a 60-second failure is a startup
+            # problem, and the last 400 characters never show it.
+            context.workdir.mkdir(parents=True, exist_ok=True)
+            log = context.workdir / ("iteration_%d_generate.log" % state.iteration)
+            log.write_text((completed.stdout or "") + (completed.stderr or ""),
+                           encoding="utf-8")
             detail = (completed.stderr or completed.stdout or "")[-400:]
             return LoopState(iteration=state.iteration,
                              stage_error="generation produced no candidate: %s" % detail,
