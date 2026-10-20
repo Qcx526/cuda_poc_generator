@@ -57,17 +57,29 @@ def parse_candidate_path(stdout: str) -> Optional[str]:
     return match.group(1).strip() if match else None
 
 
+def _find_candidate(project_root: Path, cve_id: str) -> Optional[str]:
+    """Fall back to the candidate on disk when the CLI exited non-zero."""
+    directory = project_root / "data" / "outputs" / cve_id
+    candidates = sorted(directory.glob("cuda_poc_v*.py"),
+                        key=lambda item: item.stat().st_mtime, reverse=True)
+    return str(candidates[0]) if candidates else None
+
+
 def make_generate_stage(context: StageContext,
                         runner: Runner = _default_runner) -> Callable[[LoopState], LoopState]:
     """Run ``main.py --package`` and return the produced candidate path."""
 
     def stage(state: LoopState) -> LoopState:
+        # No --package: delivering a ZIP is unrelated to grading, and a
+        # packaging failure made the stage report "no candidate" even though
+        # the candidate had been written.
         command = [context.python_exe, "main.py", "--cve-id", context.cve_id,
-                   "--no-rag", "--package"]
+                   "--no-rag"]
         if state.directive:
             command += ["--feedback", state.directive]
         completed = runner(command, cwd=context.project_root, timeout=1800)
-        candidate = parse_candidate_path(completed.stdout)
+        candidate = parse_candidate_path(completed.stdout) or _find_candidate(
+            context.project_root, context.cve_id)
         if not candidate:
             # Keep the whole subprocess output: a 60-second failure is a startup
             # problem, and the last 400 characters never show it.
