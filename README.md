@@ -282,6 +282,7 @@ P4-C 增加离线复现证据链：`src.reproduction` 解析 PoC 自己打印的
 P4-D 对三个驱动类 CVE 做了分诊：`CVE-2024-0090` 的 PoC 只有良性探测，可在本机执行，但它的版本分类器把 `551` 当成未受影响分支，给出了错误结论（NVIDIA 公告为 R555 `555.99` 之前全部受影响）；`CVE-2024-0107` 修掉 `str/bytes` 缺陷后完整执行，驱动判定为受影响、`nvgpucomp64.dll` 为 `31.0.15.5161`，但 4 个 SINCOS 变异全部未触发，属负结果；`CVE-2024-0091` 用自建最小探针验证了驱动对非空指针直接解引用——`NULL` 返回 `CUDA_ERROR_INVALID_VALUE`、合法 cubin 加载成功、`0x1`/`0xdeadbeef` 触发访问违例，未蓝屏，判定 `SUPPORTED`。原 PoC 的 35 次探测因未建上下文而全部空转。见 [驱动 PoC 分诊](docs/P4_D_DRIVER_POC_TRIAGE.md)。
 
 P4-E 跑通了端到端：真实模型生成 `CVE-2025-23340` 的新候选（679 行、`STATIC_VALID`、ZIP 交付 `INTEGRITY_VERIFIED`），再在断网容器里执行。12 个触发样本全部 `SIGSEGV`，但 5 个差分对照也全部崩溃，判定 `UNKNOWN`——生成成功不等于漏洞复现。见 [端到端验收](docs/P4_E_END_TO_END.md)。
+P4-F 把 0107 的触发路径钉到了具体指令：越界索引来自  处的 ，与 Talos 报告的运行时地址完全吻合。该路径有两道门——操作数类型位（）与指令 token（）；原 PoC 的四个毒化值全部过不了第一道门，且 ps_5_0 的 DXBC 里根本没有 SINCOS 指令，它搜索并 patch 的位置从原理上就是错的。cdb 断点证实正常 SINCOS 着色器不会进入该路径。见 [0107 RVA 分析](docs/P4_F_0107_RVA_ANALYSIS.md)。
 
 ## 13. 常见问题与测试状态
 
