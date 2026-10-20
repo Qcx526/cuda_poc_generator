@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 from .llm_client import LLMClient
 from .cuda_library import CudaLibrary
 from .models.analysis import resolve_target_cve, validate_analysis
+from .quality_lints import run_lints
 from .models.generation import CandidateResult
 from .utils import ensure_dir, write_json, write_text
 
@@ -73,11 +74,29 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    to call nvcc, cuobjdump, nvdisasm, or any CUDA toolchain binary, you MUST
    capture both stdout and stderr. On non-zero return code, print BOTH:
    - The full command line that failed
-   - stderr output (trimmed to last 2000 chars)
-   - stdout output (trimmed to last 1000 chars)
-   This is essential for debugging — silent failures waste iterations.
+   - The first 4000 bytes of stdout and stderr
 
-7. **CUDA Version Parsing**: When parsing version strings from `nvcc --version`,
+7. **Version Classification (CRITICAL)**: When the PoC classifies installed
+   driver/toolkit versions against affected ranges, a version whose branch is
+   NOT in the known table MUST be classified UNKNOWN, never NOT-AFFECTED.
+   Branch tables are always incomplete; "major 551 not in {470,535,550,555}"
+   does NOT mean patched. An unmapped version must produce an explicit
+   "UNKNOWN — consult the advisory" verdict.
+
+8. **Driver API Precondition (CRITICAL)**: If the PoC probes nvcuda/nvml/nvapi
+   entry points, the process (or child) MUST initialize first — cuInit(0) and
+   a real cuCtxCreate for CUDA APIs — before the first probe call. Without a
+   context every call returns CUDA_ERROR_NOT_INITIALIZED and the matrix
+   measures nothing. Verify this holds for EACH probe function, not just one.
+
+9. **Shader Instruction Tokens (CRITICAL)**: Before searching a compiled
+   shader byte stream for an instruction opcode token, confirm the target
+   profile actually contains that instruction. D3DSIO_* opcodes (e.g. SINCOS)
+   exist only in SM2/SM3; SM4/SM5 (ps_5_0 and friends) do not contain them,
+   and D3D11 rejects SM2/SM3 shaders. Match the token constant to the profile
+   and verify the token occurs in the compiled output before patching.
+
+10. **CUDA Version Parsing**: When parsing version strings from `nvcc --version`,
    `nvdisasm --version`, `cuobjdump --version`, or any CUDA tool, NEVER assume
    a specific output format (e.g. "Version 12.5.0" vs "V12.5.39" vs
    "release 12.5"). ALWAYS use the generic fallback pattern:
@@ -86,7 +105,7 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    to extract tool-specific info, also print the full --version output at
    startup for the user to inspect.
 
-8. **nvcc Arch Auto-Detection**: NEVER hardcode `-arch=sm_75` or any fixed
+11. **nvcc Arch Auto-Detection**: NEVER hardcode `-arch=sm_75` or any fixed
    compute capability. Instead, detect the installed GPU's arch at runtime:
    - Use `nvidia-smi --query-gpu=compute_cap --format=csv,noheader` if available
    - Fallback: try compiling with `nvcc -arch=native` first (CUDA 11.8+)
@@ -94,10 +113,10 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
      and use the first one that succeeds.
    If no GPU is present, use `-arch=sm_52` as the safest baseline.
 
-8. **CUDA Helper Functions**: When a CUDA helper library signature list is provided,
+12. **CUDA Helper Functions**: When a CUDA helper library signature list is provided,
    you MUST use those helper signatures as a reference. Implement them in the PoC.
 
-9. **Code Quality & Professionalism**:
+13. **Code Quality & Professionalism**:
    - Every function MUST have a one-line docstring describing what it does.
    - NO placeholder or AI-generated commentary like "stub", "TODO: implement",
      "not necessary", "simplified version", "basic implementation", "helper using".
@@ -110,7 +129,7 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    - Keep line length under 100 characters.
    - All imports at the top, grouped: stdlib → third-party → local.
 
-10. **Vulnerability Trigger Construction (通用原则)**: The way you construct the
+14. **Vulnerability Trigger Construction (通用原则)**: The way you construct the
    malicious input depends on the vulnerability category. Follow the correct
    strategy for each — never hand-craft complex binary structures from scratch:
 
@@ -150,11 +169,11 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    ALWAYS generate multiple test cases in a single PoC run — a single fixed
    input is unlikely to trigger the vulnerability on the first attempt.
 
-11. **Minimal & Reproducible**: The script should be the shortest code that
+15. **Minimal & Reproducible**: The script should be the shortest code that
    reliably triggers the vulnerability in the described CUDA environment.
    BUT do NOT sacrifice the code quality rules above for brevity.
 
-11. **Safety Banner**: Print a disclaimer banner at startup:
+16. **Safety Banner**: Print a disclaimer banner at startup:
    ```
    ===========================================================
    DISCLAIMER: This script is a Proof-of-Concept for CUDA
@@ -163,12 +182,12 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    ===========================================================
    ```
 
-12. **Exit Code**: Exit 0 on successful vulnerability trigger, non-zero on failure.
+17. **Exit Code**: Exit 0 on successful vulnerability trigger, non-zero on failure.
 
-13. **GPU Cleanup**: Always attempt to free GPU resources before exiting,
+18. **GPU Cleanup**: Always attempt to free GPU resources before exiting,
     even on error paths.
 
-14. **File Output Location**: NEVER write output files (crafted cubin, ELF,
+19. **File Output Location**: NEVER write output files (crafted cubin, ELF,
    exploit payloads) to `/tmp/` or `tempfile.mkdtemp()`. Write them to the
    script's own directory (`os.path.dirname(__file__)` or `"."`) so the user
    can inspect them. Print the output directory at startup. Do NOT auto-delete
@@ -483,5 +502,12 @@ class CudaCodeGenerator:
         if undefined:
             hints = ", ".join(sorted(undefined)[:5])
             return False, f"Likely missing imports: {hints}"
+
+        # ---- 3. domain lints (failure modes observed in real PoCs) ----
+        findings = run_lints(code)
+        if findings:
+            ids = ", ".join(lint_id for lint_id, _ in findings)
+            detail = " | ".join(msg for _, msg in findings[:3])
+            return False, f"{ids} — {detail}"
 
         return True, ""
