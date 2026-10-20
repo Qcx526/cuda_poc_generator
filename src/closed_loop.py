@@ -23,6 +23,7 @@ from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .failure_taxonomy import diagnose, is_retryable
 from .reproduction import ReproductionResult
 
 
@@ -58,6 +59,21 @@ class LoopState(BaseModel):
     verdict: Optional[str] = None
     grader_reasons: List[str] = Field(default_factory=list)
     stage_error: Optional[str] = None
+    diagnosis_code: Optional[str] = None
+    directive: Optional[str] = None
+
+
+class IterationRecord(BaseModel):
+    """One line of the audit trail; the thesis appendix reads this."""
+
+    model_config = ConfigDict(strict=True, frozen=True)
+
+    iteration: int
+    verdict: Optional[str] = None
+    diagnosis_code: Optional[str] = None
+    directive: Optional[str] = None
+    reasons: List[str] = Field(default_factory=list)
+    stage_error: Optional[str] = None
 
 
 class LoopResult(BaseModel):
@@ -70,6 +86,7 @@ class LoopResult(BaseModel):
     iterations_used: int
     final_verdict: Optional[str] = None
     reasons: List[str] = Field(default_factory=list)
+    trace: List[IterationRecord] = Field(default_factory=list)
 
 
 Stage = Callable[[LoopState], LoopState]
@@ -103,44 +120,63 @@ class ClosedLoopController:
         if blocked:
             return LoopResult(cve_id=self.config.cve_id, status="BLOCKED",
                               iterations_used=0, reasons=[blocked])
+
+        trace: List[IterationRecord] = []
         state = LoopState(iteration=0)
         for iteration in range(1, self.config.max_iterations + 1):
-            state = LoopState(iteration=iteration)
+            state = LoopState(iteration=iteration,
+                              diagnosis_code=state.diagnosis_code,
+                              directive=state.directive)
             for stage_name in ("generate", "execute"):
                 try:
                     state = self.stages[stage_name](state)
                 except Exception as exc:  # noqa: BLE001 - recorded, not raised
+                    trace.append(IterationRecord(
+                        iteration=iteration, diagnosis_code="STAGE_ERROR",
+                        stage_error=f"{stage_name}: {exc}",
+                        reasons=[f"stage {stage_name} failed: {exc}"]))
                     return LoopResult(
                         cve_id=self.config.cve_id, status="ERROR",
                         iterations_used=iteration,
-                        reasons=[f"stage {stage_name} failed: {exc}"])
+                        reasons=[f"stage {stage_name} failed: {exc}"],
+                        trace=trace)
+
             result = self.grader(state)
+            diagnosis = diagnose(verdict=result.verdict,
+                                 reasons=list(result.reasons),
+                                 stage_error=state.stage_error)
             state = LoopState(
                 iteration=iteration, candidate_file=state.candidate_file,
                 verdict=result.verdict, grader_reasons=list(result.reasons),
-                stage_error=state.stage_error)
+                stage_error=state.stage_error,
+                diagnosis_code=None if diagnosis is None else diagnosis.code,
+                directive=None if diagnosis is None else diagnosis.directive)
+            trace.append(IterationRecord(
+                iteration=iteration, verdict=result.verdict,
+                diagnosis_code=state.diagnosis_code,
+                directive=state.directive,
+                reasons=list(result.reasons), stage_error=state.stage_error))
+
             if result.verdict == "SUPPORTED":
                 return LoopResult(
                     cve_id=self.config.cve_id, status="SUPPORTED",
                     iterations_used=iteration, final_verdict="SUPPORTED",
-                    reasons=list(result.reasons))
-            if result.verdict == "NOT_VERIFIED" and not _attributable(result.reasons):
-                # Nothing actionable: more iterations would only burn budget.
+                    reasons=list(result.reasons), trace=trace)
+            if not is_retryable(diagnosis):
+                # Unclassified or unactionable: another attempt would not help.
                 return LoopResult(
                     cve_id=self.config.cve_id, status="EXHAUSTED",
-                    iterations_used=iteration, final_verdict="NOT_VERIFIED",
-                    reasons=list(result.reasons))
-            # UNKNOWN / attributable NOT_VERIFIED: feed back and iterate.
+                    iterations_used=iteration, final_verdict=result.verdict,
+                    reasons=list(result.reasons), trace=trace)
+            # Attributable failure: hand the directive to the next iteration.
+            if "feedback" in self.stages:
+                state = self.stages["feedback"](state)
+
         return LoopResult(
             cve_id=self.config.cve_id, status="EXHAUSTED",
             iterations_used=self.config.max_iterations,
-            final_verdict=state.verdict, reasons=list(state.grader_reasons))
-
-
-def _attributable(reasons: List[str]) -> bool:
-    """A failure is attributable when it names a condition the model can fix."""
-    markers = ("崩溃", "对照", "基线", "NOT_INITIALIZED", "缺少", "不具区分力")
-    return any(any(marker in reason for marker in markers) for reason in reasons)
+            final_verdict=state.verdict, reasons=list(state.grader_reasons),
+            trace=trace)
 
 
 # -- default execution stage ---------------------------------------------
