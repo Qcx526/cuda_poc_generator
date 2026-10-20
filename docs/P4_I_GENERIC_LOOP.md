@@ -67,9 +67,15 @@
 | 迭代生成器 | ✅ `src/iterative_generator.py`，静态重试 + 动态指令注入 |
 | 控制器 | ✅ `src/closed_loop.py`，诊断接入 trace |
 | 报告 | ✅ `src/loop_report.py` |
-| 执行阶段 | ⚠️ `docker_matrix_stage` 骨架，待接样本发现与证据落盘 |
-| 生成阶段 | ⚠️ 待包 `main.py --package` 子进程调用 |
+| 样本发现 | ✅ `src/samples.py`，命名规则 + manifest 覆盖（仅限 UNKNOWN） |
+| 生成阶段 | ✅ `src/loop_stages.py`，子进程调 `main.py --package` 并解析候选路径 |
+| 执行阶段 | ✅ 分层：工具链走断网容器，驱动组件走宿主进程 |
+| 评级阶段 | ✅ `make_grader`，解析 `name -> exit=N` 并复用差分判定 |
+| 命令行 | ✅ `python -m src.loop_runner --cve-id ... --iterations N` |
 | 插桩观测 | ⚠️ `reached` 参数已就绪，待接 cdb 判据（0107 已有手工方法） |
+
+冒烟实测（`SMOKE-004`）：一条命令完成 生成（复用候选）→ 容器执行 → 差分评级 →
+报告，结果 `SUPPORTED`，一次迭代收敛。
 
 ## 6. 下一步（把 ⚠️ 变 ✅）
 

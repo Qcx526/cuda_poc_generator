@@ -121,6 +121,11 @@ def is_crash_exit(code: int) -> bool:
     return (code & 0xFFFFFFFF) in _CRASH_CODES
 
 
+def label_for(artifact: str) -> RunLabel:
+    """Public entry point for the naming rule; callers must not re-implement it."""
+    return _label(artifact)
+
+
 def _label(artifact: str) -> RunLabel:
     """Classify by what the artifact contains, then by what the run probes.
 

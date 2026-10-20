@@ -1,0 +1,157 @@
+# -*- coding: utf-8 -*-
+"""Tests for sample discovery and the ready-to-wire loop stages."""
+
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+from src.closed_loop import LoopConfig, LoopState
+from src.loop_stages import (StageContext, build_docker_command, make_execute_stage,
+                             make_generate_stage, make_grader, parse_candidate_path,
+                             parse_runs)
+from src.samples import Sample, apply_manifest, discover, summarise
+
+
+class TestSampleDiscovery(unittest.TestCase):
+    def test_labels_come_from_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in ("benign.cubin", "_ctrlA_zero.cubin", "malicious_1.cubin",
+                         "poc_x.cubin", "notes.txt"):
+                (root / name).write_bytes(b"\x7fELF")
+            samples = discover(root)
+            labels = {s.name: s.label for s in samples}
+            self.assertEqual(labels["benign.cubin"], "BENIGN")
+            self.assertEqual(labels["_ctrlA_zero.cubin"], "CONTROL")
+            self.assertEqual(labels["malicious_1.cubin"], "MALICIOUS")
+            self.assertEqual(labels["poc_x.cubin"], "UNKNOWN")
+            self.assertNotIn("notes.txt", labels)
+
+    def test_manifest_only_overrides_unrecognised_names(self):
+        samples = [Sample("poc_x.bin", Path("poc_x.bin"), "UNKNOWN"),
+                   Sample("benign.bin", Path("benign.bin"), "BENIGN")]
+        resolved = apply_manifest(samples, {"poc_x.bin": "CONTROL"})
+        self.assertEqual(resolved[0].label, "CONTROL")
+        with self.assertRaises(ValueError):
+            apply_manifest(samples, {"benign.bin": "MALICIOUS"})
+        with self.assertRaises(ValueError):
+            apply_manifest(samples, {"poc_x.bin": "WHATEVER"})
+
+    def test_summary_counts_roles(self):
+        samples = [Sample("malicious.bin", Path("m"), "MALICIOUS"),
+                   Sample("poc.bin", Path("p"), "UNKNOWN")]
+        self.assertEqual(summarise(samples)["MALICIOUS"], 1)
+        self.assertEqual(summarise(samples)["UNKNOWN"], 1)
+
+
+class TestGenerateStage(unittest.TestCase):
+    def test_candidate_path_is_extracted(self):
+        self.assertEqual(
+            parse_candidate_path("[+] Candidate saved: F:\\x\\cuda_poc_v1.py\n"),
+            "F:\\x\\cuda_poc_v1.py")
+        self.assertIsNone(parse_candidate_path("nothing here"))
+
+    def test_missing_candidate_becomes_a_stage_error(self):
+        ctx = StageContext(project_root=Path("."), cve_id="CVE-X",
+                           container_image="img", workdir=Path("out"))
+        fake = lambda *a, **k: subprocess.CompletedProcess(a[0], 1, "", "boom")
+        state = make_generate_stage(ctx, fake)(LoopState(iteration=1))
+        self.assertIn("no candidate", state.stage_error)
+        self.assertIn("boom", state.stage_error)
+
+
+class TestExecuteStage(unittest.TestCase):
+    def test_command_is_hardened(self):
+        ctx = StageContext(project_root=Path("."), cve_id="CVE-X",
+                           container_image="cpg/cuda112-py3:1.0",
+                           workdir=Path("out"))
+        command = " ".join(build_docker_command(ctx, Path("C:/x/cuda_poc_v1.py")))
+        for flag in ("--network none", "--cap-drop ALL", "--read-only",
+                     "--pids-limit", "--memory 2g"):
+            self.assertIn(flag, command)
+        self.assertIn("python3 cuda_poc_v1.py", command)
+
+    def test_mount_source_is_the_directory_not_the_file(self):
+        # Mounting the .py file itself made the container see /work as a file
+        # and fail with "cd: /work: Not a directory".
+        ctx = StageContext(project_root=Path("."), cve_id="CVE-X",
+                           container_image="img", workdir=Path("out"))
+        command = build_docker_command(ctx, Path("data/x/poc.py"))
+        mount = command[command.index("-v") + 1]
+        self.assertTrue(mount.endswith("/x:/work:rw"), mount)
+        self.assertNotIn("poc.py:", mount)
+
+    def test_observation_is_written_to_disk(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = StageContext(project_root=Path("."), cve_id="CVE-X",
+                               container_image="img", workdir=Path(tmp))
+            fake = lambda *a, **k: subprocess.CompletedProcess(
+                a[0], 0, "malicious.cubin -> exit=139\n", "")
+            state = make_execute_stage(ctx, fake)(
+                LoopState(iteration=2, candidate_file=str(Path(tmp) / "poc.py")))
+            self.assertTrue(Path(state.observation_file).is_file())
+            self.assertIn("exit=139", Path(state.observation_file).read_text())
+
+
+class TestGrader(unittest.TestCase):
+    def test_runs_are_parsed_from_the_harness_convention(self):
+        runs = parse_runs("malicious.cubin -> exit=139\nbenign.cubin -> exit=0\n")
+        self.assertEqual([r["exit_code"] for r in runs], [139, 0])
+
+    def test_clean_differential_yields_supported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "obs.txt"
+            log.write_text("malicious.cubin -> exit=139\nbenign.cubin -> exit=0\n",
+                           encoding="utf-8")
+            config = LoopConfig(cve_id="CVE-X")
+            result = make_grader(config, version_in_range=True)(
+                LoopState(iteration=1, observation_file=str(log)))
+            self.assertEqual(result.verdict, "SUPPORTED")
+
+    def test_no_runs_is_reported_as_unreached_rather_than_success(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "obs.txt"
+            log.write_text("nothing happened\n", encoding="utf-8")
+            config = LoopConfig(cve_id="CVE-X")
+            result = make_grader(config)(LoopState(iteration=1,
+                                                   observation_file=str(log)))
+            self.assertEqual(result.verdict, "NOT_VERIFIED")
+            self.assertIn("未到达解析器", result.reasons[0])
+
+
+class TestRunnerWiring(unittest.TestCase):
+    def test_controller_gets_all_stages_and_a_grader(self):
+        from src.loop_runner import build_controller
+        with tempfile.TemporaryDirectory() as tmp:
+            controller = build_controller(
+                cve_id="CVE-X", tier="userland_toolchain", iterations=1,
+                image="img", workdir=Path(tmp), project_root=Path("."),
+                version_in_range=True, allow_kernel=False, python_exe="python",
+                runner=lambda *a, **k: subprocess.CompletedProcess(a[0], 0, "", ""))
+            self.assertEqual(set(controller.stages), {"generate", "execute"})
+            self.assertIsNone(controller.preflight())
+
+    def test_kernel_tier_is_still_blocked_by_the_controller(self):
+        from src.loop_runner import build_controller
+        with tempfile.TemporaryDirectory() as tmp:
+            controller = build_controller(
+                cve_id="CVE-X", tier="driver_kernel", iterations=1,
+                image="img", workdir=Path(tmp), project_root=Path("."),
+                version_in_range=True, allow_kernel=False, python_exe="python",
+                runner=lambda *a, **k: subprocess.CompletedProcess(a[0], 0, "", ""))
+            self.assertIsNotNone(controller.preflight())
+
+    def test_outputs_are_written_next_to_observations(self):
+        from src.loop_runner import write_outputs
+        from src.closed_loop import LoopResult
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_outputs(
+                LoopResult(cve_id="CVE-X", status="EXHAUSTED", iterations_used=1,
+                           final_verdict="UNKNOWN", reasons=["r"]), Path(tmp))
+            self.assertTrue(path.is_file())
+            self.assertIn("CVE-X", path.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()

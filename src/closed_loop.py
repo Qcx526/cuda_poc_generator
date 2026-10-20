@@ -59,6 +59,7 @@ class LoopState(BaseModel):
     verdict: Optional[str] = None
     grader_reasons: List[str] = Field(default_factory=list)
     stage_error: Optional[str] = None
+    observation_file: Optional[str] = None
     diagnosis_code: Optional[str] = None
     directive: Optional[str] = None
 
