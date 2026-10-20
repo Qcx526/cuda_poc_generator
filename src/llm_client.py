@@ -41,6 +41,36 @@ SECURITY_DISCLAIMER = (
 )
 
 
+def empty_completion_diagnostic(
+    content: Any,
+    response_metadata: Any = None,
+    additional_kwargs: Any = None,
+) -> Optional[List[Dict[str, Any]]]:
+    """Explain an empty completion instead of reporting a bare empty response.
+
+    Reasoning models emit ``reasoning_content`` before ``content``. When the
+    token budget runs out, ``content`` is empty and ``finish_reason`` is
+    ``length``; without this check the only clue is "empty_response", which
+    does not tell an operator to raise ``llm.max_tokens``.
+    """
+    if not isinstance(content, str) or content.strip():
+        return None
+    metadata = response_metadata if isinstance(response_metadata, dict) else {}
+    extra = additional_kwargs if isinstance(additional_kwargs, dict) else {}
+    finish = metadata.get("finish_reason")
+    reasoning = extra.get("reasoning_content") or ""
+    if finish != "length" and not reasoning:
+        return None
+    return [{
+        "path": [],
+        "code": "output_truncated",
+        "message": "provider exhausted the token budget before emitting text; "
+                   "raise llm.max_tokens (reasoning tokens are counted)",
+        "finish_reason": finish,
+        "reasoning_chars": len(reasoning) if isinstance(reasoning, str) else 0,
+    }]
+
+
 class StructuredOutputError(ValueError):
     """Invalid structured response with its unchanged text kept for diagnostics."""
 
@@ -144,6 +174,8 @@ class LLMClient:
             self.model,
             llm_cfg.get("api_base", "https://api.deepseek.com"),
         )
+        # Last completion's stop reason; "length" means the budget was exhausted.
+        self.last_finish_reason: Optional[str] = None
 
     # ------------------------------------------------------------------
     # 基础聊天
@@ -212,7 +244,17 @@ class LLMClient:
                     raise StructuredOutputError(
                         None, [{"path": [], "code": "non_text_provider_response"}]
                     )
+                metadata = getattr(resp, "response_metadata", None)
+                extra = getattr(resp, "additional_kwargs", None)
+                self.last_finish_reason = (
+                    metadata.get("finish_reason") if isinstance(metadata, dict) else None
+                )
                 self.last_chat_raw_response = content
+                truncated = empty_completion_diagnostic(content, metadata, extra)
+                if truncated is not None:
+                    # A reasoning model can spend the whole budget before emitting
+                    # text; calling that "empty_response" hides the real cause.
+                    raise StructuredOutputError(content, truncated)
                 return content.strip()
             except StructuredOutputError:
                 # An unsupported response representation is not a transport failure.

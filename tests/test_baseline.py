@@ -184,6 +184,22 @@ class TestConfiguration(OfflineTestCase):
 
 
 class TestLLMConfigurationAndRetry(OfflineTestCase):
+    def test_truncated_reasoning_completion_reports_the_real_cause(self):
+        # The provider returns content and reasoning_content separately; a
+        # budget exhausted by reasoning must not surface as "empty_response".
+        diagnostic = self.llm_module.empty_completion_diagnostic(
+            "", {"finish_reason": "length"}, {"reasoning_content": "thinking..."})
+        self.assertEqual(diagnostic[0]["code"], "output_truncated")
+        self.assertEqual(diagnostic[0]["finish_reason"], "length")
+        self.assertEqual(diagnostic[0]["reasoning_chars"], len("thinking..."))
+
+    def test_empty_content_without_any_hint_stays_an_empty_response(self):
+        self.assertIsNone(self.llm_module.empty_completion_diagnostic("", {}, {}))
+
+    def test_non_empty_content_is_never_flagged(self):
+        self.assertIsNone(self.llm_module.empty_completion_diagnostic(
+            "OK", {"finish_reason": "length"}, {"reasoning_content": "x"}))
+
     def test_canonical_key_takes_priority_over_legacy_alias(self):
         os.environ.update({"DEEPSEEK_API_KEY": "offline-primary", "DEEPSEEK_KEY": "offline-legacy"})
         with patch.object(self.llm_module, "ChatOpenAI") as constructor:

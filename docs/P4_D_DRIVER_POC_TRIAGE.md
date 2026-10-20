@@ -58,30 +58,64 @@ PoC 在 `S04` 构造参数变异矩阵，把 `0xdeadbeef`、`0xffffffffffffffff`
 
 结论：**不在唯一的工作机上执行**。需要第二台机器或可回滚的宿主快照。
 
-## 4. CVE-2024-0107：PoC 到不了触发点
+## 4. CVE-2024-0107：已修复缺陷并执行，未触发
 
-在 `S03` 直接抛异常，未执行到着色器提交：
+`nvgpucomp64.dll` 是**用户态**组件（着色器编译器），崩溃只影响编译进程，不会蓝屏，
+因此是本组里唯一可以在单机上安全尝试的目标。当前驱动 551.61 携带的
+`nvgpucomp64.dll` 文件版本为 **31.0.15.5161**，与 Talos 对 0107 记录的实测版本一致。
+
+原 PoC 在 `S03` 抛出 `TypeError`（`dxbc.find(chunk)`，`chunk` 是 `str`、`dxbc` 是 `bytes`）。
+在 `data/reference/driver_pocs/` 的副本中把 `("SHEX", "SHDR")` 改为 `(b"SHEX", b"SHDR")`
+后，完整执行：
 
 ```text
-File "...cuda_poc_v1.py", line 301, in find_sincos_offsets
-    position = dxbc.find(chunk)
-TypeError: argument should be integer or bytes-like object, not 'str'
+[ENV] driver=551.61 vulnerable_branch=True
+[ENV] nvgpucomp64.dll version=None            # 指纹未取到
+[S02] baseline bytecode 612 bytes
+[S03] SINCOS token offsets: ['0x138']
+[S04] generated 4 variants
+[SUBMIT] off0x138_val0x7fffffff: rc=0 crashed=False
+[SUBMIT] off0x138_val0xffffffff: rc=0 crashed=False
+[SUBMIT] off0x138_val0x0000ffff: rc=0 crashed=False
+[SUBMIT] off0x138_val0x7fff0000: rc=0 crashed=False
+S05 FAIL: no access violation observed on any variant
+S07 FAIL: host in vulnerable range but no OOB read observed
 ```
 
-`dxbc` 是 `bytes`，`chunk` 是 `str`。这是一个真实的代码缺陷，说明"生成成功"
-不等于"可执行"。该组件是用户态 DLL，理论上触发只影响编译进程，但仍是驱动组件，
-需在隔离环境验证后再考虑。
+**结论：负结果，不是复现。** 驱动在受影响区间，但当前变异策略没有触发缺陷。
+可能原因（未验证，按优先级）：
 
-## 5. 本轮未做的事
+1. 变异只改了 SINCOS 指令后的第一个 dword，未必命中 Talos 描述的
+   "着色器编译器的 SINCOS 操作数处理"具体字段；
+2. 基线 DXBC 由微软 `d3dcompiler_47.dll` 生成，指令编码可能已被折叠或改写；
+3. 该缺陷可能需要特定寄存器类型/立即数组合，而不是任意毒化值。
 
-- 未执行 0091（风险明确）、0107（代码缺陷未修）、24191（硬件不匹配）。
+另外 PoC 的 `nvgpucomp64.dll version=None` 说明它自己的指纹步骤没有取到版本，
+本次"vulnerable_branch=True"来自驱动号而非组件版本，证据强度不足。
+
+## 5. 内核路径（0091）的前置条件
+
+`CVE-2024-0091` 的缺陷在内核驱动，触发成功可能直接蓝屏。**本机不执行**，除非满足：
+
+1. 有第二台可丢弃机器，或当前机器可接受重启；
+2. 已建系统还原点，并准备好安全模式恢复步骤；
+3. 记录触发前的驱动版本、GPU 健康状态与基线 `nvidia-smi` 输出；
+4. 单次运行、限时、可中止；触发后立即复位而不是连续重试。
+
+在满足这些条件前，该 CVE 保持 `UNSUPPORTED_ENVIRONMENT`，不进入自动闭环。
+
+## 6. 本轮未做的事
+
+- 未执行 0091（内核路径，风险明确）与 24191（硬件不匹配）。
+- 0107 只在宿主以子进程方式提交着色器，未做寄存器级或内核级观测。
 - 未修改原工程目录中的任何 PoC；只在本仓库 `data/reference/driver_pocs/` 放了副本。
 - 未对 0090 的结果做"修正后重跑"：它本身没有利用步骤，改分类器也只会输出
   "AFFECTED — validate on an isolated host"，不产生新的漏洞证据。
 
-## 6. 下一步
+## 7. 下一步
 
 1. 把"受影响区间判定"独立实现为 `version_eligibility`，与 PoC 自述解耦；
    任何与 PoC 判定冲突的情况必须在报告里显式列出。
-2. 0091 需要可回滚宿主；结论以"是否蓝屏 + 是否可复位"为观测，而不是进程退出码。
-3. 0107 先修 `str/bytes` 缺陷，再在隔离环境编译恶意着色器，观察编译器是否崩溃。
+2. 0107：先从 Talos 报告取回 SINCOS 操作数的精确编码与偏移，再重做变异；
+   当前毒化策略只改指令后的第一个 dword，命中率不足。
+3. 0091：需要可回滚宿主；结论以"是否蓝屏 + 是否可复位"为观测，而不是进程退出码。
