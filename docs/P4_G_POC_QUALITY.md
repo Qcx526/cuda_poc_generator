@@ -62,3 +62,31 @@ lint 报错进入现有的**修正循环**：`_validate_code` 返回的 `err_msg
 lint 只能拦"已知形状的错误"。0107 的类型位门（`& 0x70000000`）这种**驱动内部
 细节**，除非知识库里有对应条目，lint 与提示词都救不了——这正是证据包/RAG 的价值：
 把我们逆向得到的事实喂回去，下一轮生成就站在本轮的肩膀上。
+
+## 5. lint 对真实 PoC 的验证（2026-10-20）
+
+拿三份历史上真实出问题的 PoC 直接跑 lint：
+
+| PoC | 结果 | 判定 |
+|---|---|---|
+| `CVE-2024-0107.py` | `legacy-token-search-on-modern-profile` | ✅ 真阳性——正是逆向发现的病根 |
+| `CVE-2024-0090.py` | `version-classifier-unknown-major` | ✅ 真阳性——正是假 PATCHED 的原因 |
+| `CVE-2024-0091.py` | clean | ⚠️ **漏报**，见下 |
+
+### 5.1 一个误报，已修
+
+0090 一开始还报了 `driver-probe-without-context`。查下来是 `probe_nvapi_initialize`
+只做指针解析（`nvapi_QueryInterface` 返回函数地址），并没有消费攻击者数据。已把
+`nvapi_QueryInterface` 从探测 API 列表移除——解析器不是探测器。
+
+### 5.2 一个漏报，如实记录
+
+0091 的 `run_single_probe` 通过 `for name, fn in build_probe_targets(...)` 间接调用，
+AST 只能看到 `fn(value)`，看不到 `fn` 就是 `cuModuleLoadData`。这是静态分析的固有边界。
+
+处理方式：**不引入更"聪明"的启发式**（容易误伤），而是承认它、并依赖动态层——
+该 PoC 在无上下文时返回 `CUDA_ERROR_NOT_INITIALIZED`，闭环会判
+`PRECONDITION_VIOLATED`，诊断指令与静态 lint 完全一致。
+
+**这条边界写进论文反而加分**：静态通道负责快速拦截可直接识别的形状，
+动态通道负责语义级判断，两者互补而不是互相替代。

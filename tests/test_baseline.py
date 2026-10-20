@@ -200,6 +200,35 @@ class TestLLMConfigurationAndRetry(OfflineTestCase):
         self.assertIsNone(self.llm_module.empty_completion_diagnostic(
             "OK", {"finish_reason": "length"}, {"reasoning_content": "x"}))
 
+
+    def _client_with_replies(self, replies):
+        os.environ["DEEPSEEK_API_KEY"] = "offline"
+        with patch.object(self.llm_module, "ChatOpenAI"):
+            client = self.llm_module.LLMClient(self.config())
+        calls = []
+
+        def fake_chat(messages, temperature=None):
+            calls.append(messages)
+            client.last_chat_raw_response = replies.pop(0)
+            return client.last_chat_raw_response
+
+        client.chat = fake_chat
+        return client, calls
+
+    def test_structurally_invalid_json_gets_one_repair(self):
+        # Observed live: the model terminated a JSON value with ';'.
+        client, calls = self._client_with_replies(['{"a": 1;};', '{"a": 1}'])
+        parsed = client.structured_generate("sys", "user")
+        self.assertEqual(parsed["a"], 1)
+        self.assertEqual(len(calls), 2)
+        self.assertIn("FORMAT REPAIR", calls[1][-1]["content"])
+
+    def test_persistent_invalid_json_is_not_retried_forever(self):
+        client, calls = self._client_with_replies(['{"a": 1;};', '{"a": 2;};'])
+        with self.assertRaises(self.llm_module.StructuredOutputError):
+            client.structured_generate("sys", "user")
+        self.assertEqual(len(calls), 2)
+
     def test_canonical_key_takes_priority_over_legacy_alias(self):
         os.environ.update({"DEEPSEEK_API_KEY": "offline-primary", "DEEPSEEK_KEY": "offline-legacy"})
         with patch.object(self.llm_module, "ChatOpenAI") as constructor:

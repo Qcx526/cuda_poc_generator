@@ -24,10 +24,12 @@ from typing import List, Tuple
 
 # Lint B -----------------------------------------------------------------
 
+# Only APIs that consume attacker-controlled state need initialisation.
+# nvapi_QueryInterface is deliberately absent: it merely resolves a function
+# pointer, so a resolver named "probe_*" is not a probe and must not be flagged.
 _PROBE_CALLS = {
     "cuModuleLoadData", "cuModuleLoadDataEx", "cuModuleLoad",
     "nvmlDeviceGetHandleByIndex_v2", "nvmlDeviceGetMemoryInfo",
-    "nvapi_QueryInterface",
 }
 _INIT_CALLS = {"cuInit", "cuCtxCreate_v2", "cuCtxCreate", "D3D11CreateDevice"}
 
@@ -64,7 +66,13 @@ def _reachable_calls(func: ast.FunctionDef, table: dict) -> set:
 
 
 def lint_driver_probe_without_context(tree: ast.Module) -> List[str]:
-    """Flag probe entry points whose reachable calls never initialize."""
+    """Flag probe entry points whose reachable calls never initialize.
+
+    Limitation: only direct calls are visible. A probe that invokes a callable
+    pulled from a builder (``for name, fn in targets: fn(value)``) escapes this
+    lint; the dynamic layer covers that case when the call returns
+    CUDA_ERROR_NOT_INITIALIZED and the loop diagnoses PRECONDITION_VIOLATED.
+    """
     functions = {node.name: node for node in ast.walk(tree)
                  if isinstance(node, ast.FunctionDef)}
     findings = []

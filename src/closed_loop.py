@@ -117,6 +117,17 @@ class ClosedLoopController:
 
     # -- loop ------------------------------------------------------------
 
+    def _stage_failure(self, trace: List[IterationRecord], iteration: int,
+                       stage_name: str, detail: str) -> LoopResult:
+        """Record the failing stage and stop; never continue past a failure."""
+        reason = f"stage {stage_name} failed: {detail}"
+        trace.append(IterationRecord(iteration=iteration,
+                                     diagnosis_code="STAGE_ERROR",
+                                     stage_error=reason, reasons=[reason]))
+        return LoopResult(cve_id=self.config.cve_id, status="ERROR",
+                          iterations_used=iteration, reasons=[reason],
+                          trace=trace)
+
     def run(self) -> LoopResult:
         blocked = self.preflight()
         if blocked:
@@ -133,15 +144,13 @@ class ClosedLoopController:
                 try:
                     state = self.stages[stage_name](state)
                 except Exception as exc:  # noqa: BLE001 - recorded, not raised
-                    trace.append(IterationRecord(
-                        iteration=iteration, diagnosis_code="STAGE_ERROR",
-                        stage_error=f"{stage_name}: {exc}",
-                        reasons=[f"stage {stage_name} failed: {exc}"]))
-                    return LoopResult(
-                        cve_id=self.config.cve_id, status="ERROR",
-                        iterations_used=iteration,
-                        reasons=[f"stage {stage_name} failed: {exc}"],
-                        trace=trace)
+                    return self._stage_failure(trace, iteration, stage_name, str(exc))
+                # A stage that reports an error must stop the iteration: letting
+                # the next stage run would overwrite the real cause (observed:
+                # a generation failure surfaced as "no candidate to execute").
+                if state.stage_error:
+                    return self._stage_failure(trace, iteration, stage_name,
+                                               state.stage_error)
 
             result = self.grader(state)
             diagnosis = diagnose(verdict=result.verdict,

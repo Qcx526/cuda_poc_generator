@@ -71,6 +71,12 @@ def empty_completion_diagnostic(
     }]
 
 
+def _repairable(error: "StructuredOutputError") -> bool:
+    """Only structural JSON problems are worth a repair attempt."""
+    return any(d.get("code") in ("invalid_json", "empty_response")
+               for d in getattr(error, "diagnostics", []))
+
+
 class StructuredOutputError(ValueError):
     """Invalid structured response with its unchanged text kept for diagnostics."""
 
@@ -364,13 +370,36 @@ class LLMClient:
             {"role": "system", "content": full_system},
             {"role": "user", "content": user_prompt},
         ]
+        # One bounded repair attempt: a model can emit structurally invalid
+        # JSON (observed: a stray ';' terminating a value). Failing the whole
+        # pipeline for that is a waste in an unattended loop, but retrying more
+        # than once would hide a persistent format problem.
         self.last_chat_raw_response = None
-        raw = self.chat(messages, temperature=temperature)
-        original = self.last_chat_raw_response
-        if original is None:
-            # Offline mocks and compatible custom chat implementations return raw text.
-            original = raw
-        return self._strict_parse_json(original)
+        conversation = list(messages)
+        attempts = 2
+        for attempt in range(1, attempts + 1):
+            raw = self.chat(conversation, temperature=temperature)
+            original = self.last_chat_raw_response
+            if original is None:
+                # Offline mocks return raw text directly.
+                original = raw
+            try:
+                return self._strict_parse_json(original)
+            except StructuredOutputError as exc:
+                if attempt == attempts or not _repairable(exc):
+                    raise
+                detail = "; ".join(
+                    "%s at line %s column %s" % (d.get("code"), d.get("line", "?"),
+                                                 d.get("column", "?"))
+                    for d in exc.diagnostics)
+                conversation = messages + [
+                    {"role": "assistant", "content": original[:12000]},
+                    {"role": "user", "content": (
+                        "[FORMAT REPAIR] The JSON above was rejected: %s. "
+                        "Return ONLY the corrected JSON object, with no prose, "
+                        "no trailing semicolons and no comments." % detail)},
+                ]
+        raise AssertionError("unreachable")
 
     # ------------------------------------------------------------------
     # 内部工具

@@ -101,6 +101,29 @@ class TestStopConditions(unittest.TestCase):
         ClosedLoopController(cfg, _stages([]), grader).run()
         self.assertEqual(seen, [(1, "poc.py"), (2, "poc.py")])
 
+    def test_generate_error_stops_before_execute(self):
+        # Regression: a generation failure used to be overwritten by the
+        # execute stage reporting "no candidate to execute".
+        cfg = LoopConfig(cve_id="CVE-X", max_iterations=2)
+        executed = []
+
+        def gen(state):
+            return LoopState(iteration=state.iteration,
+                             stage_error="generation produced no candidate: boom")
+
+        def ex(state):
+            executed.append(state.iteration)
+            return state
+
+        controller = ClosedLoopController(
+            cfg, {"generate": gen, "execute": ex},
+            lambda s: _result("UNKNOWN", ["x"]))
+        result = controller.run()
+        self.assertEqual(result.status, "ERROR")
+        self.assertIn("stage generate failed", result.reasons[0])
+        self.assertIn("boom", result.reasons[0])
+        self.assertEqual(executed, [])
+
 
 if __name__ == "__main__":
     unittest.main()

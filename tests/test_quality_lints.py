@@ -70,6 +70,17 @@ def run_single_probe(target, value):
 '''
         self.assertNotIn("driver-probe-without-context", _ids(code))
 
+
+    def test_pointer_resolver_is_not_treated_as_a_probe(self):
+        # probe_nvapi_initialize only resolves a function pointer via
+        # nvapi_QueryInterface; nothing consumes attacker state yet.
+        code = """
+def probe_nvapi_initialize(lib):
+    lib.nvapi_QueryInterface.restype = None
+    return lib.nvapi_QueryInterface(0x0150E828)
+"""
+        self.assertEqual(_ids(code), set())
+
     def test_non_probe_code_is_ignored(self):
         code = '''
 def submit_shader(device, blob):
