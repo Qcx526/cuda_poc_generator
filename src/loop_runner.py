@@ -23,14 +23,17 @@ def build_controller(*, cve_id: str, tier: str, iterations: int, image: str,
                      workdir: Path, project_root: Path,
                      version_in_range: Optional[bool], allow_kernel: bool,
                      python_exe: str, runner=None,
-                     fixed_candidate: Optional[str] = None) -> ClosedLoopController:
+                     fixed_candidate: Optional[str] = None,
+                     module: str = "", rva: int = 0,
+                     cdb_path: str = "") -> ClosedLoopController:
     """Wire the three stages and the grader into a controller."""
     config = LoopConfig(cve_id=cve_id, tier=tier, max_iterations=iterations,
                         container_image=image, samples_dir=str(workdir),
                         allow_kernel=allow_kernel)
     context = StageContext(project_root=project_root, cve_id=cve_id,
                            container_image=image, workdir=workdir, tier=tier,
-                           python_exe=python_exe)
+                           python_exe=python_exe, module=module, rva=rva,
+                           cdb_path=cdb_path)
     kwargs = {} if runner is None else {"runner": runner}
     if fixed_candidate:
         # Reuse an existing candidate: lets an operator re-grade a known PoC
@@ -68,6 +71,10 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--allow-kernel", action="store_true")
     parser.add_argument("--candidate", default=None,
                         help="reuse this candidate instead of generating one")
+    parser.add_argument("--module", default="",
+                        help="target module for the reached-observer")
+    parser.add_argument("--rva", default="0", help="hex RVA inside --module")
+    parser.add_argument("--cdb", default="", help="path to cdb.exe")
     args = parser.parse_args(argv)
 
     workdir = Path(args.workdir) / args.cve_id
@@ -76,7 +83,8 @@ def main(argv: Optional[list] = None) -> int:
         cve_id=args.cve_id, tier=args.tier, iterations=args.iterations,
         image=args.image, workdir=workdir, project_root=Path.cwd(),
         version_in_range=version, allow_kernel=args.allow_kernel,
-        python_exe=sys.executable, fixed_candidate=args.candidate)
+        python_exe=sys.executable, fixed_candidate=args.candidate,
+        module=args.module, rva=int(args.rva, 16), cdb_path=args.cdb)
     result = controller.run()
     report = write_outputs(result, workdir)
     print("[loop] status=%s iterations=%d verdict=%s" % (

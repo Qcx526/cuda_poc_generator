@@ -112,3 +112,26 @@ cdb 会回显 `bp ... ".echo CPG_HIT"` 这一行，标记字面量出现在回�
 兜底；已加回归用例 `test_echoed_breakpoint_command_is_not_a_hit`。
 
 **结论不变**：普通 ps_5_0 SINCOS 着色器不会执行到 `0x150315A`。第 5 节的否证成立。
+
+## 9. 观测器双向验证与闭环首次自动诊断
+
+正控制必须选 attach 之后才执行的代码，DllMain 是错的（模块早已加载）。改用导出函数：
+
+| 目标 | 结果 |
+|---|---|
+| `kernel32+0x15980`（`GetTickCount`，rendezvous 后调用） | `reached=True` |
+| `kernel32+0x999999`（永不执行） | `reached=False` |
+| `nvgpucomp64+0x150315a`（越界点） | `reached=False` |
+
+导出名在没有符号服务器时无法解析（`Couldn't resolve error`），因此 `src/pe_exports.py`
+直接读 PE 导出表取 RVA，用 `module+offset` 下断点。
+
+闭环实测（`--candidate d3d_sincos_probe.py --module nvgpucomp64 --rva 0x150315a`）：
+
+```text
+[loop] status=EXHAUSTED iterations=1 verdict=NOT_VERIFIED
+trace: NOT_VERIFIED | PATH_NOT_REACHED | "The instrumented target function was
+never executed: the input never reached the vulnerable code path..."
+```
+
+这是该漏洞第一次由流水线**自动**得出结论，而不是人工判断。

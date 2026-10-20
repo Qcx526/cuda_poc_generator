@@ -42,13 +42,18 @@ class ReachedObservation:
     stdout: str = ""
 
 
-def build_command_file(module: str, rva: int) -> str:
-    """Breakpoint script; the only trustworthy hit signal is cdb's own line."""
-    return ("lm m %s\n"
-            "bp %s+0x%x\n"
+def build_command_file(expression: str) -> str:
+    """Breakpoint script; the only trustworthy hit signal is cdb's own line.
+
+    ``expression`` is any cdb breakpoint target: ``module+0x1234`` for a raw
+    address inside a loaded module, or ``module!symbol`` for an export. A
+    symbol target is how the observer itself is validated, since an export is
+    guaranteed to be reachable after the rendezvous.
+    """
+    return ("bp %s\n"
             "g\n"
             ".echo %s\n"
-            "q\n" % (module, module, rva, DONE))
+            "q\n" % (expression, DONE))
 
 
 def parse_observation(text: str) -> ReachedObservation:
@@ -65,14 +70,14 @@ def parse_observation(text: str) -> ReachedObservation:
     return ReachedObservation(None, "observation inconclusive: no marker in cdb output")
 
 
-def observe_pid(*, cdb_path: str, pid: int, module: str, rva: int,
+def observe_pid(*, cdb_path: str, pid: int, expression: str,
                 timeout: int = 90,
                 runner: Runner = None) -> ReachedObservation:
-    """Attach to ``pid`` and report whether ``module+rva`` executed."""
+    """Attach to ``pid`` and report whether the breakpoint target executed."""
     runner = runner or _default_runner
     with tempfile.TemporaryDirectory() as tmp:
         command_file = Path(tmp) / "observed.txt"
-        command_file.write_text(build_command_file(module, rva), encoding="utf-8")
+        command_file.write_text(build_command_file(expression), encoding="utf-8")
         completed = runner([cdb_path, "-p", str(pid), "-cf", str(command_file)],
                            timeout=timeout)
     return parse_observation((completed.stdout or "") + (completed.stderr or ""))
@@ -84,7 +89,7 @@ def parse_ready(text: str) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 
-def observe_candidate(*, cdb_path: str, candidate: Path, module: str, rva: int,
+def observe_candidate(*, cdb_path: str, candidate: Path, expression: str,
                       python_exe: str = "python", pause_seconds: int = 20,
                       timeout: int = 120,
                       launcher: Runner = None,
@@ -109,7 +114,7 @@ def observe_candidate(*, cdb_path: str, candidate: Path, module: str, rva: int,
         if pid is None:
             return ReachedObservation(None, "candidate never announced a rendezvous point",
                                       "".join(collected))
-        observation = observer(cdb_path=cdb_path, pid=pid, module=module, rva=rva,
+        observation = observer(cdb_path=cdb_path, pid=pid, expression=expression,
                                timeout=timeout)
         # Keep reading so the caller still sees the trigger lines the candidate
         # prints after the rendezvous.

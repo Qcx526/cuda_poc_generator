@@ -193,6 +193,13 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    can inspect them. Print the output directory at startup. Do NOT auto-delete
    generated files on exit.
 
+20. **Observation Rendezvous (CRITICAL)**: after the target library or device is
+   loaded, and BEFORE the first trigger call, check `CPG_DEBUG_PAUSE`: when it
+   is set, print `[CPG_READY] <pid>` (flush immediately) and sleep that many
+   seconds. The closed-loop harness attaches a debugger inside this window to
+   record whether the vulnerable function was actually executed. Without the
+   rendezvous the loop can only observe crashes, never reachability.
+
 Respond with the COMPLETE Python script only. Follow these rules STRICTLY:
 
 1. Your ENTIRE response MUST be executable Python code — the first character

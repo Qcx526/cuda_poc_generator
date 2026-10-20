@@ -72,7 +72,7 @@
 | 执行阶段 | ✅ 分层：工具链走断网容器，驱动组件走宿主进程 |
 | 评级阶段 | ✅ `make_grader`，解析 `name -> exit=N` 并复用差分判定 |
 | 命令行 | ✅ `python -m src.loop_runner --cve-id ... --iterations N` |
-| 插桩观测 | ✅ `src/probe_reached.py`：协作式 `[CPG_READY]` + cdb 断点，`reached` 已接入诊断 |
+| 插桩观测 | ✅ `src/probe_reached.py`，正负控制已验证；导出符号用 `src/pe_exports.py` 取 RVA |
 
 冒烟实测（`SMOKE-004`）：一条命令完成 生成（复用候选）→ 容器执行 → 差分评级 →
 报告，结果 `SUPPORTED`，一次迭代收敛。

@@ -171,7 +171,7 @@ class TestReachedProbe(unittest.TestCase):
 
     def test_command_file_carries_module_and_rva(self):
         from src.probe_reached import build_command_file
-        text = build_command_file("nvgpucomp64", 0x15030F1)
+        text = build_command_file("nvgpucomp64+0x15030f1")
         self.assertIn("bp nvgpucomp64+0x15030f1", text)
         self.assertIn("CPG_DONE", text)
 
@@ -214,6 +214,24 @@ class TestReachedProbe(unittest.TestCase):
             controller.stages["execute"] = make_execute_stage(ctx, probe=fake)
             result = controller.run()
             self.assertEqual(result.trace[0].diagnosis_code, "PATH_NOT_REACHED")
+
+
+class TestPeExports(unittest.TestCase):
+    def test_known_export_resolves_to_an_rva(self):
+        from src.pe_exports import export_rva
+        kernel32 = Path("C:/Windows/System32/kernel32.dll")
+        if not kernel32.is_file():
+            self.skipTest("kernel32 not present")
+        rva = export_rva(kernel32, "GetTickCount")
+        self.assertIsInstance(rva, int)
+        self.assertGreater(rva, 0)
+
+    def test_missing_export_returns_none(self):
+        from src.pe_exports import export_rva
+        kernel32 = Path("C:/Windows/System32/kernel32.dll")
+        if not kernel32.is_file():
+            self.skipTest("kernel32 not present")
+        self.assertIsNone(export_rva(kernel32, "DefinitelyNotExported_xyz"))
 
 
 if __name__ == "__main__":
