@@ -239,7 +239,8 @@ class TestStrictJsonParsing(unittest.TestCase):
             with self.assertRaises(StructuredOutputError) as caught:
                 client.structured_generate("offline system", "offline user")
         self.assertEqual(caught.exception.raw_response, raw)
-        chat.assert_called_once()
+        # One bounded repair attempt, then the strict parser still refuses.
+        self.assertEqual(chat.call_count, 2)
         permissive.assert_not_called()
 
     def test_chat_retains_provider_whitespace_while_returning_legacy_stripped_text(self):

@@ -229,6 +229,24 @@ class TestLLMConfigurationAndRetry(OfflineTestCase):
             client.structured_generate("sys", "user")
         self.assertEqual(len(calls), 2)
 
+
+    def test_streaming_concatenates_chunks(self):
+        import types
+        os.environ["DEEPSEEK_API_KEY"] = "offline"
+        with patch.object(self.llm_module, "ChatOpenAI"):
+            client = self.llm_module.LLMClient(self.config())
+
+        class FakeModel:
+            def stream(self, messages):
+                for part in ("hel", "lo"):
+                    yield types.SimpleNamespace(content=part,
+                                                response_metadata={},
+                                                additional_kwargs={})
+
+        client.chat_model = FakeModel()
+        client.streaming = True
+        self.assertEqual(client.chat([{"role": "user", "content": "x"}]), "hello")
+
     def test_canonical_key_takes_priority_over_legacy_alias(self):
         os.environ.update({"DEEPSEEK_API_KEY": "offline-primary", "DEEPSEEK_KEY": "offline-legacy"})
         with patch.object(self.llm_module, "ChatOpenAI") as constructor:

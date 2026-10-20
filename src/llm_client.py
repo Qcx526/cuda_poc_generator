@@ -145,6 +145,10 @@ class LLMClient:
         self.max_retries: int = llm_cfg.get("max_retries", 3)
         self._timeout: float = llm_cfg.get("timeout", 600)
         self._headers: Optional[Dict[str, str]] = llm_cfg.get("headers") or None
+        # Some relays drop long non-streaming completions on an idle timeout;
+        # streaming keeps the connection busy while the PoC is generated.
+        self.streaming: bool = bool(llm_cfg.get("streaming", False)) or str(
+            os.environ.get("CPG_LLM_STREAMING", "")).lower() in ("1", "true", "yes")
         # 保留其他端点的可选 Responses 协议兼容；官方 DeepSeek 默认使用 Chat Completions。
         self._use_responses: bool = bool(llm_cfg.get("use_responses_api", False)) and (
             "use_responses_api" in getattr(ChatOpenAI, "model_fields", {})
@@ -244,14 +248,26 @@ class LLMClient:
                 attempt, self.max_retries, self.model, self._timeout,
             )
             try:
-                resp = model.invoke(lc_messages)
-                content = resp.content
+                stream_fn = getattr(model, "stream", None)
+                if getattr(self, "streaming", False) and callable(stream_fn):
+                    pieces = []
+                    metadata, extra = None, None
+                    for chunk in stream_fn(lc_messages):
+                        piece = getattr(chunk, "content", "")
+                        if isinstance(piece, str):
+                            pieces.append(piece)
+                        metadata = metadata or getattr(chunk, "response_metadata", None)
+                        extra = extra or getattr(chunk, "additional_kwargs", None)
+                    content = "".join(pieces)
+                else:
+                    resp = model.invoke(lc_messages)
+                    content = resp.content
+                    metadata = getattr(resp, "response_metadata", None)
+                    extra = getattr(resp, "additional_kwargs", None)
                 if not isinstance(content, str):
                     raise StructuredOutputError(
                         None, [{"path": [], "code": "non_text_provider_response"}]
                     )
-                metadata = getattr(resp, "response_metadata", None)
-                extra = getattr(resp, "additional_kwargs", None)
                 self.last_finish_reason = (
                     metadata.get("finish_reason") if isinstance(metadata, dict) else None
                 )

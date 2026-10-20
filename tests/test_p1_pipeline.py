@@ -108,11 +108,14 @@ class TestPipelineAnalysisGate(OfflineTestCase):
         for raw, expected_status in cases:
             with self.subTest(status=expected_status), tempfile.TemporaryDirectory() as directory:
                 outputs = Path(directory)
-                with self.pipeline(outputs, [raw]) as (pipeline, client, _, _, _), \
+                with self.pipeline(outputs, [raw, raw]) as (pipeline, client, _, _, _), \
                         patch.object(self.pipeline_module.CudaCodeGenerator, "generate") as generate:
                     with self.assertRaises(ValueError):
                         pipeline.run(input_dir=str(CASE_SOURCE))
-                client.chat.assert_called_once()
+                # The client may take one bounded repair attempt before the
+                # strict parser gives up; codegen must never be reached.
+                self.assertGreaterEqual(client.chat.call_count, 1)
+                self.assertLessEqual(client.chat.call_count, 2)
                 generate.assert_not_called()
                 self.assert_no_current_candidate(outputs)
                 raw_files = list(outputs.rglob("cuda_analysis_v1.raw.txt"))
@@ -247,7 +250,7 @@ class TestPipelineAnalysisGate(OfflineTestCase):
         raw = json.dumps(ANALYSIS)
         with tempfile.TemporaryDirectory() as directory:
             outputs = Path(directory)
-            with self.pipeline(outputs, [raw, SAFE_CODE, "not JSON"]) as (pipeline, client, _, _, _):
+            with self.pipeline(outputs, [raw, SAFE_CODE, "not JSON", "not JSON"]) as (pipeline, client, _, _, _):
                 first_report = pipeline.run(input_dir=str(CASE_SOURCE))
                 saved = outputs / CASE_ID / "cuda_poc_v1.py"
                 previous_bytes = saved.read_bytes()
@@ -255,7 +258,8 @@ class TestPipelineAnalysisGate(OfflineTestCase):
                     pipeline.run(input_dir=str(CASE_SOURCE))
             self.assertEqual(saved.read_bytes(), previous_bytes, "Failure must not delete user's previous candidate")
             self.assertFalse((outputs / CASE_ID / CASE_ID).exists(), "Repeated runs must not nest CVE directories")
-            self.assertEqual(client.chat.call_count, 3)
+            # analysis + codegen + one bounded JSON repair
+            self.assertEqual(client.chat.call_count, 4)
             report = self.report(outputs)
             self.assertEqual(report["status"], "ANALYSIS_PARSE_ERROR")
             self.assertEqual(report["candidate"]["generation"], "NOT_GENERATED")

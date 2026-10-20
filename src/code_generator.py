@@ -310,6 +310,13 @@ class CudaCodeGenerator:
             if not ok:
                 logger.warning("PoC 静态修正失败，保存候选供人工检查: %s", err_msg[:120])
                 print(f"  [!] STATIC_INVALID: {err_msg[:120]}")
+                # Keep the rejected source: without it the loop can only report
+                # "syntax error" and nobody can see what the model actually wrote.
+                rejected = os.path.join(self.outputs_dir,
+                                        f"cuda_poc_v{iteration}.invalid.py")
+                with open(rejected, "w", encoding="utf-8") as handle:
+                    handle.write("// static check failed: %s\n" % err_msg)
+                    handle.write(code)
             else:
                 print("  [✓] STATIC_VALID（仅静态检查，未执行或验证）")
 
