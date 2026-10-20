@@ -142,6 +142,16 @@ class TestGrader(unittest.TestCase):
             self.assertIn("步骤失败", result.reasons[0])
             self.assertIn("debug_abbrev", result.reasons[0])
 
+    def test_contradictory_label_is_graded_not_raised(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "obs.txt"
+            log.write_text("[CPG_LABEL] benign.cubin MALICIOUS\n"
+                           "[CPG_RUN] benign.cubin exit=0\n", encoding="utf-8")
+            result = make_grader(LoopConfig(cve_id="CVE-X"))(
+                LoopState(iteration=1, observation_file=str(log)))
+            self.assertEqual(result.verdict, "NOT_VERIFIED")
+            self.assertIn("标签冲突", result.reasons[0])
+
     def test_no_runs_is_reported_as_unreached_rather_than_success(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / "obs.txt"

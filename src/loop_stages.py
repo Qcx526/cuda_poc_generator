@@ -205,8 +205,16 @@ def make_grader(project_config: LoopConfig,
                 failed_steps=[], malicious_runs=0, malicious_crashes=0,
                 benign_runs=0, benign_crashes=0)
         import hashlib
-        evidence = evidence_from_runs(
-            runs=runs, source_sha256=hashlib.sha256(text.encode()).hexdigest(),
-            target_version_in_range=version_in_range)
+        try:
+            evidence = evidence_from_runs(
+                runs=runs, source_sha256=hashlib.sha256(text.encode()).hexdigest(),
+                target_version_in_range=version_in_range)
+        except ValueError as exc:
+            # A contradictory declaration is evidence about the candidate, not
+            # a reason to crash the loop.
+            return ReproductionResult(
+                verdict="NOT_VERIFIED", reasons=["标签冲突：%s" % exc],
+                failed_steps=[], malicious_runs=0, malicious_crashes=0,
+                benign_runs=0, benign_crashes=0)
         return decide(evidence)
     return grade
