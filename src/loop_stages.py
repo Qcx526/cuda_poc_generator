@@ -20,8 +20,11 @@ Runner = Callable[..., "subprocess.CompletedProcess"]
 
 _CANDIDATE = re.compile(r"Candidate saved:\s*(.+\.py)\s*$", re.MULTILINE)
 # The explicit contract is primary; the arrow form stays for older candidates.
-_RUN_LINE = re.compile(r"\[CPG_RUN\]\s+(\S+)\s+exit=(\d+)")
-_LEGACY_RUN_LINE = re.compile(r"([^\s/\\]+\.(?:cubin|elf|bin|dxbc))\s*->\s*exit=(\d+)")
+_RUN_LINE = re.compile(r"\[CPG_RUN\]\s+(\S+)\s+exit=(-?\d+)")
+_LEGACY_RUN_LINE = re.compile(r"([^\s/\\]+\.(?:cubin|elf|bin|dxbc))\s*->\s*exit=(-?\d+)")
+# The candidate declares each artifact's role; names alone are not reliable
+# ("crafted_overflow.cubin" carries no marker).
+_LABEL_LINE = re.compile(r"\[CPG_LABEL\]\s+(\S+)\s+(MALICIOUS|BENIGN|CONTROL)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -156,11 +159,25 @@ def _default_probe(*, candidate: Path, cdb_path: str, expression: str,
 def parse_runs(log_text: str) -> List[dict]:
     """Read ``name -> exit=N`` lines produced by the harness convention."""
     text = log_text or ""
+    labels = {name: role.upper() for name, role in _LABEL_LINE.findall(text)}
     matches = list(_RUN_LINE.finditer(text))
     if not matches:
         matches = list(_LEGACY_RUN_LINE.finditer(text))
-    return [{"artifact": match.group(1), "exit_code": int(match.group(2))}
-            for match in matches]
+    runs = []
+    for match in matches:
+        run = {"artifact": match.group(1), "exit_code": int(match.group(2))}
+        if match.group(1) in labels:
+            run["label"] = labels[match.group(1)]
+        runs.append(run)
+    return runs
+
+
+def _first_failed_step(log_text: str) -> str:
+    """Return the first ``[CUDA_STEP:..] ... FAIL | detail`` line, if any."""
+    for line in (log_text or "").splitlines():
+        if "[CUDA_STEP:" in line and "FAIL" in line:
+            return line.strip()[:240]
+    return ""
 
 
 def make_grader(project_config: LoopConfig,
@@ -177,9 +194,12 @@ def make_grader(project_config: LoopConfig,
         text = log_path.read_text(encoding="utf-8") if log_path.is_file() else ""
         runs = parse_runs(text)
         if not runs:
+            step = _first_failed_step(text)
+            reason = ("步骤失败：%s" % step) if step else \
+                "未观察到任何样本退出码；输入可能未到达解析器"
             return ReproductionResult(
                 verdict="NOT_VERIFIED",
-                reasons=["未观察到任何样本退出码；输入可能未到达解析器"],
+                reasons=[reason],
                 failed_steps=[], malicious_runs=0, malicious_crashes=0,
                 benign_runs=0, benign_crashes=0)
         import hashlib

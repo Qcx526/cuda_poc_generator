@@ -25,6 +25,7 @@ PRECONDITION_VIOLATED = "PRECONDITION_VIOLATED"
 FALSE_POSITIVE = "FALSE_POSITIVE"
 INCONCLUSIVE = "INCONCLUSIVE"
 NO_EFFECT = "NO_EFFECT"
+HARNESS_STEP_FAILED = "HARNESS_STEP_FAILED"
 UNCLASSIFIED = "UNCLASSIFIED"
 
 _LINT_IDS = ("version-classifier-unknown-major", "driver-probe-without-context",
@@ -63,6 +64,11 @@ _DIRECTIVES = {
     INCONCLUSIVE: (
         "There is no clean baseline, so the observation cannot be interpreted. "
         "Add a benign input that must not crash before changing the trigger."),
+    HARNESS_STEP_FAILED: (
+        "The candidate aborted at its own step before producing any artifact "
+        "run. The detail names the precondition that failed (a compiler flag, "
+        "a missing input, a version gate). Fix that step, not the trigger "
+        "logic: no trigger was ever exercised."),
     NO_EFFECT: (
         "No observable effect occurred. Verify the input actually reaches the "
         "parser and that the mutated field is one the parser consumes; print "
@@ -77,6 +83,7 @@ _DIRECTIVES = {
 _RETRYABLE = {
     SYNTAX_ERROR, LINT_VIOLATION, EXECUTOR_FAILURE, STAGE_ERROR,
     PATH_NOT_REACHED, PRECONDITION_VIOLATED, INCONCLUSIVE, NO_EFFECT,
+    HARNESS_STEP_FAILED,
 }
 # FALSE_POSITIVE is deliberately retryable only with a redesign, which the
 # directive states explicitly; the controller still bounds the attempts.
@@ -124,6 +131,8 @@ def diagnose(*, verdict: Optional[str], reasons: List[str],
         return Diagnosis(FALSE_POSITIVE, joined, _DIRECTIVES[FALSE_POSITIVE])
     if "不具区分力" in joined or "缺少良性基线" in joined:
         return Diagnosis(INCONCLUSIVE, joined, _DIRECTIVES[INCONCLUSIVE])
+    if "步骤失败" in joined or "STEP_FAILED" in joined or "[CUDA_STEP:" in joined:
+        return Diagnosis(HARNESS_STEP_FAILED, joined, _DIRECTIVES[HARNESS_STEP_FAILED])
     if "NOT_INITIALIZED" in joined or "前提" in joined:
         return Diagnosis(PRECONDITION_VIOLATED, joined,
                          _DIRECTIVES[PRECONDITION_VIOLATED])

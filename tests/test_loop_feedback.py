@@ -54,6 +54,12 @@ class TestDiagnose(unittest.TestCase):
         d = diagnose(verdict="NOT_VERIFIED", reasons=["受控样本未产生崩溃"])
         self.assertEqual(d.code, NO_EFFECT)
 
+    def test_harness_step_failure_is_retryable(self):
+        d = diagnose(verdict="NOT_VERIFIED",
+                     reasons=["步骤失败：[CUDA_STEP:S02] — FAIL | lacks debug"])
+        self.assertEqual(d.code, "HARNESS_STEP_FAILED")
+        self.assertTrue(is_retryable(d))
+
     def test_unknown_reason_is_not_retryable(self):
         d = diagnose(verdict="NOT_VERIFIED", reasons=["something odd"])
         self.assertEqual(d.code, UNCLASSIFIED)

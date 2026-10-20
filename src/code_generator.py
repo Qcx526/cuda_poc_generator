@@ -202,9 +202,10 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
 
 21. **Per-artifact Observation Line (CRITICAL)**: after each artifact is run,
    print exactly `[CPG_RUN] <artifact-name> exit=<code>` on its own line
-   (flush it). The closed-loop harness parses these lines to build the
-   differential verdict; without them the run cannot be graded and must be
-   reported as unobserved.
+   (flush it), and for each artifact print `[CPG_LABEL] <artifact-name>
+   MALICIOUS|BENIGN|CONTROL` exactly once, before running it. Names are not
+   enough: the harness needs the declared role to build the differential
+   verdict, and a run without a label cannot count as evidence.
 
 Respond with the COMPLETE Python script only. Follow these rules STRICTLY:
 

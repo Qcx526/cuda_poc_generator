@@ -243,8 +243,10 @@ def attach_runs(evidence: ReproductionEvidence,
             # recognised benign file can never be relabelled as malicious.
             if explicit not in ("MALICIOUS", "BENIGN", "CONTROL"):
                 raise ValueError("external label must be MALICIOUS, BENIGN or CONTROL")
-            if derived != "UNKNOWN":
+            if derived != "UNKNOWN" and derived != explicit:
                 raise ValueError("cannot override a recognisable artifact label")
+            # Agreement is not an override: a candidate may restate the role
+            # its file name already implies.
             label = explicit
         else:
             label = derived

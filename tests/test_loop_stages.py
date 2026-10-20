@@ -103,6 +103,24 @@ class TestGrader(unittest.TestCase):
         runs = parse_runs("malicious.cubin -> exit=139\nbenign.cubin -> exit=0\n")
         self.assertEqual([r["exit_code"] for r in runs], [139, 0])
 
+    def test_declared_labels_and_negative_exit_codes_are_parsed(self):
+        runs = parse_runs("[CPG_LABEL] crafted_overflow.cubin MALICIOUS\n"
+                          "[CPG_RUN] crafted_overflow.cubin exit=-11\n")
+        self.assertEqual(runs[0]["label"], "MALICIOUS")
+        self.assertEqual(runs[0]["exit_code"], -11)
+
+    def test_declared_label_and_name_in_agreement_yield_supported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "obs.txt"
+            log.write_text("[CPG_LABEL] crafted_overflow.cubin MALICIOUS\n"
+                           "[CPG_RUN] crafted_overflow.cubin exit=-11\n"
+                           "[CPG_LABEL] crafted_benign.cubin BENIGN\n"
+                           "[CPG_RUN] crafted_benign.cubin exit=0\n",
+                           encoding="utf-8")
+            result = make_grader(LoopConfig(cve_id="CVE-X"), version_in_range=True)(
+                LoopState(iteration=1, observation_file=str(log)))
+            self.assertEqual(result.verdict, "SUPPORTED")
+
     def test_clean_differential_yields_supported(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / "obs.txt"
@@ -112,6 +130,17 @@ class TestGrader(unittest.TestCase):
             result = make_grader(config, version_in_range=True)(
                 LoopState(iteration=1, observation_file=str(log)))
             self.assertEqual(result.verdict, "SUPPORTED")
+
+    def test_failing_step_is_reported_instead_of_a_generic_message(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "obs.txt"
+            log.write_text("[CUDA_STEP:S02] build cubin — FAIL | lacks .debug_abbrev\n",
+                           encoding="utf-8")
+            result = make_grader(LoopConfig(cve_id="CVE-X"))(
+                LoopState(iteration=1, observation_file=str(log)))
+            self.assertEqual(result.verdict, "NOT_VERIFIED")
+            self.assertIn("步骤失败", result.reasons[0])
+            self.assertIn("debug_abbrev", result.reasons[0])
 
     def test_no_runs_is_reported_as_unreached_rather_than_success(self):
         with tempfile.TemporaryDirectory() as tmp:
