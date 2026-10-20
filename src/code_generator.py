@@ -266,6 +266,7 @@ class CudaCodeGenerator:
         # Reset before every attempt so a previous successful candidate cannot leak status.
         self.last_result = CandidateResult()
         retries = 0
+        last_code = ""
         try:
             # Direct callers must also obey the analysis contract; no invalid dict reaches chat.
             expected_cve = resolve_target_cve(vuln_context)
@@ -284,6 +285,7 @@ class CudaCodeGenerator:
             self._require_source(raw_code)
             code = self._clean_code(raw_code)
             self._require_source(code)
+            last_code = code
             ok, err_msg = self._validate_code(code)
             while not ok and retries < 2:
                 retries += 1
@@ -305,6 +307,7 @@ class CudaCodeGenerator:
                 self._require_source(raw_code)
                 code = self._clean_code(raw_code)
                 self._require_source(code)
+                last_code = code
                 ok, err_msg = self._validate_code(code)
 
             if not ok:
@@ -333,6 +336,14 @@ class CudaCodeGenerator:
             self._write_result(iteration)
             logger.info("CUDA 候选已保存: %s", filepath)
         except Exception as exc:
+            # Even a failed run must leave the last source behind: otherwise
+            # the loop can only say "generation failed" without evidence.
+            if last_code.strip():
+                rejected = os.path.join(self.outputs_dir,
+                                        f"cuda_poc_v{iteration}.invalid.py")
+                with open(rejected, "w", encoding="utf-8") as handle:
+                    handle.write("// generation failed: %s\n" % type(exc).__name__)
+                    handle.write(last_code)
             self.last_result = CandidateResult(
                 generation="GENERATION_FAILED", correction_attempts=retries,
                 errors=[f"GENERATION_ERROR: {type(exc).__name__}"],
