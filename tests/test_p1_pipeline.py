@@ -263,6 +263,16 @@ class TestPipelineAnalysisGate(OfflineTestCase):
         self.assertIs(generator.call_args.args[0], second)
 
 
+    def test_spec_brief_is_injected_for_a_known_cve(self):
+        cfg = self.config()
+        with patch.object(self.pipeline_module, "ConfigLoader", return_value=cfg):
+            pipeline = self.pipeline_module.CudaPipeline()
+        brief = pipeline._spec_brief("CVE-2025-23339")
+        self.assertIn("[EVS] CVE-2025-23339", brief)
+        self.assertIn("consumed", brief.replace("field ", "consumed "))
+        self.assertIn("strategy=", brief)
+        self.assertEqual(pipeline._spec_brief("CVE-NOT-PRESENT"), "")
+
     def test_feedback_reaches_the_generation_prompt(self):
         raw = json.dumps(ANALYSIS)
         with tempfile.TemporaryDirectory() as directory:

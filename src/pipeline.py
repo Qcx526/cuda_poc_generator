@@ -264,6 +264,14 @@ class CudaPipeline:
 
         print("\n[Phase 3/3] Candidate generation and static checks only")
         extra_ctx = env_prompt_block + "\n\n" + self._target_view(rag_context[:1500], env_info) + "\n\n" + self._target_view(web_context[:1000], env_info)
+        target_cve = str((analysis or {}).get("root_cause_analysis", {}).get("cve_id")
+                         or Path(input_dir or "").name)
+        spec_brief = self._spec_brief(target_cve)
+        if spec_brief:
+            # Operational facts outrank prose: a specification that names the
+            # consumed fields changes what the candidate can do, so it goes in
+            # after the context blocks and before the failure diagnosis.
+            extra_ctx += "\n\n" + spec_brief
         if feedback:
             # The closed loop's diagnosis must reach codegen; without this the
             # loop only regenerates and never learns from the failure. The
@@ -299,6 +307,20 @@ class CudaPipeline:
         print(f"\n[+] Candidate saved: {target_dir / candidate.source_file}")
         print(f"    {candidate.generation} / {candidate.static} / NOT_EXECUTED / NOT_VERIFIED")
         return report
+
+    def _spec_brief(self, cve: str) -> str:
+        """Render specs/<CVE>/spec.json for the prompt, or nothing if absent."""
+        from .spec_model import load as load_spec
+        if not cve:
+            return ""
+        path = Path(self.cfg.project_root) / "specs" / cve / "spec.json"
+        if not path.is_file():
+            return ""
+        try:
+            return load_spec(path).prompt_brief()
+        except Exception:  # noqa: BLE001 - a malformed spec must not stop generation
+            logger.warning("规格文件无法解析，已忽略: %s", path)
+            return ""
 
     @staticmethod
     def _target_view(value, snapshot):
