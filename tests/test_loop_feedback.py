@@ -10,7 +10,8 @@ from src.failure_taxonomy import (EXECUTOR_FAILURE, FALSE_POSITIVE,
                                   is_retryable)
 from src.iterative_generator import IterativeCandidateGenerator, clean_code
 from src.loop_report import render_loop_report
-from src.closed_loop import IterationRecord, LoopResult
+from src.closed_loop import (IterationRecord, LoopConfig, LoopResult,
+                             LoopState, TargetTier)
 
 
 class TestDiagnose(unittest.TestCase):
@@ -67,6 +68,25 @@ class TestDiagnose(unittest.TestCase):
                      reasons=["未观察到任何样本退出码；输入可能未到达解析器"])
         self.assertEqual(d.code, "NO_OBSERVATION")
         self.assertTrue(is_retryable(d))
+
+
+    def test_driver_tier_refuses_to_fake_a_container_run(self):
+        from src.closed_loop import docker_matrix_stage
+        stage = docker_matrix_stage(LoopConfig(cve_id="CVE-X",
+                                               tier=TargetTier.DRIVER_USERLAND), [])
+        state = stage(LoopState(iteration=1, candidate_file="x.py"))
+        self.assertIn("PLATFORM_UNAVAILABLE", state.stage_error)
+
+    def test_platform_gap_is_not_reported_as_a_candidate_defect(self):
+        from src.closed_loop import ClosedLoopController
+        from src.reproduction import ReproductionResult
+        controller = ClosedLoopController(
+            LoopConfig(cve_id="CVE-X"), {"generate": lambda s: s},
+            lambda s: ReproductionResult(verdict="NOT_VERIFIED", reasons=[]))
+        result = controller._stage_failure([], 1, "execute",
+                                           "PLATFORM_UNAVAILABLE: needs cdb")
+        self.assertEqual(result.trace[-1].diagnosis_code, "PLATFORM_UNAVAILABLE")
+        self.assertEqual(result.status, "ERROR")
 
     def test_unknown_reason_is_not_retryable(self):
         d = diagnose(verdict="NOT_VERIFIED", reasons=["something odd"])

@@ -121,8 +121,12 @@ class ClosedLoopController:
                        stage_name: str, detail: str) -> LoopResult:
         """Record the failing stage and stop; never continue past a failure."""
         reason = f"stage {stage_name} failed: {detail}"
+        # A missing platform is not a candidate defect: label it so the report
+        # says "cannot run here" instead of "the PoC is wrong".
+        code = ("PLATFORM_UNAVAILABLE" if detail.startswith("PLATFORM_UNAVAILABLE")
+                else "STAGE_ERROR")
         trace.append(IterationRecord(iteration=iteration,
-                                     diagnosis_code="STAGE_ERROR",
+                                     diagnosis_code=code,
                                      stage_error=reason, reasons=[reason]))
         return LoopResult(cve_id=self.config.cve_id, status="ERROR",
                           iterations_used=iteration, reasons=[reason],
@@ -207,6 +211,15 @@ def docker_matrix_stage(config: LoopConfig,
     def execute(state: LoopState) -> LoopState:
         if config.tier == TargetTier.DRIVER_KERNEL:
             raise RuntimeError("kernel tier allows a single probe per iteration")
+        if config.tier == TargetTier.DRIVER_USERLAND:
+            # The container is Linux and carries no NVIDIA driver, so a candidate
+            # that loads nvcuda.dll or nvgpucomp64.dll cannot even start there.
+            # Reporting an execution result would be a fiction.
+            return LoopState(iteration=state.iteration,
+                             candidate_file=state.candidate_file,
+                             stage_error="PLATFORM_UNAVAILABLE: driver target needs "
+                                         "Windows-native execution (cdb), not the Linux "
+                                         "container")
         harness = Path(config.samples_dir) / "run_matrix.sh"
         command = ["docker", "run", "--rm", "--network", "none",
                    "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
