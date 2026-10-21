@@ -46,6 +46,7 @@ class LoopConfig(BaseModel):
     container_image: str = "cpg/cuda112-py3:1.0"
     samples_dir: str = ""
     allow_kernel: bool = False
+    allow_native: bool = False
     timeout_seconds: int = Field(default=600, ge=60, le=3600)
 
 
@@ -123,8 +124,11 @@ class ClosedLoopController:
         reason = f"stage {stage_name} failed: {detail}"
         # A missing platform is not a candidate defect: label it so the report
         # says "cannot run here" instead of "the PoC is wrong".
-        code = ("PLATFORM_UNAVAILABLE" if detail.startswith("PLATFORM_UNAVAILABLE")
-                else "STAGE_ERROR")
+        code = "STAGE_ERROR"
+        for known in ("PLATFORM_UNAVAILABLE", "NEEDS_BACKEND"):
+            if detail.startswith(known):
+                code = known
+                break
         trace.append(IterationRecord(iteration=iteration,
                                      diagnosis_code=code,
                                      stage_error=reason, reasons=[reason]))
@@ -212,14 +216,28 @@ def docker_matrix_stage(config: LoopConfig,
         if config.tier == TargetTier.DRIVER_KERNEL:
             raise RuntimeError("kernel tier allows a single probe per iteration")
         if config.tier == TargetTier.DRIVER_USERLAND:
-            # The container is Linux and carries no NVIDIA driver, so a candidate
-            # that loads nvcuda.dll or nvgpucomp64.dll cannot even start there.
-            # Reporting an execution result would be a fiction.
+            # The target is a Windows driver DLL: the Linux container cannot even
+            # load it. Run where the target lives, and only with an explicit
+            # opt-in - a native probe shares the operator's machine.
+            from .backends import BackendRegistry, TargetProfile
+            profile = TargetProfile.for_tier(config.tier)
+            registry = BackendRegistry()
+            backend = registry.select(profile) if config.allow_native else None
+            if backend is None:
+                reason = ("NEEDS_BACKEND: pass allow_native=True to run a driver "
+                          "PoC on this host" if not config.allow_native
+                          else registry.describe(profile))
+                return LoopState(iteration=state.iteration,
+                                 candidate_file=state.candidate_file,
+                                 stage_error=reason)
+            observation = backend.run(Path(state.candidate_file),
+                                      timeout=config.timeout_seconds)
+            log = Path(config.samples_dir) / "loop_native_out.txt"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(observation.stdout + observation.stderr, encoding="utf-8")
             return LoopState(iteration=state.iteration,
                              candidate_file=state.candidate_file,
-                             stage_error="PLATFORM_UNAVAILABLE: driver target needs "
-                                         "Windows-native execution (cdb), not the Linux "
-                                         "container")
+                             reached=observation.reached)
         harness = Path(config.samples_dir) / "run_matrix.sh"
         command = ["docker", "run", "--rm", "--network", "none",
                    "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
