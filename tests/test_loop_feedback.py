@@ -75,7 +75,10 @@ class TestDiagnose(unittest.TestCase):
         stage = docker_matrix_stage(LoopConfig(cve_id="CVE-X",
                                                tier=TargetTier.DRIVER_USERLAND), [])
         state = stage(LoopState(iteration=1, candidate_file="x.py"))
-        self.assertIn("PLATFORM_UNAVAILABLE", state.stage_error)
+        # Either the capability is missing, or it exists but native probing was
+        # not opted into; both must refuse rather than fake a container run.
+        self.assertTrue(state.stage_error.startswith(("NEEDS_BACKEND",
+                                                      "PLATFORM_UNAVAILABLE")))
 
     def test_platform_gap_is_not_reported_as_a_candidate_defect(self):
         from src.closed_loop import ClosedLoopController
