@@ -27,6 +27,7 @@ INCONCLUSIVE = "INCONCLUSIVE"
 NO_EFFECT = "NO_EFFECT"
 HARNESS_STEP_FAILED = "HARNESS_STEP_FAILED"
 LABEL_CONFLICT = "LABEL_CONFLICT"
+NO_OBSERVATION = "NO_OBSERVATION"
 UNCLASSIFIED = "UNCLASSIFIED"
 
 _LINT_IDS = ("version-classifier-unknown-major", "driver-probe-without-context",
@@ -65,6 +66,11 @@ _DIRECTIVES = {
     INCONCLUSIVE: (
         "There is no clean baseline, so the observation cannot be interpreted. "
         "Add a benign input that must not crash before changing the trigger."),
+    NO_OBSERVATION: (
+        "The candidate ran but produced no [CPG_RUN] lines, so nothing could be "
+        "graded. Make it execute the artifacts it creates and emit the contract "
+        "lines; a PoC that reports nothing is not a weaker PoC, it is an "
+        "unusable one."),
     LABEL_CONFLICT: (
         "The candidate declared a role for an artifact that contradicts the "
         "name it already carries (a file named benign declared MALICIOUS, for "
@@ -89,7 +95,7 @@ _DIRECTIVES = {
 _RETRYABLE = {
     SYNTAX_ERROR, LINT_VIOLATION, EXECUTOR_FAILURE, STAGE_ERROR,
     PATH_NOT_REACHED, PRECONDITION_VIOLATED, INCONCLUSIVE, NO_EFFECT,
-    HARNESS_STEP_FAILED, LABEL_CONFLICT,
+    HARNESS_STEP_FAILED, LABEL_CONFLICT, NO_OBSERVATION,
 }
 # FALSE_POSITIVE is deliberately retryable only with a redesign, which the
 # directive states explicitly; the controller still bounds the attempts.
@@ -137,6 +143,8 @@ def diagnose(*, verdict: Optional[str], reasons: List[str],
         return Diagnosis(FALSE_POSITIVE, joined, _DIRECTIVES[FALSE_POSITIVE])
     if "不具区分力" in joined or "缺少良性基线" in joined:
         return Diagnosis(INCONCLUSIVE, joined, _DIRECTIVES[INCONCLUSIVE])
+    if "未观察到任何样本退出码" in joined:
+        return Diagnosis(NO_OBSERVATION, joined, _DIRECTIVES[NO_OBSERVATION])
     if "标签冲突" in joined:
         return Diagnosis(LABEL_CONFLICT, joined, _DIRECTIVES[LABEL_CONFLICT])
     if "步骤失败" in joined or "STEP_FAILED" in joined or "[CUDA_STEP:" in joined:

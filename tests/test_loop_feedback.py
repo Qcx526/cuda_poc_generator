@@ -60,6 +60,14 @@ class TestDiagnose(unittest.TestCase):
         self.assertEqual(d.code, "HARNESS_STEP_FAILED")
         self.assertTrue(is_retryable(d))
 
+    def test_missing_observation_is_retryable(self):
+        # A candidate that prints no [CPG_RUN] lines cannot be graded, but that
+        # is a fixable contract violation, not an unclassifiable dead end.
+        d = diagnose(verdict="NOT_VERIFIED",
+                     reasons=["未观察到任何样本退出码；输入可能未到达解析器"])
+        self.assertEqual(d.code, "NO_OBSERVATION")
+        self.assertTrue(is_retryable(d))
+
     def test_unknown_reason_is_not_retryable(self):
         d = diagnose(verdict="NOT_VERIFIED", reasons=["something odd"])
         self.assertEqual(d.code, UNCLASSIFIED)
