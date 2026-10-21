@@ -206,6 +206,10 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    MALICIOUS|BENIGN|CONTROL` exactly once, before running it. Names are not
    enough: the harness needs the declared role to build the differential
    verdict, and a run without a label cannot count as evidence.
+   Naming rule: a baseline MUST be named `benign*` and MUST NOT contain
+   `control`/`ctrl`; a control MUST contain `control`/`ctrl` and MUST NOT
+   contain `benign`. An ambiguous name (both markers) is treated as a control,
+   so a baseline named `control_benign.cubin` is not a baseline.
 
 22. **Trigger Oracle (do this BEFORE writing the mutation code)**: state, as a
    comment block at the top of the script, the precondition that must hold for

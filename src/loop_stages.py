@@ -14,7 +14,8 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from .closed_loop import LoopConfig, LoopState
-from .reproduction import ReproductionResult, decide, evidence_from_runs
+from .reproduction import (ReproductionResult, decide, evidence_from_runs,
+                           label_for)
 
 Runner = Callable[..., "subprocess.CompletedProcess"]
 
@@ -223,6 +224,18 @@ def make_grader(project_config: LoopConfig,
                 failed_steps=[], malicious_runs=0, malicious_crashes=0,
                 benign_runs=0, benign_crashes=0)
         import hashlib
+        notes = []
+        # A declaration that contradicts a recognisable name is bookkeeping, not
+        # evidence: the name wins, the conflict is reported, and grading goes on.
+        for run in runs:
+            declared = run.get("label")
+            if not declared:
+                continue
+            derived = label_for(run["artifact"])
+            if derived != "UNKNOWN" and derived != declared:
+                run.pop("label")
+                notes.append("标签冲突：%s 声明为 %s，按文件名判为 %s"
+                             % (run["artifact"], declared, derived))
         try:
             evidence = evidence_from_runs(
                 runs=runs, source_sha256=hashlib.sha256(text.encode()).hexdigest(),
@@ -234,5 +247,8 @@ def make_grader(project_config: LoopConfig,
                 verdict="NOT_VERIFIED", reasons=["标签冲突：%s" % exc],
                 failed_steps=[], malicious_runs=0, malicious_crashes=0,
                 benign_runs=0, benign_crashes=0)
-        return decide(evidence)
+        result = decide(evidence)
+        if notes:
+            return result.model_copy(update={"reasons": list(result.reasons) + notes})
+        return result
     return grade
