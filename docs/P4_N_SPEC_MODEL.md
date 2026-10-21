@@ -107,7 +107,53 @@ unknown (do not invent): ...
 4. **实现**：闭环（生成→执行→差分→诊断→反馈），附失败分类学；
 5. **评估**：15 个工具链 CVE 的批跑 + 3 个消融 + 0107 案例研究（说明边界）。
 
-## 8. 当前状态与缺口
+## 8. 单案例验证：CVE-2024-0076 从"步骤失败"到 `SUPPORTED`
+
+**改前**（无规格，2026-10-20 批跑）：`HARNESS_STEP_FAILED` ——
+`[CUDA_STEP:S02] generate a baseline valid cubin — FAIL: no cubin baseline could be produced`。
+注意那一轮**恶意样本其实已经打崩了**（`exit=-11`），只是被"造不出基线"卡死在判定之前。
+
+**改后**（EVS 规格，只加了一份 `specs/CVE-2024-0076/spec.json`）：
+
+| 轮次 | 判定 | 诊断 |
+|---|---|---|
+| 1 | `NOT_VERIFIED` | `LABEL_CONFLICT`（候选把 benign 声明成别的角色） |
+| 2 | **`SUPPORTED`** | — |
+
+证据（第 2 轮观测）：
+
+```text
+[CUDA_STEP:S02] Compile a benign cubin baseline with nvcc — OK
+[CPG_LABEL] benign.cubin BENIGN
+[CPG_RUN]   benign.cubin exit=0
+[CPG_ORACLE] sh_size actual=0xfffffffffffffff0 expected=0xfffffffffffffff0
+[CPG_ORACLE] sh_offset actual=0x198 expected=inside file (<2536)
+受控样本 2/6 个产生崩溃；良性基线 1 个全部未崩溃
+```
+
+起作用的是规格里的三条信息：
+1. `baseline_recipe`（nvcc 命令 + "本镜像实测 1896 字节可用"）直接解掉了 S02；
+2. `history.refuted` 告诉模型"只改 sh_offset 不会崩，要改 sh_size"，少走一轮弯路；
+3. `oracle` 让模型先声明 `sh_size/sh_offset` 再回读验证，产出可审的证据。
+
+**这是论文里最能打的一张表**：同一模型、同一提示词、同一执行环境，唯一变量是输入形态。
+
+## 9. 反例：CVE-2025-23340 为什么仍然不可复现
+
+给 23340 也建了完整规格（`specs/CVE-2025-23340/spec.json`，100% 覆盖），但实测发现：
+它在这个环境里**不可观测**，原因有三，且都不是"规格没写好"：
+
+1. **崩溃不可见**：CWE-131 那 24 字节堆越界写落在 glibc 堆内，不触发 SIGSEGV；
+   Talos 是用 Valgrind 的 `Invalid write` 判定的。
+2. **Valgrind 装不上**：容器内无法连代理（`apt-get` 全部失败），ASAN 运行时虽在，
+   但 `LD_PRELOAD` 对该二进制不生效。
+3. **构造入口困难**：nvdisasm 只接受带 CUDA 架构信息的 cubin；
+   在真实 cubin 上追加 SHT_RELA 节后，处理分支并未进入（只做边界校验）。
+
+结论：**观测信号的选择本身就是方法的一部分**。这条反例正好支撑 EVS 里
+`observable` 必须是显式字段的主张——没有它，"打不中"和"看不见"无法区分。
+
+## 10. 当前状态与缺口
 
 | 项 | 状态 |
 |---|---|

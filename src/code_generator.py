@@ -315,7 +315,7 @@ class CudaCodeGenerator:
                     {"role": "system", "content": _CUDA_CODEGEN_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                temperature=0.15,
+                temperature=0.0,  # reproducibility: same input must give the same candidate
             )
             self._require_source(raw_code)
             code = self._clean_code(raw_code)
@@ -337,7 +337,7 @@ class CudaCodeGenerator:
                         {"role": "assistant", "content": code[:4000]},
                         {"role": "user", "content": correction_prompt},
                     ],
-                    temperature=0.1,
+                    temperature=0.0,
                 )
                 self._require_source(raw_code)
                 code = self._clean_code(raw_code)

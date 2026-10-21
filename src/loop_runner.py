@@ -49,12 +49,36 @@ def build_controller(*, cve_id: str, tier: str, iterations: int, image: str,
     return ClosedLoopController(config, stages, make_grader(config, version_in_range))
 
 
-def write_outputs(result: LoopResult, workdir: Path) -> Path:
+def write_outputs(result: LoopResult, workdir: Path,
+                  project_root: Optional[Path] = None) -> Path:
     """Persist the trace report next to the observations."""
     workdir.mkdir(parents=True, exist_ok=True)
     report = workdir / "loop_report.zh-CN.md"
     report.write_text(render_loop_report(result), encoding="utf-8")
+    record_history(result, project_root or Path.cwd())
     return report
+
+
+def record_history(result: LoopResult, project_root: Path) -> None:
+    """Append this run to the specification's history (the write-back loop).
+
+    A specification that never learns from its own runs is a static document;
+    recording attempts is what makes the next run on this target cheaper.
+    """
+    from .spec_model import load as load_spec
+
+    path = project_root / "specs" / result.cve_id / "spec.json"
+    if not path.is_file():
+        return
+    try:
+        spec = load_spec(path)
+    except Exception:  # noqa: BLE001 - never fail a run over its record
+        return
+    for record in result.trace:
+        spec.record_attempt(iteration=record.iteration,
+                            verdict=record.verdict or "",
+                            diagnosis=record.diagnosis_code or "")
+    spec.save(path)
 
 
 def main(argv: Optional[list] = None) -> int:

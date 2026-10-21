@@ -166,7 +166,7 @@ class CudaSecurityExpert:
                 system_prompt=_CUDA_EXPERT_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 json_schema=_CUDA_EXPERT_OUTPUT_SCHEMA,
-                temperature=0.2,
+                temperature=0.0,  # reproducibility of the analysis
             )
         except StructuredOutputError as exc:
             self.last_raw_response = exc.raw_response

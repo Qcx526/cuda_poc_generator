@@ -91,5 +91,34 @@ class TestSpecModel(unittest.TestCase):
                                 for c in spec.claims.values()))
 
 
+class TestWriteBack(unittest.TestCase):
+    def test_run_history_is_appended_to_the_spec(self):
+        from src.closed_loop import IterationRecord, LoopResult
+        from src.loop_runner import record_history
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / "specs" / "CVE-X"
+            directory.mkdir(parents=True)
+            VulnSpec(cve_id="CVE-X").save(directory / "spec.json")
+            result = LoopResult(
+                cve_id="CVE-X", status="EXHAUSTED", iterations_used=2,
+                final_verdict="NOT_VERIFIED",
+                trace=[IterationRecord(iteration=1, verdict="NOT_VERIFIED",
+                                       diagnosis_code="NO_EFFECT"),
+                       IterationRecord(iteration=2, verdict="SUPPORTED")])
+            record_history(result, root)
+            reloaded = load(directory / "spec.json")
+            self.assertEqual(len(reloaded.history.attempts), 2)
+            self.assertEqual(reloaded.history.attempts[0].diagnosis, "NO_EFFECT")
+
+    def test_missing_spec_is_silently_skipped(self):
+        from src.closed_loop import LoopResult
+        from src.loop_runner import record_history
+        with tempfile.TemporaryDirectory() as tmp:
+            record_history(LoopResult(cve_id="CVE-NONE", status="ERROR",
+                                      iterations_used=0), Path(tmp))
+
+
 if __name__ == "__main__":
     unittest.main()
