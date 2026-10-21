@@ -95,6 +95,34 @@ class ParserModel(BaseModel):
         return [f for f in self.consumed_fields if f.is_unchecked]
 
 
+class TargetProfileSpec(BaseModel):
+    """Where this target lives: platform, privilege, input medium, device."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    platform: Literal["linux", "windows", "any"] = "linux"
+    privilege: Literal["user", "kernel"] = "user"
+    medium: Literal["file", "api_sequence", "ioctl", "packet"] = "file"
+    device: Literal["none", "gpu"] = "none"
+
+    def as_profile(self):
+        from .backends import TargetProfile
+        return TargetProfile(platform=self.platform, privilege=self.privilege,
+                             medium=self.medium, device=self.device)
+
+
+class DriverEntry(BaseModel):
+    """How to enter a driver target: no file, an API sequence instead."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    entry_api: str = ""
+    payload_form: str = ""
+    state_sequence: List[str] = Field(default_factory=list)
+    device_requirement: str = ""
+    crash_oracle: str = ""
+
+
 class ExecutableAnchor(BaseModel):
     """How to build a valid input and how to invoke the target on it."""
 
@@ -158,6 +186,8 @@ class VulnSpec(BaseModel):
     cve_id: str
     component: str = ""
     cwe: str = ""
+    target: TargetProfileSpec = Field(default_factory=TargetProfileSpec)
+    driver: DriverEntry = Field(default_factory=DriverEntry)
     anchor: ExecutableAnchor = Field(default_factory=ExecutableAnchor)
     parser: ParserModel = Field(default_factory=ParserModel)
     observable: Observable = Field(default_factory=Observable)
@@ -211,6 +241,20 @@ class VulnSpec(BaseModel):
         lines = ["[EVS] %s | component=%s | strategy=%s | operational=%.0f%%"
                  % (self.cve_id, self.component or "unknown", self.strategy,
                     100 * self.operational_coverage())]
+        if self.target.platform != "linux" or self.target.device != "none":
+            lines.append("target: platform=%s privilege=%s medium=%s device=%s"
+                         % (self.target.platform, self.target.privilege,
+                            self.target.medium, self.target.device))
+        if self.driver.entry_api:
+            lines.append("entry_api: %s" % self.driver.entry_api)
+        if self.driver.payload_form:
+            lines.append("payload: %s" % self.driver.payload_form)
+        if self.driver.state_sequence:
+            lines.append("sequence: %s" % " -> ".join(self.driver.state_sequence))
+        if self.driver.device_requirement:
+            lines.append("device: %s" % self.driver.device_requirement)
+        if self.driver.crash_oracle:
+            lines.append("crash_oracle: %s" % self.driver.crash_oracle)
         if self.anchor.binary:
             lines.append("binary: %s" % self.anchor.binary)
         if self.anchor.invocation:
@@ -293,6 +337,11 @@ def from_legacy(input_dir: Path) -> VulnSpec:
     kind = read("5_vulnerability_type.json")
 
     spec = VulnSpec(cve_id=input_dir.name, origin="legacy")
+    lowered = (json.dumps(component, ensure_ascii=False)
+               + json.dumps(surface, ensure_ascii=False)).lower()
+    if "driver" in lowered or "nvgpucomp" in lowered or ".dll" in lowered:
+        spec.target = TargetProfileSpec(platform="windows", privilege="user",
+                                        medium="api_sequence", device="gpu")
     spec.component = str(component.get("name") or component.get("component_name") or "")
     spec.cwe = str(kind.get("cwe_id") or "")
     spec.anchor.binary = str(surface.get("entry_point") or "").split()[0] if surface.get("entry_point") else ""

@@ -48,6 +48,7 @@ class LoopConfig(BaseModel):
     allow_kernel: bool = False
     allow_native: bool = False
     timeout_seconds: int = Field(default=600, ge=60, le=3600)
+    project_root: str = ""
 
 
 class LoopState(BaseModel):
@@ -220,7 +221,18 @@ def docker_matrix_stage(config: LoopConfig,
             # load it. Run where the target lives, and only with an explicit
             # opt-in - a native probe shares the operator's machine.
             from .backends import BackendRegistry, TargetProfile
+            # The specification knows where the target lives; the tier is only a
+            # fallback for inputs that have no specification yet.
             profile = TargetProfile.for_tier(config.tier)
+            if config.project_root:
+                spec_path = (Path(config.project_root) / "specs" / config.cve_id
+                             / "spec.json")
+                if spec_path.is_file():
+                    try:
+                        from .spec_model import load as load_spec
+                        profile = load_spec(spec_path).target.as_profile()
+                    except Exception:  # noqa: BLE001 - fall back to the tier
+                        pass
             registry = BackendRegistry()
             backend = registry.select(profile) if config.allow_native else None
             if backend is None:
@@ -234,9 +246,16 @@ def docker_matrix_stage(config: LoopConfig,
                                       timeout=config.timeout_seconds)
             log = Path(config.samples_dir) / "loop_native_out.txt"
             log.parent.mkdir(parents=True, exist_ok=True)
-            log.write_text(observation.stdout + observation.stderr, encoding="utf-8")
+            # The grader reads this file, so the process result is appended as a
+            # note. It is deliberately not a [CPG_RUN] line: an unlabelled crash
+            # of the harness would be evidence of nothing.
+            log.write_text("%s%s\n[CPG_NOTE] process exit=%s crashed=%s reached=%s\n"
+                           % (observation.stdout, observation.stderr,
+                              observation.exit_code, observation.crashed,
+                              observation.reached), encoding="utf-8")
             return LoopState(iteration=state.iteration,
                              candidate_file=state.candidate_file,
+                             observation_file=str(log),
                              reached=observation.reached)
         harness = Path(config.samples_dir) / "run_matrix.sh"
         command = ["docker", "run", "--rm", "--network", "none",

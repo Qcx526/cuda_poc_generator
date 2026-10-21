@@ -99,6 +99,19 @@ class TestGrader(unittest.TestCase):
         runs = parse_runs("[CPG_RUN] malicious.cubin exit=139\n[CPG_RUN] benign.cubin exit=0\n")
         self.assertEqual([r["exit_code"] for r in runs], [139, 0])
 
+    def test_candidate_step_failure_is_not_an_executor_fault(self):
+        # The candidate aborted at its own step; that is feedback for the next
+        # iteration, not a reason to end the run.
+        from types import SimpleNamespace
+        context = StageContext(workdir=Path(tempfile.mkdtemp()), tier="driver_userland",
+                               project_root=Path("."), cve_id="CVE-X",
+                               container_image="img")
+        runner = lambda *a, **k: SimpleNamespace(
+            returncode=1, stdout="[CUDA_STEP:S03] x - FAIL: no SHDR chunk\n", stderr="")
+        stage = make_execute_stage(context, runner=runner)
+        state = stage(LoopState(iteration=1, candidate_file=__file__))
+        self.assertIsNone(state.stage_error)
+
     def test_runs_are_parsed_from_the_harness_convention(self):
         runs = parse_runs("malicious.cubin -> exit=139\nbenign.cubin -> exit=0\n")
         self.assertEqual([r["exit_code"] for r in runs], [139, 0])

@@ -151,7 +151,12 @@ def make_execute_stage(context: StageContext,
             completed = runner(command, timeout=1800)
             output = (completed.stdout or "") + (completed.stderr or "")
             error = None
-            if completed.returncode != 0 and not parse_runs(completed.stdout or ""):
+            # A candidate that failed at its own step is evidence for the
+            # diagnoser, not an executor fault: treating it as the latter ends
+            # the run before the feedback loop can act on it.
+            step_failure = "[CUDA_STEP:" in output and "FAIL" in output
+            if (completed.returncode != 0 and not parse_runs(completed.stdout or "")
+                    and not step_failure):
                 error = "executor rc=%d: %s" % (completed.returncode,
                                                 (completed.stderr or "")[-300:])
         context.workdir.mkdir(parents=True, exist_ok=True)
