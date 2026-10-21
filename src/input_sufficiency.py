@@ -32,6 +32,26 @@ CRITICAL_FIELDS: Dict[str, Dict[str, int]] = {
     },
 }
 
+# What a mutation must know before it can be targeted. These are the v2
+# operational blocks; absent blocks are the current normal, so they must not
+# invalidate anything - they only lower the operational score.
+OPERATIONAL_FIELDS: Dict[str, Dict[str, int]] = {
+    "7_root_cause.json": {
+        "parser_model.entry_function": 3,
+        "parser_model.consumed_fields": 4,
+        "parser_model.loop_pseudocode": 2,
+    },
+    "3_affected_component.json": {
+        "executable_anchor.baseline_recipe": 3,
+        "executable_anchor.affected_versions": 2,
+        "executable_anchor.input_format": 2,
+    },
+    "4_attack_surface.json": {
+        "observable_signal": 3,
+        "invocation": 2,
+    },
+}
+
 _EMPTY = {"", "n/a", "na", "unknown", "—", "-", "none", "tbd"}
 
 
@@ -43,10 +63,32 @@ class Sufficiency:
     score: int
     maximum: int
     missing: List[str] = field(default_factory=list)
+    operational_score: int = 0
+    operational_maximum: int = 0
+    operational_missing: List[str] = field(default_factory=list)
 
     @property
     def ratio(self) -> float:
         return 0.0 if self.maximum == 0 else self.score / self.maximum
+
+    @property
+    def operational_ratio(self) -> float:
+        return 0.0 if self.operational_maximum == 0 else (
+            self.operational_score / self.operational_maximum)
+
+    @property
+    def strategy(self) -> str:
+        """Pick a search strategy from input quality, not from a fixed rule.
+
+        A well-anchored input can be mutated directly. A descriptive-only input
+        must first probe the target to learn what it consumes. A thin input has
+        to start with reconnaissance, because mutation would be a guess.
+        """
+        if self.operational_ratio >= 0.6:
+            return "MUTATE_DIRECT"
+        if self.ratio >= 0.4:
+            return "PROBE_THEN_MUTATE"
+        return "RECON_FIRST"
 
     @property
     def band(self) -> str:
@@ -66,6 +108,15 @@ def _unwrap(payload: dict, filename: str) -> dict:
     return payload
 
 
+def _nested_get(body: dict, dotted: str) -> object:
+    current: object = body
+    for part in dotted.split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
 def _is_filled(value: object) -> bool:
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return value != 0
@@ -80,6 +131,9 @@ def assess(input_dir: Path) -> Sufficiency:
     score = 0
     maximum = 0
     missing: List[str] = []
+    operational_score = 0
+    operational_maximum = 0
+    operational_missing: List[str] = []
     for filename, weights in CRITICAL_FIELDS.items():
         path = input_dir / filename
         body: Dict[str, object] = {}
@@ -94,7 +148,25 @@ def assess(input_dir: Path) -> Sufficiency:
                 score += weight
             else:
                 missing.append("%s.%s" % (filename.split("_")[0], key))
-    return Sufficiency(cve_id=cve_id, score=score, maximum=maximum, missing=missing)
+
+    for filename, weights in OPERATIONAL_FIELDS.items():
+        path = input_dir / filename
+        body: Dict[str, object] = {}
+        if path.is_file():
+            try:
+                body = _unwrap(json.loads(path.read_text(encoding="utf-8")), filename)
+            except (OSError, json.JSONDecodeError):
+                body = {}
+        for dotted, weight in weights.items():
+            operational_maximum += weight
+            if _is_filled(_nested_get(body, dotted)):
+                operational_score += weight
+            else:
+                operational_missing.append("%s.%s" % (filename.split("_")[0], dotted))
+    return Sufficiency(cve_id=cve_id, score=score, maximum=maximum,
+                       missing=missing, operational_score=operational_score,
+                       operational_maximum=operational_maximum,
+                       operational_missing=operational_missing)
 
 
 def assess_all(inputs_root: Path) -> List[Sufficiency]:

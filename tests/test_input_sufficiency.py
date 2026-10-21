@@ -68,6 +68,49 @@ class TestAssess(unittest.TestCase):
             self.assertEqual(result.score, 0)
             self.assertEqual(len(result.missing), 8)
 
+    def test_operational_blocks_enable_direct_mutation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / "CVE-E"
+            d.mkdir()
+            _write(d, RICH_COMPONENT, RICH_ROOT)
+            root = {"root_cause": dict(RICH_ROOT)}
+            root["root_cause"]["parser_model"] = {
+                "entry_function": {"name": "parse", "rva": "0x1"},
+                "consumed_fields": [{"name": "size", "offset": 8}],
+                "loop_pseudocode": "while(true){}",
+            }
+            (d / "7_root_cause.json").write_text(json.dumps(root), encoding="utf-8")
+            comp = {"affected_component": dict(RICH_COMPONENT)}
+            comp["affected_component"]["executable_anchor"] = {
+                "baseline_recipe": "nvcc -cubin x.cu",
+                "affected_versions": {"min": "11.0", "fixed_in": "13.0"},
+                "input_format": {"kind": "cubin"},
+            }
+            (d / "3_affected_component.json").write_text(json.dumps(comp), encoding="utf-8")
+            (d / "4_attack_surface.json").write_text(json.dumps({
+                "attack_surface": {"observable_signal": {"type": "exit_signal"},
+                                   "invocation": {"binary": "cuobjdump"}},
+            }), encoding="utf-8")
+            result = assess(d)
+            self.assertEqual(result.operational_score, result.operational_maximum)
+            self.assertEqual(result.strategy, "MUTATE_DIRECT")
+
+    def test_descriptive_only_input_probes_before_mutating(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / "CVE-F"
+            d.mkdir()
+            _write(d, RICH_COMPONENT, RICH_ROOT)
+            result = assess(d)
+            self.assertEqual(result.operational_score, 0)
+            self.assertEqual(result.strategy, "PROBE_THEN_MUTATE")
+
+    def test_thin_input_starts_with_reconnaissance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / "CVE-G"
+            d.mkdir()
+            _write(d, {"version_range": "< 12.0"}, {})
+            self.assertEqual(assess(d).strategy, "RECON_FIRST")
+
 
 if __name__ == "__main__":
     unittest.main()
