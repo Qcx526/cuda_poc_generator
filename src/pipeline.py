@@ -266,8 +266,13 @@ class CudaPipeline:
         extra_ctx = env_prompt_block + "\n\n" + self._target_view(rag_context[:1500], env_info) + "\n\n" + self._target_view(web_context[:1000], env_info)
         if feedback:
             # The closed loop's diagnosis must reach codegen; without this the
-            # loop only regenerates and never learns from the failure.
-            extra_ctx += "\n\n[PREVIOUS ATTEMPT FAILED — ACT ON THIS]\n" + feedback
+            # loop only regenerates and never learns from the failure. The
+            # change-log requirement keeps successive attempts from drifting
+            # back to an approach that has already failed.
+            extra_ctx += ("\n\n[PREVIOUS ATTEMPT FAILED — ACT ON THIS]\n" + feedback +
+                          "\n\nBefore writing code, state in one comment line what you "
+                          "will change relative to the previous attempt and why. "
+                          "Do not repeat the failed approach.")
         try:
             generation_context = self._target_view(vuln_context, env_info)
             generation_analysis = self._target_view(analysis, env_info)

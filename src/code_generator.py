@@ -207,6 +207,34 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    enough: the harness needs the declared role to build the differential
    verdict, and a run without a label cannot count as evidence.
 
+22. **Trigger Oracle (do this BEFORE writing the mutation code)**: state, as a
+   comment block at the top of the script, the precondition that must hold for
+   the defect to fire:
+   `FIELD: <name>  OFFSET: <n>  SIZE: <n>  REQUIRED: <value or range>
+    CHECK PRESENT: <yes|no>  WHY IT FAILS: <one sentence>`.
+   Then assert it at runtime: read the field back from the crafted file and
+   print `[CPG_ORACLE] <field> actual=<value> expected=<value>`. A PoC whose
+   oracle was never evaluated is not evidence, even if something crashed.
+
+23. **Method Not Blind Mutation**: mutate the field the parser actually
+   consumes, at the offset its code reads. If the input data does not name that
+   field, say so in the oracle block and keep the mutation conservative. Do not
+   spray random bytes: an unrelated crash is a false positive, and the
+   differential control will expose it.
+
+24. **Differential Is The Definition of Success**: the trigger must crash while
+   the control — same file, exactly one variable changed — does not. Print both
+   results. If both crash, the PoC has proven nothing; report that instead of
+   claiming success.
+
+25. **Minimize**: prefer the smallest input that still triggers. Report the
+   final artifact size in bytes and the number of mutated bytes. Large PoCs are
+   harder to attribute and harder to defend.
+
+26. **Attribute The Fault**: when a crash occurs, print the signal/exit code
+   and, where available, the faulting frame or module. A crash that cannot be
+   attributed to the target parser is not a reproduced vulnerability.
+
 Respond with the COMPLETE Python script only. Follow these rules STRICTLY:
 
 1. Your ENTIRE response MUST be executable Python code — the first character
