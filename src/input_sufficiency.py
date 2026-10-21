@@ -1,0 +1,111 @@
+# -*- coding: utf-8 -*-
+"""How much does the seven-layer input actually support a targeted PoC?
+
+The batch showed that content depth, not pipeline code, decides most outcomes:
+the only CVE with a populated root-cause layer converged in one iteration,
+while the NO_EFFECT cluster all lack the parser detail that a mutation needs.
+
+This module measures that depth instead of leaving it implicit. It is a
+diagnostic, not a gate: a thin input can still succeed, so a low score changes
+the strategy and the report, never the permission to run.
+"""
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+# Field -> weight. Weights encode "what a mutation must know to be targeted":
+# a parser entry and the fields it consumes matter more than a CVSS vector.
+CRITICAL_FIELDS: Dict[str, Dict[str, int]] = {
+    "3_affected_component.json": {
+        "version_range": 2,        # decides whether a crash even counts
+        "vulnerable_function": 3,  # where to aim
+        "file_format_input": 2,    # what to feed
+        "attack_entry_point": 2,   # how to invoke it
+    },
+    "7_root_cause.json": {
+        "function": 3,             # binary-level anchor
+        "vulnerable_code_summary": 3,  # the loop shape to violate
+        "file": 1,
+        "line": 1,
+    },
+}
+
+_EMPTY = {"", "n/a", "na", "unknown", "—", "-", "none", "tbd"}
+
+
+@dataclass(frozen=True)
+class Sufficiency:
+    """Weighted coverage of the fields a targeted mutation depends on."""
+
+    cve_id: str
+    score: int
+    maximum: int
+    missing: List[str] = field(default_factory=list)
+
+    @property
+    def ratio(self) -> float:
+        return 0.0 if self.maximum == 0 else self.score / self.maximum
+
+    @property
+    def band(self) -> str:
+        """Coarse label used in reports and in strategy selection."""
+        if self.ratio >= 0.8:
+            return "RICH"
+        if self.ratio >= 0.4:
+            return "PARTIAL"
+        return "THIN"
+
+
+def _unwrap(payload: dict, filename: str) -> dict:
+    """Accept both shapes seen in the input set: wrapped and flat."""
+    wrapper = filename.split("_", 1)[1].rsplit(".", 1)[0]  # e.g. "affected_component"
+    if isinstance(payload.get(wrapper), dict):
+        return payload[wrapper]
+    return payload
+
+
+def _is_filled(value: object) -> bool:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() not in _EMPTY
+    return bool(value)
+
+
+def assess(input_dir: Path) -> Sufficiency:
+    """Score one CVE's input directory."""
+    cve_id = input_dir.name
+    score = 0
+    maximum = 0
+    missing: List[str] = []
+    for filename, weights in CRITICAL_FIELDS.items():
+        path = input_dir / filename
+        body: Dict[str, object] = {}
+        if path.is_file():
+            try:
+                body = _unwrap(json.loads(path.read_text(encoding="utf-8")), filename)
+            except (OSError, json.JSONDecodeError):
+                body = {}
+        for key, weight in weights.items():
+            maximum += weight
+            if _is_filled(body.get(key)):
+                score += weight
+            else:
+                missing.append("%s.%s" % (filename.split("_")[0], key))
+    return Sufficiency(cve_id=cve_id, score=score, maximum=maximum, missing=missing)
+
+
+def assess_all(inputs_root: Path) -> List[Sufficiency]:
+    return [assess(d) for d in sorted(inputs_root.iterdir()) if d.is_dir()]
+
+
+def missing_note(sufficiency: Sufficiency) -> Optional[str]:
+    """One line for the generation prompt, or None when nothing is missing."""
+    if not sufficiency.missing:
+        return None
+    return ("Input is incomplete for a targeted mutation: missing %s. Prefer a "
+            "conservative mutation of the fields the tool is known to parse, and "
+            "state explicitly which assumption you had to make."
+            % ", ".join(sufficiency.missing))
