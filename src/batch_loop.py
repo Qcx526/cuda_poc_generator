@@ -181,7 +181,13 @@ def main(argv: Optional[list] = None) -> int:
         cves = cves[:args.limit]
     print("[batch] %d 个工具链 CVE: %s" % (len(cves), ", ".join(cves)), flush=True)
 
+    done: List[BatchRow] = []
+
     def report(row: BatchRow) -> None:
+        # Persist after every CVE: a long batch that is interrupted must still
+        # leave the work that already finished.
+        done.append(row)
+        write_summary(done, workdir)
         print("[batch] %-16s %-10s it=%d %-12s %-20s %s %.0fs" % (
             row.cve_id, row.status, row.iterations, row.verdict,
             row.diagnosis, row.success_at_k, row.seconds), flush=True)
