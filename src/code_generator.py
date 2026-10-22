@@ -227,9 +227,12 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
    differential control will expose it.
 
 24. **Differential Is The Definition of Success**: the trigger must crash while
-   the control — same file, exactly one variable changed — does not. Print both
-   results. If both crash, the PoC has proven nothing; report that instead of
-   claiming success.
+   the control does not. A control MUST restore the mutated field to the value
+   it has in the benign baseline (or to a value you can justify as safe) and
+   keep every other byte identical. A control built from another crafted value
+   is not a control: if it crashes too, your evidence is void and you must say
+   so instead of claiming success. Name controls `<field>_restored_<value>` so
+   the harness can tell them apart from triggers.
 
 25. **Minimize**: prefer the smallest input that still triggers. Report the
    final artifact size in bytes and the number of mutated bytes. Large PoCs are
