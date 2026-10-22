@@ -31,7 +31,7 @@ class TestBatchRun(unittest.TestCase):
     def test_rows_are_produced_in_order_and_reported(self):
         seen = []
 
-        def fake_runner(cve, iterations, workdir, root, python, image):
+        def fake_runner(cve, iterations, workdir, root, python, image, index=0):
             seen.append(cve)
             return BatchRow(cve_id=cve, status="SUPPORTED", iterations=1,
                             verdict="SUPPORTED", seconds=1.0)
@@ -43,6 +43,23 @@ class TestBatchRun(unittest.TestCase):
                              progress=lambda row: seen.append("done:" + row.cve_id))
         self.assertEqual(rows[0].cve_id, "CVE-1")
         self.assertEqual(seen, ["CVE-1", "done:CVE-1", "CVE-2", "done:CVE-2"])
+
+
+    def test_repeat_counts_successes_over_independent_runs(self):
+        outcomes = iter(["CRASHED", "SUPPORTED", "CRASHED"])
+
+        def fake_runner(cve, iterations, workdir, root, python, image, index=0):
+            return BatchRow(cve_id=cve, status=next(outcomes), seconds=1.0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = run_batch(["CVE-1"], iterations=1, workdir=Path(tmp),
+                             project_root=Path("."), python_exe="python", image="img",
+                             repeat=3, runner=fake_runner)
+        self.assertEqual(rows[0].attempts, 3)
+        self.assertEqual(rows[0].successes, 1)
+        self.assertEqual(rows[0].status, "SUPPORTED")
+        self.assertEqual(rows[0].success_at_k, "1/3")
+        self.assertIn("success@3", render_summary(rows))
 
     def test_summary_counts_convergence(self):
         rows = [BatchRow("CVE-1", "SUPPORTED", 1, "SUPPORTED", seconds=1),

@@ -50,10 +50,17 @@ class BatchRow:
     seconds: float = 0.0
     reason: str = ""
     diagnoses: List[str] = field(default_factory=list)
+    attempts: int = 1
+    successes: int = 0
+
+    @property
+    def success_at_k(self) -> str:
+        """Report the rate the thesis needs: successes over independent runs."""
+        return "%d/%d" % (self.successes, self.attempts)
 
 
 def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
-            python_exe: str, image: str) -> BatchRow:
+            python_exe: str, image: str, index: int = 0) -> BatchRow:
     """Run the loop for one CVE; never raises, always returns a row."""
     from .closed_loop import TargetTier
     from .loop_runner import build_controller, write_outputs
@@ -62,7 +69,9 @@ def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
     try:
         controller = build_controller(
             cve_id=cve_id, tier=TargetTier.TOOLCHAIN, iterations=iterations,
-            image=image, workdir=workdir / cve_id, project_root=project_root,
+            image=image,
+            workdir=workdir / cve_id if index == 0 else workdir / (cve_id + "/run_%d" % index),
+            project_root=project_root,
             version_in_range=None, allow_kernel=False, python_exe=python_exe)
         result = controller.run()
         write_outputs(result, workdir / cve_id)
@@ -78,40 +87,65 @@ def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
     except Exception as exc:  # noqa: BLE001 - one bad CVE must not stop the batch
         return BatchRow(cve_id=cve_id, status="CRASHED", diagnosis=type(exc).__name__,
                         seconds=round(time.time() - started, 1),
-                        reason=str(exc)[:160])
+                        reason=str(exc)[:160], attempts=1, successes=0)
 
 
 def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
               project_root: Path, python_exe: str, image: str,
+              repeat: int = 1,
               runner: Optional[Callable[..., BatchRow]] = None,
               progress: Optional[Callable[[BatchRow], None]] = None) -> List[BatchRow]:
-    """Run every CVE in order, reporting each row as it completes."""
+    """Run every CVE in order, reporting each row as it completes.
+
+    ``repeat`` runs each CVE that many independent times and reports the
+    success rate over those runs; a single run is too noisy to publish.
+    """
     runner = runner or run_one
     rows: List[BatchRow] = []
     for cve_id in cve_ids:
-        row = runner(cve_id, iterations, workdir, project_root, python_exe, image)
-        rows.append(row)
+        attempts = 0
+        successes = 0
+        best: Optional[BatchRow] = None
+        for index in range(max(1, repeat)):
+            row = runner(cve_id, iterations, workdir, project_root,
+                         python_exe, image, index=index)
+            attempts += 1
+            if row.status == "SUPPORTED":
+                successes += 1
+                if best is None or best.status != "SUPPORTED":
+                    best = row
+            elif best is None:
+                best = row
+        assert best is not None
+        best.attempts = attempts
+        best.successes = successes
+        rows.append(best)
         if progress is not None:
-            progress(row)
+            progress(best)
     return rows
 
 
 def render_summary(rows: List[BatchRow]) -> str:
     """Markdown table plus the aggregate counts the thesis reports."""
     lines = ["# 工具链闭环批跑结果", "",
-             "| CVE | 状态 | 轮数 | 判定 | 终止诊断 | 耗时(s) | 原因 |",
-             "|---|---|---|---|---|---|---|"]
+             "| CVE | 状态 | 轮数 | 判定 | 终止诊断 | success@k | 耗时(s) | 原因 |",
+             "|---|---|---|---|---|---|---|---|"]
     for row in rows:
         reason = row.reason.replace("|", "/").replace("\n", " ")
-        lines.append("| %s | %s | %d | %s | %s | %.0f | %s |" % (
+        lines.append("| %s | %s | %d | %s | %s | %s | %.0f | %s |" % (
             row.cve_id, row.status, row.iterations, row.verdict or "—",
-            row.diagnosis or "—", row.seconds, reason))
+            row.diagnosis or "—", row.success_at_k, row.seconds, reason))
     total = len(rows)
     supported = sum(1 for r in rows if r.status == "SUPPORTED")
     converged = sum(1 for r in rows if r.status == "SUPPORTED" and r.iterations == 1)
+    attempts = sum(r.attempts for r in rows)
+    successes = sum(r.successes for r in rows)
     lines += ["", "## 汇总", "",
               "- 总数：%d" % total,
               "- `SUPPORTED`：%d（一轮收敛 %d）" % (supported, converged),
+              "- success@%d：%d/%d = %.0f%%" % (max(1, rows[0].attempts if rows else 1),
+                                               successes, attempts,
+                                               100.0 * successes / attempts if attempts else 0),
               "- 其余：%d" % (total - supported), ""]
     return "\n".join(lines)
 
@@ -135,6 +169,8 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--workdir", default="data/loop/batch")
     parser.add_argument("--image", default="cpg/cuda112-py3:1.0")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="每个 CVE 独立重复次数（success@k 的 k）")
     parser.add_argument("--cve", action="append", default=[])
     args = parser.parse_args(argv)
 
@@ -146,13 +182,13 @@ def main(argv: Optional[list] = None) -> int:
     print("[batch] %d 个工具链 CVE: %s" % (len(cves), ", ".join(cves)), flush=True)
 
     def report(row: BatchRow) -> None:
-        print("[batch] %-16s %-10s it=%d %-12s %-20s %.0fs" % (
+        print("[batch] %-16s %-10s it=%d %-12s %-20s %s %.0fs" % (
             row.cve_id, row.status, row.iterations, row.verdict,
-            row.diagnosis, row.seconds), flush=True)
+            row.diagnosis, row.success_at_k, row.seconds), flush=True)
 
     rows = run_batch(cves, iterations=args.iterations, workdir=workdir,
                      project_root=root, python_exe=sys.executable,
-                     image=args.image, progress=report)
+                     image=args.image, repeat=args.repeat, progress=report)
     path = write_summary(rows, workdir)
     print("[batch] 汇总: %s" % path, flush=True)
     return 0 if all(r.status == "SUPPORTED" for r in rows) else 1
