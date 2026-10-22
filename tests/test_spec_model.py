@@ -119,6 +119,48 @@ class TestWriteBack(unittest.TestCase):
             record_history(LoopResult(cve_id="CVE-NONE", status="ERROR",
                                       iterations_used=0), Path(tmp))
 
+    def test_crashing_malicious_artifact_becomes_positive_knowledge(self):
+        # What crashed once should be reused, not rediscovered.
+        from src.closed_loop import IterationRecord, LoopResult
+        from src.loop_runner import record_history
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / "specs" / "CVE-X"
+            directory.mkdir(parents=True)
+            VulnSpec(cve_id="CVE-X").save(directory / "spec.json")
+            workdir = root / "run"
+            workdir.mkdir()
+            (workdir / "iteration_1_observation.txt").write_text(
+                "[CPG_LABEL] benign.cubin BENIGN\n[CPG_RUN] benign.cubin exit=0\n"
+                "[CPG_LABEL] mallory.cubin MALICIOUS\n[CPG_RUN] mallory.cubin exit=-11\n",
+                encoding="utf-8")
+            result = LoopResult(cve_id="CVE-X", status="SUPPORTED",
+                                iterations_used=1, final_verdict="SUPPORTED",
+                                trace=[IterationRecord(iteration=1,
+                                                       verdict="SUPPORTED")])
+            record_history(result, root, workdir=workdir)
+            reloaded = load(directory / "spec.json")
+        self.assertEqual(reloaded.history.observed, ["mallory.cubin exit=-11"])
+        self.assertIn("observed to crash", reloaded.prompt_brief())
+
+    def test_a_benign_crash_is_not_recorded_as_a_win(self):
+        from src.closed_loop import IterationRecord, LoopResult
+        from src.loop_runner import record_history
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / "specs" / "CVE-Y"
+            directory.mkdir(parents=True)
+            VulnSpec(cve_id="CVE-Y").save(directory / "spec.json")
+            workdir = root / "run"
+            workdir.mkdir()
+            (workdir / "iteration_1_observation.txt").write_text(
+                "[CPG_RUN] benign.cubin exit=-11\n", encoding="utf-8")
+            record_history(LoopResult(cve_id="CVE-Y", status="EXHAUSTED",
+                                      iterations_used=1), root, workdir=workdir)
+            self.assertEqual(load(directory / "spec.json").history.observed, [])
+
 
 if __name__ == "__main__":
     unittest.main()

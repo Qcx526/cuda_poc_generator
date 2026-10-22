@@ -10,7 +10,7 @@ constant pulled from the tier, never a judgement call.
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from .closed_loop import (ClosedLoopController, LoopConfig, LoopResult,
                           LoopState, TargetTier)
@@ -57,15 +57,18 @@ def write_outputs(result: LoopResult, workdir: Path,
     workdir.mkdir(parents=True, exist_ok=True)
     report = workdir / "loop_report.zh-CN.md"
     report.write_text(render_loop_report(result), encoding="utf-8")
-    record_history(result, project_root or Path.cwd())
+    record_history(result, project_root or Path.cwd(), workdir=workdir)
     return report
 
 
-def record_history(result: LoopResult, project_root: Path) -> None:
+def record_history(result: LoopResult, project_root: Path,
+                   workdir: Optional[Path] = None) -> None:
     """Append this run to the specification's history (the write-back loop).
 
     A specification that never learns from its own runs is a static document;
     recording attempts is what makes the next run on this target cheaper.
+    Crashing malicious artifacts are recorded as positive knowledge so the next
+    generation reuses the mutation instead of rediscovering it.
     """
     from .spec_model import load as load_spec
 
@@ -80,7 +83,36 @@ def record_history(result: LoopResult, project_root: Path) -> None:
         spec.record_attempt(iteration=record.iteration,
                             verdict=record.verdict or "",
                             diagnosis=record.diagnosis_code or "")
+    for entry in _observed_crashes(workdir):
+        if entry not in spec.history.observed:
+            spec.history.observed.append(entry)
     spec.save(path)
+
+
+def _observed_crashes(workdir: Optional[Path]) -> List[str]:
+    """Name the malicious artifacts that crashed, from the run's own logs."""
+    from .loop_stages import parse_runs
+    from .reproduction import is_crash_exit, label_for
+
+    found: List[str] = []
+    if not workdir:
+        return found
+    for observation in sorted(Path(workdir).glob("iteration_*_observation.txt")):
+        try:
+            text = observation.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for run in parse_runs(text):
+            code = run.get("exit_code")
+            if not isinstance(code, int) or not is_crash_exit(code):
+                continue
+            label = run.get("label") or label_for(run["artifact"])
+            if label != "MALICIOUS":
+                continue
+            entry = "%s exit=%d" % (run["artifact"], code)
+            if entry not in found:
+                found.append(entry)
+    return found
 
 
 def main(argv: Optional[list] = None) -> int:

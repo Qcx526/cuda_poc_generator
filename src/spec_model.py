@@ -173,6 +173,9 @@ class History(BaseModel):
 
     attempts: List[Attempt] = Field(default_factory=list)
     refuted: List[str] = Field(default_factory=list)
+    # What already crashed, in the model's own naming: the next generation
+    # should reuse these mutations instead of rediscovering them.
+    observed: List[str] = Field(default_factory=list)
 
     def add(self, attempt: Attempt) -> None:
         self.attempts.append(attempt)
@@ -277,9 +280,12 @@ class VulnSpec(BaseModel):
             lines.append("oracle: %s must satisfy %s -> %s"
                          % (self.oracle.field, self.oracle.condition,
                             self.oracle.expected_effect))
+        if self.history.observed:
+            lines.append("observed to crash (reuse these mutations): %s"
+                         % "; ".join(self.history.observed[:6]))
         if self.history.refuted:
             lines.append("already refuted (do NOT repeat): %s"
-                         % "; ".join(self.history.refuted))
+                         % "; ".join(self.history.refuted[:6]))
         gaps = self.gaps()
         if gaps:
             lines.append("unknown (do not invent): %s" % ", ".join(gaps))
