@@ -11,6 +11,7 @@ conditions and are handled separately.
 """
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -169,11 +170,15 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--workdir", default="data/loop/batch")
     parser.add_argument("--image", default="cpg/cuda112-py3:1.0")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--freeze-history", action="store_true", default=False,
+                        help="忽略规格中的 observed 知识（消融用）")
     parser.add_argument("--repeat", type=int, default=1,
                         help="每个 CVE 独立重复次数（success@k 的 k）")
     parser.add_argument("--cve", action="append", default=[])
     args = parser.parse_args(argv)
 
+    if args.freeze_history:
+        os.environ["CPG_SPEC_FROZEN"] = "1"
     root = Path(resolve_project_root())
     workdir = root / args.workdir
     cves = args.cve or classify(root / "data" / "inputs")

@@ -8,6 +8,7 @@ constant pulled from the tier, never a judgement call.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -133,6 +134,8 @@ def main(argv: Optional[list] = None) -> int:
                         help="target module for the reached-observer")
     parser.add_argument("--rva", default="0", help="hex RVA inside --module")
     parser.add_argument("--cdb", default="", help="path to cdb.exe")
+    parser.add_argument("--freeze-history", action="store_true", default=False,
+                        help="本轮忽略规格里积累的 observed 知识（用于消融）")
     parser.add_argument("--allow-native", action="store_true", default=False,
                         help="允许在 Windows 宿主原生执行驱动类候选（共享本机）")
     args = parser.parse_args(argv)

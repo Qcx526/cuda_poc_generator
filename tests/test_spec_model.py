@@ -161,6 +161,18 @@ class TestWriteBack(unittest.TestCase):
                                       iterations_used=1), root, workdir=workdir)
             self.assertEqual(load(directory / "spec.json").history.observed, [])
 
+    def test_frozen_run_does_not_see_accumulated_observations(self):
+        import os
+        spec = _native()
+        spec.history.observed = ["mallory.cubin exit=-11"]
+        self.assertIn("observed to crash", spec.prompt_brief())
+        os.environ["CPG_SPEC_FROZEN"] = "1"
+        try:
+            self.assertNotIn("observed to crash", spec.prompt_brief())
+        finally:
+            os.environ.pop("CPG_SPEC_FROZEN", None)
+
+
 
 if __name__ == "__main__":
     unittest.main()

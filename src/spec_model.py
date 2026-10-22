@@ -24,6 +24,7 @@ their operational coverage zero.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
@@ -235,7 +236,7 @@ class VulnSpec(BaseModel):
         return "RECON_FIRST"
 
     # -- rendering ------------------------------------------------------
-    def prompt_brief(self) -> str:
+    def prompt_brief(self, include_observed: Optional[bool] = None) -> str:
         """Compact operational brief for the generation prompt.
 
         Only facts that change what the code does are included; prose belongs
@@ -280,7 +281,11 @@ class VulnSpec(BaseModel):
             lines.append("oracle: %s must satisfy %s -> %s"
                          % (self.oracle.field, self.oracle.condition,
                             self.oracle.expected_effect))
-        if self.history.observed:
+        # A frozen run must see the spec as it was authored, not as it learned:
+        # that is what separates the control fix from accumulated knowledge.
+        if include_observed is None:
+            include_observed = os.environ.get("CPG_SPEC_FROZEN") != "1"
+        if self.history.observed and include_observed:
             lines.append("observed to crash (reuse these mutations): %s"
                          % "; ".join(self.history.observed[:6]))
         if self.history.refuted:
