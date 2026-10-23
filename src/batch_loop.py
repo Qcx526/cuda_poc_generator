@@ -67,15 +67,18 @@ def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
     from .loop_runner import build_controller, write_outputs
 
     started = time.time()
+    run_dir = workdir / cve_id if index == 0 else workdir / (cve_id + "/run_%d" % index)
     try:
         controller = build_controller(
             cve_id=cve_id, tier=TargetTier.TOOLCHAIN, iterations=iterations,
             image=image,
-            workdir=workdir / cve_id if index == 0 else workdir / (cve_id + "/run_%d" % index),
+            workdir=run_dir,
             project_root=project_root,
             version_in_range=None, allow_kernel=False, python_exe=python_exe)
         result = controller.run()
-        write_outputs(result, workdir / cve_id)
+        # Each repeat writes its own report: keeping only the last one would
+        # throw away the per-run evidence that the success rate is built from.
+        write_outputs(result, run_dir)
         diagnoses = [record.diagnosis_code for record in result.trace
                      if record.diagnosis_code]
         return BatchRow(
@@ -89,6 +92,17 @@ def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
         return BatchRow(cve_id=cve_id, status="CRASHED", diagnosis=type(exc).__name__,
                         seconds=round(time.time() - started, 1),
                         reason=str(exc)[:160], attempts=1, successes=0)
+
+
+def _finished_status(run_dir: Path) -> Optional[str]:
+    """Status of an already finished run, so an interrupted batch can resume."""
+    report = run_dir / "loop_report.zh-CN.md"
+    if not report.is_file():
+        return None
+    for line in report.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if line.startswith("| 状态 |"):
+            return line.split("|")[2].strip().strip("`")
+    return None
 
 
 def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
@@ -108,6 +122,19 @@ def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
         successes = 0
         best: Optional[BatchRow] = None
         for index in range(max(1, repeat)):
+            run_dir = workdir / cve_id if index == 0 else workdir / (cve_id + "/run_%d" % index)
+            done = _finished_status(run_dir)
+            if done is not None:
+                # Resuming an interrupted batch must not redo finished work.
+                row = BatchRow(cve_id=cve_id, status=done, attempts=1,
+                               successes=1 if done == "SUPPORTED" else 0,
+                               diagnosis="", seconds=0.0, reason="resumed")
+                attempts += 1
+                if done == "SUPPORTED":
+                    successes += 1
+                if best is None:
+                    best = row
+                continue
             row = runner(cve_id, iterations, workdir, project_root,
                          python_exe, image, index=index)
             attempts += 1

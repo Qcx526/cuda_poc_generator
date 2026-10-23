@@ -80,3 +80,49 @@ class TestBatchRun(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_a_finished_run_is_not_repeated(tmp_path):
+    """Resuming must reuse finished runs instead of burning hours again."""
+    from src.batch_loop import BatchRow, run_batch
+
+    run_dir = tmp_path / "CVE-X"
+    run_dir.mkdir(parents=True)
+    (run_dir / "loop_report.zh-CN.md").write_text(
+        "| 项 | 值 |\n|---|---|\n| 状态 | `SUPPORTED` |\n", encoding="utf-8")
+
+    calls = []
+
+    def runner(cve_id, iterations, workdir, project_root, python_exe, image, index=0):
+        calls.append(index)
+        if index == 0:
+            raise AssertionError("finished runs must not be repeated")
+        return BatchRow(cve_id=cve_id, status="EXHAUSTED", attempts=1, successes=0)
+
+    rows = run_batch(["CVE-X"], iterations=1, workdir=tmp_path, project_root=tmp_path,
+                     python_exe="python", image="img", repeat=2, runner=runner)
+    assert calls == [1]              # only the missing repeat actually ran
+    assert rows[0].successes == 1 and rows[0].attempts == 2
+
+
+def test_a_finished_run_is_not_repeated(tmp_path):
+    """Resuming must reuse finished runs instead of burning hours again."""
+    from src.batch_loop import BatchRow, run_batch
+
+    run_dir = tmp_path / "CVE-X"
+    run_dir.mkdir(parents=True)
+    (run_dir / "loop_report.zh-CN.md").write_text(
+        "| 项 | 值 |\n|---|---|\n| 状态 | `SUPPORTED` |\n", encoding="utf-8")
+
+    calls = []
+
+    def runner(cve_id, iterations, workdir, project_root, python_exe, image, index=0):
+        calls.append(index)
+        if index == 0:
+            raise AssertionError("finished runs must not be repeated")
+        return BatchRow(cve_id=cve_id, status="EXHAUSTED", attempts=1, successes=0)
+
+    rows = run_batch(["CVE-X"], iterations=1, workdir=tmp_path, project_root=tmp_path,
+                     python_exe="python", image="img", repeat=2, runner=runner)
+    assert calls == [1]              # only the missing repeat actually ran
+    assert rows[0].successes == 1 and rows[0].attempts == 2
