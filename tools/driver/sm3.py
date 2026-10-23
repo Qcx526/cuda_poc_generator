@@ -25,7 +25,11 @@ DEFAULT_PARAMS: Dict[str, object] = {
     "defs_choices": [0, 1, 2, 4, 8, 16, 32],
     "repeat_max": 8,
     "resource_slot_max": 15,
-    "axes": ["operand", "defs", "repeat", "resource"],
+    # Loop bounds are where integer handling usually breaks, so the axis uses
+    # values on both sides of the 8- and 16-bit edges.
+    "loop_counts": [0, 1, 2, 16, 255, 256, 65535],
+    "flow_kinds": ["if", "loop", "rep", "if_nested"],
+    "axes": ["operand", "defs", "repeat", "resource", "flow"],
     "entry": "sincos",
 }
 
@@ -45,6 +49,8 @@ class Sm3Grammar(Grammar):
         repeat = 1
         slot = 0
         sampler_kind = "2d"
+        flow_kind = ""
+        loop_count = 1
         src = "c0.x"
         dest = "r0.xy"
 
@@ -64,6 +70,9 @@ class Sm3Grammar(Grammar):
         elif axis == "resource":
             slot = rng.randint(0, int(p["resource_slot_max"]))
             sampler_kind = rng.choice(["2d", "cube", "volume"])
+        elif axis == "flow":
+            flow_kind = rng.choice(list(p["flow_kinds"]))  # type: ignore[arg-type]
+            loop_count = rng.choice(list(p["loop_counts"]))  # type: ignore[arg-type]
 
         lines: List[str] = ["ps_3_0"]
         if axis == "resource":
@@ -81,12 +90,29 @@ class Sm3Grammar(Grammar):
             src = "r0.x"
             # SINCOS may not target the register it reads from.
             dest = "r1.%s" % rng.choice(["xy", "x", "y"])
-        for _ in range(repeat):
-            lines.append("sincos %s, %s" % (dest, src))
+        body = ["sincos %s, %s" % (dest, src)] * repeat
+        if flow_kind == "if":
+            lines.append("if_gt c0.x, c0.y")
+            lines.extend(body)
+            lines.append("endif")
+        elif flow_kind == "if_nested":
+            lines.append("if_gt c0.x, c0.y")
+            lines.append("if_ne c0.z, c0.w")
+            lines.extend(body)
+            lines.append("endif")
+            lines.append("endif")
+        elif flow_kind in ("loop", "rep"):
+            lines.append("defi i0, %d, 1, 0, 0" % loop_count)
+            lines.append("loop aL, i0" if flow_kind == "loop" else "rep i0")
+            lines.extend(body)
+            lines.append("endloop" if flow_kind == "loop" else "endrep")
+        else:
+            lines.extend(body)
         lines.append("mov oC0, r0")
         return Candidate(body="\n".join(lines) + "\n",
                          meta={"axis": axis, "defs": defs, "repeat": repeat,
                                "resource_slot": slot, "sampler": sampler_kind,
+                               "flow": flow_kind, "loop_count": loop_count,
                                "src": src, "dest": dest},
                          name=axis)
 

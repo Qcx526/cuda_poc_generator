@@ -93,7 +93,8 @@ class Summary:
 
 def fuzz(*, grammar: Grammar, params: Dict[str, object], runner: Callable[[Candidate], Outcome],
          iterations: int, seed: int = 1, on_new: Optional[Callable[[Outcome, Candidate], None]] = None,
-         on_fault: Optional[Callable[[Outcome, Candidate], None]] = None) -> Summary:
+         on_fault: Optional[Callable[[Outcome, Candidate], None]] = None,
+         on_case: Optional[Callable[[int, Outcome, Candidate], None]] = None) -> Summary:
     """Run ``iterations`` candidates, keeping one case per behavioural bucket."""
     rng = random.Random(seed)
     seen: Dict[Tuple[str, int, int], int] = {}
@@ -102,6 +103,8 @@ def fuzz(*, grammar: Grammar, params: Dict[str, object], runner: Callable[[Candi
         candidate = grammar.generate(rng, params)
         outcome = runner(candidate)
         summary.outcomes[outcome.kind] = summary.outcomes.get(outcome.kind, 0) + 1
+        if on_case is not None:
+            on_case(i, outcome, candidate)
         signature = bucket(outcome)
         if signature not in seen:
             seen[signature] = i

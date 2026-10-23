@@ -11,7 +11,7 @@ never editing the loop.
 import argparse
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
 from src.fuzz_core import fuzz, grammar_for, save
 from tools.driver.sm3 import Sm3Runner, grammar_name_from_spec, params_from_spec
@@ -40,13 +40,22 @@ def main(argv: Optional[list] = None) -> int:
         print("[new] %-13s axis=%-9s %s" % (outcome.kind, candidate.meta.get("axis"),
                                             candidate.meta), flush=True)
 
+    trace: List[Dict[str, object]] = []
+    trace_file = out / "fuzz_trace.jsonl"
+
+    def on_case(index, outcome, candidate):
+        trace.append({"i": index, "kind": outcome.kind, "size": outcome.size,
+                      "seconds": outcome.seconds, "meta": candidate.meta})
+
     def on_fault(outcome, candidate):
         print("[FAULT] rc=%s %s" % (outcome.rc, candidate.meta), flush=True)
         (out / "fault_latest.asm").write_text(candidate.body, encoding="utf-8")
 
     summary = fuzz(grammar=grammar, params=params, runner=runner,
                    iterations=args.iterations, seed=args.seed,
-                   on_new=on_new, on_fault=on_fault)
+                   on_new=on_new, on_fault=on_fault, on_case=on_case)
+    trace_file.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in trace),
+                          encoding="utf-8")
     save(out / "fuzz_summary.json", summary,
          {"spec": args.spec, "params": params, "grammar": grammar.name})
     print("\n=== %d cases: %s | corpus=%d | faults=%d ===" % (
