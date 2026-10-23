@@ -26,7 +26,7 @@ their operational coverage zero.
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -112,6 +112,19 @@ class TargetProfileSpec(BaseModel):
                              medium=self.medium, device=self.device)
 
 
+class SearchBlock(BaseModel):
+    """Which search grammar to drive and with what ranges.
+
+    The axes live here, not in the fuzzer, so a new target changes data rather
+    than code.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    grammar: str = "sm3"
+    params: Dict[str, Any] = Field(default_factory=dict)
+
+
 class DriverEntry(BaseModel):
     """How to enter a driver target: no file, an API sequence instead."""
 
@@ -192,6 +205,7 @@ class VulnSpec(BaseModel):
     cwe: str = ""
     target: TargetProfileSpec = Field(default_factory=TargetProfileSpec)
     driver: DriverEntry = Field(default_factory=DriverEntry)
+    search: SearchBlock = Field(default_factory=SearchBlock)
     anchor: ExecutableAnchor = Field(default_factory=ExecutableAnchor)
     parser: ParserModel = Field(default_factory=ParserModel)
     observable: Observable = Field(default_factory=Observable)
@@ -285,6 +299,14 @@ class VulnSpec(BaseModel):
         # that is what separates the control fix from accumulated knowledge.
         if include_observed is None:
             include_observed = os.environ.get("CPG_SPEC_FROZEN") != "1"
+        # Facts proven by execution outrank advisory text: they are what a
+        # generator should build on, and they are the only way dynamic findings
+        # reach the prompt.
+        proven = ["%s: %s" % (name, claim.value)
+                  for name, claim in sorted(self.claims.items())
+                  if getattr(claim, "verified_by", "") == "execution"]
+        if proven:
+            lines.append("verified by execution: %s" % " | ".join(proven[:3]))
         if self.history.observed and include_observed:
             lines.append("observed to crash (reuse these mutations): %s"
                          % "; ".join(self.history.observed[:6]))
