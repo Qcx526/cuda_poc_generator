@@ -57,7 +57,13 @@ def main(argv: Optional[list] = None) -> int:
 
     def on_case(index, outcome, candidate):
         trace.append({"i": index, "kind": outcome.kind, "size": outcome.size,
-                      "seconds": outcome.seconds, "meta": candidate.meta})
+                      "seconds": outcome.seconds, "meta": candidate.meta,
+                      "detail": outcome.detail})
+        # Persist as we go: an interrupted campaign must not lose the cases it
+        # already ran, including any fault it already found.
+        if (index + 1) % 100 == 0:
+            trace_file.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in trace),
+                                  encoding="utf-8")
 
     def on_fault(outcome, candidate):
         print("[FAULT] rc=%s %s" % (outcome.rc, candidate.meta), flush=True)

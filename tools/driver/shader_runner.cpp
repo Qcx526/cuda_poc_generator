@@ -3,6 +3,7 @@
  *   shader_runner compile <out.bin>            compile HLSL, dump bytecode
  *   shader_runner assemble <in.asm> <out.bin>  assemble shader-model 3 text, dump bytecode
  *   shader_runner bytecode <in.bin>            create a pixel shader from raw bytecode
+ *   shader_runner assemble <in.asm> <out.bin> vs   ... same, but vertex shader
  *
  * Exit code: 0 = accepted, 1 = rejected, anything else = the process faulted
  * (which is exactly what a reproducing input looks like).
@@ -106,10 +107,19 @@ int main(int argc, char **argv) {
 
     IDirect3DDevice9 *dev = make_device();
     if (!dev) { printf("no device\n"); return 1; }
-    IDirect3DPixelShader9 *sh = NULL;
-    HRESULT hr = dev->CreatePixelShader(words, &sh);
-    printf("CreatePixelShader hr=0x%08lx\n", (unsigned long)hr);
-    if (sh) sh->Release();
+    int is_vertex = (argc > 4 && strcmp(argv[4], "vs") == 0);
+    HRESULT hr;
+    if (is_vertex) {
+        IDirect3DVertexShader9 *vs = NULL;
+        hr = dev->CreateVertexShader(words, &vs);
+        printf("CreateVertexShader hr=0x%08lx\n", (unsigned long)hr);
+        if (vs) vs->Release();
+    } else {
+        IDirect3DPixelShader9 *sh = NULL;
+        hr = dev->CreatePixelShader(words, &sh);
+        printf("CreatePixelShader hr=0x%08lx\n", (unsigned long)hr);
+        if (sh) sh->Release();
+    }
     dev->Release();
     return SUCCEEDED(hr) ? 0 : 1;
 }

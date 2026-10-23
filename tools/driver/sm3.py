@@ -193,7 +193,116 @@ class Sm3ByteGrammar(Grammar):
 register(Sm3ByteGrammar(Path("data/harness/base.bin")))
 
 
+class Sm2SincosGrammar(Grammar):
+    """Shader-model-2 SINCOS, where the instruction resolves two coefficient
+    constants. This is a different compiler path from ps_3_0, and the
+    coefficients are the part the driver must look up rather than the validator.
+
+    Axes: which constants hold the input and the two coefficients, and what
+    values those constants carry (boundaries are where polynomial evaluation
+    tends to misbehave).
+    """
+
+    name = "sm2-sincos"
+    VALUES = ["0.0", "-0.0", "1.0", "-1.0", "0.5", "1e38", "-1e38",
+              "3.4028235e38", "-3.4028235e38", "1e-45", "1234567.0"]
+
+    def generate(self, rng: random.Random, params: Dict[str, object]) -> Candidate:
+        p = dict(DEFAULT_PARAMS)
+        p.update(params or {})
+        coeff_max = int(p.get("coeff_max", 16))
+        a = rng.randint(1, coeff_max)
+        b = rng.randint(1, coeff_max)
+        while b == a:
+            b = rng.randint(1, coeff_max)
+        defs = {0: rng.choice(self.VALUES), a: rng.choice(self.VALUES),
+                b: rng.choice(self.VALUES)}
+        stage = str(p.get("stage", "ps"))
+        lines = ["vs_2_0"] if stage == "vs" else ["ps_2_0"]
+        for idx in sorted(defs):
+            v = defs[idx]
+            lines.append("def c%d, %s, %s, %s, %s" % (idx, v, v, v, v))
+        lines.append("sincos r1.x, c0.x, c%d, c%d" % (a, b))
+        if stage == "vs":
+            lines.append("mov oPos, c0")
+        else:
+            lines += ["mov r0, c0", "mov r0.x, r1.x", "mov oC0, r0"]
+        return Candidate(body="\n".join(lines) + "\n",
+                         meta={"axis": "sm2", "model": "vs_2_0" if stage == "vs" else "ps_2_0",
+                               "stage": stage, "input": 0,
+                               "coeff_a": a, "coeff_b": b,
+                               "values": [defs[0], defs[a], defs[b]]},
+                         name="sm2")
+
+
+register(Sm2SincosGrammar())
+
+
+class SincosSrcGrammar(Grammar):
+    """Every legal spelling of the SINCOS source operand.
+
+    The advisory documents the instruction as
+    ``sincos[_sat] destSIN[.mask], destCOS[.mask], [-]src0[_abs][.swizzle]``,
+    so negation, absolute value and swizzle are all part of the input space -
+    and modifiers are exactly the kind of thing a compiler resolves through a
+    table rather than inline.
+    """
+
+    name = "sincos-src"
+    # SINCOS requires a replicate swizzle, so only single components qualify.
+    SWIZZLES = ["x", "y", "z", "w"]
+
+    def generate(self, rng: random.Random, params: Dict[str, object]) -> Candidate:
+        p = dict(DEFAULT_PARAMS)
+        p.update(params or {})
+        stage = str(p.get("stage", "ps"))
+        version = "vs_3_0" if stage == "vs" else "ps_3_0"
+        idx_max = int(p.get("operand_index_max", 223))
+        index = rng.choice([0, 0, 1, 2, 3, 15, 31, 63, 127, 128, 200, idx_max])
+        index = min(index, idx_max)
+        negate = rng.random() < 0.3
+        absolute = rng.random() < 0.3
+        swz = rng.choice(self.SWIZZLES)
+        mod = ("-" if negate else "") + ("abs" if absolute else "")
+        src = "%sc%d%s.%s" % ("-" if negate else "", index,
+                              "_abs" if absolute else "", swz)
+        dest = "r%d.%s" % (rng.choice([0, 0, 1, 2, 15, 31]), rng.choice(["xy", "x", "y"]))
+        lines = [version]
+        if stage == "vs":
+            lines.append("dcl_position v0")
+        lines.append("def c0, 0.5, 0.25, 0.75, 1.0")
+        lines.append("sincos %s, %s" % (dest, src))
+        lines.append("mov oPos, c0" if stage == "vs" else "mov oC0, r0")
+        return Candidate(body="\n".join(lines) + "\n",
+                         meta={"axis": "src", "model": version, "stage": stage,
+                               "index": index, "mod": mod, "swizzle": swz,
+                               "dest": dest},
+                         name="src")
+
+
+register(SincosSrcGrammar())
+
+
 DRIVER_MODULES = ("nvgpucomp", "nvwgf2um", "nvoglv", "nvd3dum", "nvlddmkm")
+
+
+def fault_frame(cdb: Path, harness: Path, binary: Path, timeout: int = 90) -> str:
+    """Return the first stack frame as "module!symbol+offset" for clustering."""
+    if not Path(cdb).is_file():
+        return "unknown"
+    try:
+        done = subprocess.run([str(cdb), "-g", "-G", "-c", "sxe av; g; .lastevent; kb; q",
+                               str(harness), "bytecode", str(binary)],
+                              capture_output=True, text=True, errors="replace", timeout=timeout)
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    text = (done.stdout or "") + (done.stderr or "")
+    for line in text.splitlines():
+        if "!" in line and ("+0x" in line or ":" in line):
+            token = line.strip().split()[-1].rstrip(":")
+            if "!" in token:
+                return token
+    return "unknown"
 
 
 def fault_module(cdb: Path, harness: Path, binary: Path, timeout: int = 90) -> str:
@@ -209,7 +318,7 @@ def fault_module(cdb: Path, harness: Path, binary: Path, timeout: int = 90) -> s
     try:
         done = subprocess.run([str(cdb), "-g", "-G", "-c", script, str(harness),
                                "bytecode", str(binary)],
-                              capture_output=True, text=True, timeout=timeout)
+                              capture_output=True, text=True, errors="replace", timeout=timeout)
     except (OSError, subprocess.SubprocessError):
         return "unknown"
     text = (done.stdout or "") + (done.stderr or "")
@@ -237,15 +346,18 @@ class Sm3Runner:
         asm = self.workdir / ("case_%05d.asm" % self.index)
         binary = self.workdir / ("case_%05d.bin" % self.index)
         is_bytes = candidate.meta.get("format") == "bytes"
+        vertex = candidate.meta.get("stage") == "vs"
         if is_bytes:
             binary.write_bytes(bytes.fromhex(candidate.body))
             command = [str(self.harness), "bytecode", str(binary)]
         else:
             asm.write_text(candidate.body, encoding="utf-8")
             command = [str(self.harness), "assemble", str(asm), str(binary)]
+        if vertex:
+            command.append("vs")
         started = time.time()
         try:
-            done = subprocess.run(command, capture_output=True, text=True,
+            done = subprocess.run(command, capture_output=True, text=True, errors="replace",
                                   timeout=self.timeout)
         except subprocess.TimeoutExpired:
             return Outcome(kind=TIMEOUT, seconds=self.timeout, detail="harness timeout")
@@ -258,12 +370,14 @@ class Sm3Runner:
             return Outcome(GRAMMAR_ERROR, done.returncode, seconds, size, text.strip()[-160:])
         if "CreatePixelShader" in text:
             return Outcome(REJECTED, done.returncode, seconds, size, text.strip()[-160:])
-        module = ""
-        if self.attribute and self.cdb and is_bytes:
-            module = fault_module(Path(self.cdb), self.harness, binary)
-        kind = FAULT if (module in ("", "unknown") or
+        frame = ""
+        if self.attribute and self.cdb:
+            frame = fault_frame(Path(self.cdb), self.harness, binary)
+        module = frame.split("!")[0].lower() if "!" in frame else ""
+        attributed = bool(module) and module != "unknown"
+        kind = FAULT if (not attributed or
                          any(m in module for m in DRIVER_MODULES)) else "runtime_fault"
-        detail = ("module=%s " % module if module else "") + text.strip()[-140:]
+        detail = ("frame=%s " % frame if frame else "") + text.strip()[-140:]
         return Outcome(kind, done.returncode, seconds, size, detail)
 
 
