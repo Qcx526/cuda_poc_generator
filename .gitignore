@@ -80,3 +80,8 @@ a.exe
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# 一次性 fuzz/探针产物（体积大、可重新生成）
+data/fuzz*/
+data/probeA/
+data/probeB/
