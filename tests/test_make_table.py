@@ -9,7 +9,7 @@ from tools.make_table import build_table, summarise
 ROWS = [
     {"cve_id": "CVE-2025-23339", "status": "SUPPORTED", "iterations": 1,
      "diagnosis": "", "attempts": 3, "successes": 2, "seconds": 300},
-    {"cve_id": "CVE-2025-23247", "status": "EXHAUSTED", "iterations": 2,
+    {"cve_id": "CVE-9999-0001", "status": "EXHAUSTED", "iterations": 2,
      "diagnosis": "NO_EFFECT", "attempts": 3, "successes": 0, "seconds": 600},
 ]
 
@@ -20,7 +20,7 @@ class TestTable(unittest.TestCase):
         self.assertIn("CVE-2025-23339", table)
         self.assertIn("2/3", table)
         self.assertIn("100%", table)          # 23339 has a 100%-coverage spec
-        self.assertIn("无规格", table)         # 23247 has none
+        self.assertIn("无规格", table)         # the placeholder has none
 
     def test_summary_counts_solved_cves_and_diagnoses(self):
         text = summarise(ROWS)
