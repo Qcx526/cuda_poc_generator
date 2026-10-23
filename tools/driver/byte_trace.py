@@ -21,7 +21,8 @@ BUFFER_LINE = re.compile(r"\[BUFFER\]\s+([0-9A-Fa-f]+)\s+size=(\d+)")
 
 
 def watch(harness: Path, program: Path, offset: int, cdb: Path,
-          length: int = 4, settle: float = 4.0, timeout: int = 120) -> List[str]:
+          length: int = 4, settle: float = 4.0, timeout: int = 120,
+          second_stage: bool = False) -> List[str]:
     """Return the debugger transcript of every access to buffer+offset."""
     harness = Path(harness).resolve()
     proc = subprocess.Popen([str(harness), "trace", str(Path(program).resolve())],
@@ -41,11 +42,21 @@ def watch(harness: Path, program: Path, offset: int, cdb: Path,
             raise SystemExit("offset %d is beyond the %d-byte program" % (offset, size))
 
         script = Path(harness).parent / ".byte_trace.cdb"
-        script.write_text("\n".join([
-            'ba r%d 0x%x "kb 4; r; g"' % (length, base + offset),
-            "g",
-            "q",
-        ]) + "\n", encoding="utf-8")
+        stage2 = Path(harness).parent / ".byte_trace.log"
+        if second_stage:
+            # First watchpoint catches the runtime copying the program; the
+            # copy's destination is then watched, because that is the buffer
+            # the driver actually parses.
+            lines = [
+                'ba r%d 0x%x ".printf \\"COPY rcx=%%p rdx=%%p r8=%%p\\\\n\\", '
+                '@rcx, @rdx, @r8; ba r%d @rcx \\"kb 6; gc\\"; gc"'
+                % (length, base + offset, length),
+                "g",
+                "q",
+            ]
+        else:
+            lines = ['ba r%d 0x%x "kb 4; r; g"' % (length, base + offset), "g", "q"]
+        script.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
         debugger = subprocess.Popen([str(cdb), "-p", str(proc.pid), "-cf", str(script)],
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -86,10 +97,12 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--harness", default="data/harness/shader_runner.exe")
     parser.add_argument("--cdb", default=r"D:/Windows Kits/10/Debuggers/x64/cdb.exe")
     parser.add_argument("--timeout", type=int, default=120)
+    parser.add_argument("--second-stage", action="store_true", default=False,
+                        help="watch the runtime's copy of the program, not the caller buffer")
     args = parser.parse_args(argv)
 
     lines = watch(Path(args.harness), Path(args.program), args.offset, Path(args.cdb),
-                  timeout=args.timeout)
+                  timeout=args.timeout, second_stage=args.second_stage)
     for line in lines:
         if "Breakpoint" in line or "!" in line or "Couldn't" in line:
             print(line[:160])
