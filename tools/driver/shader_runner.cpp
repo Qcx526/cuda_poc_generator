@@ -1,7 +1,8 @@
 /* shader_runner: one job - get a ps_3_0 shader in front of the driver compiler.
  *
- *   shader_runner compile <out.bin>   compile a SINCOS ps_3_0 shader, dump bytecode
- *   shader_runner bytecode <in.bin>   create a pixel shader from raw bytecode
+ *   shader_runner compile <out.bin>            compile HLSL, dump bytecode
+ *   shader_runner assemble <in.asm> <out.bin>  assemble shader-model 3 text, dump bytecode
+ *   shader_runner bytecode <in.bin>            create a pixel shader from raw bytecode
  *
  * Exit code: 0 = accepted, 1 = rejected, anything else = the process faulted
  * (which is exactly what a reproducing input looks like).
@@ -22,6 +23,9 @@ static HWND make_window(void) {
     return CreateWindowExA(0, "CpgWnd", "cpg", WS_OVERLAPPEDWINDOW,
                            0, 0, 64, 64, NULL, NULL, wc.hInstance, NULL);
 }
+
+typedef HRESULT (WINAPI *D3DAssemble_t)(LPCVOID, SIZE_T, LPCSTR, const void *, void *,
+                                        UINT, ID3DBlob **, ID3DBlob **, HRESULT *);
 
 static IDirect3DDevice9 *make_device(void) {
     HWND hwnd = make_window();
@@ -63,6 +67,32 @@ int main(int argc, char **argv) {
         fclose(f);
         printf("compiled %zu dwords -> %s\n", count, path);
         code->Release();
+    } else if (strcmp(mode, "assemble") == 0) {
+        if (argc < 4) { printf("usage: %s assemble <in.asm> <out.bin>\n", argv[0]); return 2; }
+        FILE *in = fopen(path, "rb");
+        if (!in) { printf("cannot read %s\n", path); return 1; }
+        static char text[65536];
+        size_t n = fread(text, 1, sizeof(text) - 1, in);
+        text[n] = 0;
+        fclose(in);
+        HMODULE lib = LoadLibraryA("d3dcompiler_47.dll");
+        D3DAssemble_t assemble = (D3DAssemble_t)GetProcAddress(lib, "D3DAssemble");
+        if (!assemble) { printf("no D3DAssemble\n"); return 1; }
+        ID3DBlob *code = NULL, *err = NULL;
+        HRESULT hra = assemble(text, n, path, NULL, NULL, 0, &code, &err, NULL);
+        if (FAILED(hra)) {
+            printf("assemble failed 0x%lx: %s\n", (unsigned long)hra,
+                   err ? (char *)err->GetBufferPointer() : "");
+            return 1;
+        }
+        count = code->GetBufferSize() / 4;
+        memcpy(words, code->GetBufferPointer(), code->GetBufferSize());
+        FILE *f = fopen(argv[3], "wb");
+        fwrite(words, 4, count, f);
+        fclose(f);
+        printf("assembled %zu dwords -> %s\n", count, argv[3]);
+        code->Release();
+        path = argv[3];
     } else if (strcmp(mode, "bytecode") == 0) {
         FILE *f = fopen(path, "rb");
         if (!f) { printf("cannot read %s\n", path); return 1; }
