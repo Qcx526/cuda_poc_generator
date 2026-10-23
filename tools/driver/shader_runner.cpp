@@ -4,6 +4,9 @@
  *   shader_runner assemble <in.asm> <out.bin>  assemble shader-model 3 text, dump bytecode
  *   shader_runner bytecode <in.bin>            create a pixel shader from raw bytecode
  *   shader_runner assemble <in.asm> <out.bin> vs   ... same, but vertex shader
+ *   shader_runner trace <in.bin>               print the buffer address, wait for a
+ *                                              line on stdin, then create the shader
+ *                                              (lets a debugger attach and watch reads)
  *
  * Exit code: 0 = accepted, 1 = rejected, anything else = the process faulted
  * (which is exactly what a reproducing input looks like).
@@ -94,6 +97,14 @@ int main(int argc, char **argv) {
         printf("assembled %zu dwords -> %s\n", count, argv[3]);
         code->Release();
         path = argv[3];
+    } else if (strcmp(mode, "trace") == 0) {
+        FILE *f = fopen(path, "rb");
+        if (!f) { printf("cannot read %s\n", path); return 1; }
+        count = fread(words, 4, 4096, f);
+        fclose(f);
+        printf("[BUFFER] %p size=%zu\n", (void *)words, count * 4);
+        fflush(stdout);
+        getchar();                 /* the debugger sets its watchpoint here */
     } else if (strcmp(mode, "bytecode") == 0) {
         FILE *f = fopen(path, "rb");
         if (!f) { printf("cannot read %s\n", path); return 1; }
