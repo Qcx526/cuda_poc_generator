@@ -25,6 +25,9 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--iterations", type=int, default=200)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--cdb", default="", help="debugger used to attribute faults")
+    parser.add_argument("--probe-rva", default="",
+                        help="use a debugger probe at module+rva as the fitness signal")
+    parser.add_argument("--module", default="nvgpucomp64")
     parser.add_argument("--attribute", action="store_true", default=False,
                         help="run a fault under the debugger to name the module")
     parser.add_argument("--grammar", default="", help="override the spec's grammar")
@@ -46,7 +49,12 @@ def main(argv: Optional[list] = None) -> int:
         raise SystemExit("harness not found: %s" % harness)
 
     out = Path(args.out)
-    runner = Sm3Runner(harness, out, cdb=args.cdb, attribute=args.attribute)
+    if args.probe_rva:
+        from tools.driver.probe_runner import ProbeRunner
+        runner = ProbeRunner(harness, out, Path(args.cdb), args.module,
+                             int(args.probe_rva, 0))
+    else:
+        runner = Sm3Runner(harness, out, cdb=args.cdb, attribute=args.attribute)
 
     def on_new(outcome, candidate):
         print("[new] %-13s axis=%-9s %s" % (outcome.kind, candidate.meta.get("axis"),

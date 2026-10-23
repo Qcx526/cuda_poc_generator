@@ -27,6 +27,7 @@ REJECTED = "rejected"
 GRAMMAR_ERROR = "grammar_error"
 FAULT = "fault"
 TIMEOUT = "timeout"
+REACHED = "reached"
 
 
 @dataclass
