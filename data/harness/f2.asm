@@ -1,0 +1,7 @@
+ps_3_0
+def c0, 0.5, 0.25, 0.75, 1.0
+defi i0, 4, 1, 0, 0
+loop aL, i0
+sincos r0.xy, c0.x
+endloop
+mov oC0, r0

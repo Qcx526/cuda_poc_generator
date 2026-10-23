@@ -24,17 +24,29 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--out", default="data/fuzz")
     parser.add_argument("--iterations", type=int, default=200)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--cdb", default="", help="debugger used to attribute faults")
+    parser.add_argument("--attribute", action="store_true", default=False,
+                        help="run a fault under the debugger to name the module")
+    parser.add_argument("--grammar", default="", help="override the spec's grammar")
+    parser.add_argument("--set", action="append", default=[],
+                        help="override a search param, e.g. --set byte_flips=2")
     args = parser.parse_args(argv)
 
     spec = json.loads(Path(args.spec).read_text(encoding="utf-8")) if args.spec else None
     params = params_from_spec(spec)
-    grammar = grammar_for(grammar_name_from_spec(spec))
+    for item in args.set:
+        key, _, value = item.partition("=")
+        try:
+            params[key] = json.loads(value)
+        except json.JSONDecodeError:
+            params[key] = value
+    grammar = grammar_for(args.grammar or grammar_name_from_spec(spec))
     harness = Path(args.harness).resolve()
     if not harness.is_file():
         raise SystemExit("harness not found: %s" % harness)
 
     out = Path(args.out)
-    runner = Sm3Runner(harness, out)
+    runner = Sm3Runner(harness, out, cdb=args.cdb, attribute=args.attribute)
 
     def on_new(outcome, candidate):
         print("[new] %-13s axis=%-9s %s" % (outcome.kind, candidate.meta.get("axis"),
