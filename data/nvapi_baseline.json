@@ -1,0 +1,482 @@
+[
+ {
+  "name": "NvAPI_Mosaic_SetDisplayGrids",
+  "id": "0x4d959a89",
+  "argc": 3,
+  "rc": 0,
+  "status": -130,
+  "raw": "id=0x4d959a89 argc=3 status=-130"
+ },
+ {
+  "name": "NvAPI_Mosaic_GetCurrentTopo",
+  "id": "0xec32944e",
+  "argc": 4,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xec32944e argc=4 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D_Sleep",
+  "id": "0x852cd1d2",
+  "argc": 1,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_D3D_QueryModifiedWSupport",
+  "id": "0xcbf9f4f5",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xcbf9f4f5 argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_GetSupportedMosaicTopologies",
+  "id": "0x410b5c25",
+  "argc": 1,
+  "rc": 0,
+  "status": -3,
+  "raw": "id=0x410b5c25 argc=1 status=-3"
+ },
+ {
+  "name": "NvAPI_VIO_QueryTopology",
+  "id": "0x869534e2",
+  "argc": 1,
+  "rc": 0,
+  "status": -104,
+  "raw": "id=0x869534e2 argc=1 status=-104"
+ },
+ {
+  "name": "NvAPI_RegisterRiseCallback",
+  "id": "0x9cfe8f94",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0x9cfe8f94 no such id"
+ },
+ {
+  "name": "NvAPI_D3D9_BindSwapBarrier",
+  "id": "0x9c39c246",
+  "argc": 3,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_RequestRise",
+  "id": "0x5047de98",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0x5047de98 no such id"
+ },
+ {
+  "name": "NvAPI_GPU_GetScanoutConfigurationEx",
+  "id": "0xe2e1e6f0",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xe2e1e6f0 argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_Disp_InfoFrameControl",
+  "id": "0x6067af3f",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x6067af3f argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D12_Mosaic_GetViewportAndGpuPartitions",
+  "id": "0xb092b818",
+  "argc": 1,
+  "rc": 0,
+  "status": -5,
+  "raw": "id=0xb092b818 argc=1 status=-5"
+ },
+ {
+  "name": "NvAPI_GPU_GetScanoutConfiguration",
+  "id": "0x6a9f5b63",
+  "argc": 3,
+  "rc": 0,
+  "status": -5,
+  "raw": "id=0x6a9f5b63 argc=3 status=-5"
+ },
+ {
+  "name": "NvAPI_NGX_SetNGXOverrideState",
+  "id": "0xb60fcb4e",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0xb60fcb4e no such id"
+ },
+ {
+  "name": "NvAPI_GSync_SetSyncStateSettings",
+  "id": "0x60acdfdd",
+  "argc": 3,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x60acdfdd argc=3 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D9_QuerySwapGroup",
+  "id": "0xeba4d232",
+  "argc": 4,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_DISP_SetDisplayConfig",
+  "id": "0x5d8cf8de",
+  "argc": 3,
+  "rc": "timeout",
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_D3D9_RegisterResource",
+  "id": "0xa064bdfc",
+  "argc": 1,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_DISP_TryCustomDisplay",
+  "id": "0x1f7db630",
+  "argc": 3,
+  "rc": 0,
+  "status": -5,
+  "raw": "id=0x1f7db630 argc=3 status=-5"
+ },
+ {
+  "name": "NvAPI_D3D9_Present",
+  "id": "0x5650beb",
+  "argc": 6,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_D3D11_RSSetViewportsPixelShadingRates",
+  "id": "0x34f7938f",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x34f7938f argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_SYS_GetLidAndDockInfo",
+  "id": "0xcda14d8a",
+  "argc": 1,
+  "rc": 0,
+  "status": -104,
+  "raw": "id=0xcda14d8a argc=1 status=-104"
+ },
+ {
+  "name": "NvAPI_Disp_HdrColorControl",
+  "id": "0x351da224",
+  "argc": 2,
+  "rc": 0,
+  "status": -187,
+  "raw": "id=0x351da224 argc=2 status=-187"
+ },
+ {
+  "name": "NvAPI_D3D9_StretchRectEx",
+  "id": "0x22de03aa",
+  "argc": 6,
+  "rc": 0,
+  "status": -170,
+  "raw": "id=0x22de03aa argc=6 status=-170"
+ },
+ {
+  "name": "NvAPI_Disp_GetColorimetry",
+  "id": "0xb421ad",
+  "argc": 2,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0x00b421ad no such id"
+ },
+ {
+  "name": "NvAPI_D3D_QueryMultiViewSupport",
+  "id": "0xb6e0a41c",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xb6e0a41c argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_GPU_QueryIlluminationSupport",
+  "id": "0xa629da31",
+  "argc": 1,
+  "rc": 0,
+  "status": -101,
+  "raw": "id=0xa629da31 argc=1 status=-101"
+ },
+ {
+  "name": "NvAPI_D3D_SetModifiedWMode",
+  "id": "0x6ea4bf4",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x06ea4bf4 argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D12_SetNvShaderExtnSlotSpace",
+  "id": "0xac2dfeb5",
+  "argc": 3,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_UninstallRise",
+  "id": "0xab8d09f6",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0xab8d09f6 no such id"
+ },
+ {
+  "name": "NvAPI_NGX_CloseSession",
+  "id": "0xea344918",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0xea344918 no such id"
+ },
+ {
+  "name": "NvAPI_DISP_GetAdaptiveSyncData",
+  "id": "0xb73d1ee9",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xb73d1ee9 argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_NGX_OpenSession",
+  "id": "0x1e8617e",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0x01e8617e no such id"
+ },
+ {
+  "name": "NvAPI_D3D9_QueryMaxSwapGroup",
+  "id": "0x5995410d",
+  "argc": 3,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_SYS_GetLogicalGPUs",
+  "id": "0xccfffc10",
+  "argc": 1,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xccfffc10 argc=1 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D_QueryLateLatchSupport",
+  "id": "0x8ceca0ec",
+  "argc": 2,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_DirectD3D12GraphicsCommandList_Release",
+  "id": "0x99da3dde",
+  "argc": 1,
+  "rc": 0,
+  "status": -4,
+  "raw": "id=0x99da3dde argc=1 status=-4"
+ },
+ {
+  "name": "NvAPI_DISP_SetVirtualRefreshRateData",
+  "id": "0x5abbe6a3",
+  "argc": 2,
+  "rc": 0,
+  "status": -187,
+  "raw": "id=0x5abbe6a3 argc=2 status=-187"
+ },
+ {
+  "name": "NvAPI_GPU_GetScanoutCompositionParameter",
+  "id": "0x58fe51e6",
+  "argc": 4,
+  "rc": 0,
+  "status": -5,
+  "raw": "id=0x58fe51e6 argc=4 status=-5"
+ },
+ {
+  "name": "NvAPI_DISP_GetPreferredStereoDisplay",
+  "id": "0x1f6b4666",
+  "argc": 1,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x1f6b4666 argc=1 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D1x_GetGraphicsCapabilities",
+  "id": "0x52b1499a",
+  "argc": 3,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x52b1499a argc=3 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D_GetLatency",
+  "id": "0x1a587f9c",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x1a587f9c argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_Disp_GetDisplayIdsFromTarget",
+  "id": "0xe7e5f89e",
+  "argc": 1,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xe7e5f89e argc=1 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D11_RSGetPixelShadingRateSampleOrder",
+  "id": "0x92442a1",
+  "argc": 2,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x092442a1 argc=2 status=-9"
+ },
+ {
+  "name": "NvAPI_DRS_EnumAvailableSettingValues",
+  "id": "0x2ec39f90",
+  "argc": 3,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x2ec39f90 argc=3 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D1x_BindSwapBarrier",
+  "id": "0x9de8c729",
+  "argc": 3,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_Mosaic_ValidateDisplayGrids",
+  "id": "0xcf43903d",
+  "argc": 4,
+  "rc": 0,
+  "status": -130,
+  "raw": "id=0xcf43903d argc=4 status=-130"
+ },
+ {
+  "name": "NvAPI_D3D_RegisterDevice",
+  "id": "0x8c02c4d0",
+  "argc": 1,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_D3D9_UnregisterResource",
+  "id": "0xbb2b17aa",
+  "argc": 1,
+  "rc": 0,
+  "status": 0,
+  "raw": "id=0xbb2b17aa argc=1 status=0"
+ },
+ {
+  "name": "NvAPI_DISP_SetPreferredStereoDisplay",
+  "id": "0xc9d0e25f",
+  "argc": 1,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0xc9d0e25f argc=1 status=-9"
+ },
+ {
+  "name": "NvAPI_GetCurrentMosaicTopology",
+  "id": "0xf60852bd",
+  "argc": 2,
+  "rc": 0,
+  "status": -3,
+  "raw": "id=0xf60852bd argc=2 status=-3"
+ },
+ {
+  "name": "NvAPI_D3D11_CreateCubinComputeShaderExV2",
+  "id": "0xf2c71d48",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0xf2c71d48 no such id"
+ },
+ {
+  "name": "NvAPI_DISP_SetNvManagedDedicatedDisplayMetadata",
+  "id": "0x3d8b129a",
+  "argc": 1,
+  "rc": 0,
+  "status": -104,
+  "raw": "id=0x3d8b129a argc=1 status=-104"
+ },
+ {
+  "name": "NvAPI_D3D9_VideoSetStereoInfo",
+  "id": "0xb852f4db",
+  "argc": 2,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_Disp_SetOutputMode",
+  "id": "0x98e7661a",
+  "argc": 2,
+  "rc": 0,
+  "status": -5,
+  "raw": "id=0x98e7661a argc=2 status=-5"
+ },
+ {
+  "name": "NvAPI_OGL_ExpertModeDefaultsGet",
+  "id": "0xae921f12",
+  "argc": 3,
+  "rc": 0,
+  "status": -1,
+  "raw": "id=0xae921f12 argc=3 status=-1"
+ },
+ {
+  "name": "NvAPI_D3D11_GetCudaMergedTextureSamplerObject",
+  "id": "0x5d637d8f",
+  "argc": 1,
+  "rc": 1,
+  "status": null,
+  "raw": "id=0x5d637d8f no such id"
+ },
+ {
+  "name": "NvAPI_Disp_GetSourceHdrMetadata",
+  "id": "0xd3f52da",
+  "argc": 3,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x0d3f52da argc=3 status=-9"
+ },
+ {
+  "name": "NvAPI_D3D11_BeginUAVOverlap",
+  "id": "0x65b93ca8",
+  "argc": 1,
+  "rc": 3221225477,
+  "status": null,
+  "raw": ""
+ },
+ {
+  "name": "NvAPI_DISP_GetTiming",
+  "id": "0x175167e9",
+  "argc": 3,
+  "rc": 0,
+  "status": -9,
+  "raw": "id=0x175167e9 argc=3 status=-9"
+ }
+]
