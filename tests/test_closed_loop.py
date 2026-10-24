@@ -127,3 +127,35 @@ class TestStopConditions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBlindRetryControl(unittest.TestCase):
+    """The control arm: same retry budget, no diagnosis handed over."""
+
+    def _run(self, blind):
+        seen = []
+
+        def feedback(state):
+            seen.append(state)
+            return state
+
+        cfg = LoopConfig(cve_id="CVE-X", max_iterations=2, blind_retry=blind)
+        stages = {
+            "generate": lambda s: LoopState(iteration=s.iteration, candidate_file="poc.py"),
+            "execute": lambda s: LoopState(iteration=s.iteration,
+                                           candidate_file=s.candidate_file, reached=False),
+            "feedback": feedback,
+        }
+        ClosedLoopController(cfg, stages, lambda s: _result("NOT_VERIFIED", ["x"])).run()
+        return seen
+
+    def test_normal_arm_hands_over_the_real_diagnosis(self):
+        state = self._run(blind=False)[0]
+        self.assertEqual(state.diagnosis_code, "PATH_NOT_REACHED")
+        self.assertTrue(state.directive)
+
+    def test_blind_arm_hands_over_a_generic_reason_only(self):
+        state = self._run(blind=True)[0]
+        self.assertEqual(state.diagnosis_code, "RETRY_BLIND")
+        self.assertIn("differential", state.directive)
+        self.assertNotIn("instrument", state.directive.lower())

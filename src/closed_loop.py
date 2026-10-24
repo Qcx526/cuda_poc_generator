@@ -49,6 +49,10 @@ class LoopConfig(BaseModel):
     allow_native: bool = False
     timeout_seconds: int = Field(default=600, ge=60, le=3600)
     project_root: str = ""
+    # Control arm: retry after a failure but withhold the diagnosis. Comparing
+    # it with the normal loop separates "another attempt" from "an informed
+    # attempt"; without that control the gain is merely more samples.
+    blind_retry: bool = False
 
 
 class LoopState(BaseModel):
@@ -118,6 +122,16 @@ class ClosedLoopController:
         return None
 
     # -- loop ------------------------------------------------------------
+
+    def _feedback_state(self, state: LoopState) -> LoopState:
+        """What the next iteration is told about this failure."""
+        if not self.config.blind_retry:
+            return state
+        return state.model_copy(update={
+            "diagnosis_code": "RETRY_BLIND",
+            "directive": ("The previous attempt did not satisfy the differential "
+                          "condition. Produce another candidate."),
+        })
 
     def _stage_failure(self, trace: List[IterationRecord], iteration: int,
                        stage_name: str, detail: str) -> LoopResult:
@@ -192,7 +206,7 @@ class ClosedLoopController:
                     reasons=list(result.reasons), trace=trace)
             # Attributable failure: hand the directive to the next iteration.
             if "feedback" in self.stages:
-                state = self.stages["feedback"](state)
+                state = self.stages["feedback"](self._feedback_state(state))
 
         return LoopResult(
             cve_id=self.config.cve_id, status="EXHAUSTED",

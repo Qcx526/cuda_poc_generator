@@ -27,12 +27,13 @@ def build_controller(*, cve_id: str, tier: str, iterations: int, image: str,
                      python_exe: str, runner=None,
                      fixed_candidate: Optional[str] = None,
                      module: str = "", rva: int = 0,
-                     cdb_path: str = "") -> ClosedLoopController:
+                     cdb_path: str = "",
+                     blind_retry: bool = False) -> ClosedLoopController:
     """Wire the three stages and the grader into a controller."""
     config = LoopConfig(cve_id=cve_id, tier=tier, max_iterations=iterations,
                         container_image=image, samples_dir=str(workdir),
                         allow_kernel=allow_kernel, allow_native=allow_native,
-                        project_root=str(project_root))
+                        project_root=str(project_root), blind_retry=blind_retry)
     context = StageContext(project_root=project_root, cve_id=cve_id,
                            container_image=image, workdir=workdir, tier=tier,
                            python_exe=python_exe, module=module, rva=rva,
