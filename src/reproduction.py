@@ -301,11 +301,13 @@ def decide(evidence: ReproductionEvidence) -> ReproductionResult:
     if benign_crashes:
         return result("UNKNOWN", [
             f"良性基线中有 {benign_crashes} 个样本同样崩溃；样本不具区分力"])
-    if control and control_crashes == len(control):
-        # Every one-variable control crashed: the claimed trigger window is not
-        # supported, even though the malicious samples did crash.
+    if control and control_crashes:
+        # A one-variable control crashing means the crash is not tied to the
+        # controlled variable, so the differential has not isolated anything -
+        # whether one control or all of them crashed. Counting that as support
+        # would credit the tool with a trigger it did not demonstrate.
         return result("UNKNOWN", [
-            f"机制对照 {control_crashes}/{len(control)} 全部崩溃；"
+            f"机制对照 {control_crashes}/{len(control)} 个同样崩溃；"
             "所声称的触发条件未得到支持，崩溃不可归因于受控变量"])
     reasons = [
         f"受控样本 {malicious_crashes}/{len(malicious)} 个产生崩溃退出码",
@@ -313,13 +315,7 @@ def decide(evidence: ReproductionEvidence) -> ReproductionResult:
         "目标工具版本处于受影响区间" if evidence.target_version_in_range else "目标版本区间未提供，按未知处理",
     ]
     if control:
-        if control_crashes:
-            crashed = ", ".join(run.artifact for run in control if run.crashed)
-            reasons.append(
-                f"机制对照 {control_crashes}/{len(control)} 个同样崩溃（{crashed}）："
-                "该崩溃不独属于恶意载荷，单一变量的隔离结论未成立")
-        else:
-            reasons.append(f"机制对照 {len(control)} 个全部未崩溃")
+        reasons.append(f"机制对照 {len(control)} 个全部未崩溃")
     if evidence.root_cause_proof_recorded:
         reasons.append("已记录根因级证据；CVE 级 VERIFIED 仍须独立验证器与人工复核")
     else:

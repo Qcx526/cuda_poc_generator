@@ -128,10 +128,10 @@ class TestVerdictRules(unittest.TestCase):
         self.assertEqual(result.control_runs, 1)
         self.assertTrue(any("未采集寄存器" in reason for reason in result.reasons))
 
-    def test_crashing_mechanism_control_is_reported_but_does_not_block(self):
-        # One control crashing among several shows the crash is not
-        # payload-exclusive; that is a caveat on attribution, not a
-        # false-positive signal.
+    def test_any_crashing_control_blocks_support(self):
+        # One control crashing among several already shows the crash is not tied
+        # to the controlled variable. Counting it as support would claim a
+        # trigger the run did not isolate, so it is refused instead of noted.
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
         with_controls = attach_runs(base, [
             {"artifact": "benign.cubin", "exit_code": 0},
@@ -139,9 +139,9 @@ class TestVerdictRules(unittest.TestCase):
             {"artifact": "_ctrlC_size_shrunk.cubin", "exit_code": CRASH},
         ])
         result = decide(with_controls)
-        self.assertEqual(result.verdict, "SUPPORTED")
+        self.assertNotEqual(result.verdict, "SUPPORTED")
         self.assertEqual(result.control_crashes, 1)
-        self.assertTrue(any("不独属于恶意载荷" in reason for reason in result.reasons))
+        self.assertTrue(any("机制对照" in reason for reason in result.reasons))
 
     def test_all_controls_crashing_refutes_the_claimed_trigger(self):
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
@@ -152,7 +152,7 @@ class TestVerdictRules(unittest.TestCase):
         ])
         result = decide(attached)
         self.assertEqual(result.verdict, "UNKNOWN")
-        self.assertIn("全部崩溃", result.reasons[0])
+        self.assertIn("同样崩溃", result.reasons[0])
 
     def test_benign_baseline_that_also_crashes_removes_discriminating_power(self):
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
@@ -267,3 +267,17 @@ class TestEvidenceModel(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_a_crashing_control_blocks_support_even_when_not_all_of_them_crash():
+    """One crashing control already breaks the one-variable isolation."""
+    base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
+    attached = attach_runs(base, [
+        {"artifact": "benign.cubin", "exit_code": 0},
+        {"artifact": "_ctrlA_zero_content.cubin", "exit_code": CRASH},
+        {"artifact": "_ctrlB_inbounds.cubin", "exit_code": 0},
+        {"artifact": "_ctrlC_size_shrunk.cubin", "exit_code": 0},
+    ])
+    result = decide(attached)
+    assert result.verdict != "SUPPORTED"
+    assert any("机制对照" in reason for reason in result.reasons)
