@@ -166,6 +166,29 @@ def lint_legacy_token_search_on_modern_profile(code: str) -> List[str]:
 # Entry point ------------------------------------------------------------
 
 
+_ELF_LAYOUT_TOKENS = ("e_shoff", "e_shnum", "sh_offset", "shstrtab", "sh_name",
+                      "\\x7felf", "elf64", "section_header")
+_KIT_IMPORT = re.compile(r"^\s*(?:from\s+cpgkit\s+import|import\s+cpgkit)", re.M)
+
+
+def lint_elf_layout_built_by_hand(code: str) -> List[str]:
+    """Flag ELF layout arithmetic written from scratch.
+
+    The mistakes are always the same shape - a section sized to its header, a
+    name never added to the string table, an offset taken before alignment - and
+    the result is a file that looks fine but that the tool reports as having no
+    such section. cpgkit keeps that bookkeeping; hand-rolling it is avoidable
+    work with a known failure mode.
+    """
+    lowered = code.lower()
+    if not any(token in lowered for token in _ELF_LAYOUT_TOKENS):
+        return []
+    if _KIT_IMPORT.search(code):
+        return []
+    return ["ELF section layout is computed by hand "
+            "(e_shoff/shstrtab/sh_offset) without importing cpgkit"]
+
+
 def run_lints(code: str) -> List[Tuple[str, str]]:
     """Run every lint; returns (lint_id, message) pairs, empty when clean."""
     try:
@@ -179,4 +202,6 @@ def run_lints(code: str) -> List[Tuple[str, str]]:
         findings.append(("driver-probe-without-context", message))
     for message in lint_legacy_token_search_on_modern_profile(code):
         findings.append(("legacy-token-search-on-modern-profile", message))
+    for message in lint_elf_layout_built_by_hand(code):
+        findings.append(("elf-layout-built-by-hand", message))
     return findings

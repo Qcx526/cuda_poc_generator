@@ -146,3 +146,32 @@ def run_single_probe(value):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_hand_built_elf_layout_is_flagged():
+    code = (
+        "import struct\n"
+        "image = bytearray(open('a.cubin','rb').read())\n"
+        "assert image[:4] == b'\\x7fELF'\n"
+        "shoff = struct.unpack_from('<Q', image, 0x28)[0]\n"
+        "image[shoff:shoff] = b''\n"
+    )
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "elf-layout-built-by-hand" in ids
+
+
+def test_using_cpgkit_clears_the_elf_lint():
+    code = (
+        "from cpgkit import Elf, check_section_roundtrip\n"
+        "e = Elf('a.cubin')\n"
+        "e.append_section('.x', b'1')\n"
+        "e.save('b.cubin')\n"
+        "check_section_roundtrip('b.cubin', '.x', 1)\n"
+    )
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "elf-layout-built-by-hand" not in ids
+
+
+def test_a_script_that_never_touches_elf_is_not_flagged():
+    ids = [lint_id for lint_id, _ in run_lints("print('hello')\n")]
+    assert "elf-layout-built-by-hand" not in ids
