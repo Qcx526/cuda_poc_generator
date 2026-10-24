@@ -271,6 +271,26 @@ def docker_matrix_stage(config: LoopConfig,
                              candidate_file=state.candidate_file,
                              observation_file=str(log),
                              reached=observation.reached)
+        # Ship the helper next to the candidate: every hand-rolled ELF layout is
+        # a chance to get the string table or the section size wrong.
+        kit_src = Path(config.project_root) / "tools" / "cpgkit" / "cpgkit.py"
+        kit_dst = Path(config.samples_dir) / "cpgkit.py"
+        if kit_src.is_file() and config.project_root:
+            try:
+                kit_dst.write_bytes(kit_src.read_bytes())
+            except OSError:
+                pass
+
+        # Ship the helper next to the candidate: every hand-rolled ELF layout is
+        # a chance to get the string table or the section size wrong.
+        kit_src = Path(config.project_root) / "tools" / "cpgkit" / "cpgkit.py"
+        kit_dst = Path(config.samples_dir) / "cpgkit.py"
+        if kit_src.is_file() and config.project_root:
+            try:
+                kit_dst.write_bytes(kit_src.read_bytes())
+            except OSError:
+                pass
+
         harness = Path(config.samples_dir) / "run_matrix.sh"
         command = ["docker", "run", "--rm", "--network", "none",
                    "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
