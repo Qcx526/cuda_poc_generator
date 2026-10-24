@@ -117,6 +117,8 @@ def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
     ``repeat`` runs each CVE that many independent times and reports the
     success rate over those runs; a single run is too noisy to publish.
     """
+    default_runner = runner is None
+    default_runner = runner is None
     runner = runner or run_one
     rows: List[BatchRow] = []
     for cve_id in cve_ids:
@@ -137,8 +139,11 @@ def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
                 if best is None:
                     best = row
                 continue
+            kwargs = {"index": index}
+            if default_runner:
+                kwargs["blind_retry"] = blind_retry
             row = runner(cve_id, iterations, workdir, project_root,
-                         python_exe, image, index=index, blind_retry=blind_retry)
+                         python_exe, image, **kwargs)
             attempts += 1
             if row.status == "SUPPORTED":
                 successes += 1
