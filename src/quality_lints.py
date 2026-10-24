@@ -166,8 +166,11 @@ def lint_legacy_token_search_on_modern_profile(code: str) -> List[str]:
 # Entry point ------------------------------------------------------------
 
 
-_ELF_LAYOUT_TOKENS = ("e_shoff", "e_shnum", "sh_offset", "shstrtab", "sh_name",
-                      "\\x7felf", "elf64", "section_header")
+# Only adding a section needs the string-table bookkeeping, so only that case
+# is refused. Patching an existing field in place is a supported mutation on its
+# own and must stay allowed - forcing the helper there cost a working target its
+# success rate.
+_ELF_SECTION_CREATION = ("shstrtab", "add_section", "append_section", "new section")
 _KIT_IMPORT = re.compile(r"^\s*(?:from\s+cpgkit\s+import|import\s+cpgkit)", re.M)
 
 
@@ -181,12 +184,12 @@ def lint_elf_layout_built_by_hand(code: str) -> List[str]:
     work with a known failure mode.
     """
     lowered = code.lower()
-    if not any(token in lowered for token in _ELF_LAYOUT_TOKENS):
+    if not any(token in lowered for token in _ELF_SECTION_CREATION):
         return []
     if _KIT_IMPORT.search(code):
         return []
-    return ["ELF section layout is computed by hand "
-            "(e_shoff/shstrtab/sh_offset) without importing cpgkit"]
+    return ["a new ELF section is created by hand (shstrtab bookkeeping) "
+            "without importing cpgkit"]
 
 
 def run_lints(code: str) -> List[Tuple[str, str]]:

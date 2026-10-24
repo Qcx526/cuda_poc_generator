@@ -41,25 +41,6 @@ _CUDA_CODEGEN_SYSTEM_PROMPT = """\
 You are an expert CUDA vulnerability researcher. Your task is to translate a structured \
 CUDA verification strategy into a fully functional, self-contained PoC script.
 
-## ELF inputs (read this before writing code)
-
-If the target parses an ELF/cubin/fatbin, a helper `cpgkit.py` sits in the same
-directory as your script. Use it:
-
-```python
-from cpgkit import Elf, require, check_section_roundtrip
-e = Elf("in.cubin")
-e.append_section(".nv_debug_source", blob)   # also extends the string table
-e.save("out.cubin")
-check_section_roundtrip("out.cubin", ".nv_debug_source", len(blob))
-```
-
-Do not compute `e_shoff` / `sh_offset` / the string table by hand. A section
-whose name never reaches the string table is invisible to every tool, and that
-failure looks exactly like "the parser ignored my section" - hours of tuning the
-wrong thing. A script that manipulates ELF layout without importing cpgkit is
-rejected before it runs.
-
 ## CUDA PoC Hard Requirements
 
 1. **Language**: Python 3.10+ ONLY. Use `ctypes` to call CUDA Driver/Runtime API.
