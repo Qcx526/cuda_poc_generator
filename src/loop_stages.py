@@ -101,6 +101,23 @@ def make_generate_stage(context: StageContext,
 # -- execute -------------------------------------------------------------
 
 
+def ship_helpers(context: StageContext, host_dir: Path) -> None:
+    """Copy the helper library next to the candidate before it runs.
+
+    The candidate is generated from scratch every attempt, so the bookkeeping
+    that a library gets right - extending the string table, sizing a section -
+    is re-derived from nothing each time. Shipping the library removes that
+    class of mistake instead of asking the prompt to prevent it.
+    """
+    source = Path(context.project_root) / "tools" / "cpgkit" / "cpgkit.py"
+    if not source.is_file():
+        return
+    try:
+        (Path(host_dir) / "cpgkit.py").write_bytes(source.read_bytes())
+    except OSError:
+        pass  # a read-only workdir must not take the run down
+
+
 def build_docker_command(context: StageContext, candidate: Path) -> List[str]:
     """Hardened container command; identical flags to the validated manual runs."""
     host_dir = candidate.resolve().parent.as_posix()
@@ -145,6 +162,7 @@ def make_execute_stage(context: StageContext,
             error = None
         else:
             if context.tier == "userland_toolchain":
+                ship_helpers(context, candidate.resolve().parent)
                 command = build_docker_command(context, candidate)
             else:
                 command = [context.python_exe, str(candidate)]
