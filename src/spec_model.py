@@ -307,16 +307,6 @@ class VulnSpec(BaseModel):
                   if getattr(claim, "verified_by", "") == "execution"]
         if proven:
             lines.append("verified by execution: %s" % " | ".join(proven[:3]))
-        lines.append(
-            "helpers: cpgkit.py sits in the working directory; "
-            "Elf(path).append_section(name, blob) keeps the string table consistent, "
-            "check_section_roundtrip(path, name, size) re-reads the file to prove the "
-            "section survived. Prefer it over hand-built ELF layouts.")
-        lines.append(
-            "helpers: cpgkit.py sits in the working directory; "
-            "Elf(path).append_section(name, blob) keeps the string table consistent, "
-            "check_section_roundtrip(path, name, size) re-reads the file to prove the "
-            "section survived. Prefer it over hand-built ELF layouts.")
         if self.history.observed and include_observed:
             lines.append("observed to crash (reuse these mutations): %s"
                          % "; ".join(self.history.observed[:6]))
