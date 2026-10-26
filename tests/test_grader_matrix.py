@@ -70,3 +70,12 @@ def test_script_is_written_without_carriage_returns(tmp_path):
     target = tmp_path / "_grader_matrix.sh"
     _write_matrix_script(target, [["faketool", "{artifact}"]])
     assert b"\r" not in target.read_bytes()
+
+
+def test_the_fallback_is_capped():
+    """Undeclared sweeps must not decide the run length."""
+    from src.grader_matrix import FALLBACK_LIMIT
+
+    script = render_matrix_script([["faketool", "{artifact}"]])
+    assert "count" in script
+    assert str(FALLBACK_LIMIT) in script

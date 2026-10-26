@@ -268,6 +268,21 @@ def lint_missing_run_lines(code: str) -> List[str]:
     return []
 
 
+def lint_missing_artifact_manifest(code: str) -> List[str]:
+    """Flag a script that produces artifacts without declaring their roles.
+
+    The grader labels roles from `artifacts.json`. Without it, roles fall back to
+    filename prefixes and every undeclared file gets executed - both of which
+    have already produced a wrong verdict and a twenty-four minute run.
+    """
+    if "artifacts.json" in code:
+        return []
+    if ".cubin" not in code and ".elf" not in code and ".fatbin" not in code:
+        return []
+    return ["the script produces ELF artifacts but never writes artifacts.json, "
+            "so their roles are undeclared"]
+
+
 def run_lints(code: str) -> List[Tuple[str, str]]:
     """Run every lint; returns (lint_id, message) pairs, empty when clean."""
     try:
@@ -289,4 +304,6 @@ def run_lints(code: str) -> List[Tuple[str, str]]:
         findings.append(("py38-incompatible-syntax", message))
     for message in lint_missing_run_lines(code):
         findings.append(("missing-run-lines", message))
+    for message in lint_missing_artifact_manifest(code):
+        findings.append(("missing-artifact-manifest", message))
     return findings

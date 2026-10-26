@@ -33,7 +33,8 @@ UNCLASSIFIED = "UNCLASSIFIED"
 _LINT_IDS = ("version-classifier-unknown-major", "driver-probe-without-context",
              "legacy-token-search-on-modern-profile", "elf-layout-built-by-hand",
              "project-import-in-poc", "py38-incompatible-syntax",
-             "missing-run-lines")
+             "missing-run-lines",
+             "missing-artifact-manifest")
 
 _DIRECTIVES = {
     SYNTAX_ERROR: (

@@ -232,3 +232,16 @@ def test_the_required_run_line_clears_it():
     code = 'print("[CPG_RUN] benign.cubin exit=0")\n'
     ids = [lint_id for lint_id, _ in run_lints(code)]
     assert "missing-run-lines" not in ids
+
+
+def test_artifact_producer_without_a_manifest_is_flagged():
+    code = 'open("benign.cubin", "wb").write(b"\\x7fELF")\nprint("[CPG_RUN] benign.cubin exit=0")\n'
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "missing-artifact-manifest" in ids
+
+
+def test_writing_the_manifest_clears_it():
+    code = ('open("artifacts.json", "w").write("{}")\n'
+            'print("[CPG_RUN] benign.cubin exit=0")\n')
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "missing-artifact-manifest" not in ids

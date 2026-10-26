@@ -17,6 +17,10 @@ import shlex
 from typing import List, Optional, Sequence
 
 ARTIFACT_GLOBS = ("*.cubin", "*.elf", "*.fatbin", "/tmp/*.cubin", "/tmp/*.elf")
+# Undeclared artifacts are a fallback, not the plan. A sweep of hundreds of
+# variants once held one run in the container for twenty-four minutes; the cap
+# keeps a missing manifest from turning into a missing afternoon.
+FALLBACK_LIMIT = 12
 
 
 def tool_name(invocation: Sequence[str]) -> str:
@@ -70,8 +74,11 @@ def render_matrix_script(invocations: Sequence[Sequence[str]],
         lines.append("done")
         lines.append("true")
         return "\n".join(lines) + "\n"
+    lines.append("count=0")
     for glob in ARTIFACT_GLOBS:
         lines.append("for artifact in %s; do" % glob)
+        lines.append("  count=$((count + 1)); [ \"$count\" -gt %d ] && continue"
+                     % FALLBACK_LIMIT)
         lines.append("  [ -f \"$artifact\" ] || continue")
         lines.append("  base=$(basename \"$artifact\")")
         for invocation in invocations:
