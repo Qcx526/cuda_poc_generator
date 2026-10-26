@@ -248,6 +248,26 @@ def lint_builtin_generics_on_py38(code: str, tree: ast.Module) -> List[str]:
             "Optional or add 'from __future__ import annotations'" % ", ".join(sorted(set(hits))[:3])]
 
 
+_OWN_VERDICT_TAGS = ("[CPG_VERDICT]", "[CPG_INFO]")
+
+
+def lint_missing_run_lines(code: str) -> List[str]:
+    """Flag scripts that report results in their own format.
+
+    The grader reads `[CPG_RUN] <file> exit=<code>`; a script that prints
+    `[CPG_VERDICT] ...` instead is unreadable no matter how correct its own
+    conclusion was, and the run is recorded as "no observations" - the most
+    misleading failure there is, because the work was done.
+    """
+    if "[CPG_RUN]" in code:
+        return []
+    hits = [tag for tag in _OWN_VERDICT_TAGS if tag in code]
+    if hits:
+        return ["the script reports results as %s instead of the required "
+                "'[CPG_RUN] <file> exit=<code>' line" % ", ".join(hits)]
+    return []
+
+
 def run_lints(code: str) -> List[Tuple[str, str]]:
     """Run every lint; returns (lint_id, message) pairs, empty when clean."""
     try:
@@ -267,4 +287,6 @@ def run_lints(code: str) -> List[Tuple[str, str]]:
         findings.append(("project-import-in-poc", message))
     for message in lint_builtin_generics_on_py38(code, tree):
         findings.append(("py38-incompatible-syntax", message))
+    for message in lint_missing_run_lines(code):
+        findings.append(("missing-run-lines", message))
     return findings

@@ -220,3 +220,15 @@ def test_future_annotations_clears_the_py38_lint():
     code = "from __future__ import annotations\ndef f(x: list[str]) -> None:/n    pass\n"
     ids = [lint_id for lint_id, _ in run_lints(code)]
     assert "py38-incompatible-syntax" not in ids
+
+
+def test_a_custom_verdict_format_is_flagged():
+    code = 'print("[CPG_VERDICT] NOT REPRODUCED")\n'
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "missing-run-lines" in ids
+
+
+def test_the_required_run_line_clears_it():
+    code = 'print("[CPG_RUN] benign.cubin exit=0")\n'
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "missing-run-lines" not in ids

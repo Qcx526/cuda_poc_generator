@@ -61,8 +61,12 @@ def parse_candidate_path(stdout: str) -> Optional[str]:
 def _find_candidate(project_root: Path, cve_id: str) -> Optional[str]:
     """Fall back to the candidate on disk when the CLI exited non-zero."""
     directory = project_root / "data" / "outputs" / cve_id
-    candidates = sorted(directory.glob("cuda_poc_v*.py"),
-                        key=lambda item: item.stat().st_mtime, reverse=True)
+    # ``cuda_poc_v*.py`` also matches ``cuda_poc_v1.invalid.py``, which the
+    # generator saves precisely because it must not run. Falling back to it
+    # executes a file whose first line is "// generation failed".
+    candidates = [item for item in directory.glob("cuda_poc_v*.py")
+                  if ".invalid" not in item.name]
+    candidates.sort(key=lambda item: item.stat().st_mtime, reverse=True)
     return str(candidates[0]) if candidates else None
 
 
