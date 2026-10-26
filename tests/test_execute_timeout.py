@@ -99,3 +99,21 @@ class TestStaleArtifacts(unittest.TestCase):
             self.assertFalse((root / "artifacts.json").exists())
             self.assertTrue((root / "keep.py").exists())
             self.assertEqual(len(list(root.glob("_stale_*/*.cubin"))), 1)
+
+
+class TestStaleLock(unittest.TestCase):
+    def test_a_lock_left_by_a_killed_run_does_not_block_forever(self):
+        import os
+        import time
+
+        from src.artifact_packaging import _locked
+
+        with TemporaryDirectory() as tmp:
+            lock = Path(tmp) / ".packaging.lock"
+            lock.write_text("stale", encoding="utf-8")
+            old = time.time() - 3600
+            os.utime(lock, (old, old))
+
+            with _locked(Path(tmp)):
+                self.assertTrue(lock.exists())
+            self.assertFalse(lock.exists())

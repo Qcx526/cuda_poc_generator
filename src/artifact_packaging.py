@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import time
 from pathlib import Path
 import re
 import stat
@@ -89,16 +90,39 @@ def _write_new(path, raw):
         os.fsync(stream.fileno())
 
 
+_LOCK_STALE_SECONDS = 600
+
+
+def _lock_is_stale(lock) -> bool:
+    """A lock left by a killed process must not block every later run."""
+    try:
+        age = time.time() - lock.stat().st_mtime
+    except OSError:
+        return False
+    return age > _LOCK_STALE_SECONDS
+
+
 @contextmanager
 def _locked(cve_dir):
     cve_dir = _regular_path(cve_dir)
     cve_dir.mkdir(parents=True, exist_ok=True)
     lock = cve_dir / ".packaging.lock"
-    # Exclusive creation prevents concurrent index updates and overwrite races.
-    with lock.open("xb") as stream:
-        stream.write(b"p3b-review-packager/1.0\n")
-        stream.flush()
-        os.fsync(stream.fileno())
+    for _ in range(2):
+        try:
+            # Exclusive creation prevents concurrent index updates and races.
+            with lock.open("xb") as stream:
+                stream.write(b"p3b-review-packager/1.0\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            break
+        except FileExistsError:
+            if not _lock_is_stale(lock):
+                raise
+            # The holder is gone: take the lock over rather than fail forever.
+            try:
+                lock.unlink()
+            except OSError:
+                raise
     try:
         yield
     finally:
