@@ -25,3 +25,18 @@ def test_generation_is_blocked_when_the_generator_says_invalid(tmp_path):
     state = stage(LoopState(iteration=1))
     assert state.stage_error and "STATIC_INVALID" in state.stage_error
     assert state.candidate_file is None
+
+
+def test_minimal_mode_adds_the_size_constraint(monkeypatch):
+    """The constraint is opt-in: absent by default, present when asked for."""
+    import importlib
+
+    import src.code_generator as cg
+
+    monkeypatch.delenv("CPG_MINIMAL_POC", raising=False)
+    importlib.reload(cg)
+    assert "size-constrained" not in cg.system_prompt()
+
+    monkeypatch.setenv("CPG_MINIMAL_POC", "1")
+    assert "size-constrained" in cg.system_prompt()
+    monkeypatch.delenv("CPG_MINIMAL_POC", raising=False)

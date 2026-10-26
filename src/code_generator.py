@@ -37,6 +37,32 @@ logger = logging.getLogger("cuda_poc_generator.code_generator")
 # ---------------------------------------------------------------------------
 # CUDA PoC 代码生成系统提示
 # ---------------------------------------------------------------------------
+# The grader only needs the differential, so a long script buys nothing when the
+# goal is a verdict: the same four facts fit in a fraction of the output, and
+# output length is what the wall clock tracks.
+_MINIMAL_BLOCK = """
+## Output size (this run is size-constrained)
+
+This run is graded on the differential alone: a benign baseline that does not
+fault, a crafted artifact that does, and a one-variable control that does not.
+Emit only what those four facts need - baseline, craft, control, execute,
+report exit codes. Skip extra evidence collection, per-field sweeps and
+diagnostic dumps. Keep the script under 250 lines.
+
+Naming still decides the verdict: the baseline file starts with `benign`, each
+one-variable control starts with `ctrl`, and every execution prints
+`[CPG_RUN] <file> exit=<code>`.
+"""
+
+
+def system_prompt() -> str:
+    """The generation prompt; size constraints only when asked for."""
+    import os as _os
+    if _os.environ.get("CPG_MINIMAL_POC") == "1":
+        return _CUDA_CODEGEN_SYSTEM_PROMPT + _MINIMAL_BLOCK
+    return _CUDA_CODEGEN_SYSTEM_PROMPT
+
+
 _CUDA_CODEGEN_SYSTEM_PROMPT = """\
 You are an expert CUDA vulnerability researcher. Your task is to translate a structured \
 CUDA verification strategy into a fully functional, self-contained PoC script.
@@ -319,7 +345,7 @@ class CudaCodeGenerator:
             logger.info("正在生成 CUDA PoC 代码（迭代 #%d）…", iteration)
             raw_code = self.llm.chat(
                 messages=[
-                    {"role": "system", "content": _CUDA_CODEGEN_SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt()},
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.0,  # reproducibility: same input must give the same candidate
@@ -339,7 +365,7 @@ class CudaCodeGenerator:
                 )
                 raw_code = self.llm.chat(
                     messages=[
-                        {"role": "system", "content": _CUDA_CODEGEN_SYSTEM_PROMPT},
+                        {"role": "system", "content": system_prompt()},
                         {"role": "user", "content": user_prompt},
                         {"role": "assistant", "content": code[:4000]},
                         {"role": "user", "content": correction_prompt},

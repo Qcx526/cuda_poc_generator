@@ -208,6 +208,8 @@ def main(argv: Optional[list] = None) -> int:
                         help="忽略规格中的 observed 知识（消融用）")
     parser.add_argument("--repeat", type=int, default=1,
                         help="每个 CVE 独立重复次数（success@k 的 k）")
+    parser.add_argument("--minimal-poc", action="store_true", default=False,
+                        help="constrain generated scripts to the differential only")
     parser.add_argument("--blind-retry", action="store_true", default=False,
                         help="retry after a failure without telling the model why")
     parser.add_argument("--cve", action="append", default=[])
