@@ -18,25 +18,26 @@ class TestSampleDiscovery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             for name in ("benign.cubin", "_ctrlA_zero.cubin", "malicious_1.cubin",
-                         "poc_x.cubin", "notes.txt"):
+                         "poc_x.cubin", "sample_a.cubin", "notes.txt"):
                 (root / name).write_bytes(b"\x7fELF")
             samples = discover(root)
             labels = {s.name: s.label for s in samples}
             self.assertEqual(labels["benign.cubin"], "BENIGN")
             self.assertEqual(labels["_ctrlA_zero.cubin"], "CONTROL")
             self.assertEqual(labels["malicious_1.cubin"], "MALICIOUS")
-            self.assertEqual(labels["poc_x.cubin"], "UNKNOWN")
+            self.assertEqual(labels["poc_x.cubin"], "MALICIOUS")
+            self.assertEqual(labels["sample_a.cubin"], "UNKNOWN")
             self.assertNotIn("notes.txt", labels)
 
     def test_manifest_only_overrides_unrecognised_names(self):
-        samples = [Sample("poc_x.bin", Path("poc_x.bin"), "UNKNOWN"),
+        samples = [Sample("sample_a.bin", Path("sample_a.bin"), "UNKNOWN"),
                    Sample("benign.bin", Path("benign.bin"), "BENIGN")]
-        resolved = apply_manifest(samples, {"poc_x.bin": "CONTROL"})
+        resolved = apply_manifest(samples, {"sample_a.bin": "CONTROL"})
         self.assertEqual(resolved[0].label, "CONTROL")
         with self.assertRaises(ValueError):
             apply_manifest(samples, {"benign.bin": "MALICIOUS"})
         with self.assertRaises(ValueError):
-            apply_manifest(samples, {"poc_x.bin": "WHATEVER"})
+            apply_manifest(samples, {"sample_a.bin": "WHATEVER"})
 
     def test_summary_counts_roles(self):
         samples = [Sample("malicious.bin", Path("m"), "MALICIOUS"),
@@ -127,8 +128,8 @@ class TestGrader(unittest.TestCase):
             log = Path(tmp) / "obs.txt"
             log.write_text("[CPG_LABEL] crafted_overflow.cubin MALICIOUS\n"
                            "[CPG_RUN] crafted_overflow.cubin exit=-11\n"
-                           "[CPG_LABEL] crafted_benign.cubin BENIGN\n"
-                           "[CPG_RUN] crafted_benign.cubin exit=0\n",
+                           "[CPG_LABEL] sample_b.cubin BENIGN\n"
+                           "[CPG_RUN] sample_b.cubin exit=0\n",
                            encoding="utf-8")
             result = make_grader(LoopConfig(cve_id="CVE-X"), version_in_range=True)(
                 LoopState(iteration=1, observation_file=str(log)))

@@ -147,8 +147,8 @@ class TestVerdictRules(unittest.TestCase):
         base = parse_log_file(str(SANITIZED_LOG), target_version_in_range=True)
         attached = attach_runs(base, [
             {"artifact": "benign.cubin", "exit_code": 0},
-            {"artifact": "poc_shsize_12.cubin", "exit_code": CRASH, "label": "CONTROL"},
-            {"artifact": "poc_shsize_24.cubin", "exit_code": CRASH, "label": "CONTROL"},
+            {"artifact": "case_a.bin", "exit_code": CRASH, "label": "CONTROL"},
+            {"artifact": "case_b.bin", "exit_code": CRASH, "label": "CONTROL"},
         ])
         result = decide(attached)
         self.assertEqual(result.verdict, "UNKNOWN")
@@ -213,13 +213,13 @@ class TestExternalRuns(unittest.TestCase):
 
     def test_explicit_label_is_allowed_only_for_an_unrecognisable_name(self):
         attached = attach_runs(evidence(""), [
-            {"artifact": "poc_shsize_12.cubin", "exit_code": 139, "label": "CONTROL"}])
+            {"artifact": "case_a.bin", "exit_code": 139, "label": "CONTROL"}])
         self.assertEqual(attached.runs[0].label, "CONTROL")
 
     def test_explicit_label_must_be_a_known_role(self):
         with self.assertRaises(ValueError):
             attach_runs(evidence(""), [
-                {"artifact": "poc_shsize_12.cubin", "exit_code": 0, "label": "WHATEVER"}])
+                {"artifact": "case_a.bin", "exit_code": 0, "label": "WHATEVER"}])
 
 
 class TestReport(unittest.TestCase):
@@ -281,3 +281,12 @@ def test_a_crashing_control_blocks_support_even_when_not_all_of_them_crash():
     result = decide(attached)
     assert result.verdict != "SUPPORTED"
     assert any("机制对照" in reason for reason in result.reasons)
+
+
+def test_a_crafted_artifact_named_poc_counts_as_malicious():
+    """Most candidates name their artifact poc_*; that is not an unknown role."""
+    from src.reproduction import label_for
+
+    assert label_for("poc_sec08_shsize_56.cubin::cuobjdump") == "MALICIOUS"
+    assert label_for("crafted_a.cubin") == "MALICIOUS"
+    assert label_for("proc_dump.cubin") == "UNKNOWN"

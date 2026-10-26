@@ -138,7 +138,10 @@ def _label(artifact: str) -> RunLabel:
     lowered = artifact.lower()
     # "payload" is deliberately not a malicious marker: "_ctrlE_zero_payload"
     # is a control whose payload is empty.
-    if "malicious" in lowered or "exploit" in lowered:
+    # "poc" and "crafted" are how most candidates name the thing they built;
+    # without them a perfectly good crafted artifact classified as UNKNOWN and
+    # the run reported "no controlled sample recorded" while it sat right there.
+    if re.search(r"(^|[^a-z])(malicious|exploit|poc|crafted|trigger)", lowered):
         return "MALICIOUS"
     if "benign" in lowered and "ctrl" not in lowered and "control" not in lowered:
         return "BENIGN"
