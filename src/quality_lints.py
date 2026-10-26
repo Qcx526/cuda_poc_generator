@@ -210,6 +210,44 @@ def lint_project_import(code: str) -> List[str]:
             "self-contained" % ", ".join(hits[:3])]
 
 
+_BUILTIN_GENERICS = {"list", "dict", "set", "tuple", "frozenset", "type"}
+
+
+def lint_builtin_generics_on_py38(code: str, tree: ast.Module) -> List[str]:
+    """Flag syntax that only works on 3.9+ when the container runs 3.8.
+
+    ``def f(x: list[str])`` is valid syntax and a runtime TypeError on 3.8, so
+    the failure lands at import time and looks like a broken script rather than
+    a version mismatch. ``from __future__ import annotations`` defers the
+    evaluation, so that case is left alone.
+    """
+    source = code
+    if re.search(r"^\s*from\s+__future__\s+import\s+annotations", source, re.M):
+        return []
+    hits = []
+    # Only annotation positions matter: a plain `flags | mask` expression is
+    # ordinary bitwise OR and must never be rejected.
+    annotations = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.arg) and node.annotation is not None:
+            annotations.append(node.annotation)
+        elif isinstance(node, ast.AnnAssign) and node.annotation is not None:
+            annotations.append(node.annotation)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.returns is not None:
+            annotations.append(node.returns)
+    for ann in annotations:
+        for node in ast.walk(ann):
+            if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) \
+                    and node.value.id in _BUILTIN_GENERICS:
+                hits.append("%s[...]" % node.value.id)
+            if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+                hits.append("X | Y")
+    if not hits:
+        return []
+    return ["Python 3.8 runtime: %s is not supported at runtime; use typing.List/"
+            "Optional or add 'from __future__ import annotations'" % ", ".join(sorted(set(hits))[:3])]
+
+
 def run_lints(code: str) -> List[Tuple[str, str]]:
     """Run every lint; returns (lint_id, message) pairs, empty when clean."""
     try:
@@ -227,4 +265,6 @@ def run_lints(code: str) -> List[Tuple[str, str]]:
         findings.append(("elf-layout-built-by-hand", message))
     for message in lint_project_import(code):
         findings.append(("project-import-in-poc", message))
+    for message in lint_builtin_generics_on_py38(code, tree):
+        findings.append(("py38-incompatible-syntax", message))
     return findings

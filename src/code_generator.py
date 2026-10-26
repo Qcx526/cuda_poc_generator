@@ -69,7 +69,11 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
 
 ## CUDA PoC Hard Requirements
 
-1. **Language**: Python 3.10+ ONLY. Use `ctypes` to call CUDA Driver/Runtime API.
+1. **Language**: Python **3.8** - that is the interpreter in the grading container
+   (3.8.10). No `list[str]` / `dict[str, int]` builtin generics and no `X | None`
+   unions unless the file starts with `from __future__ import annotations`.
+   Use `typing.List` / `Optional[X]` instead, or drop the annotations.
+   Use `ctypes` to call CUDA Driver/Runtime API.
    If pycuda is required, provide a fallback to ctypes.
 
 1b. **Self-contained**: the script runs in a bare container that mounts only its

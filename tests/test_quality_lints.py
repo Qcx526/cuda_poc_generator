@@ -201,3 +201,22 @@ def test_stdlib_and_third_party_imports_are_fine():
     code = "import os\nimport struct\nfrom ctypes import c_void_p\n"
     ids = [lint_id for lint_id, _ in run_lints(code)]
     assert "project-import-in-poc" not in ids
+
+
+def test_py38_builtin_generics_in_annotations_are_flagged():
+    code = "def f(items: list[str]) -> dict[str, int]:\n    return {}\n"
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "py38-incompatible-syntax" in ids
+
+
+def test_bitwise_or_outside_annotations_is_not_flagged():
+    """Flags and masks are ordinary arithmetic, not union types."""
+    code = "flags = 1 | 2\nvalue = (flags | 4) & 0xff\n"
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "py38-incompatible-syntax" not in ids
+
+
+def test_future_annotations_clears_the_py38_lint():
+    code = "from __future__ import annotations\ndef f(x: list[str]) -> None:/n    pass\n"
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "py38-incompatible-syntax" not in ids
