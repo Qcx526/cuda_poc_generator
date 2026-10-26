@@ -189,8 +189,14 @@ def quarantine_stale_artifacts(directory: Path) -> int:
     return moved
 
 
-def _declared_artifacts(directory: Path):
-    """Read the manifest; fall back to name prefixes when it is absent."""
+def _declared_artifacts(directory: Path, log_text: str = ""):
+    """Which artifacts play which roles, as the candidate declared them.
+
+    Two explicit forms are accepted and neither is a guess: an artifacts.json,
+    or `[CPG_LABEL] <file> <ROLE>` lines in the run's own output. Candidates
+    emit one or the other in practice, and refusing the second form only pushed
+    runs back onto the filename prefixes.
+    """
     from . import artifacts_manifest
 
     try:
@@ -198,11 +204,18 @@ def _declared_artifacts(directory: Path):
     except artifacts_manifest.ManifestError as exc:
         return None, "[CPG_MANIFEST] invalid: %s" % exc
     pairs = artifacts_manifest.entries(manifest, directory)
+    source = "artifacts.json"
+    if not pairs and log_text:
+        for name, role in _LABEL_LINE.findall(log_text):
+            if (Path(directory) / name).is_file():
+                pairs.append((name, role.upper()))
+        pairs = list(dict.fromkeys(pairs))
+        source = "CPG_LABEL lines"
     problems = artifacts_manifest.validate(manifest, pairs)
     if not pairs:
         return None, "[CPG_MANIFEST] missing: %s" % "; ".join(problems)
-    note = "[CPG_MANIFEST] %d artifacts declared" % len(pairs)
-    if problems:
+    note = "[CPG_MANIFEST] %d artifacts declared via %s" % (len(pairs), source)
+    if problems and source == "artifacts.json":
         note += " (%s)" % "; ".join(problems)
     return [list(pair) for pair in pairs], note
 
@@ -245,8 +258,14 @@ def quarantine_stale_artifacts(directory: Path) -> int:
     return moved
 
 
-def _declared_artifacts(directory: Path):
-    """Read the manifest; fall back to name prefixes when it is absent."""
+def _declared_artifacts(directory: Path, log_text: str = ""):
+    """Which artifacts play which roles, as the candidate declared them.
+
+    Two explicit forms are accepted and neither is a guess: an artifacts.json,
+    or `[CPG_LABEL] <file> <ROLE>` lines in the run's own output. Candidates
+    emit one or the other in practice, and refusing the second form only pushed
+    runs back onto the filename prefixes.
+    """
     from . import artifacts_manifest
 
     try:
@@ -254,11 +273,18 @@ def _declared_artifacts(directory: Path):
     except artifacts_manifest.ManifestError as exc:
         return None, "[CPG_MANIFEST] invalid: %s" % exc
     pairs = artifacts_manifest.entries(manifest, directory)
+    source = "artifacts.json"
+    if not pairs and log_text:
+        for name, role in _LABEL_LINE.findall(log_text):
+            if (Path(directory) / name).is_file():
+                pairs.append((name, role.upper()))
+        pairs = list(dict.fromkeys(pairs))
+        source = "CPG_LABEL lines"
     problems = artifacts_manifest.validate(manifest, pairs)
     if not pairs:
         return None, "[CPG_MANIFEST] missing: %s" % "; ".join(problems)
-    note = "[CPG_MANIFEST] %d artifacts declared" % len(pairs)
-    if problems:
+    note = "[CPG_MANIFEST] %d artifacts declared via %s" % (len(pairs), source)
+    if problems and source == "artifacts.json":
         note += " (%s)" % "; ".join(problems)
     return [list(pair) for pair in pairs], note
 
@@ -287,12 +313,13 @@ def build_docker_command(context: StageContext, candidate: Path,
 _MATRIX_TIMEOUT = 120
 
 
-def _matrix_pass(context: StageContext, host_dir: Path, runner: Runner) -> str:
+def _matrix_pass(context: StageContext, host_dir: Path, runner: Runner,
+                 candidate_output: str = "") -> str:
     """Run the declared tools over the declared artifacts, after the fact."""
     invocations = spec_invocations(context)
     if not invocations:
         return ""
-    declared, note = _declared_artifacts(host_dir)
+    declared, note = _declared_artifacts(host_dir, candidate_output)
     target = Path(host_dir) / "_grader_matrix.sh"
     try:
         _write_matrix_script(target, invocations, declared)
@@ -379,7 +406,8 @@ def make_execute_stage(context: StageContext,
             # Second pass, after the candidate has had its chance to declare:
             # the manifest is written during the run, so reading it earlier
             # always found nothing and silently fell back to a directory sweep.
-            output = output + _matrix_pass(context, candidate.resolve().parent, runner)
+            output = output + _matrix_pass(context, candidate.resolve().parent, runner,
+                                           candidate_output=output)
         context.workdir.mkdir(parents=True, exist_ok=True)
         log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
         log.write_text(output + detail, encoding="utf-8")

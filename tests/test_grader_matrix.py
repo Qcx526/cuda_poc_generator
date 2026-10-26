@@ -159,3 +159,17 @@ def test_the_matrix_runs_after_the_candidate_not_before(tmp_path):
     script = (tmp_path / "_grader_matrix.sh").read_text(encoding="utf-8")
     assert "[CPG_LABEL] benign.cubin BENIGN" in script
     assert "for artifact in *.cubin" not in script
+
+
+def test_label_lines_count_as_a_declaration(tmp_path):
+    """Candidates declare roles in one of two ways; both are explicit."""
+    from src.loop_stages import _declared_artifacts
+
+    (tmp_path / "benign.cubin").write_bytes(b"\x7fELF")
+    (tmp_path / "poc.cubin").write_bytes(b"\x7fELF")
+    log = "[CPG_LABEL] benign.cubin BENIGN\n[CPG_LABEL] poc.cubin MALICIOUS\n"
+
+    pairs, note = _declared_artifacts(tmp_path, log)
+
+    assert sorted(pairs) == [["benign.cubin", "BENIGN"], ["poc.cubin", "MALICIOUS"]]
+    assert "CPG_LABEL" in note
