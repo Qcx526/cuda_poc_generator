@@ -67,6 +67,24 @@ _CUDA_CODEGEN_SYSTEM_PROMPT = """\
 You are an expert CUDA vulnerability researcher. Your task is to translate a structured \
 CUDA verification strategy into a fully functional, self-contained PoC script.
 
+## Verdict contract (the grader needs exactly these three lines)
+
+Print one line per execution, on its own line, no prefixes:
+
+```
+[CPG_RUN] benign.cubin exit=0
+[CPG_RUN] <your crafted artifact>.cubin exit=<code>
+[CPG_RUN] ctrl_<what you restored>.cubin exit=0
+```
+
+- The baseline **must** be executed and reported, even when it simply exits 0.
+  Compiling it without running it is not evidence, and a missing baseline line
+  makes the whole run unjudgeable no matter how the crafted file behaved.
+- The baseline file name **must** start with `benign`; each one-variable control
+  **must** start with `ctrl`.
+- Repeat each execution twice and report both lines: the same artifact can fault
+  once and not the next time, and the grader needs to see that.
+
 ## CUDA PoC Hard Requirements
 
 1. **Language**: Python **3.8** - that is the interpreter in the grading container
