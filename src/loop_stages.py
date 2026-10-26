@@ -131,7 +131,23 @@ def ship_helpers(context: StageContext, host_dir: Path) -> None:
         pass  # a read-only workdir must not take the run down
 
 
-def build_docker_command(context: StageContext, candidate: Path) -> List[str]:
+def spec_invocations(context: StageContext) -> List[List[str]]:
+    """Every tool the specification says can observe this fault."""
+    from .grader_matrix import parse_invocations
+    from .spec_model import load
+
+    path = Path(context.project_root) / "specs" / context.cve_id / "spec.json"
+    if not path.is_file():
+        return []
+    try:
+        spec = load(path)
+    except Exception:  # noqa: BLE001 - a malformed spec must not break execution
+        return []
+    return parse_invocations(spec.anchor.invocations, spec.anchor.invocation)
+
+
+def build_docker_command(context: StageContext, candidate: Path,
+                         grader_script: str = "") -> List[str]:
     """Hardened container command; identical flags to the validated manual runs."""
     host_dir = candidate.resolve().parent.as_posix()
     return ["docker", "run", "--rm", "--network", "none",
@@ -141,7 +157,9 @@ def build_docker_command(context: StageContext, candidate: Path) -> List[str]:
             "-v", "%s:/work:rw" % host_dir,
             context.container_image,
             "bash", "-c",
-            "cd /work && python3 %s; echo HARNESS_RC=$?" % candidate.name]
+            "cd /work && python3 %s; RC=$?; %s echo HARNESS_RC=$RC"
+            % (candidate.name,
+               ("sh ./%s; " % grader_script) if grader_script else "")]
 
 
 def make_execute_stage(context: StageContext,
@@ -176,7 +194,20 @@ def make_execute_stage(context: StageContext,
         else:
             if context.tier == "userland_toolchain":
                 ship_helpers(context, candidate.resolve().parent)
-                command = build_docker_command(context, candidate)
+                # The grader exercises the artifacts itself: what the candidate
+                # chose to run must not decide which tools see its output.
+                invocations = spec_invocations(context)
+                grader_script = ""
+                if invocations:
+                    from .grader_matrix import render_matrix_script
+                    target = candidate.resolve().parent / "_grader_matrix.sh"
+                    try:
+                        target.write_text(render_matrix_script(invocations),
+                                          encoding="utf-8")
+                        grader_script = target.name
+                    except OSError:
+                        grader_script = ""
+                command = build_docker_command(context, candidate, grader_script)
             else:
                 command = [context.python_exe, str(candidate)]
             completed = runner(command, timeout=1800)

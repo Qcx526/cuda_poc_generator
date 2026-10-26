@@ -144,6 +144,10 @@ class ExecutableAnchor(BaseModel):
 
     binary: str = ""
     invocation: List[str] = Field(default_factory=list)
+    # Every tool that may observe the fault. The grader runs each of these over
+    # every artifact, so a tool the candidate forgot cannot hide a crash, and a
+    # specification that names the wrong single tool stops being decisive.
+    invocations: List[List[str]] = Field(default_factory=list)
     input_kind: str = ""
     input_magic: str = ""
     baseline_recipe: str = ""
@@ -275,8 +279,11 @@ class VulnSpec(BaseModel):
             lines.append("crash_oracle: %s" % self.driver.crash_oracle)
         if self.anchor.binary:
             lines.append("binary: %s" % self.anchor.binary)
-        if self.anchor.invocation:
-            lines.append("invoke: %s" % " ".join(self.anchor.invocation))
+        if self.anchor.invocation or self.anchor.invocations:
+            from .grader_matrix import parse_invocations
+            templates = parse_invocations(self.anchor.invocations, self.anchor.invocation)
+            rendered = " | ".join(" ".join(item) for item in templates)
+            lines.append("invoke: %s" % rendered)
         if self.anchor.input_kind:
             lines.append("input: %s (magic=%s)" % (self.anchor.input_kind,
                                                    self.anchor.input_magic or "unknown"))
