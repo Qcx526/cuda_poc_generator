@@ -79,6 +79,15 @@ def make_generate_stage(context: StageContext,
         if state.directive:
             command += ["--feedback", state.directive]
         completed = runner(command, cwd=context.project_root, timeout=1800)
+        # A candidate the generator itself flagged as invalid must not be
+        # executed: running it spends the whole execution round to rediscover a
+        # syntax error the generator already knows about.
+        invalid = re.search(r"STATIC_INVALID://s*(.*)", completed.stdout or "")
+        if invalid:
+            return LoopState(iteration=state.iteration,
+                             stage_error="generation produced STATIC_INVALID: %s"
+                                         % invalid.group(1)[:200],
+                             diagnosis_code=state.diagnosis_code)
         candidate = parse_candidate_path(completed.stdout) or _find_candidate(
             context.project_root, context.cve_id)
         if not candidate:

@@ -504,6 +504,11 @@ class CudaCodeGenerator:
             lines = lines[1:]
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
+        # Chat-template residue: the model occasionally emits the wrapper tag it
+        # was trained to use, and a single stray "</parameter>" is a SyntaxError
+        # that costs a whole execution round to discover.
+        residue = re.compile(r"^\s*</?(?:parameter|response|answer|tool_call|function_calls?)>\s*$")
+        lines = [line for line in lines if not residue.match(line)]
         return "\n".join(lines) + "\n"
 
     @staticmethod
