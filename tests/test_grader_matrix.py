@@ -52,3 +52,21 @@ class TestMatrixScript(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_script_is_written_without_carriage_returns(tmp_path):
+    """A CRLF script fails inside the container without an error message."""
+    from src.loop_stages import _write_matrix_script
+
+    target = tmp_path / "_grader_matrix.sh"
+    _write_matrix_script(target, [["faketool", "{artifact}"]])
+    assert b"\r" not in target.read_bytes()
+
+
+def test_script_is_written_without_carriage_returns(tmp_path):
+    """A CRLF script fails inside the container without an error message."""
+    from src.loop_stages import _write_matrix_script
+
+    target = tmp_path / "_grader_matrix.sh"
+    _write_matrix_script(target, [["faketool", "{artifact}"]])
+    assert b"\r" not in target.read_bytes()

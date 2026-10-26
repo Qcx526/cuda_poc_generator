@@ -146,6 +146,18 @@ def spec_invocations(context: StageContext) -> List[List[str]]:
     return parse_invocations(spec.anchor.invocations, spec.anchor.invocation)
 
 
+def _write_matrix_script(target: Path, invocations: List[List[str]]) -> None:
+    """Write the generated matrix; bytes so Windows cannot add CRLF."""
+    from .grader_matrix import render_matrix_script
+    target.write_bytes(render_matrix_script(invocations).encode("utf-8"))
+
+
+def _write_matrix_script(target: Path, invocations: List[List[str]]) -> None:
+    """Write the generated matrix; bytes so Windows cannot add CRLF."""
+    from .grader_matrix import render_matrix_script
+    target.write_bytes(render_matrix_script(invocations).encode("utf-8"))
+
+
 def build_docker_command(context: StageContext, candidate: Path,
                          grader_script: str = "") -> List[str]:
     """Hardened container command; identical flags to the validated manual runs."""
@@ -202,8 +214,10 @@ def make_execute_stage(context: StageContext,
                     from .grader_matrix import render_matrix_script
                     target = candidate.resolve().parent / "_grader_matrix.sh"
                     try:
-                        target.write_text(render_matrix_script(invocations),
-                                          encoding="utf-8")
+                        # Bytes, not text: writing on Windows turns every newline
+                        # into CRLF, and the container's sh then fails on the
+                        # carriage returns without saying so.
+                        _write_matrix_script(target, invocations)
                         grader_script = target.name
                     except OSError:
                         grader_script = ""
