@@ -281,9 +281,40 @@ def build_docker_command(context: StageContext, candidate: Path,
             "-v", "%s:/work:rw" % host_dir,
             context.container_image,
             "bash", "-c",
-            "cd /work && python3 %s; RC=$?; %s echo HARNESS_RC=$RC"
-            % (candidate.name,
-               ("sh ./%s; " % grader_script) if grader_script else "")]
+            "cd /work && python3 %s; echo HARNESS_RC=$?" % candidate.name]
+
+
+_MATRIX_TIMEOUT = 120
+
+
+def _matrix_pass(context: StageContext, host_dir: Path, runner: Runner) -> str:
+    """Run the declared tools over the declared artifacts, after the fact."""
+    invocations = spec_invocations(context)
+    if not invocations:
+        return ""
+    declared, note = _declared_artifacts(host_dir)
+    target = Path(host_dir) / "_grader_matrix.sh"
+    try:
+        _write_matrix_script(target, invocations, declared)
+    except OSError as exc:
+        return "\n[CPG_MATRIX] could not write the matrix script: %s\n" % exc
+    try:
+        completed = runner(build_matrix_command(context, host_dir, target.name),
+                           timeout=_MATRIX_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return "\n%s\n[CPG_MATRIX] timed out after %ds\n" % (note, _MATRIX_TIMEOUT)
+    return "\n%s\n%s%s" % (note, completed.stdout or "", completed.stderr or "")
+
+
+def build_matrix_command(context: StageContext, host_dir: Path, script: str) -> List[str]:
+    """Second pass: exercise the artifacts the candidate just declared."""
+    return ["docker", "run", "--rm", "--network", "none",
+            "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+            "--read-only", "--tmpfs", "/tmp:size=512m",
+            "--pids-limit", "256", "--memory", "2g", "--cpus", "1",
+            "-v", "%s:/work:rw" % Path(host_dir).as_posix(),
+            context.container_image,
+            "bash", "-c", "cd /work && sh ./%s" % script]
 
 
 def make_execute_stage(context: StageContext,
@@ -307,7 +338,6 @@ def make_execute_stage(context: StageContext,
         reached: Optional[bool] = None
         detail = ""
         manifest_note = ""
-        manifest_note = ""
         if context.module and context.rva and context.cdb_path:
             observe = probe or _default_probe
             observation = observe(candidate=candidate, cdb_path=context.cdb_path,
@@ -321,23 +351,7 @@ def make_execute_stage(context: StageContext,
             if context.tier == "userland_toolchain":
                 ship_helpers(context, candidate.resolve().parent)
                 quarantine_stale_artifacts(candidate.resolve().parent)
-                # The grader exercises the artifacts itself: what the candidate
-                # chose to run must not decide which tools see its output.
-                invocations = spec_invocations(context)
-                declared, manifest_note = _declared_artifacts(candidate.resolve().parent)
-                grader_script = ""
-                if invocations:
-                    from .grader_matrix import render_matrix_script
-                    target = candidate.resolve().parent / "_grader_matrix.sh"
-                    try:
-                        # Bytes, not text: writing on Windows turns every newline
-                        # into CRLF, and the container's sh then fails on the
-                        # carriage returns without saying so.
-                        _write_matrix_script(target, invocations, declared)
-                        grader_script = target.name
-                    except OSError:
-                        grader_script = ""
-                command = build_docker_command(context, candidate, grader_script)
+                command = build_docker_command(context, candidate)
             else:
                 command = [context.python_exe, str(candidate)]
             # A candidate that cannot finish in a few minutes is stuck, not
@@ -361,8 +375,11 @@ def make_execute_stage(context: StageContext,
                     and not step_failure):
                 error = "executor rc=%d: %s" % (completed.returncode,
                                                 (completed.stderr or "")[-300:])
-        if manifest_note:
-            output = output + "\n" + manifest_note + "\n"
+        if context.tier == "userland_toolchain":
+            # Second pass, after the candidate has had its chance to declare:
+            # the manifest is written during the run, so reading it earlier
+            # always found nothing and silently fell back to a directory sweep.
+            output = output + _matrix_pass(context, candidate.resolve().parent, runner)
         context.workdir.mkdir(parents=True, exist_ok=True)
         log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
         log.write_text(output + detail, encoding="utf-8")

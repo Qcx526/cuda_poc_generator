@@ -79,3 +79,83 @@ def test_the_fallback_is_capped():
     script = render_matrix_script([["faketool", "{artifact}"]])
     assert "count" in script
     assert str(FALLBACK_LIMIT) in script
+
+
+def test_the_matrix_runs_after_the_candidate_not_before(tmp_path):
+    """The manifest is written during the run, so it can only be read after."""
+    from src.closed_loop import LoopState
+    from src.loop_stages import StageContext, make_execute_stage
+
+    calls = []
+
+    class Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def runner(command, **kwargs):
+        calls.append(command)
+        if len(calls) == 1:
+            (tmp_path / "benign.cubin").write_bytes(b"\x7fELF")
+            (tmp_path / "poc.cubin").write_bytes(b"\x7fELF")
+            (tmp_path / "artifacts.json").write_text(
+                '{"benign": ["benign.cubin"], "crafted": ["poc.cubin"]}',
+                encoding="utf-8")
+        return Result()
+
+    spec_dir = tmp_path / "specs" / "CVE-X"
+    spec_dir.mkdir(parents=True)
+    (spec_dir / "spec.json").write_text(
+        '{"cve_id": "CVE-X", "anchor": {"invocations": [["faketool", "{artifact}"]]}}',
+        encoding="utf-8")
+    candidate = tmp_path / "poc.py"
+    candidate.write_text("print(1)\n", encoding="utf-8")
+    context = StageContext(project_root=tmp_path, cve_id="CVE-X",
+                           container_image="img", workdir=tmp_path / "wd",
+                           tier="userland_toolchain", python_exe="python")
+    make_execute_stage(context, runner=runner)(LoopState(iteration=1, candidate_file=str(candidate)))
+
+    assert len(calls) == 2
+    script = (tmp_path / "_grader_matrix.sh").read_text(encoding="utf-8")
+    assert "[CPG_LABEL] benign.cubin BENIGN" in script
+    assert "for artifact in *.cubin" not in script
+
+
+def test_the_matrix_runs_after_the_candidate_not_before(tmp_path):
+    """The manifest is written during the run, so it can only be read after."""
+    from src.closed_loop import LoopState
+    from src.loop_stages import StageContext, make_execute_stage
+
+    calls = []
+
+    class Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def runner(command, **kwargs):
+        calls.append(command)
+        if len(calls) == 1:
+            (tmp_path / "benign.cubin").write_bytes(b"\x7fELF")
+            (tmp_path / "poc.cubin").write_bytes(b"\x7fELF")
+            (tmp_path / "artifacts.json").write_text(
+                '{"benign": ["benign.cubin"], "crafted": ["poc.cubin"]}',
+                encoding="utf-8")
+        return Result()
+
+    spec_dir = tmp_path / "specs" / "CVE-X"
+    spec_dir.mkdir(parents=True)
+    (spec_dir / "spec.json").write_text(
+        '{"cve_id": "CVE-X", "anchor": {"invocations": [["faketool", "{artifact}"]]}}',
+        encoding="utf-8")
+    candidate = tmp_path / "poc.py"
+    candidate.write_text("print(1)\n", encoding="utf-8")
+    context = StageContext(project_root=tmp_path, cve_id="CVE-X",
+                           container_image="img", workdir=tmp_path / "wd",
+                           tier="userland_toolchain", python_exe="python")
+    make_execute_stage(context, runner=runner)(LoopState(iteration=1, candidate_file=str(candidate)))
+
+    assert len(calls) == 2
+    script = (tmp_path / "_grader_matrix.sh").read_text(encoding="utf-8")
+    assert "[CPG_LABEL] benign.cubin BENIGN" in script
+    assert "for artifact in *.cubin" not in script
