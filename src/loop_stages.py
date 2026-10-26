@@ -27,6 +27,9 @@ _LEGACY_RUN_LINE = re.compile(r"([^\s/\\]+\.(?:cubin|elf|bin|dxbc))\s*->\s*exit=
 # ("crafted_overflow.cubin" carries no marker).
 _LABEL_LINE = re.compile(r"\[CPG_LABEL\]\s+(\S+)\s+(MALICIOUS|BENIGN|CONTROL)", re.IGNORECASE)
 
+# Compiling a few cubins takes seconds; anything near this bound is hung.
+_EXECUTE_TIMEOUT = 240
+
 
 @dataclass(frozen=True)
 class StageContext:
@@ -265,7 +268,10 @@ def make_execute_stage(context: StageContext,
                 command = build_docker_command(context, candidate, grader_script)
             else:
                 command = [context.python_exe, str(candidate)]
-            completed = runner(command, timeout=1800)
+            # A candidate that cannot finish in a few minutes is stuck, not
+            # slow: compiling a handful of cubins takes seconds. Left at the
+            # old thirty minutes, one hung run consumed the whole budget.
+            completed = runner(command, timeout=_EXECUTE_TIMEOUT)
             output = (completed.stdout or "") + (completed.stderr or "")
             error = None
             # A candidate that failed at its own step is evidence for the
