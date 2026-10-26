@@ -189,3 +189,15 @@ def test_patching_an_existing_field_in_place_is_allowed():
     )
     ids = [lint_id for lint_id, _ in run_lints(code)]
     assert "elf-layout-built-by-hand" not in ids
+
+
+def test_importing_project_packages_is_flagged():
+    code = "from src.tools.env import find_cuda_tool\nimport tools.helpers\n"
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "project-import-in-poc" in ids
+
+
+def test_stdlib_and_third_party_imports_are_fine():
+    code = "import os\nimport struct\nfrom ctypes import c_void_p\n"
+    ids = [lint_id for lint_id, _ in run_lints(code)]
+    assert "project-import-in-poc" not in ids

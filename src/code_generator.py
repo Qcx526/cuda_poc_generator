@@ -72,6 +72,12 @@ CUDA verification strategy into a fully functional, self-contained PoC script.
 1. **Language**: Python 3.10+ ONLY. Use `ctypes` to call CUDA Driver/Runtime API.
    If pycuda is required, provide a fallback to ctypes.
 
+1b. **Self-contained**: the script runs in a bare container that mounts only its
+   own directory. Never import this project's packages (`src.*`, `tools.*`,
+   `specs.*`, `tests.*`) - they do not exist there, and the script dies on line
+   one with ModuleNotFoundError. Standard library only; third-party only with a
+   declared fallback.
+
 2. **CUDA Environment Detection**: The script MUST auto-detect at startup:
    - GPU availability (device count, compute capability)
    - CUDA Driver version (cuDriverGetVersion)

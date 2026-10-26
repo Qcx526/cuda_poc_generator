@@ -192,6 +192,24 @@ def lint_elf_layout_built_by_hand(code: str) -> List[str]:
             "without importing cpgkit"]
 
 
+_PROJECT_IMPORT = re.compile(r"^\s*(?:from|import)\s+(?:src|tools|specs|tests)\b", re.M)
+
+
+def lint_project_import(code: str) -> List[str]:
+    """Flag imports of this repository's own packages.
+
+    The candidate runs inside a container that mounts only its own directory, so
+    ``from src.tools.env import ...`` raises ModuleNotFoundError before the first
+    step. It looks like a plausible import because the generator has seen this
+    repository, which is exactly why it needs a rule rather than vigilance.
+    """
+    hits = sorted({m.group(0).strip() for m in _PROJECT_IMPORT.finditer(code)})
+    if not hits:
+        return []
+    return ["the candidate imports this project's own packages (%s); it must be "
+            "self-contained" % ", ".join(hits[:3])]
+
+
 def run_lints(code: str) -> List[Tuple[str, str]]:
     """Run every lint; returns (lint_id, message) pairs, empty when clean."""
     try:
@@ -207,4 +225,6 @@ def run_lints(code: str) -> List[Tuple[str, str]]:
         findings.append(("legacy-token-search-on-modern-profile", message))
     for message in lint_elf_layout_built_by_hand(code):
         findings.append(("elf-layout-built-by-hand", message))
+    for message in lint_project_import(code):
+        findings.append(("project-import-in-poc", message))
     return findings
