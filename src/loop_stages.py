@@ -146,16 +146,54 @@ def spec_invocations(context: StageContext) -> List[List[str]]:
     return parse_invocations(spec.anchor.invocations, spec.anchor.invocation)
 
 
-def _write_matrix_script(target: Path, invocations: List[List[str]]) -> None:
-    """Write the generated matrix; bytes so Windows cannot add CRLF."""
-    from .grader_matrix import render_matrix_script
-    target.write_bytes(render_matrix_script(invocations).encode("utf-8"))
+def _declared_artifacts(directory: Path):
+    """Read the manifest; fall back to name prefixes when it is absent."""
+    from . import artifacts_manifest
+
+    try:
+        manifest = artifacts_manifest.load(directory)
+    except artifacts_manifest.ManifestError as exc:
+        return None, "[CPG_MANIFEST] invalid: %s" % exc
+    pairs = artifacts_manifest.entries(manifest, directory)
+    problems = artifacts_manifest.validate(manifest, pairs)
+    if not pairs:
+        return None, "[CPG_MANIFEST] missing: %s" % "; ".join(problems)
+    note = "[CPG_MANIFEST] %d artifacts declared" % len(pairs)
+    if problems:
+        note += " (%s)" % "; ".join(problems)
+    return [list(pair) for pair in pairs], note
 
 
-def _write_matrix_script(target: Path, invocations: List[List[str]]) -> None:
+def _write_matrix_script(target: Path, invocations: List[List[str]],
+                         entries: Optional[List[List[str]]] = None) -> None:
     """Write the generated matrix; bytes so Windows cannot add CRLF."""
     from .grader_matrix import render_matrix_script
-    target.write_bytes(render_matrix_script(invocations).encode("utf-8"))
+    target.write_bytes(render_matrix_script(invocations, entries).encode("utf-8"))
+
+
+def _declared_artifacts(directory: Path):
+    """Read the manifest; fall back to name prefixes when it is absent."""
+    from . import artifacts_manifest
+
+    try:
+        manifest = artifacts_manifest.load(directory)
+    except artifacts_manifest.ManifestError as exc:
+        return None, "[CPG_MANIFEST] invalid: %s" % exc
+    pairs = artifacts_manifest.entries(manifest, directory)
+    problems = artifacts_manifest.validate(manifest, pairs)
+    if not pairs:
+        return None, "[CPG_MANIFEST] missing: %s" % "; ".join(problems)
+    note = "[CPG_MANIFEST] %d artifacts declared" % len(pairs)
+    if problems:
+        note += " (%s)" % "; ".join(problems)
+    return [list(pair) for pair in pairs], note
+
+
+def _write_matrix_script(target: Path, invocations: List[List[str]],
+                         entries: Optional[List[List[str]]] = None) -> None:
+    """Write the generated matrix; bytes so Windows cannot add CRLF."""
+    from .grader_matrix import render_matrix_script
+    target.write_bytes(render_matrix_script(invocations, entries).encode("utf-8"))
 
 
 def build_docker_command(context: StageContext, candidate: Path,
@@ -194,6 +232,8 @@ def make_execute_stage(context: StageContext,
         candidate = Path(state.candidate_file)
         reached: Optional[bool] = None
         detail = ""
+        manifest_note = ""
+        manifest_note = ""
         if context.module and context.rva and context.cdb_path:
             observe = probe or _default_probe
             observation = observe(candidate=candidate, cdb_path=context.cdb_path,
@@ -209,6 +249,7 @@ def make_execute_stage(context: StageContext,
                 # The grader exercises the artifacts itself: what the candidate
                 # chose to run must not decide which tools see its output.
                 invocations = spec_invocations(context)
+                declared, manifest_note = _declared_artifacts(candidate.resolve().parent)
                 grader_script = ""
                 if invocations:
                     from .grader_matrix import render_matrix_script
@@ -217,7 +258,7 @@ def make_execute_stage(context: StageContext,
                         # Bytes, not text: writing on Windows turns every newline
                         # into CRLF, and the container's sh then fails on the
                         # carriage returns without saying so.
-                        _write_matrix_script(target, invocations)
+                        _write_matrix_script(target, invocations, declared)
                         grader_script = target.name
                     except OSError:
                         grader_script = ""
@@ -235,6 +276,8 @@ def make_execute_stage(context: StageContext,
                     and not step_failure):
                 error = "executor rc=%d: %s" % (completed.returncode,
                                                 (completed.stderr or "")[-300:])
+        if manifest_note:
+            output = output + "\n" + manifest_note + "\n"
         context.workdir.mkdir(parents=True, exist_ok=True)
         log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
         log.write_text(output + detail, encoding="utf-8")

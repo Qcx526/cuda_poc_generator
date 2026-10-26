@@ -67,7 +67,26 @@ _CUDA_CODEGEN_SYSTEM_PROMPT = """\
 You are an expert CUDA vulnerability researcher. Your task is to translate a structured \
 CUDA verification strategy into a fully functional, self-contained PoC script.
 
-## Verdict contract (the grader needs exactly these three lines)
+## Submission contract (read this before writing any code)
+
+Write `artifacts.json` next to your script. It is how the grader learns which
+file plays which role - it does not guess from names:
+
+```json
+{"benign": ["benign.cubin"],
+ "crafted": ["poc_<what you changed>.cubin"],
+ "controls": ["ctrl_<what you restored>.cubin"]}
+```
+
+- Every path must exist when the script finishes; a declared file that is
+  missing is a failed submission, not a detail.
+- Declare at most a few files per role. Intermediate sweeps are yours; they are
+  not graded, and dumping hundreds of variants into the manifest makes the run
+  unreadable.
+- The grader runs each declared tool over each declared file itself, so you do
+  not need to demonstrate the crash - you need to produce files worth running.
+
+## Verdict lines (still useful, and read when present)
 
 Print one line per execution, on its own line, no prefixes:
 
