@@ -28,7 +28,7 @@ _LEGACY_RUN_LINE = re.compile(r"([^\s/\\]+\.(?:cubin|elf|bin|dxbc))\s*->\s*exit=
 _LABEL_LINE = re.compile(r"\[CPG_LABEL\]\s+(\S+)\s+(MALICIOUS|BENIGN|CONTROL)", re.IGNORECASE)
 
 # Compiling a few cubins takes seconds; anything near this bound is hung.
-_EXECUTE_TIMEOUT = 240
+_EXECUTE_TIMEOUT = 300
 
 
 @dataclass(frozen=True)
@@ -271,7 +271,14 @@ def make_execute_stage(context: StageContext,
             # A candidate that cannot finish in a few minutes is stuck, not
             # slow: compiling a handful of cubins takes seconds. Left at the
             # old thirty minutes, one hung run consumed the whole budget.
-            completed = runner(command, timeout=_EXECUTE_TIMEOUT)
+            try:
+                completed = runner(command, timeout=_EXECUTE_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                return LoopState(
+                    iteration=state.iteration,
+                    stage_error=("execution timed out after %ds: the candidate or the "
+                                 "tool matrix did not finish" % _EXECUTE_TIMEOUT),
+                    diagnosis_code=state.diagnosis_code)
             output = (completed.stdout or "") + (completed.stderr or "")
             error = None
             # A candidate that failed at its own step is evidence for the
