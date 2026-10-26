@@ -9,6 +9,7 @@ Docker or a model to be unit-testable.
 
 import re
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, List, Optional
@@ -61,7 +62,8 @@ def parse_candidate_path(stdout: str) -> Optional[str]:
     return match.group(1).strip() if match else None
 
 
-def _find_candidate(project_root: Path, cve_id: str) -> Optional[str]:
+def _find_candidate(project_root: Path, cve_id: str,
+                    since: Optional[float] = None) -> Optional[str]:
     """Fall back to the candidate on disk when the CLI exited non-zero."""
     directory = project_root / "data" / "outputs" / cve_id
     # ``cuda_poc_v*.py`` also matches ``cuda_poc_v1.invalid.py``, which the
@@ -69,6 +71,12 @@ def _find_candidate(project_root: Path, cve_id: str) -> Optional[str]:
     # executes a file whose first line is "// generation failed".
     candidates = [item for item in directory.glob("cuda_poc_v*.py")
                   if ".invalid" not in item.name]
+    if since is not None:
+        # A candidate from an earlier run is not this run's output. Without
+        # this, a failed generation silently graded yesterday's script and the
+        # result was attributed to today's attempt.
+        candidates = [item for item in candidates
+                      if item.stat().st_mtime >= since - 1]
     candidates.sort(key=lambda item: item.stat().st_mtime, reverse=True)
     return str(candidates[0]) if candidates else None
 
@@ -85,6 +93,7 @@ def make_generate_stage(context: StageContext,
                    "--no-rag"]
         if state.directive:
             command += ["--feedback", state.directive]
+        started = time.time()
         completed = runner(command, cwd=context.project_root, timeout=1800)
         # A candidate the generator itself flagged as invalid must not be
         # executed: running it spends the whole execution round to rediscover a
@@ -96,7 +105,7 @@ def make_generate_stage(context: StageContext,
                                          % invalid.group(1)[:200],
                              diagnosis_code=state.diagnosis_code)
         candidate = parse_candidate_path(completed.stdout) or _find_candidate(
-            context.project_root, context.cve_id)
+            context.project_root, context.cve_id, since=started)
         if not candidate:
             # Keep the whole subprocess output: a 60-second failure is a startup
             # problem, and the last 400 characters never show it.
@@ -149,6 +158,37 @@ def spec_invocations(context: StageContext) -> List[List[str]]:
     return parse_invocations(spec.anchor.invocations, spec.anchor.invocation)
 
 
+_ARTIFACT_SUFFIXES = (".cubin", ".elf", ".fatbin")
+
+
+def quarantine_stale_artifacts(directory: Path) -> int:
+    """Move artifacts from earlier runs aside before this one starts.
+
+    Left in place, they are indistinguishable from what this run produced: the
+    manifest would describe files nobody declared, and the fallback glob would
+    happily grade last week's cubin.
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        return 0
+    stale = [entry for entry in directory.iterdir()
+             if entry.is_file() and (entry.suffix in _ARTIFACT_SUFFIXES
+                                     or entry.name == "artifacts.json")]
+    if not stale:
+        return 0
+    import time as _time
+    bucket = directory / ("_stale_%d" % int(_time.time()))
+    bucket.mkdir(exist_ok=True)
+    moved = 0
+    for entry in stale:
+        try:
+            entry.replace(bucket / entry.name)
+            moved += 1
+        except OSError:
+            continue
+    return moved
+
+
 def _declared_artifacts(directory: Path):
     """Read the manifest; fall back to name prefixes when it is absent."""
     from . import artifacts_manifest
@@ -172,6 +212,37 @@ def _write_matrix_script(target: Path, invocations: List[List[str]],
     """Write the generated matrix; bytes so Windows cannot add CRLF."""
     from .grader_matrix import render_matrix_script
     target.write_bytes(render_matrix_script(invocations, entries).encode("utf-8"))
+
+
+_ARTIFACT_SUFFIXES = (".cubin", ".elf", ".fatbin")
+
+
+def quarantine_stale_artifacts(directory: Path) -> int:
+    """Move artifacts from earlier runs aside before this one starts.
+
+    Left in place, they are indistinguishable from what this run produced: the
+    manifest would describe files nobody declared, and the fallback glob would
+    happily grade last week's cubin.
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        return 0
+    stale = [entry for entry in directory.iterdir()
+             if entry.is_file() and (entry.suffix in _ARTIFACT_SUFFIXES
+                                     or entry.name == "artifacts.json")]
+    if not stale:
+        return 0
+    import time as _time
+    bucket = directory / ("_stale_%d" % int(_time.time()))
+    bucket.mkdir(exist_ok=True)
+    moved = 0
+    for entry in stale:
+        try:
+            entry.replace(bucket / entry.name)
+            moved += 1
+        except OSError:
+            continue
+    return moved
 
 
 def _declared_artifacts(directory: Path):
@@ -249,6 +320,7 @@ def make_execute_stage(context: StageContext,
         else:
             if context.tier == "userland_toolchain":
                 ship_helpers(context, candidate.resolve().parent)
+                quarantine_stale_artifacts(candidate.resolve().parent)
                 # The grader exercises the artifacts itself: what the candidate
                 # chose to run must not decide which tools see its output.
                 invocations = spec_invocations(context)
