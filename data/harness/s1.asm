@@ -1,5 +1,4 @@
-ps_2_0
-def c0, 0.5, 0.25, 0.75, 1.0
-def c1, 1.0, 2.0, 3.0, 4.0
-sincos r0.x, c0.x, c1, c1
-mov oC0, r0
+ps_3_0
+dcl_texcoord0 v0
+sincos r1.xy, c0.x
+mov oC0, r1
