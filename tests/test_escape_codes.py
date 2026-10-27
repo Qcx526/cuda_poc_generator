@@ -34,3 +34,22 @@ class TestScan(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDriverSelection(unittest.TestCase):
+    def test_windows_version_maps_to_the_nvidia_number(self):
+        from tools.extract_escape_codes import nvidia_version
+
+        self.assertEqual(nvidia_version("31.0.15.3598"), "535.98")
+        self.assertEqual(nvidia_version("32.0.15.6094"), "560.94")
+        self.assertEqual(nvidia_version("27.21.14.6089"), "460.89")
+
+    def test_the_loaded_driver_is_selected_not_the_newest(self):
+        """The DriverStore keeps every version; mtime picks the wrong one."""
+        from tools.extract_escape_codes import (driver_path, file_version,
+                                                loaded_driver_version,
+                                                nvidia_version)
+
+        path = driver_path()
+        self.assertEqual(nvidia_version(file_version(path)),
+                         loaded_driver_version())

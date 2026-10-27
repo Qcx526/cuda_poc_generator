@@ -27,14 +27,67 @@ from typing import Dict, List
 ESCAPE_PREFIX = 0x1000
 
 
-def driver_path() -> Path:
-    """The loaded driver lives in the DriverStore, not in System32\\drivers."""
+def file_version(path: Path) -> str:
+    """Four-part version from the file's resource, or empty when unreadable."""
+    import ctypes
+    from ctypes import wintypes
+    version = ctypes.WinDLL("version")
+    size = version.GetFileVersionInfoSizeW(str(path), None)
+    if not size:
+        return ""
+    buffer = ctypes.create_string_buffer(size)
+    if not version.GetFileVersionInfoW(str(path), 0, size, buffer):
+        return ""
+    pointer = ctypes.c_void_p()
+    length = wintypes.UINT()
+    if not version.VerQueryValueW(buffer, "\\", ctypes.byref(pointer),
+                                  ctypes.byref(length)):
+        return ""
+    # VS_FIXEDFILEINFO: signature, strucVersion, FileVersionMS, FileVersionLS.
+    # Reading MS out of slot 1 gives a plausible-looking wrong answer.
+    fixed = ctypes.cast(pointer, ctypes.POINTER(wintypes.DWORD * 4)).contents
+    return "%d.%d.%d.%d" % (fixed[2] >> 16, fixed[2] & 0xFFFF,
+                            fixed[3] >> 16, fixed[3] & 0xFFFF)
+
+
+def nvidia_version(windows_version: str) -> str:
+    """31.0.15.3598 -> 535.98: the driver's own numbering hides in the last digits."""
+    parts = windows_version.split(".")
+    if len(parts) != 4:
+        return ""
+    # 31.0.15.3598 -> digits "5" + "3598" = 53598, presented as 535.98.
+    digits = "%d%s" % (int(parts[2]) % 10, parts[3].zfill(4))
+    return "%s.%s" % (digits[:-2], digits[-2:])
+
+
+def loaded_driver_version() -> str:
+    import subprocess
+    try:
+        text = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
+                               "--format=csv,noheader"], capture_output=True,
+                              text=True, timeout=15).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return text.strip().splitlines()[0].strip() if text.strip() else ""
+
+
+def driver_path(want: str = "") -> Path:
+    """The driver that is actually loaded, not the newest one on disk.
+
+    The DriverStore keeps every version ever installed; picking by modified time
+    analyses whichever was written last, which is neither the running driver nor
+    the one the CVE names.
+    """
     root = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "DriverStore" / "FileRepository"
-    candidates = sorted(root.rglob("nvlddmkm.sys"),
-                        key=lambda item: item.stat().st_mtime, reverse=True)
+    candidates = list(root.rglob("nvlddmkm.sys"))
     if not candidates:
         raise FileNotFoundError("nvlddmkm.sys not found under %s" % root)
-    return candidates[0]
+    want = want or loaded_driver_version()
+    for candidate in candidates:
+        if want and nvidia_version(file_version(candidate)) == want:
+            return candidate
+    raise FileNotFoundError("no nvlddmkm.sys matches driver %s; found %s"
+                            % (want, [file_version(item) for item in candidates]))
 
 
 def scan(data: bytes) -> Dict[int, int]:
