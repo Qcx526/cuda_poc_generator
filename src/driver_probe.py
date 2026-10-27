@@ -25,7 +25,8 @@ from typing import Dict, Optional
 MARKER_NAME = "probe_armed.json"
 
 
-def arm(workdir: Path, candidate: Path, note: str = "") -> Path:
+def arm(workdir: Path, candidate: Path, note: str = "",
+        variant: str = "") -> Path:
     """Record that a probe is about to run, before it can hurt anything."""
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
@@ -35,6 +36,7 @@ def arm(workdir: Path, candidate: Path, note: str = "") -> Path:
         "host": os.environ.get("COMPUTERNAME", ""),
         "platform": sys.platform,
         "note": note,
+        "variant": variant,
     }
     path = workdir / MARKER_NAME
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2),
@@ -52,7 +54,8 @@ def read_marker(workdir: Path) -> Optional[Dict[str, object]]:
         return None
 
 
-def launch(candidate: Path, timeout: int = 600) -> int:
+def launch(candidate: Path, timeout: int = 600, variant: str = "",
+           runner=None) -> int:
     """Start the probe detached and wait for it, but not for the machine.
 
     A child sharing this console dies with it, and a bugcheck kills both; the
@@ -63,7 +66,13 @@ def launch(candidate: Path, timeout: int = 600) -> int:
         # Own process group: a Ctrl-C must not take the probe with it, and the
         # probe must not take this shell down before it writes its result.
         creation = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    completed = subprocess.run([sys.executable, str(candidate)],
+    command = [sys.executable, str(candidate)]
+    if variant:
+        command += ["--variant", variant]
+    if runner is not None:
+        completed = runner(command, timeout=timeout)
+        return completed.returncode
+    completed = subprocess.run(command,
                                capture_output=True, text=True, timeout=timeout,
                                creationflags=creation)
     return completed.returncode
@@ -96,6 +105,7 @@ def harvest(workdir: Path, *, uptime_seconds: Optional[float] = None,
             "rebooted": True,
             "bugcheck": bugcheck or {"code": "unknown", "name": "BUGCHECK_NOT_READABLE"},
             "candidate": marker.get("candidate"),
+            "variant": marker.get("variant"),
             "started_at": marker.get("started_at"),
         }
 
@@ -106,6 +116,7 @@ def harvest(workdir: Path, *, uptime_seconds: Optional[float] = None,
         # but there is no crash record to attribute.
         return {"outcome": "rebooted_without_bugcheck",
                 "candidate": marker.get("candidate"),
+                "variant": marker.get("variant"),
                 "started_at": marker.get("started_at")}
 
     if uptime_seconds is not None:
@@ -123,6 +134,7 @@ def harvest(workdir: Path, *, uptime_seconds: Optional[float] = None,
     if exit_code is not None:
         return {"outcome": "exited", "exit_code": exit_code,
                 "candidate": marker.get("candidate"),
+                "variant": marker.get("variant"),
                 "started_at": marker.get("started_at")}
 
     return {"outcome": "still_running", "candidate": marker.get("candidate"),

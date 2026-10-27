@@ -28,11 +28,13 @@ import os
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Verification = Literal["advisory", "reverse_engineering", "execution", "unverified"]
 BoundCheck = Literal["none", "range", "alignment", "length", "unknown"]
-SignalKind = Literal["signal", "exit_code", "stderr_pattern", "hresult"]
+# "bugcheck" is the kernel-tier signal: the machine goes down and the OS
+# records why, so it is a distinct kind rather than a very large exit code.
+SignalKind = Literal["signal", "exit_code", "stderr_pattern", "hresult", "bugcheck"]
 
 
 class Claim(BaseModel):
@@ -126,7 +128,12 @@ class SearchBlock(BaseModel):
 
 
 class DriverEntry(BaseModel):
-    """How to enter a driver target: no file, an API sequence instead."""
+    """How to enter a driver target: no file, an API sequence instead.
+
+    The descriptive fields say what the entry looks like; ``steps`` is the same
+    thing in a form the harness can act on, so a probe is a sequence rather than
+    a paragraph the generator has to interpret.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -135,6 +142,17 @@ class DriverEntry(BaseModel):
     state_sequence: List[str] = Field(default_factory=list)
     device_requirement: str = ""
     crash_oracle: str = ""
+
+    device: str = ""
+    open_as: str = "unprivileged"
+    steps: List[Dict[str, Any]] = Field(default_factory=list)
+    repeat: int = Field(default=1, ge=1, le=64)
+
+    @field_validator("steps")
+    @classmethod
+    def _check_steps(cls, value):
+        from .trigger_model import parse_steps
+        return parse_steps(value)
 
 
 class ExecutableAnchor(BaseModel):
@@ -279,6 +297,14 @@ class VulnSpec(BaseModel):
             lines.append("crash_oracle: %s" % self.driver.crash_oracle)
         if self.anchor.binary:
             lines.append("binary: %s" % self.anchor.binary)
+        if self.driver.steps:
+            from .trigger_model import describe
+            rendered = describe({"device": self.driver.device,
+                                 "open_as": self.driver.open_as,
+                                 "steps": self.driver.steps,
+                                 "repeat": self.driver.repeat})
+            lines.append("trigger (driver tier):")
+            lines.extend("  " + row for row in rendered.splitlines())
         if self.anchor.invocation or self.anchor.invocations:
             from .grader_matrix import parse_invocations
             templates = parse_invocations(self.anchor.invocations, self.anchor.invocation)

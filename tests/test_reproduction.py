@@ -290,3 +290,13 @@ def test_a_crafted_artifact_named_poc_counts_as_malicious():
     assert label_for("poc_sec08_shsize_56.cubin::cuobjdump") == "MALICIOUS"
     assert label_for("crafted_a.cubin") == "MALICIOUS"
     assert label_for("proc_dump.cubin") == "UNKNOWN"
+
+
+def test_a_baseline_whose_name_contains_poc_stays_the_baseline():
+    """Role prefixes win over crafting words; otherwise the control grades itself."""
+    from src.reproduction import label_for
+
+    assert label_for("benign_dry_poc") == "BENIGN"
+    assert label_for("ctrl_dry_poc") == "CONTROL"
+    assert label_for("crafted_dry_poc") == "MALICIOUS"
+    assert label_for("_ctrl_restored_malicious_1") == "MALICIOUS"

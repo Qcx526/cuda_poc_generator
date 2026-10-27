@@ -62,7 +62,8 @@ class BatchRow:
 
 def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
             python_exe: str, image: str, index: int = 0,
-            blind_retry: bool = False) -> BatchRow:
+            blind_retry: bool = False, tier: str = "userland_toolchain",
+            allow_kernel: bool = False) -> BatchRow:
     """Run the loop for one CVE; never raises, always returns a row."""
     from .closed_loop import TargetTier
     from .loop_runner import build_controller, write_outputs
@@ -71,11 +72,11 @@ def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
     run_dir = workdir / cve_id if index == 0 else workdir / (cve_id + "/run_%d" % index)
     try:
         controller = build_controller(
-            cve_id=cve_id, tier=TargetTier.TOOLCHAIN, iterations=iterations,
+            cve_id=cve_id, tier=tier, iterations=iterations,
             image=image,
             workdir=run_dir,
             project_root=project_root,
-            version_in_range=None, allow_kernel=False, python_exe=python_exe,
+            version_in_range=None, allow_kernel=allow_kernel, python_exe=python_exe,
             blind_retry=blind_retry)
         result = controller.run()
         # Each repeat writes its own report: keeping only the last one would
@@ -110,6 +111,7 @@ def _finished_status(run_dir: Path) -> Optional[str]:
 def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
               project_root: Path, python_exe: str, image: str,
               repeat: int = 1, blind_retry: bool = False,
+              tier: str = "userland_toolchain",
               runner: Optional[Callable[..., BatchRow]] = None,
               progress: Optional[Callable[[BatchRow], None]] = None) -> List[BatchRow]:
     """Run every CVE in order, reporting each row as it completes.
@@ -208,6 +210,10 @@ def main(argv: Optional[list] = None) -> int:
                         help="忽略规格中的 observed 知识（消融用）")
     parser.add_argument("--repeat", type=int, default=1,
                         help="每个 CVE 独立重复次数（success@k 的 k）")
+    parser.add_argument("--tier", default="userland_toolchain",
+                        choices=["userland_toolchain", "driver_userland",
+                                 "driver_kernel"],
+                        help="execution tier; driver tiers run on this machine")
     parser.add_argument("--minimal-poc", action="store_true", default=False,
                         help="constrain generated scripts to the differential only")
     parser.add_argument("--blind-retry", action="store_true", default=False,

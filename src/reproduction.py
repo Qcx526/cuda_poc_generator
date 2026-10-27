@@ -138,15 +138,17 @@ def _label(artifact: str) -> RunLabel:
     lowered = artifact.lower()
     # "payload" is deliberately not a malicious marker: "_ctrlE_zero_payload"
     # is a control whose payload is empty.
-    # "poc" and "crafted" are how most candidates name the thing they built;
-    # without them a perfectly good crafted artifact classified as UNKNOWN and
-    # the run reported "no controlled sample recorded" while it sat right there.
-    if re.search(r"(^|[^a-z])(malicious|exploit|poc|crafted|trigger)", lowered):
+    if "malicious" in lowered or "exploit" in lowered:
         return "MALICIOUS"
     if "benign" in lowered and "ctrl" not in lowered and "control" not in lowered:
         return "BENIGN"
     if "ctrl" in lowered or "control" in lowered:
         return "CONTROL"
+    # Only now the crafting markers: a benign baseline called "benign_dry_poc"
+    # carries "poc" too, and matching it early turned the baseline itself into
+    # the crafted sample - the run then "reproduced" against its own control.
+    if re.search(r"(^|[^a-z])(poc|crafted|trigger)", lowered):
+        return "MALICIOUS"
     return "UNKNOWN"
 
 
@@ -163,6 +165,31 @@ def parse_step_events(text: str) -> List[StepEvent]:
     return events
 
 
+_PROBE = re.compile(r"\[CPG_PROBE\]\s+(?P<name>\S+)\s+outcome=(?P<outcome>\w+)"
+                    r"(?:\s+bugcheck=(?P<bugcheck>\S+))?")
+
+
+def parse_probe_runs(text: str) -> List[ArtifactRun]:
+    """Kernel-tier probes: the crash is a bugcheck, not a process exit.
+
+    A driver probe that succeeds kills the machine, so it cannot report an exit
+    code. Encoding its outcome here keeps the verdict rules unchanged - the probe
+    is a crafted artifact whose "exit" is fatal - while the truth (a bugcheck
+    code) stays in the record.
+    """
+    runs: List[ArtifactRun] = []
+    for match in _PROBE.finditer(text):
+        crashed = match.group("outcome") == "crashed"
+        runs.append(ArtifactRun(
+            artifact=match.group("name"),
+            exit_code=-11 if crashed else 0,
+            crashed=crashed,
+            label=_label(match.group("name")),
+            recorded_kind="bugcheck" if crashed else "",
+        ))
+    return runs
+
+
 def parse_artifact_runs(text: str) -> List[ArtifactRun]:
     runs: List[ArtifactRun] = []
     for match in _EXIT.finditer(text):
@@ -174,7 +201,7 @@ def parse_artifact_runs(text: str) -> List[ArtifactRun]:
             label=_label(match.group("artifact")),
             recorded_kind=(match.group("kind") or "").strip(),
         ))
-    return runs
+    return runs + parse_probe_runs(text)
 
 
 def parse_log(text: str, *, target_version_in_range: Optional[bool] = None,

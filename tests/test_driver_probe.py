@@ -110,3 +110,39 @@ class TestScanMode(unittest.TestCase):
             log = (root / "harvest.log").read_text(encoding="utf-8")
             self.assertIn("CVE-A", log)
             self.assertIn("CVE-B", log)
+
+
+class TestDriverStage(unittest.TestCase):
+    def test_three_variants_are_armed_and_reported(self):
+        from src.closed_loop import LoopState
+        from src.loop_stages import StageContext, make_execute_stage
+
+        seen = []
+
+        class Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        def runner(command, **kwargs):
+            seen.append(command)
+            return Result()
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = root / "poc.py"
+            candidate.write_text("print(1)\n", encoding="utf-8")
+            context = StageContext(project_root=root, cve_id="CVE-X",
+                                   container_image="img", workdir=root / "wd",
+                                   tier="driver_kernel", python_exe="python")
+            state = make_execute_stage(context, runner=runner)(
+                LoopState(iteration=1, candidate_file=str(candidate)))
+
+            text = Path(state.observation_file).read_text(encoding="utf-8")
+
+        # A parameter set per arm, and the variant is named on the command line.
+        self.assertEqual(len(seen), 3)
+        self.assertIn("--variant", seen[1])
+        self.assertIn("crafted", " ".join(seen[1]))
+        for prefix in ("benign", "crafted", "ctrl"):
+            self.assertIn("[CPG_PROBE] %s_poc outcome=" % prefix, text)

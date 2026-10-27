@@ -313,6 +313,43 @@ def build_docker_command(context: StageContext, candidate: Path,
 _MATRIX_TIMEOUT = 120
 
 
+_DRIVER_VARIANTS = (("benign", "benign"), ("crafted", "crafted"), ("ctrl", "ctrl"))
+
+
+def _driver_stage(context: StageContext, candidate: Path, state: LoopState,
+                  runner: Runner) -> LoopState:
+    """Run each parameter set in turn, armed before it starts.
+
+    Ordered benign first: if the baseline faults, the finding is that the driver
+    is broken for this entry, not that a crafted value did something - and the
+    later sets never run, which is the correct outcome.
+    """
+    from .driver_probe import arm, harvest, launch
+
+    context.workdir.mkdir(parents=True, exist_ok=True)
+    lines = []
+    for variant, prefix in _DRIVER_VARIANTS:
+        arm(context.workdir, candidate, variant=variant)
+        try:
+            code = launch(candidate, timeout=_EXECUTE_TIMEOUT, variant=variant,
+                          runner=runner)
+        except subprocess.TimeoutExpired:
+            code = None
+        result = harvest(context.workdir, exit_code=code)
+        name = "%s_%s" % (prefix, candidate.stem)
+        bug = (result.get("bugcheck") or {}).get("code") or ""
+        lines.append("[CPG_PROBE] %s outcome=%s%s"
+                     % (name, result.get("outcome"), (" bugcheck=%s" % bug) if bug else ""))
+        if result.get("outcome") == "crashed":
+            break
+
+    output = "\n".join(lines) + "\n"
+    log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
+    log.write_text(output, encoding="utf-8")
+    return LoopState(iteration=state.iteration, observation_file=str(log),
+                     candidate_file=str(candidate))
+
+
 def _matrix_pass(context: StageContext, host_dir: Path, runner: Runner,
                  candidate_output: str = "") -> str:
     """Run the declared tools over the declared artifacts, after the fact."""
@@ -375,6 +412,11 @@ def make_execute_stage(context: StageContext,
             detail = "\n[probe_reached] %s\n" % getattr(observation, "detail", "")
             error = None
         else:
+            if context.tier in ("driver_kernel", "driver_userland"):
+                # A kernel probe runs on the operator's machine, one parameter
+                # set at a time: if it takes the machine down, the marker says
+                # which set was armed.
+                return _driver_stage(context, candidate, state, runner)
             if context.tier == "userland_toolchain":
                 ship_helpers(context, candidate.resolve().parent)
                 quarantine_stale_artifacts(candidate.resolve().parent)
