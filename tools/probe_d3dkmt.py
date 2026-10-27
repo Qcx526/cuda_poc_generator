@@ -53,15 +53,17 @@ class CREATEDEVICEFLAGS(ctypes.Structure):
 
 
 class CREATEDEVICE(ctypes.Structure):
-    """Only the front of the structure matters for a default device.
+    """Layout taken from what the driver actually writes, not from a header.
 
-    The command and allocation lists are left empty on purpose: a device that
-    owns no buffers has nothing of ours to corrupt if the driver misbehaves.
+    A zeroed request was sent and the buffer read back: offset 0 kept the adapter
+    handle and offset 12 came back holding a new handle that DestroyDevice
+    accepted. So Flags occupy offset 8 and hDevice follows at 12 - the union
+    reading in the WDK header does not describe this build.
     """
-    # The first field is a union: hAdapter going in, hDevice coming back, in the
-    # same four bytes. Reading it after the call is how the device is obtained.
     _fields_ = [("hAdapter", wintypes.UINT),
+                ("Reserved0", wintypes.UINT),
                 ("Flags", CREATEDEVICEFLAGS),
+                ("hDevice", wintypes.UINT),
                 ("pCommandBuffer", ctypes.c_void_p),
                 ("CommandBufferSize", wintypes.UINT),
                 ("pAllocationList", ctypes.c_void_p),
@@ -71,10 +73,12 @@ class CREATEDEVICE(ctypes.Structure):
 
 
 class ESCAPE(ctypes.Structure):
+    """Flags precede the escape code: a code read from the wrong offset is an
+    invalid parameter, which looks exactly like a driver that rejects the code."""
     _fields_ = [("hAdapter", wintypes.UINT),
                 ("hDevice", wintypes.UINT),
-                ("EscapeCode", wintypes.UINT),
                 ("Flags", wintypes.UINT),
+                ("EscapeCode", wintypes.UINT),
                 ("pPrivateDriverData", ctypes.c_void_p),
                 ("PrivateDriverDataSize", wintypes.UINT),
                 ("hContext", wintypes.UINT)]
@@ -102,6 +106,18 @@ def first_display() -> str:
     raise RuntimeError("no attached display found")
 
 
+class OPENADAPTERFROMLUID(ctypes.Structure):
+    _fields_ = [("AdapterLuid", LUID), ("hAdapter", wintypes.UINT)]
+
+
+def open_adapter_from_luid(luid) -> int:
+    """The route the published PoCs use; also the one that yields a usable handle."""
+    request = OPENADAPTERFROMLUID()
+    request.AdapterLuid = luid
+    status = gdi32.D3DKMTOpenAdapterFromLuid(ctypes.byref(request))
+    return status, request.hAdapter
+
+
 def open_adapter_from_hdc(device_name: str = ""):
     """Open an adapter through a display DC: no window, no D3D runtime."""
     if not device_name:
@@ -123,13 +139,16 @@ def create_device(h_adapter: int):
 
 
 def device_handle(request) -> int:
-    """After a successful create, the union slot holds the device handle."""
-    return request.hAdapter
+    return request.hDevice
+
+
+class DESTROYDEVICE(ctypes.Structure):
+    _fields_ = [("hDevice", wintypes.UINT)]
 
 
 def destroy_device(h_adapter: int, h_device: int) -> int:
-    request = CREATEDEVICE()
-    request.hAdapter = h_device
+    request = DESTROYDEVICE()
+    request.hDevice = h_device
     return gdi32.D3DKMTDestroyDevice(ctypes.byref(request))
 
 
@@ -155,15 +174,24 @@ def main() -> int:
     args = parser.parse_args()
 
     report = {"stage": args.stage}
+    # The DC route gives a LUID but its handle is refused by every later call;
+    # opening again by that LUID yields one the driver accepts.
     status, request, hdc = open_adapter_from_hdc()
-    report["open_adapter"] = {"status": status,
-                              "h_adapter": request.hAdapter,
-                              "luid": "%08x:%08x" % (request.AdapterLuid.HighPart & 0xFFFFFFFF,
-                                                     request.AdapterLuid.LowPart)}
-    print("open adapter   status=%d handle=0x%x luid=%s"
-          % (status, request.hAdapter, report["open_adapter"]["luid"]))
-    if status != STATUS_SUCCESS or not request.hAdapter:
+    luid_text = "%08x:%08x" % (request.AdapterLuid.HighPart & 0xFFFFFFFF,
+                               request.AdapterLuid.LowPart)
+    print("adapter by HDC status=%d handle=0x%x luid=%s"
+          % (status, request.hAdapter, luid_text))
+    if status != STATUS_SUCCESS:
         print("no adapter; nothing further is possible")
+        return 1
+
+    luid_status, h_adapter = open_adapter_from_luid(request.AdapterLuid)
+    report["open_adapter"] = {"status": luid_status, "h_adapter": h_adapter,
+                              "luid": luid_text,
+                              "hdc_handle": request.hAdapter}
+    print("adapter by LUID status=%d handle=0x%x" % (luid_status, h_adapter))
+    if luid_status != STATUS_SUCCESS or not h_adapter:
+        print("adapter handle unusable; stopping here")
         return 1
 
     if args.stage == "adapter":
@@ -171,7 +199,7 @@ def main() -> int:
         _write(report, args.json)
         return 0
 
-    device_status, device = create_device(request.hAdapter)
+    device_status, device = create_device(h_adapter)
     handle = device_handle(device)
     report["create_device"] = {"status": device_status, "h_device": handle}
     print("create device  status=%d handle=0x%x" % (device_status, handle))
@@ -181,7 +209,7 @@ def main() -> int:
         return 1
 
     if args.stage == "device":
-        destroy_device(request.hAdapter, handle)
+        destroy_device(h_adapter, handle)
         gdi32.DeleteDC(hdc)
         _write(report, args.json)
         return 0
@@ -189,13 +217,13 @@ def main() -> int:
     code = int(args.escape_code, 16) if args.escape_code.lower().startswith("0x") \
         else int(args.escape_code)
     payload = bytes(args.payload_size)
-    escape_status, _ = send_escape(request.hAdapter, handle, code, payload)
+    escape_status, _ = send_escape(h_adapter, handle, code, payload)
     report["escape"] = {"code": "0x%x" % code, "payload_size": args.payload_size,
                         "status": escape_status}
     print("escape         code=0x%x size=%d status=%d"
           % (code, args.payload_size, escape_status))
 
-    destroy_device(request.hAdapter, handle)
+    destroy_device(h_adapter, handle)
     gdi32.DeleteDC(hdc)
     _write(report, args.json)
     return 0 if escape_status == STATUS_SUCCESS else 1
