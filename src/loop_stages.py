@@ -263,37 +263,6 @@ def quarantine_stale_artifacts(directory: Path) -> int:
     return moved
 
 
-def _declared_artifacts(directory: Path, log_text: str = ""):
-    """Which artifacts play which roles, as the candidate declared them.
-
-    Two explicit forms are accepted and neither is a guess: an artifacts.json,
-    or `[CPG_LABEL] <file> <ROLE>` lines in the run's own output. Candidates
-    emit one or the other in practice, and refusing the second form only pushed
-    runs back onto the filename prefixes.
-    """
-    from . import artifacts_manifest
-
-    try:
-        manifest = artifacts_manifest.load(directory)
-    except artifacts_manifest.ManifestError as exc:
-        return None, "[CPG_MANIFEST] invalid: %s" % exc
-    pairs = artifacts_manifest.entries(manifest, directory)
-    source = "artifacts.json"
-    if not pairs and log_text:
-        for name, role in _LABEL_LINE.findall(log_text):
-            if (Path(directory) / name).is_file():
-                pairs.append((name, role.upper()))
-        pairs = list(dict.fromkeys(pairs))
-        source = "CPG_LABEL lines"
-    problems = artifacts_manifest.validate(manifest, pairs)
-    if not pairs:
-        return None, "[CPG_MANIFEST] missing: %s" % "; ".join(problems)
-    note = "[CPG_MANIFEST] %d artifacts declared via %s" % (len(pairs), source)
-    if problems and source == "artifacts.json":
-        note += " (%s)" % "; ".join(problems)
-    return [list(pair) for pair in pairs], note
-
-
 def _write_matrix_script(target: Path, invocations: List[List[str]],
                          entries: Optional[List[List[str]]] = None) -> None:
     """Write the generated matrix; bytes so Windows cannot add CRLF."""

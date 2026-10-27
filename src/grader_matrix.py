@@ -74,6 +74,18 @@ def render_matrix_script(invocations: Sequence[Sequence[str]],
         lines.append("done")
         lines.append("true")
         return "\n".join(lines) + "\n"
+    # Undeclared artifacts still get labelled, by prefix only. Without labels the
+    # grader cannot assign roles at all and reports "nothing to grade" even after
+    # a genuine crash; with guessed labels it can at least say which file was
+    # meant as what, and UNKNOWN never counts toward a verdict.
+    lines.append("role_of() {")
+    lines.append("  case \"$1\" in")
+    lines.append("    benign*) echo BENIGN ;;")
+    lines.append("    ctrl*|control*) echo CONTROL ;;")
+    lines.append("    poc*|crafted*|malicious*|trigger*) echo MALICIOUS ;;")
+    lines.append("    *) echo UNKNOWN ;;")
+    lines.append("  esac")
+    lines.append("}")
     lines.append("count=0")
     for glob in ARTIFACT_GLOBS:
         lines.append("for artifact in %s; do" % glob)
@@ -81,6 +93,10 @@ def render_matrix_script(invocations: Sequence[Sequence[str]],
                      % FALLBACK_LIMIT)
         lines.append("  [ -f \"$artifact\" ] || continue")
         lines.append("  base=$(basename \"$artifact\")")
+        # No backslash before the quotes: inside the double-quoted echo those
+        # would reach role_of as literal quote characters, and every artifact
+        # would be labelled UNKNOWN.
+        lines.append('  echo "[CPG_LABEL] $base $(role_of "$base")"')
         for invocation in invocations:
             name = tool_name(invocation)
             parts = []

@@ -173,3 +173,43 @@ def test_label_lines_count_as_a_declaration(tmp_path):
 
     assert sorted(pairs) == [["benign.cubin", "BENIGN"], ["poc.cubin", "MALICIOUS"]]
     assert "CPG_LABEL" in note
+
+
+class TestFallbackLabels(unittest.TestCase):
+    def test_undeclared_artifacts_still_get_a_role(self):
+        """Without labels the grader reports 'nothing to grade' even after a
+        real crash, so the fallback path labels by filename prefix."""
+        from src.grader_matrix import render_matrix_script
+
+        script = render_matrix_script([["nvdisasm", "{artifact}"]])
+        self.assertIn("role_of()", script)
+        self.assertIn("benign*) echo BENIGN", script)
+        self.assertIn('echo "[CPG_LABEL] $base $(role_of "$base")"', script)
+
+    def test_declared_artifacts_keep_their_declared_role(self):
+        from src.grader_matrix import render_matrix_script
+
+        script = render_matrix_script([["nvdisasm", "{artifact}"]],
+                                      [["odd_name.cubin", "MALICIOUS"]])
+        self.assertIn("[CPG_LABEL] odd_name.cubin MALICIOUS", script)
+        self.assertNotIn("role_of()", script)
+
+
+class TestFallbackLabels(unittest.TestCase):
+    def test_undeclared_artifacts_still_get_a_role(self):
+        """Without labels the grader reports 'nothing to grade' even after a
+        real crash, so the fallback path labels by filename prefix."""
+        from src.grader_matrix import render_matrix_script
+
+        script = render_matrix_script([["nvdisasm", "{artifact}"]])
+        self.assertIn("role_of()", script)
+        self.assertIn("benign*) echo BENIGN", script)
+        self.assertIn('echo "[CPG_LABEL] $base $(role_of "$base")"', script)
+
+    def test_declared_artifacts_keep_their_declared_role(self):
+        from src.grader_matrix import render_matrix_script
+
+        script = render_matrix_script([["nvdisasm", "{artifact}"]],
+                                      [["odd_name.cubin", "MALICIOUS"]])
+        self.assertIn("[CPG_LABEL] odd_name.cubin MALICIOUS", script)
+        self.assertNotIn("role_of()", script)
