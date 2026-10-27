@@ -96,12 +96,41 @@ def _run(command: List[str], timeout: int = 30) -> str:
     return completed.stdout or ""
 
 
-def last_bugcheck(timeout: int = 30) -> Optional[Dict[str, object]]:
+# wevtutil emits single quotes in /f:xml; other tools emit double.
+_SYSTEMTIME = re.compile(r"""<TimeCreated SystemTime=['"]([^'"]+)['"]""")
+
+
+def latest_event_time(event_id: int, timeout: int = 30):
+    """When the newest event of this id happened, in local time.
+
+    Event timestamps are the reliable signal: uptime does not reset when Fast
+    Startup hibernates the kernel session, so a machine can look "up for four
+    days" while having restarted twice.
+    """
+    text = _run(["wevtutil", "qe", "System", "/q:*[System[(EventID=%d)]]" % event_id,
+                 "/c:1", "/rd:true", "/f:xml"], timeout=timeout)
+    match = _SYSTEMTIME.search(text)
+    if not match:
+        return None
+    stamp = match.group(1).replace("Z", "+00:00")
+    try:
+        parsed = _dt.datetime.fromisoformat(stamp)
+    except ValueError:
+        return None
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone().replace(tzinfo=None)
+    return parsed
+
+
+def last_bugcheck(timeout: int = 30, with_time: bool = False):
     """The most recent BugCheck this machine recorded, if it can be read."""
     query = "*[System[(EventID=%d)]]" % BUGCHECK_EVENT_ID
     text = _run(["wevtutil", "qe", "System", "/q:%s" % query,
                  "/c:1", "/rd:true", "/f:text"], timeout=timeout)
-    return parse_bugcheck_record(text)
+    record = parse_bugcheck_record(text)
+    if record is not None and with_time:
+        record["time"] = latest_event_time(BUGCHECK_EVENT_ID, timeout=timeout)
+    return record
 
 
 def uptime_seconds() -> Optional[float]:

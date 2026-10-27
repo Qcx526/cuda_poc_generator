@@ -70,8 +70,8 @@ def launch(candidate: Path, timeout: int = 600) -> int:
 
 
 def harvest(workdir: Path, *, uptime_seconds: Optional[float] = None,
-            bugcheck: Optional[Dict[str, object]] = None,
-            exit_code: Optional[int] = None) -> Dict[str, object]:
+            boot_event_time=None, bugcheck: Optional[Dict[str, object]] = None,
+            bugcheck_time=None, exit_code: Optional[int] = None) -> Dict[str, object]:
     """Decide what happened, from the marker plus what the OS recorded.
 
     ``uptime_seconds`` and ``bugcheck`` are injectable so the logic can be
@@ -82,19 +82,15 @@ def harvest(workdir: Path, *, uptime_seconds: Optional[float] = None,
         return {"outcome": "no_marker", "detail": "no probe was armed here"}
 
     started = datetime.fromisoformat(str(marker["started_at"]))
-    if uptime_seconds is None:
-        from .driver_crash import uptime_seconds as _uptime
-        uptime_seconds = _uptime()
 
-    rebooted = False
-    if uptime_seconds is not None:
-        booted_at = datetime.fromtimestamp(datetime.now().timestamp() - uptime_seconds)
-        rebooted = booted_at > started
-
-    if rebooted:
-        if bugcheck is None:
-            from .driver_crash import last_bugcheck
-            bugcheck = last_bugcheck()
+    from .driver_crash import latest_event_time, last_bugcheck
+    if bugcheck_time is None and bugcheck is None:
+        record = last_bugcheck(with_time=True)
+        if record:
+            bugcheck, bugcheck_time = record, record.get("time")
+    # The crash record is authoritative: a bugcheck after arming is the crash,
+    # whatever the uptime says.
+    if bugcheck_time is not None and bugcheck_time > started:
         return {
             "outcome": "crashed",
             "rebooted": True,
@@ -102,6 +98,27 @@ def harvest(workdir: Path, *, uptime_seconds: Optional[float] = None,
             "candidate": marker.get("candidate"),
             "started_at": marker.get("started_at"),
         }
+
+    if boot_event_time is None:
+        boot_event_time = latest_event_time(6005)
+    if boot_event_time is not None and boot_event_time > started:
+        # Restarted without a bugcheck: the probe may still have hung the GPU,
+        # but there is no crash record to attribute.
+        return {"outcome": "rebooted_without_bugcheck",
+                "candidate": marker.get("candidate"),
+                "started_at": marker.get("started_at")}
+
+    if uptime_seconds is not None:
+        booted_at = datetime.fromtimestamp(datetime.now().timestamp() - uptime_seconds)
+        if booted_at > started:
+            return {
+                "outcome": "crashed",
+                "rebooted": True,
+                "bugcheck": bugcheck or {"code": "unknown",
+                                         "name": "BUGCHECK_NOT_READABLE"},
+                "candidate": marker.get("candidate"),
+                "started_at": marker.get("started_at"),
+            }
 
     if exit_code is not None:
         return {"outcome": "exited", "exit_code": exit_code,
@@ -120,6 +137,8 @@ def summarise(result: Dict[str, object]) -> str:
         return "machine went down: %s (%s)" % (bug.get("name"), bug.get("code"))
     if outcome == "exited":
         return "probe exited with %s; no restart" % result.get("exit_code")
+    if outcome == "rebooted_without_bugcheck":
+        return "machine restarted with no bugcheck recorded"
     if outcome == "still_running":
         return "probe neither exited nor crashed within the window"
     return "no armed probe found in this workdir"

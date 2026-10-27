@@ -7,7 +7,11 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from datetime import datetime, timedelta
+
 from src.driver_probe import arm, harvest, read_marker, summarise
+
+LONG_AGO = datetime(2000, 1, 1)
 from src.driver_crash import bugcheck_name, normalise_code, parse_bugcheck_record
 
 
@@ -16,7 +20,8 @@ class TestArmAndHarvest(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             arm(root, root / "poc.py")
-            result = harvest(root, uptime_seconds=10_000, exit_code=0)
+            result = harvest(root, bugcheck_time=LONG_AGO,
+                             boot_event_time=LONG_AGO, exit_code=0)
             self.assertEqual(result["outcome"], "exited")
             self.assertEqual(result["exit_code"], 0)
 
@@ -25,15 +30,24 @@ class TestArmAndHarvest(unittest.TestCase):
             root = Path(tmp)
             arm(root, root / "poc.py")
             time.sleep(1.1)
-            # Uptime shorter than the time since arming means the machine
-            # restarted after the probe was armed.
-            result = harvest(root, uptime_seconds=0.3,
-                             bugcheck={"code": "0x000000d1",
-                                       "name": "DRIVER_IRQL_NOT_LESS_OR_EQUAL",
-                                       "params": []})
+            # A bugcheck recorded after arming is the crash, whatever uptime says.
+            result = harvest(root, bugcheck={"code": "0x000000d1",
+                                             "name": "DRIVER_IRQL_NOT_LESS_OR_EQUAL",
+                                             "params": []},
+                             bugcheck_time=datetime.now() + timedelta(seconds=1),
+                             boot_event_time=LONG_AGO)
             self.assertEqual(result["outcome"], "crashed")
             self.assertTrue(result["rebooted"])
             self.assertIn("DRIVER_IRQL", summarise(result))
+
+    def test_a_restart_without_a_bugcheck_is_not_a_crash(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            arm(root, root / "poc.py")
+            result = harvest(root, bugcheck_time=LONG_AGO,
+                             boot_event_time=datetime.now() + timedelta(seconds=1))
+            self.assertEqual(result["outcome"], "rebooted_without_bugcheck")
+            self.assertIn("no bugcheck", summarise(result))
 
     def test_no_marker_means_nothing_was_probed(self):
         with TemporaryDirectory() as tmp:
