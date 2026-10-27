@@ -53,6 +53,7 @@ offset 12 : 0x40000080  （驱动写回的 device）
 | 3 | 提取的码是 escape 码 | 检查出现位置 | `0x10001002` 与 `0x10000402` **总是成对出现在相隔约 60 字节处** | 这是结构体**版本检查**的形态，不是分发表 |
 | 4 | 设备缺命令缓冲导致硬件 escape 被拒 | 带 64 KB command buffer 重建 + 重发 escape | 返回与之前**完全一致** | 与命令缓冲无关 |
 | 5 | 可以从 UMD 的导入项抄到真实调用 | 检查 `nvwgf2umx.dll`（100 MB）导入表 | **不导入任何 D3DKMT 函数** | 现代 UMD 通过 `D3DDI_DEVICECALLBACKS` 回调表访问内核，IAT 补丁无处可打 |
+| 6 | ETW 能采到真实 escape | 采样 `Microsoft-Windows-DxgKrnl`（全关键字，level 5），同时创建一个 D3D11 硬件设备 | 收到 **58,165 个事件**（ETL 6.3 MB），其中**没有一个与 escape 相关**；提供程序清单 7,417 行里唯一含 Escape 的事件是 `MiracastUmdSendMiracastEscape` | DxgKrnl 不跟踪通用 `D3DKMTEscape`，ETW 无法作为观测手段 |
 
 ## 4. 发现的真实结构
 
@@ -130,5 +131,8 @@ verification_rules:
 1. 我们的 `D3DKMT_ESCAPE` 仍缺一个内核认可的字段（最可能是句柄来源必须为合法 UMD 客户端）。
 2. `0x100001xx` 族是否属于 escape 分派域，未验证。
 
-**下一步计划**：用 ETW 采样 `Microsoft-Windows-DxgKrnl` 提供程序，从真实客户端取得一次完整 escape
-（不注入代码、不打补丁），以实测字段替换当前推测。
+**剩余手段只剩一种**：内联钩 `gdi32!D3DKMTEscape`（改写函数头 12 字节跳转到 detour，
+并自建 trampoline 保存原指令）。它是唯一能观察到真实调用的方式，但改错指令边界会直接崩溃进程，
+且中断点难以调试，属于高风险手段。
+
+**已排除的观测手段**：IAT 补丁（UMD 无导入项）、回调查表（位置未定位）、ETW（提供程序不记录）。
