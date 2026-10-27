@@ -24,3 +24,19 @@ class TestProbeCodes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHookPrimitives(unittest.TestCase):
+    def test_patching_and_reading_back_a_pointer(self):
+        import ctypes
+        from tools.hook_deviceioctl import patch_pointer, read_pointer
+
+        cell = (ctypes.c_void_p * 1)()
+        address = ctypes.addressof(cell)
+        self.assertEqual(read_pointer(address), 0)
+        patch_pointer(address, 0x1234)
+        self.assertEqual(read_pointer(address), 0x1234)
+
+    def test_the_watch_starts_empty(self):
+        from tools.hook_deviceioctl import Watch
+        self.assertEqual(Watch().calls, [])
