@@ -117,3 +117,52 @@ class TestStaleLock(unittest.TestCase):
             with _locked(Path(tmp)):
                 self.assertTrue(lock.exists())
             self.assertFalse(lock.exists())
+
+
+class TestUndecodableOutput(unittest.TestCase):
+    def test_runner_survives_output_the_local_codepage_cannot_decode(self):
+        """Container output carries bytes GBK rejects; a dead reader thread
+        returns empty stdout and the verdict blames the candidate."""
+        import sys
+
+        from src.loop_stages import _default_runner
+
+        code = "import sys; sys.stdout.buffer.write(b'\\x94ok\\n')"
+        completed = _default_runner([sys.executable, "-c", code], timeout=60)
+        self.assertIn("ok", completed.stdout or "")
+
+
+class TestCandidateCrash(unittest.TestCase):
+    def test_the_exception_is_extracted(self):
+        from pathlib import Path
+
+        from src.loop_stages import _candidate_crashed
+
+        output = ("Traceback (most recent call last):\n"
+                  '  File "cuda_poc_v1.py", line 799, in step_build_artifacts\n'
+                  "    raise ValueError(\"mutation escaped the sh_size field\")\n"
+                  "ValueError: mutation escaped the sh_size field\n")
+        message = _candidate_crashed(output, Path("cuda_poc_v1.py"))
+        self.assertIn("mutation escaped", message)
+
+    def test_a_clean_run_is_not_a_crash(self):
+        from pathlib import Path
+
+        from src.loop_stages import _candidate_crashed
+
+        self.assertEqual(_candidate_crashed("[CPG_RUN] a.cubin exit=0\n",
+                                            Path("cuda_poc_v1.py")), "")
+
+
+class TestCandidateFaultIsRetried(unittest.TestCase):
+    def test_a_crashed_candidate_becomes_a_retryable_diagnosis(self):
+        """No samples recorded must be attributed, not filed as unclassifiable."""
+        from src.failure_taxonomy import diagnose, is_retryable
+        from src.reproduction import decide, parse_log
+
+        text = "[CPG_CANDIDATE_FAULT] ValueError: mutation escaped the sh_size field\n"
+        result = decide(parse_log(text, target_version_in_range=True))
+        diagnosis = diagnose(verdict=result.verdict, reasons=list(result.reasons))
+
+        self.assertEqual(diagnosis.code, "NO_OBSERVATION")
+        self.assertTrue(is_retryable(diagnosis))

@@ -146,7 +146,10 @@ def diagnose(*, verdict: Optional[str], reasons: List[str],
         return Diagnosis(FALSE_POSITIVE, joined, _DIRECTIVES[FALSE_POSITIVE])
     if "不具区分力" in joined or "缺少良性基线" in joined:
         return Diagnosis(INCONCLUSIVE, joined, _DIRECTIVES[INCONCLUSIVE])
-    if "未观察到任何样本退出码" in joined:
+    if ("未观察到任何样本退出码" in joined
+            or "没有可识别的受控样本" in joined
+            or "没有样本执行记录" in joined
+            or "[CPG_CANDIDATE_FAULT]" in joined):
         return Diagnosis(NO_OBSERVATION, joined, _DIRECTIVES[NO_OBSERVATION])
     if "标签冲突" in joined:
         return Diagnosis(LABEL_CONFLICT, joined, _DIRECTIVES[LABEL_CONFLICT])

@@ -299,7 +299,8 @@ def docker_matrix_stage(config: LoopConfig,
                    "-v", f"{config.samples_dir}:/work:rw",
                    config.container_image, "bash", str(harness)]
         completed = subprocess.run(command, capture_output=True, text=True,
-                                   timeout=config.timeout_seconds)
+                                   timeout=config.timeout_seconds,
+                                   encoding="utf-8", errors="replace")
         out = Path(config.samples_dir) / "loop_matrix_out.txt"
         out.write_text(completed.stdout + completed.stderr, encoding="utf-8")
         return LoopState(iteration=state.iteration,

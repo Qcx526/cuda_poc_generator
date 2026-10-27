@@ -49,8 +49,13 @@ class StageContext:
 
 def _default_runner(command: List[str], *, cwd: Optional[Path] = None,
                     timeout: int = 600) -> "subprocess.CompletedProcess":
+    # Decode as UTF-8 with replacement: the default is the ANSI code page, and
+    # container output routinely carries bytes it cannot decode. The reader
+    # thread then dies, stdout comes back empty, and the verdict says "no
+    # samples recorded" - a decoding problem disguised as a failed reproduction.
     return subprocess.run(command, cwd=None if cwd is None else str(cwd),
-                          capture_output=True, text=True, timeout=timeout)
+                          capture_output=True, text=True, timeout=timeout,
+                          encoding="utf-8", errors="replace")
 
 
 # -- generate ------------------------------------------------------------
@@ -350,12 +355,38 @@ def _driver_stage(context: StageContext, candidate: Path, state: LoopState,
                      candidate_file=str(candidate))
 
 
+def _candidate_crashed(output: str, candidate: Path) -> str:
+    """The exception the candidate raised, when it raised one.
+
+    A candidate that dies in its own code produced nothing to grade. Running the
+    fallback matrix anyway finds some leftover file, grades it as "no effect",
+    and the loop treats that as an unclassifiable result instead of a candidate
+    fault it could feed back.
+    """
+    if "Traceback (most recent call last)" not in output:
+        return ""
+    if candidate.name not in output and "ValueError" not in output \
+            and "AssertionError" not in output and "Exception" not in output:
+        return ""
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    for line in reversed(lines):
+        if line.startswith(("ValueError", "AssertionError", "RuntimeError",
+                            "TypeError", "KeyError", "IndexError", "OSError")):
+            return line
+    return "candidate raised an exception"
+
+
 def _matrix_pass(context: StageContext, host_dir: Path, runner: Runner,
                  candidate_output: str = "") -> str:
     """Run the declared tools over the declared artifacts, after the fact."""
     invocations = spec_invocations(context)
     if not invocations:
         return ""
+    broken = _candidate_crashed(candidate_output, Path(context.cve_id))
+    if broken:
+        # Nothing was produced, so there is nothing to exercise: say so, and let
+        # the loop hand the exception to the next iteration.
+        return "\n[CPG_CANDIDATE_FAULT] %s\n" % broken
     declared, note = _declared_artifacts(host_dir, candidate_output)
     target = Path(host_dir) / "_grader_matrix.sh"
     try:

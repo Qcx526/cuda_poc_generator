@@ -107,7 +107,8 @@ class ContainerBackend:
                    "-v", "%s:/work:rw" % Path(candidate).parent.resolve(),
                    image, "python3", Path(candidate).name]
         completed = subprocess.run(command, capture_output=True, text=True,
-                                   timeout=timeout)
+                                   timeout=timeout, encoding="utf-8",
+                                   errors="replace")
         return ExecutionObservation(
             backend=self.name, exit_code=completed.returncode,
             stdout=completed.stdout, stderr=completed.stderr)
@@ -131,7 +132,8 @@ class WindowsNativeBackend:
         if not self.available():
             raise RuntimeError("windows_native backend requires Windows")
         completed = subprocess.run([sys.executable, str(candidate)],
-                                   capture_output=True, text=True, timeout=timeout)
+                                   capture_output=True, text=True, timeout=timeout,
+                                   encoding="utf-8", errors="replace")
         return ExecutionObservation(
             backend=self.name, exit_code=completed.returncode,
             stdout=completed.stdout, stderr=completed.stderr,
