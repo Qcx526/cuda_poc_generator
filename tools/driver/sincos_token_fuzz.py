@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Sequence
 
 ACCESS_VIOLATION = 0xC0000005
+CDB = r"D:/Windows Kits/10/Debuggers/x64/cdb.exe"
 
 
 def load_words(path: Path) -> List[int]:
@@ -45,6 +46,42 @@ def run(harness: Path, bytecode: Path, scratch: Path, words: Sequence[int],
     except subprocess.TimeoutExpired:
         return -1
     return completed.returncode
+
+
+def fault_module(harness: Path, bytecode: Path, scratch: Path,
+                 words: Sequence[int], cdb: str = CDB) -> str:
+    """Which module actually faulted.
+
+    An access violation on its own proves nothing: truncated bytecode makes
+    d3d9's validator fault long before the driver sees the shader. Only a fault
+    inside nvgpucomp64 is the bug being chased.
+    """
+    write_words(scratch, words)
+    try:
+        completed = subprocess.run(
+            [cdb, "-c", "sxe av; g; kb; q", str(harness), "bytecode", str(scratch)],
+            capture_output=True, text=True, timeout=180,
+            encoding="utf-8", errors="replace")
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    # The faulting frame is the first symbol line after the exception banner.
+    # Searching the whole output for "nvgpucomp64" matches the loaded-module
+    # list and reports the wrong culprit with complete confidence.
+    seen_fault = False
+    for line in (completed.stdout or "").splitlines():
+        if "Access violation" in line:
+            seen_fault = True
+            continue
+        if not seen_fault:
+            continue
+        stripped = line.strip()
+        if "!" in stripped and not stripped.startswith("*"):
+            module = stripped.split("!")[0].split()[-1]
+            for token in stripped.split():
+                if "!" in token and "+" in token:
+                    return token.split("!")[0]
+            return module
+    return "none"
 
 
 def sweep(bytecode: Path, harness: Path, positions: Sequence[int],
