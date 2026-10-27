@@ -76,3 +76,23 @@ class TestBugcheckParsing(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestScanMode(unittest.TestCase):
+    def test_scan_finds_every_armed_probe_under_a_root(self):
+        from tools.harvest_probe import scan
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first = root / "v1" / "CVE-A"
+            second = root / "v1" / "CVE-B"
+            for workdir in (first, second):
+                workdir.mkdir(parents=True)
+                arm(workdir, workdir / "poc.py")
+            time.sleep(1.1)
+
+            scan(root)
+
+            log = (root / "harvest.log").read_text(encoding="utf-8")
+            self.assertIn("CVE-A", log)
+            self.assertIn("CVE-B", log)
