@@ -1,198 +1,202 @@
-# CUDA PoC Generator
+# CUDA / GPU PoC Generator
 
-面向 **GPU 漏洞全品类**的 PoC 生成工程：从漏洞资料出发，让模型写出可执行的 PoC，
-再由判分器**自己**跑一遍工具链给出差分判定，失败结果回流下一轮。
+LLM 驱动的漏洞 PoC 生成与**迭代验证**系统。生成只是起点：候选必须在隔离环境里跑出
+**差分证据**——基线干净、构造样本崩溃、单变量对照干净——才算复现。
 
-支持三层目标，同一套判定规则：
+**当前版本：Closed-Loop Iterative Generation。判定以差分证据为准，不以候选自述为准。**
 
-| 层 | 目标形态 | 执行位置 | 崩溃信号 |
-|---|---|---|---|
-| `userland_toolchain` | 畸形文件 → CLI 工具（cuobjdump / nvdisasm） | 隔离容器 | 信号 / 退出码 |
-| `driver_userland` | 驱动附带的用户态组件（着色器编译器等） | 本机进程 | `0xC0000005` + 模块归因 |
-| `driver_kernel` | 内核驱动（`nvlddmkm`），ioctl 序列 | 本机 + 跨重启取证 | bugcheck（事件 1001） |
+## 1. 核心能力
 
-当前测试规模：**1486 passed, 66 skipped**。
+- **闭环迭代**：规格 → 生成 → 执行 → 差分判分 → 失败归因 → 带反馈重试（`src/closed_loop.py`）
+- **三层目标**：`userland_toolchain`（nvdisasm/cuobjdump，Docker 隔离）、`driver_userland`
+  （nvgpucomp64 等）、`driver_kernel`（nvlddmkm，带崩溃取证）
+- **差分判分**：判分器**自己**把产物逐个喂给目标工具，不听候选报告；三条件同时成立才判
+  `SUPPORTED`（`src/reproduction.py`）
+- **失败归因**：12 类失败分类（语法/lint/路径未达/前提/假阳性/无观察…），可归因的失败
+  才重试，且反馈带具体指令（`src/failure_taxonomy.py`）
+- **崩溃取证**：内核层执行前写标记、跨重启采集开机事件 6005 与 bugcheck 1001，
+  结果归因到候选与变体（`src/driver_probe.py` / `src/driver_crash.py`）
+- **质量 lint**：生成阶段的硬约束（版本分类、驱动探测上下文、手工 ELF 布局、项目内 import 等），
+  违规候选被拒并重写
+- **RAG 知识库**：`data/knowledge_bases/` 下的方法条目（含 GPU 驱动入口链与已否证路径），
+  供生成阶段检索
+- **七维资料加载**：七类 JSON 输入、字段来源与 SHA-256、严格合同校验（`src/data_loader.py`）
+- **可复现报告**：每轮 `iteration_N_observation.txt` 原始输出 + 中文 `loop_report.zh-CN.md`
 
-## 1. 当前状态（实测，不是计划）
-
-| 能力 | 状态 | 证据 |
-|---|---|---|
-| 工具链层闭环 | ✅ 可用 | `CVE-2024-0076` 3/3、`CVE-2025-23339` 2/3，单次 163–317 秒 |
-| 判分器自主执行 | ✅ 可用 | 候选交 `artifacts.json`，判分器按声明逐个跑工具 |
-| 内核层取证 | ✅ 可用 | 跨重启布防/采集，读 bugcheck 事件，7 项宿主检查全绿 |
-| D3DKMT 客户端 | ✅ 可达 | adapter / device / context 三句柄实测可用 |
-| 内核 escape 触发 | ❌ 未打通 | 分发前被权限拒绝（`0xC0000022`），见 `docs/P4_Z` |
-| 用户态编译触发 | ❌ 未打通 | 分派函数对像素着色器不进入，见 `docs/P4_V` |
-
-**已知结论**：内核层的困难不是方法不足，而是接口被系统性硬化——
-六条否证见 `docs/P5_A_GPU_POC_FEASIBILITY.md`。
-
-## 2. 闭环流程
-
-```
-specs/<CVE>/spec.json        规格：入口、字段、oracle
-        │
-        ├─ [generate]  模型读规格 → 候选脚本（lint 不过则重写，最多两次）
-        ├─ [execute]   候选跑出产物 → 判分器**自己**再跑一遍工具
-        ├─ [grade]     三条件判定：baseline 干净 + crafted 崩 + control 干净
-        └─ [feedback]  失败归类 → 具象指令 → 下一轮
-```
-
-三条设计约束，都是踩过坑之后定下的：
-
-1. **判分器自己跑**：候选只交文件和角色，工具调用由判分器决定。
-   否则候选可以靠"我跑了，崩了"蒙混过关。
-2. **角色显式声明**：`artifacts.json`（或 `[CPG_LABEL]` 行）。
-   按文件名猜角色曾把良性基线和攻击样本搞混。
-3. **崩溃必须归因**：内核层要 bugcheck 事件，用户态要模块名。
-   只看退出码曾把 d3d9 校验器的崩溃当成驱动漏洞（见 `docs/P5_A` §5.2）。
-
-## 3. 快速开始
+## 2. 快速开始（Windows）
 
 ```powershell
+# 1) 环境：原生 CPython 3.12（uv 管理的解释器亦可，用绝对路径）
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -c constraints/windows-py312.txt -e ".[dev]"
-Copy-Item .env.example .env      # 填入 DEEPSEEK_API_KEY
 
-# 跑一个 CVE（工具链层；需要 Docker Desktop 已启动）
+# 2) 密钥：本地 .env（不要提交）
+Copy-Item .env.example .env
+#   DEEPSEEK_API_KEY=...   CPG_LLM_MODEL_NAME / CPG_LLM_API_BASE 见 §8
+
+# 3) Docker：工具链层在容器里执行
+docker images cpg/cuda112-py3:1.0     # 缺失则 docker build -t cpg/cuda112-py3:1.0 -f docker/Dockerfile .
+
+# 4) 跑一个 CVE（规格已就绪，oracle 明确）
 .\.venv\Scripts\python.exe -u -m src.batch_loop --cve CVE-2025-23340 --iterations 2 --repeat 1 --workdir data/loop/first
 ```
 
-第一次运行的逐阶段说明见 [首次运行指南](docs/P5_B_FIRST_RUN.md)。
+首次运行的完整走查（每阶段输出含义、结果落点、常见两件事）见
+**[docs/P5_B_FIRST_RUN.md](docs/P5_B_FIRST_RUN.md)**。
 
-结果位置：
+## 3. 三层目标与判定
 
-| 路径 | 内容 |
-|---|---|
-| `data/loop/<run>/<CVE>/loop_report.zh-CN.md` | 人读报告：判定、理由、每轮记录 |
-| `data/loop/<run>/<CVE>/iteration_N_observation.txt` | 原始执行输出（含 `[CPG_RUN]` 与清单信息） |
-| `data/outputs/<CVE>/` | 候选脚本与它产出的文件 |
+| 层 | 目标 | 执行环境 | 判定 |
+|---|---|---|---|
+| `userland_toolchain` | nvdisasm / cuobjdump 等独立工具 | Docker（`cpg/cuda112-py3:1.0`，无网络、限内存） | 进程退出码 / SIGSEGV |
+| `driver_userland` | `nvgpucomp64.dll` 等驱动用户态组件 | 本机（cdb 断点 + 退出码） | **退出码 + 出错模块归因** |
+| `driver_kernel` | `nvlddmkm.sys`（escape / ioctl） | 本机，先布防再触发 | **bugcheck 1001 + 跨重启取证** |
 
-判定含义：`SUPPORTED` 三条件成立；`NOT_VERIFIED` 有崩溃但对照不干净或未崩；
-`EXHAUSTED` 迭代用尽；`ERROR` 阶段失败。
+**判定语义**：
 
-## 4. 目录结构
-
-```text
-main.py                  单次生成入口（历史接口，仍可用）
-src/batch_loop.py        批量闭环驱动
-src/closed_loop.py       循环与终止条件
-src/loop_stages.py       生成 / 执行 / 反馈三个阶段
-src/reproduction.py      日志解析与差分判定
-src/failure_taxonomy.py  失败归类与可重试判定
-src/spec_model.py        规格模型（含 driver 层的 trigger 步骤）
-src/driver_probe.py      内核探针：布防 → 启动 → 跨重启采集
-src/driver_crash.py      bugcheck 解析与开机时间判定
-specs/<CVE>/spec.json    每个目标一份规格
-data/harness/            着色器测试器与字节码样本
-data/knowledge_bases/    检索语料（会被 RAG 摄取）
-tools/                   探测、取证、逆向工具
-docs/                    合同、验收、可行性报告
+```
+SUPPORTED    基线干净 ∧ 构造样本崩溃 ∧ 单变量对照干净
+NOT_VERIFIED 有崩溃但对照不干净，或无崩溃
+EXHAUSTED    迭代用尽且每轮归因明确
+ERROR        阶段失败（生成失败 / 超时 / 容器问题）
 ```
 
-## 5. 工具
+**用户态归因规则**（踩过坑后固化）：访问违例必须归因到模块才算命中——截断输入会让
+`d3d9!CBaseShaderValidator` 先崩，与目标组件无关。
 
-**运行闭环**
-
-| 工具 | 用途 |
-|---|---|
-| `src.batch_loop` | 批量跑 CVE，输出汇总 |
-| `tools.diag_generation` | 单独诊断生成阶段 |
-| `tools.compare_runs` | 多次运行对比 |
-
-**内核层取证**
-
-| 工具 | 用途 |
-|---|---|
-| `tools.check_driver_env` | 宿主自检：驱动版本、转储配置、自动重启 |
-| `tools.harvest_probe` | 重启后采集：`--scan` 遍历所有已布防探针 |
-| `tools.probe_d3dkmt` | D3DKMT 三段探测（adapter / device / escape） |
-| `tools.probe_gpu_surface` | 枚举可达的设备对象与 NVAPI 面 |
-
-**驱动逆向**
-
-| 工具 | 用途 |
-|---|---|
-| `tools.extract_escape_codes` | 从 `nvlddmkm.sys` 提取 `0x1000xxxx` 候选（按版本选文件） |
-| `tools.extract_ioctls` | 从 `nvapi64.dll` 提取 DeviceIoControl 码 |
-| `tools.probe_ioctl_channel` | 验证 ioctl 通道是否可用（无效码探针） |
-| `tools.sweep_escapes` | 逐码尝试 escape，命中即停 |
-| `tools.hook_umd_escape` | 拦截 UMD 的 escape 调用 |
-
-**着色器路径**
-
-| 工具 | 用途 |
-|---|---|
-| `tools.driver.run_fuzz` | 按语法生成变体并跑（带崩溃归因） |
-| `tools.driver.trace_run` | 在指定 RVA 下断，返回是否命中 |
-| `tools.driver.byte_trace` | 字节级跟踪 |
-| `tools.driver.sincos_token_fuzz` | 定向损坏指令令牌字段 |
-| `data/harness/shader_runner.exe` | `compile` / `bytecode` / `assemble` 三种模式 |
-
-## 6. 输入与配置
-
-漏洞输入为七维 JSON（`data/inputs/CVE-*/`）：
+## 4. 闭环架构
 
 ```text
-1_os_environment.json            OS/kernel/权限/环境
-2_cuda_environment.json          GPU/CUDA/驱动/工具链
-3_affected_component.json        组件与版本范围
-4_attack_surface.json            入口与输入控制
-5_vulnerability_type.json        CWE/类型
-6_impact_controllability.json    影响与控制条件
-7_root_cause.json                根因、来源与研究假设
+specs/<CVE>/spec.json          规格：入口、解析字段、oracle（触发条件）
+        │
+        ▼
+[generate]   读规格 + RAG + 失败反馈 → 写 cuda_poc_vN.py（过 lint 才放行）
+        │
+        ▼
+[execute]    容器/本机执行候选 → 候选产出 artifacts.json（benign/crafted/controls）
+        │     判分器再自己把产物喂给目标工具，记录 [CPG_RUN] 行
+        ▼
+[grade]      差分判定 → SUPPORTED / NOT_VERIFIED / …
+        │
+        ▼
+[diagnose]   失败归因（12 类）→ 可归因且可重试？
+        │            ├─ 是 → [feedback] 带指令进入下一轮
+        ▼            └─ 否 → 结束并写报告
+loop_report.zh-CN.md + iteration_N_observation.txt
 ```
 
-配置优先级：进程环境 > 根目录 `.env` > `config/default.yaml`。
-常用覆盖项：`CPG_LLM_MODEL_NAME`、`CPG_LLM_API_BASE`、`CPG_LLM_API_KEY_ENV`、
-`CPG_RAG_ENABLED`、`CPG_MAX_ITERATIONS`。密钥只放 `.env`，不入库。
+设计铁律（详见 [docs/P4_Z_KERNEL_ESCAPE_PROBE.md](docs/P4_Z_KERNEL_ESCAPE_PROBE.md)）：
 
-RAG 读取 `data/knowledge_bases/` 下的 UTF-8 `.md`/`.txt`，本地 CPU 嵌入
-（`all-MiniLM-L6-v2`），索引存 `data/knowledge_bases/.chromadb/`（不提交）。
-`--no-rag` 只关 RAG，不影响模型调用。
+1. **目标函数是差分判定**，不是"观察到崩溃"——否则会收敛到假阳性
+2. **内核路径禁止无界重试**——每次触发都可能蓝屏；一次一个值，触发即停
+3. **反馈必须可归因**（lint 罪名 / 对照结果 / 退出码），"没崩"不回流
 
-## 7. 已知边界
+## 5. 规格：添加一个目标
 
-- **工具链层**：需要 Docker，镜像 `cpg/cuda112-py3:1.0`。
-- **内核层**：需要 Windows + 真 GPU + 可回滚的崩溃恢复（`AutoReboot=1`、转储开启）。
-- **用户态编译层**：版本敏感（`CVE-2024-0107` 只在 551.61 复现，535.98 已修复）。
-- **生成阶段**：受模型服务稳定性影响，抖动表现为 `STAGE_ERROR`，重跑即可。
-- 主流程不会自动编译 CUDA 源码或启动 kernel；工具链层的产物由候选脚本构造。
+`specs/<CVE>/spec.json` 声明：入口调用、输入形态、解析字段及偏移、oracle（哪个字段、
+什么条件、预期效果）、版本范围。oracle 明确时策略为 `MUTATE_DIRECTED`（定点变异），
+否则降级为搜索。现有目标：
 
-## 8. 文档索引
+```
+CVE-2024-0076   cuobjdump ELF 解析越界写
+CVE-2024-0091   cuobjdump 空指针
+CVE-2024-0107   nvgpucomp64 着色器编译越界读（driver_userland）
+CVE-2025-23247 / 23339 / 23340   nvdisasm / cuobjdump 内存类
+CVE-2026-24193  nvlddmkm 越界写（driver_kernel，入口可达性已实测）
+```
 
-**可行性结论**
-
-- [GPU 驱动 PoC 可行性：一天的实测与结论](docs/P5_A_GPU_POC_FEASIBILITY.md) — 11 组否证、三个静默错误、下一步路线
-- [内核 escape 入口探测](docs/P4_Z_KERNEL_ESCAPE_PROBE.md) — 六条否证与判别方法
-- [驱动逆向地图](docs/P4_V_DRIVER_RE_MAP.md) — CVE-2024-0107 的实测 RVA（含勘误）
-
-**操作指南**
-
-- [首次运行](docs/P5_B_FIRST_RUN.md)
-- [环境迁移](docs/ENVIRONMENT_MIGRATION.md)
-- [归档合同](docs/CVE_ARTIFACT_PACKAGING.md)
-
-**历史阶段**：`docs/P0_*` 至 `docs/P4_*` 记录各阶段的合同与验收。
-
-## 9. 环境与依赖
-
-- Python `>=3.10,<3.13`（本轮 Windows 使用 3.12.13）
-- 依赖入口 `pyproject.toml`；`constraints/windows-py312.txt` 为版本快照
-- 运行闭环需要 Docker Desktop；内核层工具需要 Windows 与 NVIDIA 驱动
-- 着色器逆向的调试器默认 `D:\Windows Kits\10\Debuggers\x64\cdb.exe`
-
-## 10. 测试与提交
+## 6. 常用命令
 
 ```powershell
+# 单个 CVE 闭环
+.\.venv\Scripts\python.exe -u -m src.batch_loop --cve CVE-2025-23340 --iterations 2 --repeat 1 --workdir data/loop/run1
+
+# 批量（工具链层）
+.\.venv\Scripts\python.exe -u -m src.batch_loop --tier userland_toolchain --limit 3
+
+# 内核层（带布防与取证）
+.\.venv\Scripts\python.exe -u -m src.batch_loop --tier driver_kernel --cve CVE-2026-24193
+
+# 静态入口：从 nvlddmkm.sys 提取 escape 码候选（按版本匹配）
+.\.venv\Scripts\python.exe -m tools.extract_escape_codes
+
+# 质量检查
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m ruff check main.py src tests tools
 ```
 
-约定见 `AGENTS.md`：默认在 `main` 开发，验收通过后提交推送，不 force push，
-不提交 `.env`、虚拟环境、缓存与私有原始证据。
+## 7. 目录结构
 
-## 11. 生成物不代表漏洞已验证
+```text
+src/                    闭环内核（closed_loop / loop_stages / reproduction /
+                        failure_taxonomy / backends）与加载、配置、探测
+specs/                  每个 CVE 的入口与 oracle 规格
+tools/                  探测与提取工具（probe_* / extract_* / sweep_* / driver/）
+data/inputs/CVE-*/      七维研究输入（受控）
+data/knowledge_bases/   RAG 语料（CUDA 漏洞知识 + GPU 驱动方法与已否证路径）
+data/outputs/<CVE>/     候选脚本与产物（artifacts.json 声明角色）
+data/loop/<run>/        每轮观察与中文报告
+constraints/            版本约束快照（Windows 3.12 / core）
+tests/                  离线回归（83 个文件，约 1150 个测试函数）
+docs/                   P0–P5 阶段合同与验收报告（64 篇）
+```
 
-候选能被生成、能被 lint 通过、甚至能让工具崩溃，都不等于复现成立。
-判定只认三条件同时成立，且每条结论都带证据路径（`[CPG_RUN]` 行、崩溃归因、对照结果）。
+## 8. 依赖与模型配置
+
+| 组 | 用途 | 安装 |
+|---|---|---|
+| 核心 | YAML/dotenv/Pydantic/httpx/OpenAI/LangChain | `pip install -c constraints/core.txt -e .` |
+| `dev` | pytest、ruff | `pip install -c constraints/core.txt -e '.[dev]'` |
+| `rag` | Chroma、sentence-transformers | `pip install -c constraints/core.txt -e '.[rag]'` |
+| `search` | Tavily 联网检索 | `pip install -c constraints/core.txt -e '.[search]'` |
+
+`.env` 三项（密钥留在本地，不进仓库）：
+
+```dotenv
+DEEPSEEK_API_KEY=<本地密钥>
+CPG_LLM_MODEL_NAME=deepseek-flash
+CPG_LLM_API_BASE=https://api.deepseek.com
+```
+
+配置优先级：进程环境高于 `.env`，`CPG_*` 高于 YAML。支持覆盖项包括
+`CPG_LLM_MODEL_NAME / API_BASE / API_KEY_ENV / TEMPERATURE / MAX_TOKENS / TIMEOUT /
+MAX_RETRIES` 与 `CPG_RAG_ENABLED`。Tavily Key 未设置时跳过 Web 检索；`--no-rag`
+只禁用 RAG，不禁用 LLM 或 Tavily 网络请求。LangSmith 外部追踪默认关闭。
+
+RAG 加载 `data/knowledge_bases/` 下 UTF-8 `.md`/`.txt`，嵌入
+`sentence-transformers/all-MiniLM-L6-v2`（CPU），索引存 `.chromadb/` 不提交。
+更新语料后需 `force_rebuild` 重建。
+
+工具链执行需要 Docker 与镜像 `cpg/cuda112-py3:1.0`（构建见 `docker/Dockerfile`）。
+
+## 9. 边界与当前限制（如实）
+
+- **生成成功不等于复现**：只有差分三条件同时成立才判 `SUPPORTED`；历史 run 的
+  `NOT_VERIFIED` 保留原判，不改写
+- **`driver_kernel` 层入口可达但未打通**：D3DKMT 链路已实测到 device/context，
+  escape 在分发前被权限拒绝；六条否证与方法记录见
+  [docs/P5_A_GPU_POC_FEASIBILITY.md](docs/P5_A_GPU_POC_FEASIBILITY.md)
+- **`driver_userland`（CVE-2024-0107）**：版本对齐（551.61）、断点与归因工具就绪，
+  但构造到达漏洞路径的输入仍在研究；已否证路径见
+  [docs/P4_V_DRIVER_RE_MAP.md](docs/P4_V_DRIVER_RE_MAP.md)
+- **执行隔离**：工具链层在无网络容器内；内核层执行前必须布防标记，触发后跨重启取证。
+  不满足前置（Docker、镜像、cdb）时对应层直接报 `ERROR`，不静默跳过
+
+## 10. 文档索引
+
+| 主题 | 入口 |
+|---|---|
+| 首次运行走查 | `docs/P5_B_FIRST_RUN.md` |
+| GPU 驱动 PoC 可行性（11 组否证与方法） | `docs/P5_A_GPU_POC_FEASIBILITY.md` |
+| 内核 escape 探测记录 | `docs/P4_Z_KERNEL_ESCAPE_PROBE.md` |
+| CVE-2024-0107 逆向地图与勘误 | `docs/P4_V_DRIVER_RE_MAP.md` |
+| 七维输入 JSON 结构 | `docs/P1_A_CONTRACT.md` |
+| 历史阶段合同（P0–P3：分析/平台/工具/Oracle/打包） | `docs/P*_*.md` 系列 |
+
+## 11. 质量基线
+
+```text
+pytest:  1486 passed / 66 skipped（含编码回归、候选故障归因、判定链路）
+ruff:    clean（main.py / src / tests / tools）
+语言:    代码与合同英文，报告默认简体中文 UTF-8
+```
