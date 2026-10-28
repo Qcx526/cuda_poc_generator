@@ -128,3 +128,14 @@ def test_only_novel_variants_reach_the_findings_store():
     kept = novel_lines(raw, ["b.cubin"])
     assert "b.cubin" in kept
     assert "a.cubin" not in kept
+
+
+def test_a_nonzero_exit_without_a_fault_site_is_not_a_new_site():
+    """The tool rejecting an input is not a crash somewhere else."""
+    variants = [
+        Variant("seed", "(unchanged)", 0, 0, 0, exit_code=139,
+                fingerprint="cuobjdump+0xb000"),
+        Variant("structure", "e_shnum", 1, 60, 2, exit_code=1, fingerprint=""),
+    ]
+    classify(variants, "cuobjdump+0xb000")
+    assert variants[1].outcome == UNKNOWN

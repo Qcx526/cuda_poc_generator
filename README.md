@@ -195,6 +195,7 @@ python -m pytest -q -p no:cacheprovider
 | `docs/P5_A_GPU_POC_FEASIBILITY.md` | 一天 11 组实验的可行性报告（含三条结构性原因） |
 | `docs/P5_B_FIRST_RUN.md` | 第一次自己跑的手把手流程 |
 | `docs/P5_C_POC_MUTATION_METHOD.md` | PoC 变异方法、文献定位、创新点与评测设计 |
+| `docs/P5_D_MUTATION_SCALE.md` | 两个 CVE、16 个变体的规模数据与边界 |
 | `docs/P4_Z_KERNEL_ESCAPE_PROBE.md` | 内核 escape 六条否证与判定方法 |
 | `docs/P4_V_DRIVER_RE_MAP.md` | CVE-2024-0107 逆向地图与勘误 |
 | `docs/P4_X_STAGE_SUMMARY.md` | 阶段总结与工具能力清单 |

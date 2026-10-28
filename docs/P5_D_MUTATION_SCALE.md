@@ -1,0 +1,106 @@
+# P5-D 变异战役的规模数据（两个 CVE，16 个变体）
+
+报告语言：`zh-CN`。数据来自本机容器实跑，每个变体只改一个字段，指纹为崩溃模块 + 4 KB 取整偏移。
+详细表格见 `data/mutation/cve-2024-0076/report.md` 与 `data/mutation/cve-2025-23340/report.md`。
+
+## 1. 为什么是两个
+
+七个规格里只有两个具备**可用的种子**（一个能稳定崩溃的样本）：
+
+| 规格 | 种子情况 | 能否做战役 |
+|---|---|---|
+| CVE-2024-0076 | `poc_sec08_shsize_...ffffffff.cubin`，崩在 `cuobjdump+0xb000` | ✅ |
+| CVE-2025-23340 | `poc_sh_size_0.cubin`，崩在 `nvdisasm+0x28000` | ✅ |
+| CVE-2025-23247 | 两份 poc（`fffe` / `8000`）在容器里均 `exit=0` | ❌ 无崩溃可作种子 |
+| CVE-2025-23339 | 只有 `benign.cubin` | ❌ |
+| CVE-2024-0091 / 2024-0107 / 2026-24193 | 无样本产物 | ❌ |
+
+**这是当前规模的硬边界**，不是选择。要扩大，得先让这些规格各自产出一个能崩的种子。
+
+## 2. 汇总
+
+| CVE | 种子崩溃点 | SAME | CLEAN | **NOVEL** | 无信号 | 独立新点位 |
+|---|---|---|---|---|---|---|
+| CVE-2024-0076 | `cuobjdump+0xb000` | 2 | 2 | **4** | 0 | **2**（`cuobjdump+0x12000`、`libc.so.6+0x183000`） |
+| CVE-2025-23340 | `nvdisasm+0x28000` | 6 | 3 | **0** | 3 | 0 |
+
+两个 CVE 的变体合计 16 个，其中 4 个落在新点位（去重后 2 个独立位置）。
+
+## 3. 逐条数据
+
+### CVE-2024-0076（历史 5/5 成功）
+
+| 轴 | 字段 | 取值 | 退出码 | 指纹 | 访问 | 判定 |
+|---|---|---|---|---|---|---|
+| seed | — | — | 139 | `cuobjdump+0xb000` | read-out-of-bounds | |
+| boundary | sh_size | 16 | 0 | — | — | CLEAN |
+| boundary | sh_size | 0xFFFFFFFF | 139 | `cuobjdump+0xb000` | read-out-of-bounds | SAME |
+| boundary | sh_size | 0xFFFFFFFFFFFFFFF0 | 0 | — | — | **CLEAN**（公告称应触发） |
+| structure | e_shnum | 11（原值） | 139 | `cuobjdump+0xb000` | read-out-of-bounds | SAME |
+| structure | e_shnum | 1 | 139 | `cuobjdump+0x12000` | null-read | **NOVEL** |
+| structure | e_shnum | 4096 | 139 | `libc.so.6+0x183000` | null-read | **NOVEL** |
+| structure_shstrndx | e_shstrndx | 9 | 139 | `libc.so.6+0x183000` | null-read | NOVEL（与上同点位） |
+| structure_shstrndx | e_shstrndx | 99 | 139 | `cuobjdump+0x12000` | null-read | NOVEL（与上同点位） |
+
+### CVE-2025-23340（此前的假阳性案例）
+
+| 轴 | 字段 | 取值 | 退出码 | 指纹 | 访问 | 判定 |
+|---|---|---|---|---|---|---|
+| seed | — | — | 139 | `nvdisasm+0x28000` | null-read | |
+| boundary | sh_size | 0 | 139 | `nvdisasm+0x28000` | null-read | SAME |
+| boundary | sh_size | 11 / 12 / 24 | 0 | — | — | CLEAN |
+| mechanism | sh_type | 4 / 3 / 1 | 139 | `nvdisasm+0x28000` | null-read | SAME |
+| structure | e_shnum | 9（原值） | 139 | `nvdisasm+0x28000` | null-read | SAME |
+| structure | e_shnum | 1 / 4096 | 1 | — | — | 无信号（工具拒绝） |
+| structure_shstrndx | e_shstrndx | 1 | 139 | `nvdisasm+0x28000` | null-read | SAME |
+
+## 4. 这组数据说明了什么
+
+### 4.1 方法能区分三种结果
+
+同一批变体里同时出现了"打中同一处"、"改了就没事"、"崩到别处"，且判定由指纹决定而非退出码。
+这是方法可用的最低要求，已经满足。
+
+### 4.2 新点位在"真 CVE"上出现，在假阳性上不出现
+
+| CVE | 种子性质 | NOVEL |
+|---|---|---|
+| CVE-2024-0076 | 真实确认的漏洞（三方对照成立） | 4（去重 2） |
+| CVE-2025-23340 | 我们判定为假阳性 | 0 |
+
+**观察（不足以作为结论）**：假阳性的种子周围变异不出新点位，因为它的崩溃本来就由单一字段的取值决定。
+样本只有两个，这条只能当方向。
+
+### 4.3 公告与实测的偏差（两处）
+
+| CVE | 公告说 | 实测 |
+|---|---|---|
+| CVE-2024-0076 | `sh_size` 取 `0xFFFFFFFF` 或 `0xFFFFFFFFFFFFFFF0` 都触发 | **只有 0xFFFFFFFF 触发** |
+| CVE-2025-23340 | `0 ≤ sh_size ≤ 11` 触发 | **只有 0 触发** |
+
+两处都是"文档窗口比实现宽"。这类偏差靠读公告永远发现不了，只有逐值跑才会暴露。
+
+### 4.4 新点位不等于更严重
+
+两个新点位经 memcheck 取证后都是**空指针读**：
+
+| 点位 | memcheck | 判断 |
+|---|---|---|
+| `cuobjdump+0x12000` | `Invalid read of size 4 at 0x4` | 读 `NULL+4` |
+| `libc.so.6+0x183000` | `Invalid read of size 1 at 0x0`，栈在 `strcmp` | 节名为 NULL 未检查 |
+
+崩在 libc 里曾被误以为代表堆破坏，实际不是。**严重程度必须单独取证。**
+
+## 5. 这组数据不能说明什么
+
+- **不能**说明方法在 CVE 上的发现率——只有 2 个样本，且都不是随机抽的
+- **不能**说明 NOVEL 与真实漏洞的相关性——2 个点无法支撑任何相关性
+- **不能**与盲 fuzz 比较——还没有在同等预算下跑对照
+
+## 6. 要把它变成可汇报的规模数据，还差三件事
+
+1. **更多可用种子**：先让 23247 / 23339 等规格产出能崩的样本（跑闭环），才有第三、第四个 CVE
+2. **对照实验**：同预算下用随机字节变异（不做语义轴）跑一遍，比较新点位数量与人工确认成本
+3. **分诊**：把 `UNTRIAGED` 的条目过一遍，给出"真新缺陷 / 同源变体 / 误报"的比例
+
+前两件是工作量，第三件需要人。

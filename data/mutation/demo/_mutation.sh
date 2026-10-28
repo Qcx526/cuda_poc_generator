@@ -1,0 +1,55 @@
+#!/bin/sh
+crashcap=''
+if [ ! -f ./crashcap.so ] && [ -f ./crashcap.c ] && command -v gcc >/dev/null 2>&1; then
+  gcc -shared -fPIC -O1 -o ./crashcap.so ./crashcap.c -ldl >/dev/null 2>&1 || true
+fi
+[ -f ./crashcap.so ] && crashcap='./crashcap.so'
+f='seed_(unchanged)_0.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='boundary_sh_size_0.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='boundary_sh_size_11.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='boundary_sh_size_12.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='boundary_sh_size_24.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='mechanism_sh_type_4.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='mechanism_sh_type_3.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='mechanism_sh_type_1.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+true

@@ -116,8 +116,11 @@ def classify(variants: Sequence[Variant], baseline: str) -> List[Variant]:
             variant.outcome = CLEAN
         elif variant.fingerprint == baseline:
             variant.outcome = SAME
-        elif variant.fingerprint.startswith("exit:"):
-            variant.outcome = UNKNOWN      # crashed, but no site was recorded
+        elif not variant.fingerprint or variant.fingerprint.startswith("exit:"):
+            # Non-zero exit without a recorded fault site is the tool refusing
+            # the input, not a crash somewhere new. Calling it NOVEL would fill
+            # the findings store with rejects.
+            variant.outcome = UNKNOWN
         else:
             variant.outcome = NOVEL
     return list(variants)
@@ -151,7 +154,9 @@ def _matrix_script(variants: Sequence[Variant],
         for invocation in invocations:
             parts = []
             for part in invocation:
-                parts.append('"$f"' if str(part) == "{artifact}" else str(part))
+                # Specs spell the input either way; both mean the same file.
+                parts.append('"$f"' if str(part) in ("{artifact}", "{candidate}")
+                             else str(part))
             command = " ".join(parts)
             lines.append('rm -f ".cc.$f"')
             lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" %s >/dev/null 2>&1'
@@ -375,7 +380,8 @@ def report(variants: Sequence[Variant], cve_id: str, baseline: str,
              "| `%s` | %d | 与种子同一处崩溃 |" % (SAME, counts.get(SAME, 0)),
              "| `%s` | %d | 不崩溃 |" % (CLEAN, counts.get(CLEAN, 0)),
              "| `%s` | %d | **崩溃在别处，候选新发现** |" % (NOVEL, counts.get(NOVEL, 0)),
-             "| `%s` | %d | 无可用信号 |" % (UNKNOWN, counts.get(UNKNOWN, 0)),
+             "| `%s` | %d | 非零退出但无崩溃点（多为工具拒绝），或无结果 |"
+             % (UNKNOWN, counts.get(UNKNOWN, 0)),
              ""]
     if required_missing:
         lines += ["**缺少必需变异轴：%s**，本轮结论不可用于归属。"
