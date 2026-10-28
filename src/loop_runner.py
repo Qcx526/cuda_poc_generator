@@ -28,7 +28,8 @@ def build_controller(*, cve_id: str, tier: str, iterations: int, image: str,
                      fixed_candidate: Optional[str] = None,
                      module: str = "", rva: int = 0,
                      cdb_path: str = "",
-                     blind_retry: bool = False) -> ClosedLoopController:
+                     blind_retry: bool = False,
+                     rag: bool = False) -> ClosedLoopController:
     """Wire the three stages and the grader into a controller."""
     config = LoopConfig(cve_id=cve_id, tier=tier, max_iterations=iterations,
                         container_image=image, samples_dir=str(workdir),
@@ -47,7 +48,9 @@ def build_controller(*, cve_id: str, tier: str, iterations: int, image: str,
                                            diagnosis_code=state.diagnosis_code,
                                            directive=state.directive)
     else:
-        generate = make_generate_stage(context, **kwargs)
+        # Retrieval is a property of the generate stage only; the executor must
+        # not be handed a keyword it does not accept.
+        generate = make_generate_stage(context, use_rag=rag, **kwargs)
     stages = {"generate": generate,
               "execute": make_execute_stage(context, **kwargs)}
     return ClosedLoopController(config, stages, make_grader(config, version_in_range))

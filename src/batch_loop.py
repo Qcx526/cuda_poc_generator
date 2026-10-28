@@ -63,7 +63,7 @@ class BatchRow:
 def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
             python_exe: str, image: str, index: int = 0,
             blind_retry: bool = False, tier: str = "userland_toolchain",
-            allow_kernel: bool = False) -> BatchRow:
+            allow_kernel: bool = False, rag: bool = False) -> BatchRow:
     """Run the loop for one CVE; never raises, always returns a row."""
     from .closed_loop import TargetTier
     from .loop_runner import build_controller, write_outputs
@@ -77,7 +77,7 @@ def run_one(cve_id: str, iterations: int, workdir: Path, project_root: Path,
             workdir=run_dir,
             project_root=project_root,
             version_in_range=None, allow_kernel=allow_kernel, python_exe=python_exe,
-            blind_retry=blind_retry)
+            blind_retry=blind_retry, rag=rag)
         result = controller.run()
         # Each repeat writes its own report: keeping only the last one would
         # throw away the per-run evidence that the success rate is built from.
@@ -111,7 +111,7 @@ def _finished_status(run_dir: Path) -> Optional[str]:
 def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
               project_root: Path, python_exe: str, image: str,
               repeat: int = 1, blind_retry: bool = False,
-              tier: str = "userland_toolchain",
+              tier: str = "userland_toolchain", rag: bool = False,
               runner: Optional[Callable[..., BatchRow]] = None,
               progress: Optional[Callable[[BatchRow], None]] = None) -> List[BatchRow]:
     """Run every CVE in order, reporting each row as it completes.
@@ -145,7 +145,7 @@ def run_batch(cve_ids: List[str], *, iterations: int, workdir: Path,
             if default_runner:
                 kwargs["blind_retry"] = blind_retry
             row = runner(cve_id, iterations, workdir, project_root,
-                         python_exe, image, **kwargs)
+                         python_exe, image, rag=rag, **kwargs)
             attempts += 1
             if row.status == "SUPPORTED":
                 successes += 1
@@ -218,6 +218,8 @@ def main(argv: Optional[list] = None) -> int:
                         help="constrain generated scripts to the differential only")
     parser.add_argument("--blind-retry", action="store_true", default=False,
                         help="retry after a failure without telling the model why")
+    parser.add_argument("--rag", action="store_true", default=False,
+                        help="hand the generator this CVE's measured knowledge")
     parser.add_argument("--cve", action="append", default=[])
     args = parser.parse_args(argv)
 
@@ -243,7 +245,8 @@ def main(argv: Optional[list] = None) -> int:
 
     rows = run_batch(cves, iterations=args.iterations, workdir=workdir,
                      project_root=root, python_exe=sys.executable,
-                     image=args.image, repeat=args.repeat, progress=report)
+                     image=args.image, repeat=args.repeat, progress=report,
+                     rag=args.rag)
     path = write_summary(rows, workdir)
     print("[batch] 汇总: %s" % path, flush=True)
     return 0 if all(r.status == "SUPPORTED" for r in rows) else 1

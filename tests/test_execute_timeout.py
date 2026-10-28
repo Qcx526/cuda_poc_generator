@@ -166,3 +166,36 @@ class TestCandidateFaultIsRetried(unittest.TestCase):
 
         self.assertEqual(diagnosis.code, "NO_OBSERVATION")
         self.assertTrue(is_retryable(diagnosis))
+
+
+class TestRetrievalSwitch(unittest.TestCase):
+    def test_the_generate_stage_can_opt_into_retrieval(self):
+        """Without this, a knowledge entry written by a campaign never reaches
+        the generator: the loop used to pass --no-rag unconditionally."""
+        from pathlib import Path
+
+        from src.closed_loop import LoopState
+        from src.loop_stages import StageContext, make_generate_stage
+
+        class Recorder:
+            def __init__(self):
+                self.commands = []
+
+            def __call__(self, command, cwd=None, timeout=None):
+                self.commands.append(command)
+
+                class Result:
+                    stdout = ""
+                    stderr = ""
+                    returncode = 0
+                return Result()
+
+        context = StageContext(project_root=Path("."), cve_id="CVE-X",
+                               container_image="img", workdir=Path("w"),
+                               tier="userland_toolchain", python_exe="py")
+        recorder = Recorder()
+        make_generate_stage(context, runner=recorder, use_rag=False)(LoopState(iteration=1))
+        make_generate_stage(context, runner=recorder, use_rag=True)(LoopState(iteration=1))
+
+        self.assertIn("--no-rag", recorder.commands[0])
+        self.assertNotIn("--no-rag", recorder.commands[1])

@@ -100,7 +100,9 @@ def test_knowledge_entry_states_what_the_axes_proved():
     ]
     text = knowledge_markdown(variants, "CVE-X", "nvdisasm+0x28000")
     assert "CVE-X" in text
-    assert "触发窗口是 `sh_size` ∈ [0]" in text
+    # The mechanism axis changed nothing, so the entry may describe what was
+    # measured but must not present it as the trigger condition.
+    assert "未确证归属" in text
     assert "不是 CVE-X 的区分轴" in text
 
 
@@ -139,3 +141,24 @@ def test_a_nonzero_exit_without_a_fault_site_is_not_a_new_site():
     ]
     classify(variants, "cuobjdump+0xb000")
     assert variants[1].outcome == UNKNOWN
+
+
+def test_knowledge_without_attribution_refuses_to_give_instructions():
+    """A mechanism axis that changes nothing cannot license a reproduction rule."""
+    from src.mutation_campaign import attributed, knowledge_markdown
+
+    unattributed = [
+        Variant("seed", "(unchanged)", 0, 0, 0, exit_code=139, fingerprint="a+0x1000"),
+        Variant("mechanism", "sh_type", 1, 0, 4, exit_code=139, fingerprint="a+0x1000", outcome=SAME),
+        Variant("boundary", "sh_size", 0, 0, 8, exit_code=139, fingerprint="a+0x1000", outcome=SAME),
+        Variant("boundary", "sh_size", 24, 0, 8, exit_code=0, outcome=CLEAN),
+    ]
+    assert attributed(unattributed) is False
+    text = knowledge_markdown(unattributed, "CVE-X", "a+0x1000")
+    assert "未确证归属" in text
+    assert "生成时应直接取窗口内的值" not in text
+
+    attributed_arm = [
+        Variant("mechanism", "sh_type", 1, 0, 4, exit_code=0, outcome=CLEAN),
+    ]
+    assert attributed(attributed_arm) is True

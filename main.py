@@ -42,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dir", type=str, default=None, help="输入目录（与 --cve-id 互斥）")
     parser.add_argument("--output-dir", type=str, default=None, help="输出目录")
     parser.add_argument("--no-rag", action="store_true", default=False, help="禁用 RAG")
+    parser.add_argument("--knowledge-file", type=str, default="",
+                        help="measured facts about this CVE, injected verbatim")
     parser.add_argument("--feedback", type=str, default="",
                         help="上一轮失败的诊断指令，注入代码生成提示词")
     parser.add_argument("--package", action="store_true", default=False,
@@ -103,6 +105,11 @@ def main() -> None:
         pipeline.archive_artifacts = True
         pipeline.package_artifacts = args.package
         options = {}
+        if args.knowledge_file:
+            from pathlib import Path as _Path
+            path = _Path(args.knowledge_file)
+            if path.is_file():
+                options["knowledge"] = path.read_text(encoding="utf-8")
         if args.feedback:
             options["feedback"] = args.feedback
         if args.target_backend is not None:

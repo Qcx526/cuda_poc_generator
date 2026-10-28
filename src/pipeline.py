@@ -82,6 +82,7 @@ class CudaPipeline:
         archive_artifacts: Optional[bool] = None,
         package_artifacts: Optional[bool] = None,
         feedback: str = "",
+        knowledge: str = "",
     ) -> Dict[str, Any]:
         """Normalize inputs, validate analysis, then save an unexecuted candidate.
 
@@ -272,6 +273,12 @@ class CudaPipeline:
             # consumed fields changes what the candidate can do, so it goes in
             # after the context blocks and before the failure diagnosis.
             extra_ctx += "\n\n" + spec_brief
+        if knowledge:
+            # Measured facts about this CVE, retrieved deterministically rather
+            # than by similarity: an entry that says "changing sh_type does not
+            # move the crash" is wasted if it never ranks in the top-k.
+            extra_ctx += ("\n\n[MEASURED KNOWLEDGE ABOUT THIS CVE — do not "
+                          "contradict these measurements]\n" + knowledge)
         if feedback:
             # The closed loop's diagnosis must reach codegen; without this the
             # loop only regenerates and never learns from the failure. The

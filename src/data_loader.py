@@ -53,22 +53,50 @@ CUDA_VULN_KEYWORDS = [
 _KNOWLEDGE_SUFFIXES = (".md", ".txt")
 
 
+def _corpus_fingerprint(kb_dir: Path) -> str:
+    """sha256 over every document's path and bytes, in a stable order."""
+    import hashlib
+    digest = hashlib.sha256()
+    for path in sorted(Path(kb_dir).rglob("*")):
+        if path.is_file() and path.suffix in _KNOWLEDGE_SUFFIXES:
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
 def _index_is_stale(kb_dir: Path, persist_dir: Path) -> bool:
-    """True when a document is newer than the persisted index."""
+    """True when the corpus differs from what the index was built from.
+
+    Modification times are not enough: moving a file back into the directory
+    restores its old timestamp, so an index built without it still looks current
+    and the restored knowledge is silently never indexed. The fingerprint compares
+    content, which is what the index is actually a function of.
+    """
+    import json
+
     try:
         if not persist_dir.exists():
             return True
-        documents = [p for p in Path(kb_dir).rglob("*")
-                     if p.is_file() and p.suffix in _KNOWLEDGE_SUFFIXES]
-        if not documents:
+        stamp = persist_dir / "kb_corpus.json"
+        if not stamp.is_file():
             return True
-        newest_document = max(p.stat().st_mtime for p in documents)
-        stamps = [p.stat().st_mtime for p in persist_dir.rglob("*") if p.is_file()]
-        if not stamps:
-            return True
-        return max(stamps) < newest_document
-    except OSError:
+        recorded = json.loads(stamp.read_text(encoding="utf-8"))
+        return recorded.get("sha256") != _corpus_fingerprint(kb_dir)
+    except (OSError, ValueError):
         return True
+
+
+def _write_corpus_stamp(kb_dir: Path, persist_dir: Path) -> None:
+    """Remember what the index was built from."""
+    import json
+
+    try:
+        Path(persist_dir).mkdir(parents=True, exist_ok=True)
+        (Path(persist_dir) / "kb_corpus.json").write_text(
+            json.dumps({"sha256": _corpus_fingerprint(kb_dir)}, ensure_ascii=False),
+            encoding="utf-8")
+    except OSError:
+        pass
 
 
 def _simple_split_documents(documents: list, chunk_size: int = 1024, chunk_overlap: int = 128) -> list:
@@ -312,6 +340,9 @@ class CudaDataLoader:
         self._retriever = self._vectorstore.as_retriever(
             search_kwargs={"k": self.cfg.rag.get("top_k", 5)}
         )
+        # Remember what this index was built from, so the next run can tell
+        # whether the corpus still matches it.
+        _write_corpus_stamp(kb_path, Path(persist_dir))
         logger.info("CUDA RAG 索引构建并持久化完成: %s", persist_dir)
         print("[RAG] 索引构建完成，后续运行将直接加载。")
 

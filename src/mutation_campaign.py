@@ -298,6 +298,19 @@ def verdict(variants: Sequence[Variant], baseline: str) -> List[str]:
     return findings
 
 
+def attributed(variants: Sequence[Variant]) -> bool:
+    """Whether the axes separated the bug from everything else.
+
+    A mechanism axis that changes nothing cannot support attribution, and a
+    campaign without one may well be describing a side effect rather than the
+    CVE. Knowledge written from such a campaign must not read as instructions.
+    """
+    mechanism = [v for v in variants if v.axis.startswith("mechanism")]
+    if not mechanism:
+        return False
+    return any(v.outcome in (NOVEL, CLEAN) for v in mechanism)
+
+
 def knowledge_markdown(variants: Sequence[Variant], cve_id: str,
                        baseline: str) -> str:
     """What the campaign learned, written for retrieval rather than for reading.
@@ -310,7 +323,13 @@ def knowledge_markdown(variants: Sequence[Variant], cve_id: str,
     for variant in variants:
         by_axis.setdefault(variant.axis, []).append(variant)
 
+    ok = attributed(variants)
     parts = ["# %s 变异实测结论" % cve_id, ""]
+    parts.append("归属状态：%s" % ("机制轴可区分，结论可用于复现指引"
+                                  if ok else
+                                  "**未确证归属**——机制轴不区分，本条只描述实测现象，"
+                                  "不得当作该 CVE 的复现指引"))
+    parts.append("")
     parts.append("## 种子（%s）" % cve_id)
     parts.append("%s 的种子样本崩溃于 `%s`。" % (cve_id, baseline or "未记录"))
     parts.append("")
@@ -338,12 +357,17 @@ def knowledge_markdown(variants: Sequence[Variant], cve_id: str,
             parts.append(
                 "因此 `%s` 不是 %s 的区分轴：改它不改变崩溃点，"
                 "用它既不能证明也不能否定归属。" % (field, cve_id))
-        elif clean and same:
+        elif clean and same and ok:
             parts.append(
                 "因此 %s 的触发窗口是 `%s` ∈ %s；%s 不触发。"
                 "生成时应直接取窗口内的值，不要靠试探。"
                 % (cve_id, field, [v.value for v in items if v.outcome in (SAME, NOVEL)],
                    clean))
+        elif clean and same:
+            parts.append(
+                "取值 %s 能让崩溃消失、%s 不能，但机制轴不区分，"
+                "所以这只能说明该字段影响了某个崩溃，**不能**说明它就是 %s 的触发条件。"
+                % (clean, [v.value for v in items if v.outcome in (SAME, NOVEL)], cve_id))
         elif clean and not same:
             parts.append(
                 "因此 %s 的 `%s` 在本轮取值中都不触发，窗口尚未定位。"

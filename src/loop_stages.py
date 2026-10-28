@@ -87,15 +87,28 @@ def _find_candidate(project_root: Path, cve_id: str,
 
 
 def make_generate_stage(context: StageContext,
-                        runner: Runner = _default_runner) -> Callable[[LoopState], LoopState]:
-    """Run ``main.py --package`` and return the produced candidate path."""
+                        runner: Runner = _default_runner,
+                        use_rag: bool = False) -> Callable[[LoopState], LoopState]:
+    """Run ``main.py --package`` and return the produced candidate path.
+
+    Retrieval is off by default because a loop arm must be reproducible without
+    an index; enabling it is what lets a knowledge entry reach the generator.
+    """
 
     def stage(state: LoopState) -> LoopState:
         # No --package: delivering a ZIP is unrelated to grading, and a
         # packaging failure made the stage report "no candidate" even though
         # the candidate had been written.
-        command = [context.python_exe, "main.py", "--cve-id", context.cve_id,
-                   "--no-rag"]
+        command = [context.python_exe, "main.py", "--cve-id", context.cve_id]
+        if not use_rag:
+            command.append("--no-rag")
+        # A campaign writes what it measured about this CVE; hand it over
+        # verbatim. Similarity search is not trusted for this: the entry is
+        # specific to this CVE and ranks poorly against a general corpus.
+        entry = (Path(context.project_root) / "data" / "knowledge_bases"
+                 / "mutation" / ("%s.md" % context.cve_id))
+        if use_rag and entry.is_file():
+            command += ["--knowledge-file", str(entry)]
         if state.directive:
             command += ["--feedback", state.directive]
         started = time.time()
