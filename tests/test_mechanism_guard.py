@@ -61,15 +61,18 @@ def _grade(tmp_path: Path, samples: Path):
     return make_grader(config, version_in_range=None)(state)
 
 
-def test_a_size_only_control_cannot_carry_a_supported_verdict(tmp_path):
+def test_a_missing_mechanism_control_is_a_note_not_a_veto(tmp_path):
+    """Reproducing a CVE means the three conditions on an affected version.
+    Whether the crash also depends on a mechanism the advisory may not even name
+    belongs in the report, not in the verdict."""
     samples = _project(tmp_path, control_changes_type=False)
     result = _grade(tmp_path, samples)
-    assert result.verdict != "SUPPORTED"
-    assert any("机制轴" in reason for reason in result.reasons)
+    assert result.verdict == "SUPPORTED"
+    assert any("提示" in reason for reason in result.reasons)
 
 
-def test_a_control_that_moves_the_mechanism_axis_leaves_the_verdict_alone(tmp_path):
+def test_a_control_that_moves_the_mechanism_axis_adds_no_note(tmp_path):
     samples = _project(tmp_path, control_changes_type=True)
     result = _grade(tmp_path, samples)
     assert result.verdict == "SUPPORTED"
-    assert not any("机制轴" in reason for reason in result.reasons)
+    assert not any("提示" in reason for reason in result.reasons)

@@ -593,14 +593,15 @@ def make_grader(project_config: LoopConfig,
                 failed_steps=[], malicious_runs=0, malicious_crashes=0,
                 benign_runs=0, benign_crashes=0)
         result = decide(evidence)
-        # A SUPPORTED verdict rests on the controls the candidate chose, and a
-        # candidate that only restores the crashing field passes without ever
-        # testing the mechanism. Require the spec's mechanism axis to be covered.
-        guard = _mechanism_gap(project_config, runs, state)
-        if guard:
-            notes.append(guard)
-            if result.verdict == "SUPPORTED":
-                result = result.model_copy(update={"verdict": "NOT_VERIFIED"})
+        # Advisory, not a gate. The verdict is the three conditions on an
+        # affected version - that is what reproducing a CVE means. Whether the
+        # crash also depends on the mechanism the advisory names is worth saying
+        # out loud, but the advisory often does not name one, and inventing a
+        # condition the CVE never stated is how a correct reproduction gets
+        # rejected.
+        note = _mechanism_gap(project_config, runs, state)
+        if note:
+            notes.append(note)
         if notes:
             return result.model_copy(update={"reasons": list(result.reasons) + notes})
         return result

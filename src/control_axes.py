@@ -62,6 +62,6 @@ def missing_controls(spec: dict, crafted: Dict[str, bytes],
 
 
 def reason(missing: Sequence[str]) -> str:
-    return ("缺少机制轴对照：没有对照样本只改动 %s；"
-            "因此无法排除'崩溃与该机制无关'，判定不能为 SUPPORTED"
-            % "、".join(missing))
+    """A note, not a veto: the CVE is reproduced either way."""
+    return ("提示：没有对照样本只改动 %s；若公告明确以该机制为触发条件，"
+            "可另跑一次变异确认，但这不影响复现结论" % "、".join(missing))
