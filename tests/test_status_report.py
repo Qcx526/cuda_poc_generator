@@ -43,9 +43,9 @@ def test_reproduction_and_findings_are_both_listed(tmp_path):
     assert "cuobjdump+0x12000" in text
 
 
-def test_a_finding_that_survives_the_fix_is_flagged_as_candidate(tmp_path):
+def test_a_finding_that_survives_the_newest_release_is_a_candidate(tmp_path):
     text = build(_root(tmp_path))
-    assert "仍崩（候选新漏洞）" in text
+    assert "12.4.1 崩" in text and "候选新漏洞" in text
 
 
 def test_a_run_without_a_verdict_is_not_reported_as_the_state(tmp_path):

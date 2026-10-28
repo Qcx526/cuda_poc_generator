@@ -76,19 +76,31 @@ def _findings(root: Path) -> Dict[str, List[dict]]:
     return grouped
 
 
-def _still_crashes(finding: dict, fixed_in: str) -> str:
-    """Whether the fault survives on a release the advisory calls fixed.
+def _version_columns(finding: dict) -> str:
+    """What the finding did on every release it was tried against.
 
-    Matches on the version number inside the image tag: the spec says "12.4",
-    the image is called "...cuda:12.4.1-devel...", and demanding equality would
-    report every tested finding as untested.
+    A finding is a candidate new vulnerability only when it survives the newest
+    release tested; crashing on an old one and not on the newest is a bug that
+    someone already fixed.
     """
-    version = (fixed_in or "").split()[0] if fixed_in else ""
-    for row in finding.get("versions", []):
-        image = str(row.get("image", ""))
-        if version and version in image:
-            return "仍崩（候选新漏洞）" if row.get("crashed") else "已不崩（已修复）"
-    return "未测"
+    rows = finding.get("versions") or []
+    if not rows:
+        return "未测"
+
+    def key(row):
+        tag = str(row.get("image", "")).split(":")[-1]
+        parts = tag.split("-")[0].split(".")
+        try:
+            return tuple(int(p) for p in parts)
+        except ValueError:
+            return (0,)
+
+    rows = sorted(rows, key=key)
+    text = "; ".join("%s %s" % (str(row.get("image", "")).split(":")[-1].split("-")[0],
+                                 "崩" if row.get("crashed") else "不崩")
+                     for row in rows)
+    newest = rows[-1]
+    return "%s → %s" % (text, "候选新漏洞" if newest.get("crashed") else "非新漏洞")
 
 
 def build(root: Path) -> str:
@@ -114,11 +126,10 @@ def build(root: Path) -> str:
                   "| 样本 | 崩溃点 | 访问类型 | 修复版本上 | 状态 |",
                   "|---|---|---|---|---|"]
         for row in rows:
-            fixed = next((s for s in specs if s["cve"] == cve), {}).get("fixed_in", "")
             lines.append("| %s | `%s` | %s | %s | %s |"
                          % (row.get("artifact", ""), row.get("fingerprint", ""),
                             row.get("severity", "—"),
-                            _still_crashes(row, fixed), row.get("triage", "")))
+                            _version_columns(row), row.get("triage", "")))
         lines.append("")
     lines += ["## 三、说明", "",
               "- 新发现只在判断“是否为新漏洞”时才需要跑修复版本；仍崩即为候选新漏洞。",

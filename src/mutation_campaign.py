@@ -160,8 +160,10 @@ def _matrix_script(variants: Sequence[Variant],
                              else str(part))
             command = " ".join(parts)
             lines.append('rm -f ".cc.$f"')
-            lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" %s >/dev/null 2>&1'
-                         % command)
+            # A hostile input can make the tool run for minutes; without a bound
+            # one such variant stalls the whole pass and the campaign looks hung.
+            lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" '
+                         'timeout 10 %s >/dev/null 2>&1' % command)
             lines.append("rc=$?")
             lines.append('echo "[CPG_RUN] $f::%s exit=$rc"' % tool_name(invocation))
             lines.append('if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi')
@@ -442,6 +444,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--cve", required=True)
     parser.add_argument("--spec", default="")
     parser.add_argument("--workdir", default="")
+    parser.add_argument("--tool", default="",
+                        help='single tool to exercise, e.g. "nvdisasm {artifact}"')
     parser.add_argument("--image", default=DEFAULT_IMAGE)
     parser.add_argument("--seed", default="",
                         help="path to the seed artifact; overrides mutation.seed")
@@ -468,8 +472,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     seed_variant = Variant(axis="seed", field="(unchanged)", value=0,
                            offset=0, width=0)
     anchor = spec.get("anchor") or {}
-    invocations = parse_invocations(anchor.get("invocations"),
-                                    anchor.get("invocation"))
+    invocations = ([args.tool.split()] if args.tool else
+                   parse_invocations(anchor.get("invocations"),
+                                     anchor.get("invocation")))
     if not invocations:
         print("spec declares no anchor invocation")
         return 2
