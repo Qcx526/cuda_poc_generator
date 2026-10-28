@@ -174,7 +174,7 @@ def _worse(candidate: int, current: int) -> bool:
 
 def run(variants: Sequence[Variant], seed: bytes, invocations: Sequence[Sequence[str]],
         workdir: Path, image: str = DEFAULT_IMAGE,
-        timeout: int = 600) -> Sequence[Variant]:
+        timeout: int = 600) -> str:
     """Materialise the variants, run them once, and read back where they died."""
     # Absolute: a relative path is read by docker as a *named volume*, and the
     # mount silently fails to appear, which looks exactly like "nothing ran".
@@ -227,7 +227,23 @@ def run(variants: Sequence[Variant], seed: bytes, invocations: Sequence[Sequence
             variant.fault_address = crash.address
             variant.access = crash.access
             variant.severity = crash.severity
-    return variants
+    return completed.stdout or ""
+
+
+def novel_lines(raw: str, names: Sequence[str]) -> str:
+    """Only the protocol lines belonging to variants that landed somewhere new.
+
+    The findings store is where a human looks for things worth a second look; a
+    crash that merely repeated the seed does not belong in it.
+    """
+    keep = set(names)
+    lines = []
+    for line in (raw or "").splitlines():
+        if "CPG_CRASH" in line or "CPG_RUN" in line:
+            parts = line.split()
+            if len(parts) > 1 and parts[1].split("::")[0] in keep:
+                lines.append(line)
+    return "\n".join(lines) + "\n"
 
 
 def verdict(variants: Sequence[Variant], baseline: str) -> List[str]:
@@ -412,8 +428,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not invocations:
         print("spec declares no anchor invocation")
         return 2
-    run([seed_variant] + variants, seed_path.read_bytes(), invocations,
-        workdir, args.image)
+    raw = run([seed_variant] + variants, seed_path.read_bytes(), invocations,
+              workdir, args.image)
 
     baseline = seed_variant.fingerprint
     variants = classify(variants, baseline)
@@ -423,6 +439,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     (workdir / "variants.json").write_text(
         json.dumps([variant.__dict__ for variant in variants],
                    ensure_ascii=False, indent=2), encoding="utf-8")
+    novel = [v for v in variants if v.outcome == NOVEL]
+    if novel:
+        from . import novel_findings
+        saved = novel_findings.record(
+            workdir, args.cve,
+            novel_lines(raw, [Path(v.path).name for v in novel]),
+            "NOT_VERIFIED", ["变异落在与种子不同的崩溃点，归属未定"])
+        for path in saved:
+            print("novel finding: %s" % path)
+
     print(text)
     if not args.no_knowledge:
         target = write_knowledge(variants, args.cve, baseline,

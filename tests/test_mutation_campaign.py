@@ -113,3 +113,18 @@ def test_knowledge_is_one_file_per_cve(tmp_path):
     second = write_knowledge(variants, "CVE-X", "a+0x1000", tmp_path)
     assert first == second
     assert len(list(tmp_path.glob("*.md"))) == 1
+
+
+def test_only_novel_variants_reach_the_findings_store():
+    """A crash that repeated the seed is not a finding; one somewhere else is."""
+    from src.mutation_campaign import novel_lines
+
+    raw = ("[CPG_RUN] a.cubin::cuobjdump exit=139\n"
+           "[CPG_CRASH] a.cubin sig=11 code=1 pc=0x1 base=0x0 off=0xb000 "
+           "addr=0x0 module=cuobjdump insn=803f00\n"
+           "[CPG_RUN] b.cubin::cuobjdump exit=139\n"
+           "[CPG_CRASH] b.cubin sig=11 code=1 pc=0x2 base=0x0 off=0x12000 "
+           "addr=0x0 module=cuobjdump insn=803f00\n")
+    kept = novel_lines(raw, ["b.cubin"])
+    assert "b.cubin" in kept
+    assert "a.cubin" not in kept
