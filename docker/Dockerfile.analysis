@@ -1,0 +1,17 @@
+# Analysis image: the runtime image plus the tools we do not ship to production.
+#
+# The matrix runs the scored image unchanged, read-only and without a network, so
+# anything installed here is for looking at a finding afterwards, never for
+# producing one. Keeping the two apart means a verdict cannot depend on a tool
+# that only exists on the analyst's machine.
+FROM cpg/cuda112-py3:1.0
+
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    valgrind \
+    gdb \
+    file \
+    xxd \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work

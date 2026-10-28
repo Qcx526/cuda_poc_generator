@@ -128,7 +128,17 @@ for 每个变异体:
 | `e_shnum=4096` | **`libc.so.6+0x183000`** | `NOVEL_SITE` |
 
 两条新点位按指纹去重后自动进入 `data/findings/novel/`，状态 `UNTRIAGED`。
-这是方法的第二个出口第一次真正产出内容——不再是"判定失败就丢弃"。
+
+**取证结论（valgrind memcheck）**：
+
+| 发现 | memcheck | 判断 |
+|---|---|---|
+| `cuobjdump+0x12000` | `Invalid read of size 4 at 0x4` | 读 `NULL+4`，空结构体成员访问 |
+| `libc.so.6+0x183000` | `Invalid read of size 1 at 0x0`，栈在 `strcmp` | 节名为 NULL 时未检查就 `strcmp` |
+
+**两者都是空指针读，不是堆破坏。** 这否证了"崩在 libc 就是内存破坏"的直觉，
+也说明 `NOVEL_SITE` 能找到新位置，但**位置新不代表更严重**——
+严重程度必须由 memcheck 或读写类型单独判定，不能从崩溃点推断。
 
 ## 5. 当前实现度（诚实版本）
 
