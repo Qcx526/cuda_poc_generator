@@ -377,14 +377,21 @@ def knowledge_markdown(variants: Sequence[Variant], cve_id: str,
 
 
 def write_knowledge(variants: Sequence[Variant], cve_id: str, baseline: str,
-                    directory: Path) -> Path:
+                    directory: Path, pending_dir: Optional[Path] = None) -> Path:
     """One file per CVE, overwritten rather than appended.
 
     A campaign that runs twice must not leave two versions of the same conclusion
     in the index - retrieval would then answer with whichever chunk it matched
     first.
+
+    An unattributed campaign writes outside the indexed directory: its结论 is a
+    measured fact, but handing it to the generator as guidance is how a false
+    positive gets reproduced on purpose.
     """
     directory = Path(directory)
+    if not attributed(variants):
+        directory = Path(pending_dir) if pending_dir else \
+            directory.parent.parent / "knowledge_bases_pending" / "mutation"
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / ("%s.md" % cve_id)
     target.write_text(knowledge_markdown(variants, cve_id, baseline),
@@ -483,7 +490,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.no_knowledge:
         target = write_knowledge(variants, args.cve, baseline,
                                  Path(args.knowledge_dir))
-        print("knowledge entry: %s" % target)
+        indexed = Path(args.knowledge_dir) in target.parents
+        print("knowledge entry: %s%s" % (target,
+                                         "" if indexed else "（未确证归属，不进索引）"))
     print("written to %s" % workdir)
     return 0
 

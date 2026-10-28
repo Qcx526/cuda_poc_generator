@@ -7,12 +7,13 @@ subprocess runner is injected for the same reason: nothing here needs a GPU,
 Docker or a model to be unit-testable.
 """
 
+import json
 import re
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from .closed_loop import LoopConfig, LoopState
 from .reproduction import (ReproductionResult, decide, evidence_from_runs,
@@ -510,6 +511,41 @@ def _first_failed_step(log_text: str) -> str:
     return ""
 
 
+def _mechanism_gap(config: LoopConfig, runs: List[dict],
+                   state: LoopState) -> str:
+    """The spec's mechanism axis, when no control exercises it."""
+    from . import control_axes
+    from .spec_model import load as load_spec
+
+    root = Path(config.project_root or ".")
+    spec_path = root / "specs" / config.cve_id / "spec.json"
+    if not spec_path.is_file():
+        return ""
+    try:
+        spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+
+    directory = Path(config.samples_dir)
+    crafted: Dict[str, bytes] = {}
+    controls: Dict[str, bytes] = {}
+    for run in runs:
+        name = run.get("artifact", "")
+        label = run.get("label")
+        path = directory / name
+        if not path.is_file():
+            continue
+        if label == "MALICIOUS":
+            crafted[name] = path.read_bytes()
+        elif label == "CONTROL":
+            controls[name] = path.read_bytes()
+    if not crafted or not controls:
+        return ""
+
+    missing = control_axes.missing_controls(spec, crafted, controls)
+    return control_axes.reason(missing) if missing else ""
+
+
 def make_grader(project_config: LoopConfig,
                 version_in_range: Optional[bool] = None) -> Callable[[LoopState], ReproductionResult]:
     """Turn an observation log into the differential verdict."""
@@ -557,6 +593,14 @@ def make_grader(project_config: LoopConfig,
                 failed_steps=[], malicious_runs=0, malicious_crashes=0,
                 benign_runs=0, benign_crashes=0)
         result = decide(evidence)
+        # A SUPPORTED verdict rests on the controls the candidate chose, and a
+        # candidate that only restores the crashing field passes without ever
+        # testing the mechanism. Require the spec's mechanism axis to be covered.
+        guard = _mechanism_gap(project_config, runs, state)
+        if guard:
+            notes.append(guard)
+            if result.verdict == "SUPPORTED":
+                result = result.model_copy(update={"verdict": "NOT_VERIFIED"})
         if notes:
             return result.model_copy(update={"reasons": list(result.reasons) + notes})
         return result

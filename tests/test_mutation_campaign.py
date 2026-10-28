@@ -109,8 +109,9 @@ def test_knowledge_entry_states_what_the_axes_proved():
 def test_knowledge_is_one_file_per_cve(tmp_path):
     from src.mutation_campaign import write_knowledge
 
-    variants = [Variant("seed", "(unchanged)", 0, 0, 0, exit_code=139,
-                        fingerprint="a+0x1000")]
+    # Attributed, so it lands in the directory under test rather than in the
+    # pending area for unproven conclusions.
+    variants = [Variant("mechanism", "sh_type", 1, 0, 4, exit_code=0, outcome=CLEAN)]
     first = write_knowledge(variants, "CVE-X", "a+0x1000", tmp_path)
     second = write_knowledge(variants, "CVE-X", "a+0x1000", tmp_path)
     assert first == second
@@ -162,3 +163,29 @@ def test_knowledge_without_attribution_refuses_to_give_instructions():
         Variant("mechanism", "sh_type", 1, 0, 4, exit_code=0, outcome=CLEAN),
     ]
     assert attributed(attributed_arm) is True
+
+
+def test_unattributed_knowledge_goes_outside_the_index(tmp_path):
+    """Handing an unproven conclusion to the generator is how a false positive
+    gets reproduced on purpose."""
+    from src.mutation_campaign import write_knowledge
+
+    variants = [
+        Variant("mechanism", "sh_type", 1, 0, 4, exit_code=139,
+                fingerprint="a+0x1000", outcome=SAME),
+    ]
+    indexed = tmp_path / "kb" / "mutation"
+    path = write_knowledge(variants, "CVE-X", "a+0x1000", indexed)
+    assert "pending" in str(path)
+    assert not (indexed / "CVE-X.md").exists()
+
+
+def test_attributed_knowledge_stays_in_the_index(tmp_path):
+    from src.mutation_campaign import write_knowledge
+
+    variants = [
+        Variant("mechanism", "sh_type", 1, 0, 4, exit_code=0, outcome=CLEAN),
+    ]
+    indexed = tmp_path / "kb" / "mutation"
+    path = write_knowledge(variants, "CVE-X", "a+0x1000", indexed)
+    assert path == indexed / "CVE-X.md"
