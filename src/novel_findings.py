@@ -92,6 +92,56 @@ class Finding:
         return asdict(self)
 
 
+def disclosure_markdown(finding: dict) -> str:
+    """The finding registered the way a CVE entry is written.
+
+    Component, effect, trigger, the versions it was measured on, the inferred
+    affected range, and the disclosure search. The point of the document is that
+    someone can read it without our tooling and decide whether they have seen
+    this bug before.
+    """
+    disclosure = finding.get("disclosure") or {}
+    versions = finding.get("versions") or []
+    measured = "; ".join(
+        "%s %s" % (str(row.get("image", "")).split(":")[-1].split("-")[0],
+                   "崩溃" if row.get("crashed") else "不崩溃")
+        for row in versions) or "未测"
+    matches = disclosure.get("matches") or []
+    match_lines = "\n".join("- %s" % item for item in matches) or "- 未检索到已发布的相似描述"
+    verdict = disclosure.get("verdict", "待查重")
+    return "\n".join([
+        "# 候选漏洞登记：%s" % finding.get("artifact", ""),
+        "",
+        "| 项目 | 内容 |",
+        "|---|---|",
+        "| 组件 | %s |" % disclosure.get("component", finding.get("fingerprint", "")),
+        "| 现象 | %s |" % disclosure.get("effect", finding.get("severity", "崩溃")),
+        "| 触发条件 | %s |" % disclosure.get("trigger", ""),
+        "| 崩溃点 | `%s` |" % finding.get("fingerprint", ""),
+        "| 故障地址 | %s |" % ("0x%x" % finding["fault_address"] if finding.get("fault_address") else "—"),
+        "| 实测版本 | %s |" % measured,
+        "| 推断受影响范围 | %s |" % disclosure.get("affected_statement", "以实测为准"),
+        "",
+        "## 查重结果（%s）" % verdict,
+        "",
+        match_lines,
+        "",
+        "## 结论",
+        "",
+        disclosure.get("conclusion", ""),
+        "",
+    ]) + "\n"
+
+
+def write_disclosure(directory: Path) -> Path:
+    """Render the finding's CVE-like registration beside its evidence."""
+    directory = Path(directory)
+    meta = json.loads((directory / "finding.json").read_text(encoding="utf-8"))
+    target = directory / "disclosure.md"
+    target.write_text(disclosure_markdown(meta), encoding="utf-8")
+    return target
+
+
 def parse_sites(text: str) -> dict:
     """Fault sites recorded by the shim, keyed by artifact."""
     sites = {}

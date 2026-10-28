@@ -123,13 +123,15 @@ def build(root: Path) -> str:
         lines += ["暂无记录。", ""]
     for cve, rows in sorted(findings.items()):
         lines += ["### %s" % cve, "",
-                  "| 样本 | 崩溃点 | 访问类型 | 修复版本上 | 状态 |",
+                  "| 样本 | 崩溃点 | 访问类型 | 实测版本 | 查重结论 |",
                   "|---|---|---|---|---|"]
         for row in rows:
+            disclosure = row.get("disclosure") or {}
             lines.append("| %s | `%s` | %s | %s | %s |"
                          % (row.get("artifact", ""), row.get("fingerprint", ""),
                             row.get("severity", "—"),
-                            _version_columns(row), row.get("triage", "")))
+                            _version_columns(row),
+                            disclosure.get("verdict", row.get("triage", "未查重"))))
         lines.append("")
     lines += ["## 三、说明", "",
               "- 新发现只在判断“是否为新漏洞”时才需要跑修复版本；仍崩即为候选新漏洞。",
