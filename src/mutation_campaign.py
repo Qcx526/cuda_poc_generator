@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 from . import novel_findings
+from .grader_matrix import parse_invocations, tool_name
 
 DEFAULT_IMAGE = "cpg/cuda112-py3:1.0"
 
@@ -49,6 +50,7 @@ class Variant:
     fault_address: int = 0
     access: str = ""
     severity: str = ""
+    tool: str = ""
     outcome: str = ""
 
 
@@ -135,7 +137,8 @@ def tool_label(invocation: Sequence[str]) -> str:
     return "tool"
 
 
-def _matrix_script(variants: Sequence[Variant], invocation: Sequence[str]) -> str:
+def _matrix_script(variants: Sequence[Variant],
+                   invocations: Sequence[Sequence[str]]) -> str:
     """One container pass for every variant, mirroring the grader's protocol."""
     lines = ["#!/bin/sh", "crashcap=''",
              "if [ ! -f ./crashcap.so ] && [ -f ./crashcap.c ] && command -v gcc >/dev/null 2>&1; then",
@@ -144,22 +147,32 @@ def _matrix_script(variants: Sequence[Variant], invocation: Sequence[str]) -> st
              "[ -f ./crashcap.so ] && crashcap='./crashcap.so'"]
     for variant in variants:
         name = Path(variant.path).name
-        parts = []
-        for part in invocation:
-            parts.append('"$f"' if str(part) == "{artifact}" else str(part))
-        command = " ".join(parts)
         lines.append("f='%s'" % name)
-        lines.append('rm -f ".cc.$f"')
-        lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" %s >/dev/null 2>&1'
-                     % command)
-        lines.append("rc=$?")
-        lines.append('echo "[CPG_RUN] $f::%s exit=$rc"' % tool_label(invocation))
-        lines.append('if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi')
+        for invocation in invocations:
+            parts = []
+            for part in invocation:
+                parts.append('"$f"' if str(part) == "{artifact}" else str(part))
+            command = " ".join(parts)
+            lines.append('rm -f ".cc.$f"')
+            lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" %s >/dev/null 2>&1'
+                         % command)
+            lines.append("rc=$?")
+            lines.append('echo "[CPG_RUN] $f::%s exit=$rc"' % tool_name(invocation))
+            lines.append('if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi')
     lines.append("true")
     return "\n".join(lines) + "\n"
 
 
-def run(variants: Sequence[Variant], seed: bytes, invocation: Sequence[str],
+def _worse(candidate: int, current: int) -> bool:
+    """A crash outranks a plain error, which outranks success."""
+    def rank(code: int) -> int:
+        if code < 0 or code in (134, 136, 137, 139, 143):
+            return 2
+        return 1 if code else 0
+    return rank(candidate) > rank(current)
+
+
+def run(variants: Sequence[Variant], seed: bytes, invocations: Sequence[Sequence[str]],
         workdir: Path, image: str = DEFAULT_IMAGE,
         timeout: int = 600) -> Sequence[Variant]:
     """Materialise the variants, run them once, and read back where they died."""
@@ -177,7 +190,7 @@ def run(variants: Sequence[Variant], seed: bytes, invocation: Sequence[str],
     if source.is_file():
         shutil.copy2(source, workdir / "crashcap.c")
     script = workdir / "_mutation.sh"
-    script.write_bytes(_matrix_script(variants, invocation).encode("utf-8"))
+    script.write_bytes(_matrix_script(variants, invocations).encode("utf-8"))
 
     command = ["docker", "run", "--rm", "--network", "none",
                "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
@@ -189,17 +202,26 @@ def run(variants: Sequence[Variant], seed: bytes, invocation: Sequence[str],
                                timeout=timeout, encoding="utf-8", errors="replace")
     observed = novel_findings.parse_crashes(completed.stdout or "")
     by_name: Dict[str, object] = {crash.artifact: crash for crash in observed}
-    codes = {}
+    # Every declared tool runs the same file. Keep the worst result and the tool
+    # that produced it: a spec often lists a second tool because only that one
+    # reaches the vulnerable parser, and averaging the two would hide it.
+    codes: Dict[str, tuple] = {}
     for line in (completed.stdout or "").splitlines():
-        if line.startswith("[CPG_RUN]"):
-            parts = line.split()
-            name = parts[1].split("::")[0]
-            codes[name] = int(parts[-1].split("=")[1])
+        if not line.startswith("[CPG_RUN]"):
+            continue
+        parts = line.split()
+        name, _, tool = parts[1].partition("::")
+        code = int(parts[-1].split("=")[1])
+        previous = codes.get(name)
+        if previous is None or _worse(code, previous[0]):
+            codes[name] = (code, tool)
 
     for variant in variants:
         name = Path(variant.path).name
         crash = by_name.get(name)
-        variant.exit_code = codes.get(name)
+        recorded = codes.get(name)
+        if recorded is not None:
+            variant.exit_code, variant.tool = recorded
         if crash is not None:
             variant.fingerprint = crash.fingerprint
             variant.fault_address = crash.address
@@ -225,9 +247,15 @@ def verdict(variants: Sequence[Variant], baseline: str) -> List[str]:
         moved = [v for v in mechanism if v.outcome == NOVEL]
         same = [v for v in mechanism if v.outcome == SAME]
         if same and not moved:
+            # Not the same claim as "the mechanism is refuted". If changing the
+            # field cannot remove the crash, the axis simply does not separate
+            # the bug from the noise, and another axis has to be chosen; saying
+            # "not this CVE" from a non-discriminating axis would be a verdict
+            # built on a badly chosen question.
             findings.append(
-                "机制轴全部落在同一崩溃点：把 `%s` 改成 %s 都不改变崩溃位置，"
-                "说明崩溃与声明机制无关——按当前证据它**不是**该 CVE。"
+                "机制轴不区分：把 `%s` 改成 %s 都不改变崩溃位置，"
+                "因此无法用这个轴证明归属——需要换一个**能让崩溃消失**的机制轴"
+                "（例如条目大小、偏移是否落在文件内），而不是据此否定。"
                 % (mechanism[0].field, [v.value for v in same]))
         elif moved:
             findings.append(
@@ -285,10 +313,10 @@ def knowledge_markdown(variants: Sequence[Variant], cve_id: str,
                             [v.fingerprint for v in novel]))
         parts.append("%s：%s。" % (cve_id, "；".join(facts)))
 
-        if axis_name == "mechanism" and same and not novel:
+        if axis_name.startswith("mechanism") and same and not novel:
             parts.append(
-                "因此 %s 的崩溃与 `%s` 声明的机制无关：改这个字段不改变崩溃点，"
-                "不能作为复现依据，也不要把改类型当成绕过。" % (cve_id, field))
+                "因此 `%s` 不是 %s 的区分轴：改它不改变崩溃点，"
+                "用它既不能证明也不能否定归属。" % (field, cve_id))
         elif clean and same:
             parts.append(
                 "因此 %s 的触发窗口是 `%s` ∈ %s；%s 不触发。"
@@ -378,8 +406,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     # to be wrong about which instruction matters.
     seed_variant = Variant(axis="seed", field="(unchanged)", value=0,
                            offset=0, width=0)
-    invocation = (spec.get("anchor") or {}).get("invocation") or ["nvdisasm", "{artifact}"]
-    run([seed_variant] + variants, seed_path.read_bytes(), invocation,
+    anchor = spec.get("anchor") or {}
+    invocations = parse_invocations(anchor.get("invocations"),
+                                    anchor.get("invocation"))
+    if not invocations:
+        print("spec declares no anchor invocation")
+        return 2
+    run([seed_variant] + variants, seed_path.read_bytes(), invocations,
         workdir, args.image)
 
     baseline = seed_variant.fingerprint

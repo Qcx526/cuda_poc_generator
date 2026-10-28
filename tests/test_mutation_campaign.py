@@ -81,7 +81,10 @@ def test_the_verdict_says_when_the_mechanism_does_not_matter():
                 fingerprint="nvdisasm+0x28000", outcome=SAME),
     ]
     text = " ".join(verdict(variants, "nvdisasm+0x28000"))
-    assert "不是" in text and "该 CVE" in text
+    # A field that cannot remove the crash says nothing about attribution; the
+    # verdict must not turn it into "not this CVE".
+    assert "不区分" in text
+    assert "不是该 CVE" not in text
 
 
 def test_knowledge_entry_states_what_the_axes_proved():
@@ -98,7 +101,7 @@ def test_knowledge_entry_states_what_the_axes_proved():
     text = knowledge_markdown(variants, "CVE-X", "nvdisasm+0x28000")
     assert "CVE-X" in text
     assert "触发窗口是 `sh_size` ∈ [0]" in text
-    assert "与 `sh_type` 声明的机制无关" in text
+    assert "不是 CVE-X 的区分轴" in text
 
 
 def test_knowledge_is_one_file_per_cve(tmp_path):
