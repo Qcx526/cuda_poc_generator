@@ -217,6 +217,33 @@ class History(BaseModel):
         self.attempts.append(attempt)
 
 
+class MutationAxis(BaseModel):
+    """One field, one list of values, one reason it is worth changing.
+
+    The axis is declared here rather than chosen by the generator: a mutation
+    whose purpose is not written down cannot be argued about afterwards.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    field: str
+    offset: int
+    width: int = 8
+    values: List[int] = Field(default_factory=list)
+    why: str = ""
+
+
+class MutationBlock(BaseModel):
+    """How to walk away from a seed without losing track of where it is."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    seed: str = ""
+    axes: List[MutationAxis] = Field(default_factory=list)
+    required: List[str] = Field(default_factory=list)
+
+
 class VulnSpec(BaseModel):
     """The full specification: who, where, what bytes, what proves it."""
 
@@ -232,6 +259,7 @@ class VulnSpec(BaseModel):
     parser: ParserModel = Field(default_factory=ParserModel)
     observable: Observable = Field(default_factory=Observable)
     oracle: TriggerOracle = Field(default_factory=TriggerOracle)
+    mutation: MutationBlock = Field(default_factory=MutationBlock)
     claims: Dict[str, Claim] = Field(default_factory=dict)
     history: History = Field(default_factory=History)
     origin: str = "native"  # native | legacy
