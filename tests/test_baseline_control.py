@@ -38,3 +38,8 @@ def test_the_comparison_prints_both_arms():
                     {"counts": {NOVEL: 1}, "distinct_sites": 2, "novel_sites": ["z"]})
     assert "语义轴变异" in table and "随机字节变异" in table
     assert "**2**" in table and "**1**" in table
+
+
+def test_the_draw_can_be_bounded_to_the_parsing_region():
+    variants = random_variants(size=4096, count=10, seed=5, until=512)
+    assert all(0x40 <= v.offset < 512 for v in variants)

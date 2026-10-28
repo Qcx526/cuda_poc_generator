@@ -114,13 +114,14 @@ def classify(variants: Sequence[Variant], baseline: str) -> List[Variant]:
             variant.outcome = UNKNOWN
         elif variant.exit_code == 0:
             variant.outcome = CLEAN
-        elif variant.fingerprint == baseline:
-            variant.outcome = SAME
         elif not variant.fingerprint or variant.fingerprint.startswith("exit:"):
             # Non-zero exit without a recorded fault site is the tool refusing
-            # the input, not a crash somewhere new. Calling it NOVEL would fill
-            # the findings store with rejects.
+            # the input, not a crash somewhere new. This must be checked before
+            # comparing to the baseline: when the seed does not crash, the
+            # baseline is empty and every rejection would equal it.
             variant.outcome = UNKNOWN
+        elif variant.fingerprint == baseline:
+            variant.outcome = SAME
         else:
             variant.outcome = NOVEL
     return list(variants)
@@ -305,6 +306,11 @@ def attributed(variants: Sequence[Variant]) -> bool:
     campaign without one may well be describing a side effect rather than the
     CVE. Knowledge written from such a campaign must not read as instructions.
     """
+    seed = next((v for v in variants if v.axis == "seed"), None)
+    if seed is not None and not seed.fingerprint:
+        # The seed never crashed: this is an exploratory sweep, not a
+        # reproduction, and nothing in it can be called attributed.
+        return False
     mechanism = [v for v in variants if v.axis.startswith("mechanism")]
     if not mechanism:
         return False
@@ -437,6 +443,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--spec", default="")
     parser.add_argument("--workdir", default="")
     parser.add_argument("--image", default=DEFAULT_IMAGE)
+    parser.add_argument("--seed", default="",
+                        help="path to the seed artifact; overrides mutation.seed")
     parser.add_argument("--knowledge-dir", default="data/knowledge_bases/mutation")
     parser.add_argument("--no-knowledge", action="store_true", default=False)
     args = parser.parse_args(argv)
@@ -447,7 +455,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     workdir = Path(args.workdir) if args.workdir else Path("data/mutation") / args.cve
 
     seed_dir = Path("data/outputs") / args.cve
-    seed_path = seed_dir / str(block.get("seed", ""))
+    seed_path = Path(args.seed) if args.seed else seed_dir / str(block.get("seed", ""))
     if not seed_path.is_file():
         print("seed not found: %s" % seed_path)
         return 2

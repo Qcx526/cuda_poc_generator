@@ -25,17 +25,22 @@ RANDOM = "random"
 
 
 def random_variants(size: int, count: int, seed: int = 7,
-                    skip_first: int = 0x40) -> List[campaign.Variant]:
+                    skip_first: int = 0x40, until: int = 0) -> List[campaign.Variant]:
     """One changed byte each, drawn uniformly, avoiding the ELF ident block.
 
     The first 64 bytes are the magic, class and type; flipping those produces
     files the loader rejects outright, which measures nothing about the parser.
+
+    ``until`` bounds the draw to the region a parser actually reads (headers and
+    the section table). Uniform draws over a whole file spend most of their budget
+    on payload bytes, which no parser decision depends on.
     """
+    stop = until if until > skip_first else size
     rng = random.Random(seed)
     variants: List[campaign.Variant] = []
     used = set()
     while len(variants) < count:
-        offset = rng.randrange(skip_first, size)
+        offset = rng.randrange(skip_first, stop)
         if offset in used:
             continue
         used.add(offset)
@@ -79,15 +84,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--cve", required=True)
     parser.add_argument("--spec", default="")
     parser.add_argument("--count", type=int, default=16)
+    parser.add_argument("--until", type=int, default=0,
+                        help="upper bound for random offsets (0 = whole file)")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--workdir", default="")
     parser.add_argument("--image", default=campaign.DEFAULT_IMAGE)
+    parser.add_argument("--seed-artifact", default="",
+                        help="path to the seed artifact; overrides mutation.seed")
     args = parser.parse_args(argv)
 
     spec_path = Path(args.spec) if args.spec else Path("specs") / args.cve / "spec.json"
     spec = json.loads(spec_path.read_text(encoding="utf-8"))
     block = spec.get("mutation") or {}
-    seed_path = Path("data/outputs") / args.cve / str(block.get("seed", ""))
+    seed_path = (Path(args.seed_artifact) if args.seed_artifact else
+                 Path("data/outputs") / args.cve / str(block.get("seed", "")))
     if not seed_path.is_file():
         print("seed not found: %s" % seed_path)
         return 2
@@ -100,7 +110,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     baseline_variant = campaign.Variant(axis="seed", field="(unchanged)",
                                         value=0, offset=0, width=0)
-    variants = random_variants(len(seed_bytes), args.count, args.seed)
+    variants = random_variants(len(seed_bytes), args.count, args.seed,
+                               until=args.until)
     raw = campaign.run([baseline_variant] + variants, seed_bytes, invocations,
                        workdir, args.image)
     baseline = baseline_variant.fingerprint

@@ -189,3 +189,24 @@ def test_attributed_knowledge_stays_in_the_index(tmp_path):
     indexed = tmp_path / "kb" / "mutation"
     path = write_knowledge(variants, "CVE-X", "a+0x1000", indexed)
     assert path == indexed / "CVE-X.md"
+
+
+def test_a_clean_seed_does_not_make_every_rejection_a_repeat():
+    """With a seed that never crashed the baseline is empty, and an empty
+    fingerprint equals it - which used to label tool rejections SAME_SITE."""
+    variants = [
+        Variant("seed", "(unchanged)", 0, 0, 0, exit_code=0, fingerprint=""),
+        Variant("boundary", "sh_size", 24, 0, 8, exit_code=1, fingerprint=""),
+    ]
+    classify(variants, "")
+    assert variants[1].outcome == UNKNOWN
+
+
+def test_an_exploratory_sweep_is_not_attributed():
+    from src.mutation_campaign import attributed
+
+    variants = [
+        Variant("seed", "(unchanged)", 0, 0, 0, exit_code=0, fingerprint=""),
+        Variant("mechanism", "sh_type", 1, 0, 4, exit_code=0, outcome=CLEAN),
+    ]
+    assert attributed(variants) is False
