@@ -91,12 +91,13 @@ python -m src.novel_findings list --cve CVE-2025-23340
 
 ```text
 data/findings/novel/<CVE>/<时间戳>_<文件名>_exit<码>/
-  finding.json      # 判定、理由、退出码、工具、sha256、triage=UNTRIAGED
+  finding.json      # 判定、理由、退出码、工具、指纹、sha256、triage=UNTRIAGED
   <artifact>        # 崩溃样本副本（.cubin/.elf/.fatbin 不入库）
   observation.txt   # 崩溃前后的日志片段
 ```
 
-记录**不改变判定**，也不判断这是不是真 bug——分诊留给能花时间看的人。
+指纹形如 `nvdisasm+0x28000`（模块 + 4 KB 取整的偏移）：**同一处崩溃只记一条**，
+不同处才视为新发现。记录**不改变判定**，也不判断这是不是真 bug——分诊留给能花时间看的人。
 判定为 `SUPPORTED` 的样本不在此列：它已由本轮运行本身保存。
 
 ## 5. 规格（`specs/`）
@@ -123,6 +124,7 @@ data/findings/novel/<CVE>/<时间戳>_<文件名>_exit<码>/
 | `[CPG_RUN] <file>::<tool> exit=<n>` | 一次受控执行及其退出码 |
 | `[CPG_MANIFEST] <n> artifacts declared` / `missing` | 候选是否声明了产物 |
 | `[CPG_CANDIDATE_FAULT] <exception>` | 候选自身抛异常，无可判分内容 |
+| `[CPG_CRASH] <file> sig=.. off=.. addr=.. module=..` | 崩溃点与故障地址（用于指纹） |
 | `[CPG_STEP:...]` | 工具链步骤（编译/汇编）成功或失败 |
 
 ## 7. 已知边界（实测结论）

@@ -298,6 +298,16 @@ def docker_matrix_stage(config: LoopConfig,
         # a chance to get the string table or the section size wrong.
         kit_src = Path(config.project_root) / "tools" / "cpgkit" / "cpgkit.py"
         kit_dst = Path(config.samples_dir) / "cpgkit.py"
+        # The fault-site recorder is compiled inside the container; without the
+        # source beside the artifacts the fingerprint degrades to the exit code.
+        cap_src = Path(config.project_root) / "tools" / "driver" / "crashcap.c"
+        cap_dst = Path(config.samples_dir) / "crashcap.c"
+        if cap_src.is_file() and config.project_root:
+            try:
+                if not cap_dst.is_file() or cap_dst.read_bytes() != cap_src.read_bytes():
+                    cap_dst.write_bytes(cap_src.read_bytes())
+            except OSError:
+                pass
         if kit_src.is_file() and config.project_root:
             try:
                 kit_dst.write_bytes(kit_src.read_bytes())

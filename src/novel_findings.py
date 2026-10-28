@@ -30,6 +30,11 @@ from typing import List, Optional
 
 _RUN = re.compile(
     r"\[CPG_RUN\]\s+(?P<artifact>[^\s:]+)(?:::(?P<tool>[\w.-]+))?\s+exit=(?P<code>-?\d+)")
+_CRASH = re.compile(
+    r"\[CPG_CRASH\]\s+(?P<artifact>[^\s:]+)\s+sig=(?P<sig>-?\d+)\s+pc=0x(?P<pc>[0-9a-fA-F]+)"
+    r"\s+base=0x(?P<base>[0-9a-fA-F]+)\s+off=0x(?P<off>[0-9a-fA-F]+)"
+    r"\s+addr=0x(?P<addr>[0-9a-fA-F]+)\s+module=(?P<module>\S+)")
+BUCKET = 0x1000
 _CRASH_EXITS = {134, 136, 137, 139, 143, -6, -11, -4}
 
 
@@ -38,10 +43,25 @@ class Crash:
     artifact: str
     exit_code: int
     tool: str = ""
+    module: str = ""
+    offset: int = 0
+    address: int = 0
 
     @property
     def crashed(self) -> bool:
         return self.exit_code in _CRASH_EXITS
+
+    @property
+    def fingerprint(self) -> str:
+        """Where it died, not which input killed it.
+
+        Offsets are bucketed to 4 KB: the same function faulting at two nearby
+        instructions is one bug far more often than it is two, and an exact
+        offset would split one root cause across a dozen findings.
+        """
+        if not self.module:
+            return "exit:%d" % self.exit_code
+        return "%s+0x%x" % (self.module, self.offset & ~(BUCKET - 1))
 
 
 @dataclass
@@ -53,6 +73,8 @@ class Finding:
     verdict: str
     reasons: List[str] = field(default_factory=list)
     note: str = ""
+    fingerprint: str = ""
+    fault_address: int = 0
     sha256: str = ""
     recorded_at: str = ""
     triage: str = "UNTRIAGED"
@@ -61,8 +83,21 @@ class Finding:
         return asdict(self)
 
 
+def parse_sites(text: str) -> dict:
+    """Fault sites recorded by the shim, keyed by artifact."""
+    sites = {}
+    for match in _CRASH.finditer(text or ""):
+        sites[match.group("artifact")] = {
+            "module": match.group("module"),
+            "offset": int(match.group("off"), 16),
+            "address": int(match.group("addr"), 16),
+        }
+    return sites
+
+
 def parse_crashes(text: str) -> List[Crash]:
     """Every crashing run in a log, from either [CPG_RUN] spelling."""
+    sites = parse_sites(text)
     crashes: List[Crash] = []
     seen = set()
     for match in _RUN.finditer(text or ""):
@@ -72,8 +107,12 @@ def parse_crashes(text: str) -> List[Crash]:
         if key in seen:
             continue
         seen.add(key)
+        site = sites.get(artifact, {})
         crash = Crash(artifact=artifact, exit_code=code,
-                      tool=(match.group("tool") or "").strip())
+                      tool=(match.group("tool") or "").strip(),
+                      module=site.get("module", ""),
+                      offset=site.get("offset", 0),
+                      address=site.get("address", 0))
         if crash.crashed:
             crashes.append(crash)
     return crashes
@@ -101,6 +140,7 @@ def record(directory: Path, cve_id: str, observation: str, verdict: str,
         return []
     written: List[Path] = []
     directory = Path(directory)
+    known = {row.get("fingerprint") for row in load_all(Path(root) / cve_id)}
     # One record per artifact: the candidate's own run and the grader's run both
     # report the same crash, and two directories named after it collide.
     by_artifact = {}
@@ -109,6 +149,9 @@ def record(directory: Path, cve_id: str, observation: str, verdict: str,
         if previous is None or (not previous.tool and crash.tool):
             by_artifact[crash.artifact] = crash
     for crash in by_artifact.values():
+        if crash.fingerprint in known:
+            continue          # same place, same bug: already on file
+        known.add(crash.fingerprint)
         source = directory / crash.artifact
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         target = Path(root) / cve_id / ("%s_%s_exit%d" % (stamp, crash.artifact, crash.exit_code))
@@ -127,6 +170,7 @@ def record(directory: Path, cve_id: str, observation: str, verdict: str,
             tool=crash.tool, verdict=verdict, reasons=list(reasons or []),
             note=("Crash present but the CVE is not attributable: the baseline or "
                   "a control did not behave, so this may be a different bug."),
+            fingerprint=crash.fingerprint, fault_address=crash.address,
             sha256=digest, recorded_at=stamp)
         (target / "finding.json").write_text(
             json.dumps(finding.as_dict(), ensure_ascii=False, indent=2),
