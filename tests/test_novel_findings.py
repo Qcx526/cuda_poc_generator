@@ -93,3 +93,14 @@ def test_the_same_fault_is_not_recorded_twice(tmp_path):
                                    root=tmp_path / "n")
     assert len(first) == 1
     assert second == []                                  # same place, same bug
+
+
+def test_the_faulting_instruction_is_read_and_classified():
+    line = ("[CPG_RUN] p.cubin::nvdisasm exit=139\n"
+            "[CPG_CRASH] p.cubin sig=11 code=1 pc=0x428b80 base=0x400000 "
+            "off=0x28b80 addr=0x0 module=nvdisasm insn=803f00744b\n")
+    crash = novel_findings.parse_crashes(line)[0]
+    assert crash.insn == "803f00744b"
+    assert crash.access == "read"
+    assert crash.severity == "null-read"
+    assert "cmp" in crash.instruction

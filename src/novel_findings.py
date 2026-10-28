@@ -31,9 +31,11 @@ from typing import List, Optional
 _RUN = re.compile(
     r"\[CPG_RUN\]\s+(?P<artifact>[^\s:]+)(?:::(?P<tool>[\w.-]+))?\s+exit=(?P<code>-?\d+)")
 _CRASH = re.compile(
-    r"\[CPG_CRASH\]\s+(?P<artifact>[^\s:]+)\s+sig=(?P<sig>-?\d+)\s+pc=0x(?P<pc>[0-9a-fA-F]+)"
+    r"\[CPG_CRASH\]\s+(?P<artifact>[^\s:]+)\s+sig=(?P<sig>-?\d+)"
+    r"(?:\s+code=(?P<code>-?\d+))?\s+pc=0x(?P<pc>[0-9a-fA-F]+)"
     r"\s+base=0x(?P<base>[0-9a-fA-F]+)\s+off=0x(?P<off>[0-9a-fA-F]+)"
-    r"\s+addr=0x(?P<addr>[0-9a-fA-F]+)\s+module=(?P<module>\S+)")
+    r"\s+addr=0x(?P<addr>[0-9a-fA-F]+)\s+module=(?P<module>\S+)"
+    r"(?:\s+insn=(?P<insn>[0-9a-fA-F]*))?")
 BUCKET = 0x1000
 _CRASH_EXITS = {134, 136, 137, 139, 143, -6, -11, -4}
 
@@ -46,6 +48,10 @@ class Crash:
     module: str = ""
     offset: int = 0
     address: int = 0
+    insn: str = ""
+    access: str = ""
+    instruction: str = ""
+    severity: str = ""
 
     @property
     def crashed(self) -> bool:
@@ -75,6 +81,9 @@ class Finding:
     note: str = ""
     fingerprint: str = ""
     fault_address: int = 0
+    access: str = ""
+    instruction: str = ""
+    severity: str = ""
     sha256: str = ""
     recorded_at: str = ""
     triage: str = "UNTRIAGED"
@@ -91,6 +100,7 @@ def parse_sites(text: str) -> dict:
             "module": match.group("module"),
             "offset": int(match.group("off"), 16),
             "address": int(match.group("addr"), 16),
+            "insn": match.group("insn") or "",
         }
     return sites
 
@@ -112,7 +122,14 @@ def parse_crashes(text: str) -> List[Crash]:
                       tool=(match.group("tool") or "").strip(),
                       module=site.get("module", ""),
                       offset=site.get("offset", 0),
-                      address=site.get("address", 0))
+                      address=site.get("address", 0),
+                      insn=site.get("insn", ""))
+        if crash.insn:
+            from . import fault_site
+            detail = fault_site.classify(crash.insn, crash.address)
+            crash.access = detail["access"]
+            crash.instruction = detail["instruction"]
+            crash.severity = detail["severity"]
         if crash.crashed:
             crashes.append(crash)
     return crashes
@@ -171,6 +188,8 @@ def record(directory: Path, cve_id: str, observation: str, verdict: str,
             note=("Crash present but the CVE is not attributable: the baseline or "
                   "a control did not behave, so this may be a different bug."),
             fingerprint=crash.fingerprint, fault_address=crash.address,
+            access=crash.access, instruction=crash.instruction,
+            severity=crash.severity,
             sha256=digest, recorded_at=stamp)
         (target / "finding.json").write_text(
             json.dumps(finding.as_dict(), ensure_ascii=False, indent=2),

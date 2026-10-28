@@ -52,11 +52,23 @@ static void handler(int sig, siginfo_t *info, void *context) {
         base = (unsigned long)dl.dli_fbase;
     }
 
-    char line[640];
+    /* The faulting instruction itself, so the host can say read or write.
+       Decoding here would mean writing an x86 decoder into a signal handler;
+       carrying fifteen bytes out is cheaper and cannot go stale. */
+    char insn[64] = "";
+    if (pc) {
+        const unsigned char *code = (const unsigned char *)pc;
+        int n = 0;
+        for (int i = 0; i < 15 && n < (int)sizeof(insn) - 3; i++) {
+            n += snprintf(insn + n, sizeof(insn) - n, "%02x", code[i]);
+        }
+    }
+
+    char line[768];
     snprintf(line, sizeof(line),
-             "sig=%d pc=0x%lx base=0x%lx off=0x%lx addr=0x%lx module=%s\n",
-             sig, pc, base, base ? pc - base : 0,
-             (unsigned long)(info ? info->si_addr : 0), module);
+             "sig=%d code=%d pc=0x%lx base=0x%lx off=0x%lx addr=0x%lx module=%s insn=%s\n",
+             sig, info ? info->si_code : 0, pc, base, base ? pc - base : 0,
+             (unsigned long)(info ? info->si_addr : 0), module, insn);
 
     const char *out = getenv("CRASHCAP_OUT");
     if (out) {

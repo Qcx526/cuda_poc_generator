@@ -47,6 +47,8 @@ class Variant:
     exit_code: Optional[int] = None
     fingerprint: str = ""
     fault_address: int = 0
+    access: str = ""
+    severity: str = ""
     outcome: str = ""
 
 
@@ -201,6 +203,8 @@ def run(variants: Sequence[Variant], seed: bytes, invocation: Sequence[str],
         if crash is not None:
             variant.fingerprint = crash.fingerprint
             variant.fault_address = crash.address
+            variant.access = crash.access
+            variant.severity = crash.severity
     return variants
 
 
@@ -336,12 +340,13 @@ def report(variants: Sequence[Variant], cve_id: str, baseline: str,
     lines += ["## 结论", ""]
     lines += ["- " + item for item in verdict(variants, baseline)]
     lines += ["", "## 明细", "",
-              "| 轴 | 字段 | 取值 | 退出码 | 指纹 | 判定 |", "|---|---|---|---|---|---|"]
+              "| 轴 | 字段 | 取值 | 退出码 | 指纹 | 访问 | 判定 |", "|---|---|---|---|---|---|---|"]
     for variant in variants:
-        lines.append("| %s | %s | %d | %s | `%s` | `%s` |"
+        lines.append("| %s | %s | %d | %s | `%s` | %s | `%s` |"
                      % (variant.axis, variant.field, variant.value,
                         "-" if variant.exit_code is None else variant.exit_code,
-                        variant.fingerprint or "-", variant.outcome))
+                        variant.fingerprint or "-", variant.severity or "-",
+                        variant.outcome))
     return "\n".join(lines) + "\n"
 
 
