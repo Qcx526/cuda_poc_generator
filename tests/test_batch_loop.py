@@ -31,7 +31,7 @@ class TestBatchRun(unittest.TestCase):
     def test_rows_are_produced_in_order_and_reported(self):
         seen = []
 
-        def fake_runner(cve, iterations, workdir, root, python, image, index=0):
+        def fake_runner(cve, iterations, workdir, root, python, image, index=0, **kwargs):
             seen.append(cve)
             return BatchRow(cve_id=cve, status="SUPPORTED", iterations=1,
                             verdict="SUPPORTED", seconds=1.0)
@@ -48,7 +48,7 @@ class TestBatchRun(unittest.TestCase):
     def test_repeat_counts_successes_over_independent_runs(self):
         outcomes = iter(["CRASHED", "SUPPORTED", "CRASHED"])
 
-        def fake_runner(cve, iterations, workdir, root, python, image, index=0):
+        def fake_runner(cve, iterations, workdir, root, python, image, index=0, **kwargs):
             return BatchRow(cve_id=cve, status=next(outcomes), seconds=1.0)
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -93,7 +93,7 @@ def test_a_finished_run_is_not_repeated(tmp_path):
 
     calls = []
 
-    def runner(cve_id, iterations, workdir, project_root, python_exe, image, index=0):
+    def runner(cve_id, iterations, workdir, project_root, python_exe, image, index=0, **kwargs):
         calls.append(index)
         if index == 0:
             raise AssertionError("finished runs must not be repeated")
@@ -116,7 +116,7 @@ def test_a_finished_run_is_not_repeated(tmp_path):
 
     calls = []
 
-    def runner(cve_id, iterations, workdir, project_root, python_exe, image, index=0):
+    def runner(cve_id, iterations, workdir, project_root, python_exe, image, index=0, **kwargs):
         calls.append(index)
         if index == 0:
             raise AssertionError("finished runs must not be repeated")
