@@ -50,6 +50,27 @@ CUDA_VULN_KEYWORDS = [
 ]
 
 
+_KNOWLEDGE_SUFFIXES = (".md", ".txt")
+
+
+def _index_is_stale(kb_dir: Path, persist_dir: Path) -> bool:
+    """True when a document is newer than the persisted index."""
+    try:
+        if not persist_dir.exists():
+            return True
+        documents = [p for p in Path(kb_dir).rglob("*")
+                     if p.is_file() and p.suffix in _KNOWLEDGE_SUFFIXES]
+        if not documents:
+            return True
+        newest_document = max(p.stat().st_mtime for p in documents)
+        stamps = [p.stat().st_mtime for p in persist_dir.rglob("*") if p.is_file()]
+        if not stamps:
+            return True
+        return max(stamps) < newest_document
+    except OSError:
+        return True
+
+
 def _simple_split_documents(documents: list, chunk_size: int = 1024, chunk_overlap: int = 128) -> list:
     """简单的文档分割器，避免引入 langchain_text_splitters → torch 依赖链。
     
@@ -223,7 +244,13 @@ class CudaDataLoader:
             return
 
         # ---------- 尝试加载已有持久化索引 ----------
-        if not force_rebuild and Path(persist_dir).exists():
+        # Reuse only when the index is newer than every document: a knowledge
+        # entry written after the last build would otherwise be read, indexed and
+        # never retrieved, which looks exactly like "the feedback had no effect".
+        stale = _index_is_stale(kb_path, Path(persist_dir))
+        if stale and not force_rebuild:
+            print("[RAG] 知识库有更新，重建索引…")
+        if not force_rebuild and Path(persist_dir).exists() and not stale:
             try:
                 print("[RAG] 加载已有向量索引…")
                 logger.info("从持久化目录加载 CUDA RAG 索引: %s", persist_dir)

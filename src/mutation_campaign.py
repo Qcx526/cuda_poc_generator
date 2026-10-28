@@ -245,6 +245,76 @@ def verdict(variants: Sequence[Variant], baseline: str) -> List[str]:
     return findings
 
 
+def knowledge_markdown(variants: Sequence[Variant], cve_id: str,
+                       baseline: str) -> str:
+    """What the campaign learned, written for retrieval rather than for reading.
+
+    Short paragraphs, each headed by the CVE and the axis it is about: the loader
+    splits at about a thousand characters, so a conclusion that only makes sense
+    inside a longer argument would be retrieved as a fragment.
+    """
+    by_axis: Dict[str, List[Variant]] = {}
+    for variant in variants:
+        by_axis.setdefault(variant.axis, []).append(variant)
+
+    parts = ["# %s 变异实测结论" % cve_id, ""]
+    parts.append("## 种子（%s）" % cve_id)
+    parts.append("%s 的种子样本崩溃于 `%s`。" % (cve_id, baseline or "未记录"))
+    parts.append("")
+
+    for axis_name, items in by_axis.items():
+        if axis_name == "seed" or not items:
+            continue
+        field = items[0].field
+        same = [v.value for v in items if v.outcome == SAME]
+        clean = [v.value for v in items if v.outcome == CLEAN]
+        novel = [v for v in items if v.outcome == NOVEL]
+        parts.append("## %s 的 %s 轴（%s）" % (cve_id, axis_name, field))
+        facts = []
+        if same:
+            facts.append("取值 %s 仍崩溃在同一处 `%s`" % (same, baseline))
+        if clean:
+            facts.append("取值 %s 不崩溃" % clean)
+        if novel:
+            facts.append("取值 %s 崩溃在别处（%s）"
+                         % ([v.value for v in novel],
+                            [v.fingerprint for v in novel]))
+        parts.append("%s：%s。" % (cve_id, "；".join(facts)))
+
+        if axis_name == "mechanism" and same and not novel:
+            parts.append(
+                "因此 %s 的崩溃与 `%s` 声明的机制无关：改这个字段不改变崩溃点，"
+                "不能作为复现依据，也不要把改类型当成绕过。" % (cve_id, field))
+        elif clean and same:
+            parts.append(
+                "因此 %s 的触发窗口是 `%s` ∈ %s；%s 不触发。"
+                "生成时应直接取窗口内的值，不要靠试探。"
+                % (cve_id, field, [v.value for v in items if v.outcome in (SAME, NOVEL)],
+                   clean))
+        elif clean and not same:
+            parts.append(
+                "因此 %s 的 `%s` 在本轮取值中都不触发，窗口尚未定位。"
+                % (cve_id, field))
+        parts.append("")
+    return "\n".join(parts).rstrip() + "\n"
+
+
+def write_knowledge(variants: Sequence[Variant], cve_id: str, baseline: str,
+                    directory: Path) -> Path:
+    """One file per CVE, overwritten rather than appended.
+
+    A campaign that runs twice must not leave two versions of the same conclusion
+    in the index - retrieval would then answer with whichever chunk it matched
+    first.
+    """
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / ("%s.md" % cve_id)
+    target.write_text(knowledge_markdown(variants, cve_id, baseline),
+                      encoding="utf-8")
+    return target
+
+
 def report(variants: Sequence[Variant], cve_id: str, baseline: str,
            required_missing: Sequence[str]) -> str:
     counts: Dict[str, int] = {}
@@ -281,6 +351,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--spec", default="")
     parser.add_argument("--workdir", default="")
     parser.add_argument("--image", default=DEFAULT_IMAGE)
+    parser.add_argument("--knowledge-dir", default="data/knowledge_bases/mutation")
+    parser.add_argument("--no-knowledge", action="store_true", default=False)
     args = parser.parse_args(argv)
 
     spec_path = Path(args.spec) if args.spec else Path("specs") / args.cve / "spec.json"
@@ -314,6 +386,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         json.dumps([variant.__dict__ for variant in variants],
                    ensure_ascii=False, indent=2), encoding="utf-8")
     print(text)
+    if not args.no_knowledge:
+        target = write_knowledge(variants, args.cve, baseline,
+                                 Path(args.knowledge_dir))
+        print("knowledge entry: %s" % target)
     print("written to %s" % workdir)
     return 0
 

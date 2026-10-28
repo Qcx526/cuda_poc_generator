@@ -82,3 +82,31 @@ def test_the_verdict_says_when_the_mechanism_does_not_matter():
     ]
     text = " ".join(verdict(variants, "nvdisasm+0x28000"))
     assert "不是" in text and "该 CVE" in text
+
+
+def test_knowledge_entry_states_what_the_axes_proved():
+    from src.mutation_campaign import knowledge_markdown
+
+    variants = [
+        Variant("seed", "(unchanged)", 0, 0, 0, exit_code=139, fingerprint="nvdisasm+0x28000"),
+        Variant("boundary", "sh_size", 0, 0, 8, exit_code=139,
+                fingerprint="nvdisasm+0x28000", outcome=SAME),
+        Variant("boundary", "sh_size", 24, 0, 8, exit_code=0, outcome=CLEAN),
+        Variant("mechanism", "sh_type", 1, 0, 4, exit_code=139,
+                fingerprint="nvdisasm+0x28000", outcome=SAME),
+    ]
+    text = knowledge_markdown(variants, "CVE-X", "nvdisasm+0x28000")
+    assert "CVE-X" in text
+    assert "触发窗口是 `sh_size` ∈ [0]" in text
+    assert "与 `sh_type` 声明的机制无关" in text
+
+
+def test_knowledge_is_one_file_per_cve(tmp_path):
+    from src.mutation_campaign import write_knowledge
+
+    variants = [Variant("seed", "(unchanged)", 0, 0, 0, exit_code=139,
+                        fingerprint="a+0x1000")]
+    first = write_knowledge(variants, "CVE-X", "a+0x1000", tmp_path)
+    second = write_knowledge(variants, "CVE-X", "a+0x1000", tmp_path)
+    assert first == second
+    assert len(list(tmp_path.glob("*.md"))) == 1

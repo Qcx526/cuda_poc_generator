@@ -100,6 +100,26 @@ data/findings/novel/<CVE>/<时间戳>_<文件名>_exit<码>/
 不同处才视为新发现。记录**不改变判定**，也不判断这是不是真 bug——分诊留给能花时间看的人。
 判定为 `SUPPORTED` 的样本不在此列：它已由本轮运行本身保存。
 
+### 4.2 变异战役（`src/mutation_campaign.py`）
+
+按规格声明的轴逐个改字段，一次容器内跑完，按**崩溃指纹**分类：
+
+```bash
+python -m src.mutation_campaign --cve CVE-2025-23340 --workdir data/mutation/demo
+```
+
+| 结果 | 含义 |
+|---|---|
+| `SAME_SITE` | 又打中同一处 → 同一个 bug |
+| `NOVEL_SITE` | 崩在别处 → 候选新发现 |
+| `CLEAN` | 改了就不崩 → 该字段是必要条件 |
+
+产物：`data/mutation/<run>/report.md`（含自动结论）、`variants.json`，
+以及写入 `data/knowledge_bases/mutation/<CVE>.md` 的知识条目——下一轮生成会检索到
+"改哪个字段不会改变崩溃点"，不必重新试错。
+
+索引按文档修改时间自动失效重建，新增条目不会被旧索引挡住。
+
 ## 5. 规格（`specs/`）
 
 7 份规格，每份把 CVE 描述变成可执行定义：
