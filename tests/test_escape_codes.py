@@ -50,6 +50,8 @@ class TestDriverSelection(unittest.TestCase):
                                                 loaded_driver_version,
                                                 nvidia_version)
 
+        want = loaded_driver_version()
+        if not want:
+            self.skipTest("the loaded driver version is not readable here")
         path = driver_path()
-        self.assertEqual(nvidia_version(file_version(path)),
-                         loaded_driver_version())
+        self.assertEqual(nvidia_version(file_version(path)), want)

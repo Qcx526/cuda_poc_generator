@@ -68,7 +68,11 @@ def loaded_driver_version() -> str:
                               text=True, timeout=15).stdout
     except (OSError, subprocess.SubprocessError):
         return ""
-    return text.strip().splitlines()[0].strip() if text.strip() else ""
+    # A broken NVML prints its complaint on stdout; taking that as a version made
+    # driver_path search for a file called "Failed to initialize NVML".
+    import re
+    line = text.strip().splitlines()[0].strip() if text.strip() else ""
+    return line if re.fullmatch(r"\d+\.\d+", line) else ""
 
 
 def driver_path(want: str = "") -> Path:
