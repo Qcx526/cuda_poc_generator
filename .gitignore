@@ -85,3 +85,8 @@ Desktop.ini
 data/fuzz*/
 data/probeA/
 data/probeB/
+
+# Novel crashes: keep the index, never the binaries
+data/findings/novel/**/*.cubin
+data/findings/novel/**/*.elf
+data/findings/novel/**/*.fatbin

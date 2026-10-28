@@ -19,6 +19,7 @@ Three invariants, all learned from real runs:
 """
 
 import subprocess
+from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -69,6 +70,16 @@ class LoopState(BaseModel):
     reached: Optional[bool] = None
     diagnosis_code: Optional[str] = None
     directive: Optional[str] = None
+
+
+def _read_observation(state: LoopState) -> str:
+    """The run's raw output, or empty when it was never written."""
+    if not state.observation_file:
+        return ""
+    try:
+        return Path(state.observation_file).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
 
 
 class IterationRecord(BaseModel):
@@ -176,6 +187,18 @@ class ClosedLoopController:
                                                state.stage_error)
 
             result = self.grader(state)
+            # A crash the CVE cannot claim is either a bad PoC or a different
+            # bug; the second is worth keeping. Recording never changes the
+            # verdict, and a failure to record must not fail the run.
+            if result.verdict != "SUPPORTED":
+                try:
+                    from . import novel_findings
+                    novel_findings.record(
+                        Path(self.config.samples_dir), self.config.cve_id,
+                        _read_observation(state), result.verdict,
+                        list(result.reasons))
+                except Exception:  # noqa: BLE001 - side channel only
+                    pass
             diagnosis = diagnose(verdict=result.verdict,
                                  reasons=list(result.reasons),
                                  stage_error=state.stage_error,
@@ -271,16 +294,6 @@ def docker_matrix_stage(config: LoopConfig,
                              candidate_file=state.candidate_file,
                              observation_file=str(log),
                              reached=observation.reached)
-        # Ship the helper next to the candidate: every hand-rolled ELF layout is
-        # a chance to get the string table or the section size wrong.
-        kit_src = Path(config.project_root) / "tools" / "cpgkit" / "cpgkit.py"
-        kit_dst = Path(config.samples_dir) / "cpgkit.py"
-        if kit_src.is_file() and config.project_root:
-            try:
-                kit_dst.write_bytes(kit_src.read_bytes())
-            except OSError:
-                pass
-
         # Ship the helper next to the candidate: every hand-rolled ELF layout is
         # a chance to get the string table or the section size wrong.
         kit_src = Path(config.project_root) / "tools" / "cpgkit" / "cpgkit.py"

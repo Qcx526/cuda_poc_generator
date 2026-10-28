@@ -77,6 +77,28 @@ specs/<CVE>/spec.json          规格：输入格式、锚点命令、消费字�
 - **崩溃必须归因到模块**。只看退出码会把 D3D 校验器的崩溃当成驱动崩溃（实测踩过）。
 - **零结果必须交叉验证**。"导出 0 个符号""0 个调用点"都出现过，都是解析错误而非事实。
 
+### 4.1 未归属的崩溃（`data/findings/novel/`）
+
+判定没通过、但确实有样本崩溃时，**崩溃不会随判定一起丢弃**。它可能是坏 PoC，
+也可能是另一个没人报过的 bug，后者比前者有价值。
+
+```bash
+python -m src.novel_findings list                 # 全部
+python -m src.novel_findings list --cve CVE-2025-23340
+```
+
+每条记录一个目录：
+
+```text
+data/findings/novel/<CVE>/<时间戳>_<文件名>_exit<码>/
+  finding.json      # 判定、理由、退出码、工具、sha256、triage=UNTRIAGED
+  <artifact>        # 崩溃样本副本（.cubin/.elf/.fatbin 不入库）
+  observation.txt   # 崩溃前后的日志片段
+```
+
+记录**不改变判定**，也不判断这是不是真 bug——分诊留给能花时间看的人。
+判定为 `SUPPORTED` 的样本不在此列：它已由本轮运行本身保存。
+
 ## 5. 规格（`specs/`）
 
 7 份规格，每份把 CVE 描述变成可执行定义：
