@@ -5,6 +5,7 @@
 # 在部分镜像源上直接失败——克隆后第一步就卡住，代价远大于收益。
 #
 # 需要 RAG（知识库检索）时另外装：pip install -e ".[rag]"
+capstone>=5.0,<6
 PyYAML>=6.0,<7
 python-dotenv>=1.0,<2
 pydantic>=2.7.4,<3

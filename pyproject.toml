@@ -9,6 +9,7 @@ description = "CUDA research candidate PoC generation with optional local RAG"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
+    "capstone>=5.0,<6",
     "PyYAML>=6.0,<7",
     "python-dotenv>=1.0,<2",
     "pydantic>=2.7.4,<3",

@@ -123,3 +123,6 @@ data/findings/**/crashcap.c
 /out/
 demo/*/artifacts/*.so
 demo/*/artifacts/observation.txt
+
+# 根目录的运行产物（demo 下的样本不受影响）
+/artifacts/
