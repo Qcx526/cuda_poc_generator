@@ -283,6 +283,79 @@ def lint_missing_artifact_manifest(code: str) -> List[str]:
             "so their roles are undeclared"]
 
 
+def lint_unpack_arity_mismatch(tree: ast.Module) -> List[str]:
+    """A call unpacks a different number of values than the function returns.
+
+    The generator writes its own helpers, and nothing stops it from returning a
+    four-tuple in one place and unpacking three in another. That surfaces as a
+    ValueError at run time - after the container has spent minutes getting there -
+    and the loop can only report "a step failed", which tells the next round
+    nothing. Reading both sides statically turns it into a one-line diagnosis.
+
+    Deliberately narrow: only module-level defs, only calls with plain positional
+    arguments, and only when every return of the callee is a fixed-length tuple.
+    Anything ambiguous is skipped rather than guessed.
+    """
+    defs = {}
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef) or node.decorator_list:
+            continue
+        args = node.args
+        if args.vararg or args.kwarg:
+            continue
+        params = len(args.args)
+        required = params - len(args.defaults)
+        arities = set()
+        unknown = False
+        for inner in ast.walk(node):
+            if isinstance(inner, ast.Return):
+                if inner.value is None:
+                    unknown = True
+                elif isinstance(inner.value, ast.Tuple):
+                    if any(isinstance(elt, ast.Starred) for elt in inner.value.elts):
+                        unknown = True
+                    else:
+                        arities.add(len(inner.value.elts))
+                else:
+                    unknown = True
+        defs[node.name] = {"params": params, "required": required,
+                           "arities": None if unknown else arities,
+                           "line": node.lineno}
+
+    findings: List[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            info = defs.get(node.func.id)
+            if info is None:
+                continue
+            if any(isinstance(arg, ast.Starred) for arg in node.args):
+                continue
+            given = len(node.args)
+            if given > info["params"]:
+                findings.append(
+                    "Line %d: %s() takes %d argument(s) but is called with %d"
+                    % (node.lineno, node.func.id, info["params"], given))
+            elif given < info["required"]:
+                findings.append(
+                    "Line %d: %s() needs at least %d argument(s) but is called with %d"
+                    % (node.lineno, node.func.id, info["required"], given))
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) \
+                and isinstance(node.value.func, ast.Name):
+            target = node.targets[0]
+            if not isinstance(target, ast.Tuple):
+                continue
+            info = defs.get(node.value.func.id)
+            if info is None or not info["arities"]:
+                continue
+            unpacked = len(target.elts)
+            if unpacked not in info["arities"]:
+                findings.append(
+                    "Line %d: unpacks %d value(s) but %s() returns %s (defined line %d)"
+                    % (node.lineno, unpacked, node.value.func.id,
+                       "/".join(str(n) for n in sorted(info["arities"])), info["line"]))
+    return findings
+
+
 def run_lints(code: str) -> List[Tuple[str, str]]:
     """Run every lint; returns (lint_id, message) pairs, empty when clean."""
     try:
@@ -306,4 +379,6 @@ def run_lints(code: str) -> List[Tuple[str, str]]:
         findings.append(("missing-run-lines", message))
     for message in lint_missing_artifact_manifest(code):
         findings.append(("missing-artifact-manifest", message))
+    for message in lint_unpack_arity_mismatch(tree):
+        findings.append(("unpack-arity-mismatch", message))
     return findings
