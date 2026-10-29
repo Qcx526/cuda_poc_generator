@@ -21,7 +21,7 @@ import json
 import shutil
 import struct
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
@@ -52,6 +52,9 @@ class Variant:
     severity: str = ""
     tool: str = ""
     outcome: str = ""
+    # Several fields changed in one artifact. Empty means the single
+    # offset/width/value triple applies, which is the common case.
+    edits: list = field(default_factory=list)
 
 
 def widen(value: int, width: int) -> bytes:
@@ -65,6 +68,24 @@ def widen(value: int, width: int) -> bytes:
     if width == 4:
         return struct.pack("<I", value & 0xFFFFFFFF)
     return struct.pack("<Q", value & 0xFFFFFFFFFFFFFFFF)
+
+
+def apply_many(seed: bytes, edits) -> bytes:
+    """Several fields at once; the reason multi-field mutation exists.
+
+    A parser that checks one field against another only misbehaves when both move,
+    so an artifact that changes two fields coherently is a different experiment
+    from two artifacts that each change one.
+    """
+    out = bytearray(seed)
+    for offset, width, value in edits:
+        if offset + width > len(seed):
+            raise ValueError("field at %d+%d runs past the %d-byte seed"
+                             % (offset, width, len(seed)))
+        encoded = widen(value, width)
+        if encoded:
+            out[offset:offset + width] = encoded
+    return bytes(out)
 
 
 def apply(seed: bytes, offset: int, width: int, value: int) -> bytes:
@@ -191,8 +212,11 @@ def run(variants: Sequence[Variant], seed: bytes, invocations: Sequence[Sequence
     for variant in variants:
         variant.path = str(workdir / ("%s_%s_%d.cubin"
                                       % (variant.axis, variant.field, variant.value)))
-        Path(variant.path).write_bytes(
-            apply(seed, variant.offset, variant.width, variant.value))
+        if variant.edits:
+            Path(variant.path).write_bytes(apply_many(seed, variant.edits))
+        else:
+            Path(variant.path).write_bytes(
+                apply(seed, variant.offset, variant.width, variant.value))
 
     source = Path(__file__).resolve().parent.parent / "tools" / "driver" / "crashcap.c"
     if source.is_file():

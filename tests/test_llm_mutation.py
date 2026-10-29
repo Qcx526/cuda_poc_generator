@@ -80,21 +80,21 @@ def test_scale_expands_over_every_matching_field():
     accepted, _ = expand([Operator("scale", "sec*.sh_size", factor=2)],
                          table(seed), len(seed))
     assert len(accepted) == 3
-    assert all(item.proposal.value == 32 for item in accepted)
+    assert all(item.value == 32 for item in accepted)
 
 
 def test_set_to_reads_another_field():
     seed = _elf(3)
     accepted, _ = expand([Operator("set_to", "sec0.sh_size", value_from="e_shnum")],
                          table(seed), len(seed))
-    assert accepted[0].proposal.value == 3
+    assert accepted[0].value == 3
 
 
 def test_set_to_file_len_needs_no_extra_input():
     seed = _elf(2)
     accepted, _ = expand([Operator("set_to", "sec0.sh_offset", value_from="file_len")],
                          table(seed), len(seed))
-    assert accepted[0].proposal.value == len(seed)
+    assert accepted[0].value == len(seed)
 
 
 def test_a_target_matching_nothing_is_reported():
@@ -126,3 +126,40 @@ def test_operator_output_is_parsed_leniently():
     ]}
     operators = parse_operators(payload)
     assert len(operators) == 1 and operators[0].target == "e_*"
+
+
+# ---- tuple: several fields in one artifact -----------------------------------
+
+def test_a_tuple_aligns_fields_by_section():
+    """Both fields of section 0, then both of section 1 - not a cross product."""
+    seed = _elf(3)
+    variants, rejected = expand([Operator(
+        "tuple", assign={"sec*.sh_offset": "file_len", "sec*.sh_size": 32})],
+        table(seed), len(seed))
+    assert len(variants) == 3 and not rejected
+    assert all(len(variant.edits) == 2 for variant in variants)
+    first = variants[0].edits
+    assert first[0][0] == 64 + 0 * 64 + 24     # sec0.sh_offset
+    assert first[1][0] == 64 + 0 * 64 + 32     # sec0.sh_size
+
+
+def test_a_tuple_with_no_change_is_refused():
+    seed = _elf(2)
+    variants, rejected = expand([Operator(
+        "tuple", assign={"sec0.sh_size": 16, "sec0.sh_type": 1})],
+        table(seed), len(seed))
+    assert not variants
+    assert "equals the current one" in rejected[0]["why"]
+
+
+def test_a_tuple_naming_an_unknown_field_is_refused():
+    seed = _elf()
+    variants, rejected = expand([Operator(
+        "tuple", assign={"sec0.sh_nope": 1, "sec0.sh_size": 0})],
+        table(seed), len(seed))
+    assert not variants and "unknown field" in rejected[0]["why"]
+
+
+def test_an_empty_tuple_is_refused():
+    variants, rejected = expand([Operator("tuple", assign={})], table(_elf()), 128)
+    assert not variants and rejected[0]["why"] == "empty assign"

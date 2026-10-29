@@ -23,7 +23,7 @@ The proposal list is written next to the run. A run can be replayed from it with
 
 import argparse
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -39,6 +39,13 @@ Available operator kinds:
   {"op": "set", "target": "<glob>", "value": <int>}
   {"op": "scale", "target": "<glob>", "factor": <int>}
   {"op": "set_to", "target": "<glob>", "value_from": "<source>"}
+  {"op": "tuple", "assign": {"<glob>": <value or source>, ...}}
+
+A tuple changes several fields in the same artifact. When every key uses the same
+single "*", the keys are aligned by the matched index, so
+  {"sec*.sh_offset": "file_len", "sec*.sh_size": 16}
+changes both fields of section 0, then both of section 1, and so on. This is the
+only way to express a precondition that relates two fields.
 
 target is a glob over field names: "sec*.sh_size", "e_*", "sec0.*", "*".
 value_from is one of: "file_len", "file_len_plus_1", "section_table_end",
@@ -77,7 +84,7 @@ class Accepted:
 
 
 def build_prompt(cve_id: str, spec: dict, table: dict, crash_note: str,
-                 count: int) -> str:
+                 count: int, op_kind: str = "any") -> str:
     oracle = spec.get("oracle") or {}
     rows = ["| field | offset | width | current |", "|---|---|---|---|"]
     for name, item in table.items():
@@ -99,7 +106,11 @@ def build_prompt(cve_id: str, spec: dict, table: dict, crash_note: str,
         "",
     ] + rows + [
         "",
-        "Propose at most %d mutations for %s." % (count, cve_id),
+        ("Propose at most %d operators for %s." % (count, cve_id)
+         if op_kind == "any" else
+         "Propose at most %d operators for %s. EVERY operator must have op "
+         "\"tuple\" and a non-empty assign: single-field operators are rejected "
+         "in this run." % (count, cve_id)),
         "Explain in the reason what parser decision the value is meant to change.",
     ])
 
@@ -135,11 +146,12 @@ def validate(proposals: List[Proposal], table: dict) -> Tuple[List[Accepted], Li
 @dataclass
 class Operator:
     op: str
-    target: str
+    target: str = ""
     value: int = 0
     factor: int = 0
     value_from: str = ""
     reason: str = ""
+    assign: dict = field(default_factory=dict)
 
 
 SOURCES = ("file_len", "file_len_plus_1", "section_table_end",
@@ -164,8 +176,75 @@ def _source_value(name: str, table: dict, length: int) -> Optional[int]:
     return item["value"] if item else None
 
 
+def _resolve(spec, table: dict, length: int):
+    """A tuple assignment value: a literal, or a named source."""
+    if isinstance(spec, bool):
+        return None
+    if isinstance(spec, int):
+        return spec
+    if isinstance(spec, str):
+        return _source_value(spec.strip(), table, length)
+    return None
+
+
+def _expand_tuple(operator: Operator, table: dict, length: int,
+                  per_operator: int) -> Tuple[list, list]:
+    """Several fields per artifact, aligned by the index a glob captured."""
+    rejected: list = []
+    keys = list(operator.assign)
+    if not keys:
+        return [], [{"operator": operator.__dict__, "why": "empty assign"}]
+
+    wildcard = [key for key in keys if key.count("*") == 1]
+    if len(wildcard) == len(keys):
+        prefix = wildcard[0].split("*")[0]
+        suffix = wildcard[0].split("*")[1]
+        indices = sorted({name[len(prefix):len(name) - len(suffix)]
+                          for name in table
+                          if name.startswith(prefix) and name.endswith(suffix)})
+    else:
+        indices = [None]
+
+    variants: list = []
+    for index in indices:
+        edits, changed, problem = [], False, ""
+        for key, spec in operator.assign.items():
+            name = key if index is None else key.replace("*", index)
+            item = table.get(name)
+            if item is None:
+                problem = "unknown field %s" % name
+                break
+            value = _resolve(spec, table, length)
+            if value is None:
+                problem = "unresolvable value for %s" % name
+                break
+            limit = 1 << (8 * item["width"])
+            if not 0 <= value < limit:
+                problem = "%d does not fit %s (%d byte)" % (value, name, item["width"])
+                break
+            if value != item["value"]:
+                changed = True
+            edits.append((item["offset"], item["width"], value))
+        if problem:
+            rejected.append({"operator": operator.__dict__, "why": problem})
+            continue
+        if not changed:
+            rejected.append({"operator": operator.__dict__,
+                             "why": "every assigned value equals the current one"})
+            continue
+        label = "+".join(sorted(operator.assign)) if index is None else \
+            "+".join(sorted(key.replace("*", index) for key in operator.assign))
+        variant = campaign.Variant(axis="tuple", field=label[:60], value=0,
+                                   offset=edits[0][0], width=edits[0][1])
+        variant.edits = edits
+        variants.append(variant)
+        if len(variants) >= per_operator:
+            break
+    return variants, rejected
+
+
 def expand(operators: List[Operator], table: dict, length: int,
-           per_operator: int = 40) -> Tuple[List[Accepted], List[dict]]:
+           per_operator: int = 40) -> Tuple[list, List[dict]]:
     """Turn operators into concrete mutations, one per matching field.
 
     This is the point of operators: one model answer covers every section, so the
@@ -173,10 +252,15 @@ def expand(operators: List[Operator], table: dict, length: int,
     """
     import fnmatch
 
-    accepted: List[Accepted] = []
+    accepted: list = []
     rejected: List[dict] = []
     seen = set()
     for operator in operators:
+        if operator.op == "tuple":
+            produced, refused = _expand_tuple(operator, table, length, per_operator)
+            accepted.extend(produced)
+            rejected.extend(refused)
+            continue
         matched = [name for name in table if fnmatch.fnmatch(name, operator.target)]
         if not matched:
             rejected.append({"operator": operator.__dict__, "why": "no field matches"})
@@ -213,8 +297,9 @@ def expand(operators: List[Operator], table: dict, length: int,
             if key in seen:
                 continue
             seen.add(key)
-            accepted.append(Accepted(Proposal(name, value, operator.reason),
-                                     item["offset"], item["width"]))
+            accepted.append(campaign.Variant(axis=operator.op, field=name,
+                                             value=value, offset=item["offset"],
+                                             width=item["width"]))
             taken += 1
             if taken >= per_operator:
                 break
@@ -244,27 +329,36 @@ def parse_operators(payload: dict) -> List[Operator]:
     out = []
     for row in payload.get("operators") or []:
         try:
-            out.append(Operator(op=str(row["op"]), target=str(row["target"]),
-                                value=int(row.get("value", 0)),
-                                factor=int(row.get("factor", 0)),
+            # A tuple names no single target: it carries an assign map instead.
+            # Reading row["target"] unconditionally dropped every one of them.
+            out.append(Operator(op=str(row["op"]),
+                                target=str(row.get("target", "")),
+                                value=int(row.get("value", 0) or 0),
+                                factor=int(row.get("factor", 0) or 0),
                                 value_from=str(row.get("value_from", "")),
-                                reason=str(row.get("reason", ""))[:160]))
+                                reason=str(row.get("reason", ""))[:160],
+                                assign=dict(row.get("assign") or {})))
         except (KeyError, TypeError, ValueError):
             continue
     return out
 
 
 def ask_operators(cve_id: str, spec: dict, table: dict, crash_note: str,
-                  count: int) -> List[Operator]:
+                  count: int, op_kind: str = "any") -> List[Operator]:
     from .config_loader import ConfigLoader
     from .llm_client import LLMClient
 
     client = LLMClient(ConfigLoader())
     payload = client.structured_generate(
         system_prompt=SYSTEM,
-        user_prompt=build_prompt(cve_id, spec, table, crash_note, count),
+        user_prompt=build_prompt(cve_id, spec, table, crash_note, count, op_kind),
         temperature=0.0)
-    return parse_operators(payload)
+    operators = parse_operators(payload)
+    if op_kind == "tuple":
+        # Asking for tuples and accepting singles would quietly turn the
+        # experiment back into the one it is meant to improve on.
+        operators = [o for o in operators if o.op == "tuple" and o.assign]
+    return operators
 
 
 def ask_model(cve_id: str, spec: dict, table: dict, crash_note: str,
@@ -285,21 +379,20 @@ def run(cve_id: str, spec: dict, seed: bytes, proposals: List[Proposal],
         timeout: int = 1200) -> dict:
     table = elf_fields.table(seed)
     accepted, rejected = validate(proposals, table)
-    return execute(cve_id, seed, accepted, rejected, invocations, workdir,
-                   image, timeout, proposed=len(proposals))
+    return execute(cve_id, seed, to_variants(accepted), rejected, invocations,
+                   workdir, image, timeout, proposed=len(proposals))
 
 
-def execute(cve_id: str, seed: bytes, accepted: List[Accepted],
+def execute(cve_id: str, seed: bytes, variants: list,
             rejected: List[dict], invocations: List[List[str]], workdir: Path,
             image: str, timeout: int = 1200, proposed: int = 0) -> dict:
-    variants = to_variants(accepted)
     baseline = campaign.Variant(axis="seed", field="(unchanged)", value=0,
                                 offset=0, width=0)
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
     (workdir / "proposals.json").write_text(json.dumps(
         {"cve_id": cve_id, "proposed": proposed,
-         "accepted": len(accepted), "rejected": rejected},
+         "accepted": len(variants), "rejected": rejected},
         ensure_ascii=False, indent=2), encoding="utf-8")
 
     if variants:
@@ -311,7 +404,7 @@ def execute(cve_id: str, seed: bytes, accepted: List[Accepted],
     sites: Dict[str, int] = {}
     for variant in crashes:
         sites[variant.fingerprint] = sites.get(variant.fingerprint, 0) + 1
-    return {"proposed": proposed, "accepted": len(accepted),
+    return {"proposed": proposed, "accepted": len(variants),
             "rejected": len(rejected), "variants": len(variants),
             "crashes": len(crashes), "sites": sites,
             "seed_fingerprint": baseline.fingerprint,
@@ -337,6 +430,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--from-proposals", default="",
                         help="replay a saved proposal list without calling the model")
     parser.add_argument("--crash-note", default="")
+    parser.add_argument("--op-kind", choices=("any", "tuple"), default="any",
+                        help="tuple: every operator must change several fields")
     parser.add_argument("--mode", choices=("operators", "instances"),
                         default="operators",
                         help="operators: one answer covers every matching field")
@@ -351,21 +446,24 @@ def main(argv: Optional[List[str]] = None) -> int:
         payload = json.loads(Path(args.from_proposals).read_text(encoding="utf-8"))
         proposals = [Proposal(**row) for row in payload.get("proposed", [])]
         accepted, rejected = validate(proposals, table)
-        summary = execute(args.cve, seed, accepted, rejected, invocations_for(spec, args),
-                          Path(args.workdir), args.image, proposed=len(proposals))
+        summary = execute(args.cve, seed, to_variants(accepted), rejected,
+                          invocations_for(spec, args), Path(args.workdir),
+                          args.image, proposed=len(proposals))
     elif args.mode == "instances":
         proposals = ask_model(args.cve, spec, table, args.crash_note, args.count)
         accepted, rejected = validate(proposals, table)
-        summary = execute(args.cve, seed, accepted, rejected, invocations_for(spec, args),
-                          Path(args.workdir), args.image, proposed=len(proposals))
+        summary = execute(args.cve, seed, to_variants(accepted), rejected,
+                          invocations_for(spec, args), Path(args.workdir),
+                          args.image, proposed=len(proposals))
     else:
-        operators = ask_operators(args.cve, spec, table, args.crash_note, args.count)
-        accepted, rejected = expand(operators, table, len(seed))
+        operators = ask_operators(args.cve, spec, table, args.crash_note,
+                                  args.count, args.op_kind)
+        variants, rejected = expand(operators, table, len(seed))
         Path(args.workdir).mkdir(parents=True, exist_ok=True)
         (Path(args.workdir) / "operators.json").write_text(json.dumps(
             {"cve_id": args.cve, "operators": [o.__dict__ for o in operators]},
             ensure_ascii=False, indent=2), encoding="utf-8")
-        summary = execute(args.cve, seed, accepted, rejected, invocations_for(spec, args),
+        summary = execute(args.cve, seed, variants, rejected, invocations_for(spec, args),
                           Path(args.workdir), args.image, proposed=len(operators))
         print("operators: %d | variants per operator: %.1f"
               % (len(operators), summary["variants"] / max(1, len(operators))))
