@@ -10,6 +10,12 @@ could not also reach.
 import struct
 from typing import List, Tuple
 
+# Values a parser branches on: zero, one, the window just below the alignment of
+# a RELA entry (12), the sign boundary, and the all-ones patterns that turn a
+# length into a huge one. The sweep substitutes these everywhere; the model is
+# told so, because a proposal inside this set adds nothing.
+COMMON_VALUES = (0, 1, 2, 8, 11, 0x7FFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF)
+
 # Fields a parser branches on. sh_addr and sh_addralign are left out: they rarely
 # change a decision, and including them multiplies the variant count without
 # buying coverage.

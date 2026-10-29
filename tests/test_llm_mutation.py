@@ -68,3 +68,61 @@ def test_the_model_output_is_parsed_leniently():
     ]}
     proposals = parse_proposals(payload)
     assert len(proposals) == 1 and proposals[0].value == 0
+
+
+# ---- operators: one answer, many mutations -----------------------------------
+
+from src.llm_mutation import Operator, expand, parse_operators  # noqa: E402
+
+
+def test_scale_expands_over_every_matching_field():
+    seed = _elf(3)
+    accepted, _ = expand([Operator("scale", "sec*.sh_size", factor=2)],
+                         table(seed), len(seed))
+    assert len(accepted) == 3
+    assert all(item.proposal.value == 32 for item in accepted)
+
+
+def test_set_to_reads_another_field():
+    seed = _elf(3)
+    accepted, _ = expand([Operator("set_to", "sec0.sh_size", value_from="e_shnum")],
+                         table(seed), len(seed))
+    assert accepted[0].proposal.value == 3
+
+
+def test_set_to_file_len_needs_no_extra_input():
+    seed = _elf(2)
+    accepted, _ = expand([Operator("set_to", "sec0.sh_offset", value_from="file_len")],
+                         table(seed), len(seed))
+    assert accepted[0].proposal.value == len(seed)
+
+
+def test_a_target_matching_nothing_is_reported():
+    seed = _elf()
+    accepted, rejected = expand([Operator("set", "nope.*", value=1)],
+                                table(seed), len(seed))
+    assert not accepted and rejected[0]["why"] == "no field matches"
+
+
+def test_expansion_respects_the_field_width():
+    seed = _elf()
+    accepted, rejected = expand([Operator("set", "e_shnum", value=0x1_0000)],
+                                table(seed), len(seed))
+    assert not accepted and "does not fit" in rejected[0]["why"]
+
+
+def test_one_operator_costs_one_question_not_one_per_field():
+    """This is the whole point: 11 sections, one answer."""
+    seed = _elf(11)
+    accepted, _ = expand([Operator("scale", "sec*.sh_size", factor=2)],
+                         table(seed), len(seed))
+    assert len(accepted) == 11
+
+
+def test_operator_output_is_parsed_leniently():
+    payload = {"operators": [
+        {"op": "set", "target": "e_*", "value": 0, "reason": "zero the header"},
+        {"op": "set"},
+    ]}
+    operators = parse_operators(payload)
+    assert len(operators) == 1 and operators[0].target == "e_*"

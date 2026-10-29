@@ -21,13 +21,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import mutation_campaign as campaign  # noqa: E402
+from src import elf_fields  # noqa: E402
 from src.elf_fields import fields  # noqa: E402
 
 # Values a parser branches on: zero, one, the window just below the ELF
 # alignment of a RELA entry (12), which is the precondition a heap-write bug
 # documents, the sign boundary, and the all-ones patterns that turn a length
 # into a huge one.
-INTERESTING = [0, 1, 2, 8, 11, 0x7FFFFFFF, 0xFFFFFFFF]
+INTERESTING = list(elf_fields.COMMON_VALUES[:7])
 
 
 def variants_for(data: bytes):
