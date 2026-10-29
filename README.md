@@ -153,6 +153,13 @@ python -m pytest -q        # 测试
 python -m ruff check src   # 静态检查
 ```
 
+**装依赖报 `from versions: none`**：这是索引地址的问题，不是包缺失。
+pip 的全局配置可能指向某个当前不可用的镜像源，显式指定官方源即可：
+
+```bash
+pip install -r requirements.txt -i https://pypi.org/simple
+```
+
 ## 现状与限制
 
 - **内核驱动路径未打通**：`driver_kernel` 层的入口可达，但分发前被驱动拒绝；
