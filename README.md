@@ -29,6 +29,35 @@ make demo
 
 ---
 
+## 能力零：PoC 生成（闭环）
+
+生成阶段需要模型端点；其余环节（执行、判定）都在容器内完成，不需要模型参与。
+
+```bash
+cp .env.example .env                      # 填模型端点与密钥
+python main.py --cve-id CVE-2024-0076     # 单次生成（只生成与静态检查）
+
+# 闭环：生成 → 执行 → 判分 → 反馈重试
+python -m src.batch_loop --cve CVE-2024-0076 --iterations 2 --workdir data/loop/mine
+```
+
+三个阶段：
+
+| 阶段 | 做什么 | 产物 |
+|---|---|---|
+| generate | 把漏洞上下文交给模型产出候选脚本 | `data/outputs/<CVE>/` |
+| execute | 在冻结镜像里跑候选，采集退出码与崩溃点 | `iteration_N_observation.txt` |
+| grade | 三条件判定，诊断写回下一轮提示 | `loop_report.zh-CN.md` |
+
+失败不是终点：诊断（例如 `NO_EFFECT`——脚本跑起来了但受控样本没崩）会作为处置指令
+回到生成阶段，下一轮换做法而不是重跑同一个脚本。
+
+**没有 API key 时**，可以看一次真实运行的完整痕迹：
+[`demo/loop-trace/`](demo/loop-trace/README.md)——第 1 轮 `NOT_VERIFIED`、第 2 轮 `SUPPORTED`，
+两轮的原始观察都在里面。
+
+---
+
 ## 能力一：复现 CVE
 
 判定标准就是公告本身：**组件、现象、受影响版本**。在其中一个受影响版本上出现该现象即为复现成功；
