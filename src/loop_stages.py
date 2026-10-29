@@ -359,12 +359,34 @@ def _candidate_crashed(output: str, candidate: Path) -> str:
     return "candidate raised an exception"
 
 
+def spec_problem(context: StageContext) -> str:
+    """Why this spec cannot drive the second pass, or '' when it can.
+
+    The load used to fail silently: a spec that stopped validating turned the
+    framework's own verification off, and the run then graded whatever the
+    candidate printed about itself. A missing second pass has to be visible in
+    the observation, because its absence is indistinguishable from "nothing to
+    check" otherwise.
+    """
+    from .spec_model import load
+
+    path = Path(context.project_root) / "specs" / context.cve_id / "spec.json"
+    if not path.is_file():
+        return "规格不存在：%s" % path.name
+    try:
+        load(path)
+    except Exception as exc:  # noqa: BLE001 - report, do not propagate
+        return "规格校验失败，第二遍矩阵未执行：%s" % str(exc).splitlines()[0][:160]
+    return ""
+
+
 def _matrix_pass(context: StageContext, host_dir: Path, runner: Runner,
                  candidate_output: str = "") -> str:
     """Run the declared tools over the declared artifacts, after the fact."""
     invocations = spec_invocations(context)
     if not invocations:
-        return ""
+        problem = spec_problem(context)
+        return "\n[CPG_MATRIX] %s\n" % (problem or "规格未声明可执行的工具命令")
     broken = _candidate_crashed(candidate_output, Path(context.cve_id))
     if broken:
         # Nothing was produced, so there is nothing to exercise: say so, and let
@@ -458,15 +480,29 @@ def make_execute_stage(context: StageContext,
                     and not step_failure):
                 error = "executor rc=%d: %s" % (completed.returncode,
                                                 (completed.stderr or "")[-300:])
+        candidate_log = output
         if context.tier == "userland_toolchain":
             # Second pass, after the candidate has had its chance to declare:
             # the manifest is written during the run, so reading it earlier
             # always found nothing and silently fell back to a directory sweep.
-            output = output + _matrix_pass(context, candidate.resolve().parent, runner,
-                                           candidate_output=output)
+            matrix = _matrix_pass(context, candidate.resolve().parent, runner,
+                                  candidate_output=output)
+            # When the framework managed to run the artifacts itself, its
+            # observation replaces the candidate's: the same artifact reported
+            # twice, once by the script under test and once by the framework,
+            # lets the grader count one run as two and compare a claim against
+            # itself. The candidate's log is kept beside it for diagnosis.
+            if "CPG_RUN]" in matrix and "::" in matrix:
+                candidate_log = output
+                output = matrix
+            else:
+                output = output + matrix
         context.workdir.mkdir(parents=True, exist_ok=True)
         log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
         log.write_text(output + detail, encoding="utf-8")
+        if candidate_log is not output:
+            (context.workdir / ("iteration_%d_candidate.txt" % state.iteration)) \
+                .write_text(candidate_log + detail, encoding="utf-8")
         return LoopState(iteration=state.iteration,
                          candidate_file=state.candidate_file,
                          observation_file=str(log),

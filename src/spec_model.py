@@ -191,6 +191,12 @@ class TriggerOracle(BaseModel):
     field: str = ""
     condition: str = ""
     expected_effect: str = ""
+    # Provenance from the advisory. Carried on the oracle because that is what
+    # the claim is about, and because the status report quotes it.
+    advisory: str = ""
+    affected: str = ""
+    fixed_in: str = ""
+    technical_detail: str = ""
 
 
 class Attempt(BaseModel):
