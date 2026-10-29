@@ -461,6 +461,49 @@ def build_feedback(operators: List[Operator], refused: List[dict],
     ])
 
 
+def build_escalation(operators: List[Operator], parsed: int) -> str:
+    """The other half of the loop: everything parsed and nothing failed.
+
+    Refusal feedback drives the model toward validity, and validity is not the
+    goal - a file that parses cleanly has proved nothing. Once refusals stop, the
+    only useful signal is that the fields being touched are not on a path that can
+    fail, so the next round has to move rather than shrink.
+    """
+    return "\n".join([
+        "All %d file(s) parsed cleanly and none crashed." % parsed,
+        "",
+        "That means the fields you are changing are not on a path that can fail,",
+        "or the values stay inside what the parser tolerates. Do not shrink further",
+        "and do not repeat these assignments.",
+        "",
+        "Current operators:",
+        json.dumps([o.__dict__ for o in operators], ensure_ascii=False, indent=1)[:2500],
+        "",
+        "Change which fields you touch. Fields that index other data are the ones",
+        "that turn a value into an address: sh_link, sh_info, sh_name, sh_entsize,",
+        "e_shstrndx, e_shnum. Make two fields disagree with each other, or point one",
+        "field at a region whose size is decided by another.",
+        "Return the full revised list as JSON: {\"operators\": [...]}",
+    ])
+
+
+def escalate(operators: List[Operator], parsed: int, count: int,
+             op_kind: str) -> List[Operator]:
+    from .config_loader import ConfigLoader
+    from .llm_client import LLMClient
+
+    client = LLMClient(ConfigLoader())
+    payload = client.structured_generate(
+        system_prompt=SYSTEM,
+        user_prompt=build_escalation(operators, parsed)
+        + "\n\nAt most %d operators." % count,
+        temperature=0.0)
+    revised = parse_operators(payload)
+    if op_kind == "tuple":
+        revised = [o for o in revised if o.op == "tuple" and o.assign]
+    return revised or operators
+
+
 def revise(operators: List[Operator], refused: List[dict], parsed: int,
            crashed: int, count: int, op_kind: str) -> List[Operator]:
     from .config_loader import ConfigLoader
@@ -525,8 +568,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                           invocations_for(spec, args), Path(args.workdir),
                           args.image, proposed=len(proposals))
     else:
+        print("asking the model for operators...", flush=True)
         operators = ask_operators(args.cve, spec, table, args.crash_note,
                                   args.count, args.op_kind)
+        print("model returned %d operator(s)" % len(operators), flush=True)
         history = []
         for round_index in range(1, max(1, args.rounds) + 1):
             round_dir = Path(args.workdir) / ("round_%d" % round_index)
@@ -548,11 +593,23 @@ def main(argv: Optional[List[str]] = None) -> int:
             print("round %d: %d operators -> %d variants | parsed %d | crashed %d | refused %d"
                   % (round_index, len(operators), summary["variants"], parsed,
                      summary["crashes"], len(refused)))
-            if round_index == max(1, args.rounds) or not refused:
+            if round_index == max(1, args.rounds):
                 break
-            # Only refusals go back: a crash is a result, not a mistake.
-            operators = revise(operators, refused, parsed, summary["crashes"],
-                               args.count, args.op_kind)
+            if refused:
+                # Only refusals go back: a crash is a result, not a mistake.
+                print("feeding back %d refusal(s) for a revision..."
+                      % len(refused), flush=True)
+                operators = revise(operators, refused, parsed, summary["crashes"],
+                                   args.count, args.op_kind)
+            elif not summary["crashes"]:
+                # Everything parsed and nothing failed: the fields are wrong, not
+                # the values. Stopping here would end the run on the weaker of the
+                # two signals.
+                print("all parsed, nothing crashed - asking for different fields...",
+                      flush=True)
+                operators = escalate(operators, parsed, args.count, args.op_kind)
+            else:
+                break
         (Path(args.workdir) / "rounds.json").write_text(
             json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
 

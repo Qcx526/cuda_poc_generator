@@ -221,3 +221,13 @@ def test_the_feedback_states_what_was_refused_and_why():
                             "error": "invalid sh_offset"}], parsed=1, crashed=0)
     assert "invalid sh_offset" in text
     assert "1 parsed" in text and "1 refused" in text
+
+
+def test_escalation_asks_for_different_fields_not_smaller_values():
+    """Once everything parses, shrinking further proves even less."""
+    from src.llm_mutation import build_escalation
+
+    text = build_escalation([Operator("tuple", assign={"sec0.sh_size": 1})], parsed=4)
+    assert "parsed cleanly and none crashed" in text
+    assert "Change which fields you touch" in text
+    assert "sh_link" in text
