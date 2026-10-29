@@ -21,37 +21,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import mutation_campaign as campaign  # noqa: E402
+from src.elf_fields import fields  # noqa: E402
 
-INTERESTING = [0, 1, 0xFFFFFFFF]
-
-
-def fields(data: bytes):
-    """Every numeric field in the ELF header and every section header."""
-    out = []
-    if len(data) < 64:
-        return out
-    out += [("e_shoff", 0x28, 8), ("e_shentsize", 0x3A, 2),
-            ("e_shnum", 0x3C, 2), ("e_shstrndx", 0x3E, 2)]
-    shoff = struct.unpack_from("<Q", data, 0x28)[0]
-    entsize = struct.unpack_from("<H", data, 0x3A)[0]
-    count = struct.unpack_from("<H", data, 0x3C)[0]
-    if not entsize or shoff + entsize * count > len(data):
-        return out
-    # Fields a parser actually branches on. sh_addr and sh_addralign are left
-    # out: they rarely change a decision, and 630 variants is already enough to
-    # turn a five-second probe into an hour.
-    named = [("sh_type", 4, 4), ("sh_offset", 24, 8), ("sh_size", 32, 8),
-             ("sh_link", 40, 4), ("sh_info", 44, 4), ("sh_entsize", 56, 8)]
-    for index in range(count):
-        base = shoff + index * entsize
-        for name, rel, width in named:
-            out.append(("sec%d.%s" % (index, name), base + rel, width))
-    return out
+# Values a parser branches on: zero, one, the window just below the ELF
+# alignment of a RELA entry (12), which is the precondition a heap-write bug
+# documents, the sign boundary, and the all-ones patterns that turn a length
+# into a huge one.
+INTERESTING = [0, 1, 2, 8, 11, 0x7FFFFFFF, 0xFFFFFFFF]
 
 
 def variants_for(data: bytes):
+    """One variant per (field, interesting value) that fits the field."""
     length = len(data)
-    values = INTERESTING + [length, length + 1]
+    values = INTERESTING + [length, length + 1, 0xFFFFFFFFFFFFFFFF]
     variants = []
     for name, offset, width in fields(data):
         limit = (1 << (8 * width)) - 1
