@@ -3,6 +3,7 @@
 
 import struct
 
+from src import mutation_campaign as campaign
 from src.elf_fields import fields, table
 from src.llm_mutation import Proposal, parse_proposals, to_variants, validate
 
@@ -173,3 +174,50 @@ def test_a_tuple_naming_an_unknown_field_is_refused():
 def test_an_empty_tuple_is_refused():
     variants, rejected = expand([Operator("tuple", assign={})], table(_elf()), 128)
     assert not variants and rejected[0]["why"] == "empty assign"
+
+
+# ---- refusals feed back into the next round ----------------------------------
+
+def test_a_refusal_carries_the_tool_message(tmp_path):
+    from src.llm_mutation import refusals
+
+    variant = campaign.Variant(axis="tuple", field="sec0.sh_offset", value=0,
+                               offset=0, width=8, exit_code=255)
+    variant.path = str(tmp_path / "x.cubin")
+    (tmp_path / ".err.x.cubin").write_text("Error: section 0: invalid sh_offset\n",
+                                           encoding="utf-8")
+    items = refusals([variant], tmp_path)
+    assert len(items) == 1
+    assert items[0]["error"].startswith("Error: section 0")
+    assert items[0]["exit"] == 255
+
+
+def test_a_crash_is_not_a_refusal(tmp_path):
+    """A crash is the result being sought; sending it back would ask the model to
+    undo its one success."""
+    from src.llm_mutation import refusals
+
+    variant = campaign.Variant(axis="tuple", field="sec0.sh_size", value=0,
+                               offset=0, width=8, exit_code=139,
+                               fingerprint="cuobjdump+0x68000")
+    variant.path = str(tmp_path / "y.cubin")
+    assert refusals([variant], tmp_path) == []
+
+
+def test_parsed_files_are_not_refusals(tmp_path):
+    from src.llm_mutation import refusals
+
+    variant = campaign.Variant(axis="set", field="sec0.sh_size", value=1,
+                               offset=0, width=8, exit_code=0)
+    variant.path = str(tmp_path / "z.cubin")
+    assert refusals([variant], tmp_path) == []
+
+
+def test_the_feedback_states_what_was_refused_and_why():
+    from src.llm_mutation import build_feedback
+
+    text = build_feedback([Operator("tuple", assign={"sec0.sh_size": 0})],
+                          [{"fields": "sec0.sh_size", "exit": 255,
+                            "error": "invalid sh_offset"}], parsed=1, crashed=0)
+    assert "invalid sh_offset" in text
+    assert "1 parsed" in text and "1 refused" in text

@@ -411,6 +411,73 @@ def execute(cve_id: str, seed: bytes, variants: list,
             "reasons": {v.field: (v.severity or "unknown") for v in variants}}
 
 
+def refusals(variants: list, workdir: Path) -> List[dict]:
+    """Files the tool refused before any parsing could fail.
+
+    A crash is evidence; a refusal is a mistake in the mutation. Only the second
+    one is worth sending back, and only with the tool's own words - the model
+    cannot infer which invariant it broke from an exit code alone.
+    """
+    out = []
+    for variant in variants:
+        if variant.exit_code in (None, 0) or variant.fingerprint:
+            continue
+        name = Path(variant.path).name
+        note = ""
+        err = Path(workdir) / (".err.%s" % name)
+        if err.is_file():
+            lines = [line.strip() for line in
+                     err.read_text(encoding="utf-8", errors="replace").splitlines()
+                     if line.strip()]
+            note = lines[0][:160] if lines else ""
+        out.append({"fields": variant.field, "exit": variant.exit_code,
+                    "error": note})
+    return out
+
+
+def build_feedback(operators: List[Operator], refused: List[dict],
+                   parsed: int, crashed: int) -> str:
+    rows = ["| assignment | exit | tool said |", "|---|---|---|"]
+    for item in refused[:20]:
+        rows.append("| %s | %d | %s |" % (item["fields"].replace("|", "/"),
+                                          item["exit"],
+                                          (item["error"] or "(no message)").replace("|", "/")))
+    return "\n".join([
+        "Your operators produced %d file(s): %d parsed, %d crashed, %d refused."
+        % (parsed + crashed + len(refused), parsed, crashed, len(refused)),
+        "",
+        "Refused means the tool rejected the file before reaching the code you",
+        "were aiming at, so those mutations tested nothing:",
+        "",
+    ] + rows + [
+        "",
+        "Current operators:",
+        json.dumps([o.__dict__ for o in operators], ensure_ascii=False, indent=1)[:2500],
+        "",
+        "Revise them. Keep the ideas that parsed. For the refused ones, change the",
+        "assignment so the file stays consistent with the invariants the tool",
+        "enforces, while still disturbing the field you intended.",
+        "Return the full revised list as JSON: {\"operators\": [...]}",
+    ])
+
+
+def revise(operators: List[Operator], refused: List[dict], parsed: int,
+           crashed: int, count: int, op_kind: str) -> List[Operator]:
+    from .config_loader import ConfigLoader
+    from .llm_client import LLMClient
+
+    client = LLMClient(ConfigLoader())
+    payload = client.structured_generate(
+        system_prompt=SYSTEM,
+        user_prompt=build_feedback(operators, refused, parsed, crashed)
+        + "\n\nAt most %d operators." % count,
+        temperature=0.0)
+    revised = parse_operators(payload)
+    if op_kind == "tuple":
+        revised = [o for o in revised if o.op == "tuple" and o.assign]
+    return revised or operators
+
+
 def invocations_for(spec: dict, args) -> List[List[str]]:
     if args.tool:
         return [args.tool.split()]
@@ -430,6 +497,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--from-proposals", default="",
                         help="replay a saved proposal list without calling the model")
     parser.add_argument("--crash-note", default="")
+    parser.add_argument("--rounds", type=int, default=1,
+                        help="revision rounds; refusals are fed back each time")
     parser.add_argument("--op-kind", choices=("any", "tuple"), default="any",
                         help="tuple: every operator must change several fields")
     parser.add_argument("--mode", choices=("operators", "instances"),
@@ -458,15 +527,34 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         operators = ask_operators(args.cve, spec, table, args.crash_note,
                                   args.count, args.op_kind)
-        variants, rejected = expand(operators, table, len(seed))
-        Path(args.workdir).mkdir(parents=True, exist_ok=True)
-        (Path(args.workdir) / "operators.json").write_text(json.dumps(
-            {"cve_id": args.cve, "operators": [o.__dict__ for o in operators]},
-            ensure_ascii=False, indent=2), encoding="utf-8")
-        summary = execute(args.cve, seed, variants, rejected, invocations_for(spec, args),
-                          Path(args.workdir), args.image, proposed=len(operators))
-        print("operators: %d | variants per operator: %.1f"
-              % (len(operators), summary["variants"] / max(1, len(operators))))
+        history = []
+        for round_index in range(1, max(1, args.rounds) + 1):
+            round_dir = Path(args.workdir) / ("round_%d" % round_index)
+            round_dir.mkdir(parents=True, exist_ok=True)
+            (round_dir / "operators.json").write_text(json.dumps(
+                {"cve_id": args.cve, "operators": [o.__dict__ for o in operators]},
+                ensure_ascii=False, indent=2), encoding="utf-8")
+
+            variants, rejected = expand(operators, table, len(seed))
+            summary = execute(args.cve, seed, variants, rejected,
+                              invocations_for(spec, args), round_dir, args.image,
+                              proposed=len(operators))
+            refused = refusals(variants, round_dir)
+            parsed = sum(1 for variant in variants if variant.exit_code == 0)
+            history.append({"round": round_index, "operators": len(operators),
+                            "variants": summary["variants"], "parsed": parsed,
+                            "crashed": summary["crashes"], "refused": len(refused),
+                            "sites": summary["sites"]})
+            print("round %d: %d operators -> %d variants | parsed %d | crashed %d | refused %d"
+                  % (round_index, len(operators), summary["variants"], parsed,
+                     summary["crashes"], len(refused)))
+            if round_index == max(1, args.rounds) or not refused:
+                break
+            # Only refusals go back: a crash is a result, not a mistake.
+            operators = revise(operators, refused, parsed, summary["crashes"],
+                               args.count, args.op_kind)
+        (Path(args.workdir) / "rounds.json").write_text(
+            json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print("proposed %d | accepted %d | rejected %d"
           % (summary["proposed"], summary["accepted"], summary["rejected"]))

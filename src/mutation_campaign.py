@@ -183,8 +183,11 @@ def _matrix_script(variants: Sequence[Variant],
             lines.append('rm -f ".cc.$f"')
             # A hostile input can make the tool run for minutes; without a bound
             # one such variant stalls the whole pass and the campaign looks hung.
+            # stderr is kept: "the tool refused the file" is only actionable if
+            # the refusal text survives, and the model is the one who can act on
+            # it. stdout is discarded - it is the tool's normal output.
             lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" '
-                         'timeout 10 %s >/dev/null 2>&1' % command)
+                         'timeout 10 %s >/dev/null 2>".err.$f"' % command)
             lines.append("rc=$?")
             lines.append('echo "[CPG_RUN] $f::%s exit=$rc"' % tool_name(invocation))
             lines.append('if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi')
