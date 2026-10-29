@@ -142,7 +142,9 @@ docs/           方法与实验记录
 
 ## 环境
 
-- Python 3.12+，`pip install -r requirements.txt`（RAG 可选：`pip install -e ".[rag]"`）
+- Python 3.12+，`pip install -r requirements.txt`
+  - 项目**不需要安装**，从仓库根目录 `python -m src.xxx` 直接运行
+  - RAG（知识库检索）是可选能力：`pip install -e ".[rag]"`，需要能拉到 setuptools 的源
 - Docker（判分与变异都在容器内执行）
 - 生成阶段需要模型端点，配置在 `.env`（演示不需要）
 

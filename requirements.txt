@@ -1,4 +1,14 @@
-# Compatibility entry point: preserves the original RAG installation path.
-# Recommended core/dev installation is documented in README.md.
--c constraints/core.txt
--e .[rag,search]
+# 核心依赖：跑判定、变异、报告只需要这些。
+#
+# 这里不安装项目本身（`-e .`）。项目是按 `python -m src.xxx` 从仓库根目录运行的，
+# 不需要被安装；而 `-e .` 会让 pip 进入构建隔离、去索引里拉 setuptools，
+# 在部分镜像源上直接失败——克隆后第一步就卡住，代价远大于收益。
+#
+# 需要 RAG（知识库检索）时另外装：pip install -e ".[rag]"
+PyYAML>=6.0,<7
+python-dotenv>=1.0,<2
+pydantic>=2.7.4,<3
+httpx>=0.27,<0.29
+openai>=2.26.0,<3
+langchain-core>=1.4.7,<1.5
+langchain-openai>=1.3.3,<1.4
