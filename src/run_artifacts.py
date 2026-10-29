@@ -63,6 +63,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                   [["nvdisasm", "{artifact}"]]
     text = run(Path(args.dir), args.image, invocations)
     target = Path(args.out) if args.out else Path(args.dir) / "observation.txt"
+    # A fresh clone has no output directory; writing must not depend on the
+    # caller having created it, because not every platform runs `make`.
+    target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text, encoding="utf-8")
     print(text, end="")
     print("written to %s" % target)
