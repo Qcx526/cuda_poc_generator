@@ -102,8 +102,12 @@ def main() -> int:
           % (len(crashes), len(groups)))
     for site, items in groups:
         fields = sorted({item.field for item in items})
-        print("  %-26s %d variant(s) | %s" % (site, len(items),
-                                              ", ".join(fields[:6])))
+        access = sorted({item.severity for item in items if item.severity})
+        sample = Path(items[0].path).name if items[0].path else "-"
+        print("  %-26s %2d variant(s) | %-18s | %s"
+              % (site, len(items), "/".join(access) or "unknown",
+                 ", ".join(fields[:5])))
+        print("      e.g. %s" % sample)
     if not crashes:
         print("  none")
     return 0
