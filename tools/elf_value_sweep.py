@@ -63,6 +63,19 @@ def variants_for(data: bytes):
     return variants
 
 
+def summarise(crashes):
+    """Group crashes by fault site.
+
+    Forty-four variants that all land in libc+0x183000 are one fact about the
+    parser, repeated - not forty-four findings. Counting variants overstates the
+    result in a way that is easy to quote by accident.
+    """
+    groups = {}
+    for variant in crashes:
+        groups.setdefault(variant.fingerprint, []).append(variant)
+    return sorted(groups.items(), key=lambda item: -len(item[1]))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="dangerous-value sweep over ELF fields")
     parser.add_argument("--seed", required=True)
@@ -84,11 +97,13 @@ def main() -> int:
     print("seed fingerprint: %s | variants: %d"
           % (baseline.fingerprint or "(clean)", len(variants)))
     crashes = [v for v in variants if v.outcome == campaign.NOVEL]
-    print("crashes at a new site: %d" % len(crashes))
-    for variant in crashes[:20]:
-        print("  %-22s = %-20s -> %s (%s)"
-              % (variant.field, hex(variant.value), variant.fingerprint,
-                 variant.severity or "?"))
+    groups = summarise(crashes)
+    print("crashes at a new site: %d, at %d distinct site(s)"
+          % (len(crashes), len(groups)))
+    for site, items in groups:
+        fields = sorted({item.field for item in items})
+        print("  %-26s %d variant(s) | %s" % (site, len(items),
+                                              ", ".join(fields[:6])))
     if not crashes:
         print("  none")
     return 0
