@@ -120,12 +120,22 @@ def test_one_operator_costs_one_question_not_one_per_field():
 
 
 def test_operator_output_is_parsed_leniently():
+    """An entry without a target is kept, then refused with a reason.
+
+    Dropping it during parsing would hide the model's malformed answer; keeping it
+    means the rejection shows up in the run's rejected list, which is the number
+    the experiment reports.
+    """
     payload = {"operators": [
         {"op": "set", "target": "e_*", "value": 0, "reason": "zero the header"},
         {"op": "set"},
+        {"nonsense": True},
     ]}
     operators = parse_operators(payload)
-    assert len(operators) == 1 and operators[0].target == "e_*"
+    assert len(operators) == 2
+    assert operators[0].target == "e_*" and operators[1].target == ""
+    variants, rejected = expand([operators[1]], table(_elf()), 128)
+    assert not variants and rejected[0]["why"] == "no field matches"
 
 
 # ---- tuple: several fields in one artifact -----------------------------------
