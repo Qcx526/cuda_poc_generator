@@ -1,0 +1,11 @@
+{
+  "benign": [
+    "benign_sh_size_24.cubin"
+  ],
+  "crafted": [
+    "poc_sh_size_0.cubin"
+  ],
+  "controls": [
+    "ctrl_sh_size_restored_24.cubin"
+  ]
+}

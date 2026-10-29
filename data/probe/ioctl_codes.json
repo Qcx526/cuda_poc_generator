@@ -1,0 +1,22 @@
+{
+  "attempts": [
+    {
+      "code": "0x00320004",
+      "in_size": 0,
+      "out_size": 0,
+      "ok": false,
+      "error": 1,
+      "returned": 0,
+      "meaning": "invalid function - this device does not dispatch it"
+    },
+    {
+      "code": "0x0026480c",
+      "in_size": 0,
+      "out_size": 0,
+      "ok": false,
+      "error": 1,
+      "returned": 0,
+      "meaning": "invalid function - this device does not dispatch it"
+    }
+  ]
+}

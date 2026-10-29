@@ -1,0 +1,7 @@
+sxe ld:nvgpucomp64
+g
+bp nvgpucomp64+0x15029bd
+g
+r
+kb 8
+q

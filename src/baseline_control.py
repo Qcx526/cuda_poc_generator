@@ -88,6 +88,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="upper bound for random offsets (0 = whole file)")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--workdir", default="")
+    parser.add_argument("--tool", default="",
+                        help='single tool to exercise, e.g. "nvdisasm {artifact}"')
     parser.add_argument("--image", default=campaign.DEFAULT_IMAGE)
     parser.add_argument("--seed-artifact", default="",
                         help="path to the seed artifact; overrides mutation.seed")
@@ -105,8 +107,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     seed_bytes = seed_path.read_bytes()
     workdir = Path(args.workdir) if args.workdir else Path("data/control") / args.cve
     anchor = spec.get("anchor") or {}
-    invocations = campaign.parse_invocations(anchor.get("invocations"),
-                                            anchor.get("invocation"))
+    invocations = ([args.tool.split()] if args.tool else
+                   campaign.parse_invocations(anchor.get("invocations"),
+                                              anchor.get("invocation")))
 
     baseline_variant = campaign.Variant(axis="seed", field="(unchanged)",
                                         value=0, offset=0, width=0)

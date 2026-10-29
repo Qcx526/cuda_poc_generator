@@ -1,0 +1,12 @@
+{
+  "benign": [
+    "/work/benign.cubin"
+  ],
+  "crafted": [
+    "/work/poc_sec8_sh_size_00000000ffffffff.cubin",
+    "/work/poc_sec8_sh_size_fffffffffffffff0.cubin"
+  ],
+  "controls": [
+    "/work/ctrl_sh_size_restored_0000000000000010.cubin"
+  ]
+}

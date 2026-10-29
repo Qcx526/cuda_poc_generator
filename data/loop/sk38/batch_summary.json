@@ -1,0 +1,26 @@
+[
+ {
+  "cve_id": "CVE-2025-23338",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 366.0,
+  "reason": "受控样本 12/34 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 3,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2025-23339",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 153.6,
+  "reason": "受控样本 5/6 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 3,
+  "successes": 2
+ }
+]

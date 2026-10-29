@@ -1,0 +1,16 @@
+[
+ {
+  "cve_id": "CVE-2025-23340",
+  "status": "EXHAUSTED",
+  "iterations": 1,
+  "verdict": "UNKNOWN",
+  "diagnosis": "UNCLASSIFIED",
+  "seconds": 640.7,
+  "reason": "没有可识别的受控样本执行记录；无法判定复现",
+  "diagnoses": [
+   "UNCLASSIFIED"
+  ],
+  "attempts": 1,
+  "successes": 0
+ }
+]

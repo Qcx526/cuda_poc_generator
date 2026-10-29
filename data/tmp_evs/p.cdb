@@ -1,0 +1,5 @@
+sxe ld:nvgpucomp64
+g
+bp nvgpucomp64+0x15030FA "gc"
+g
+q

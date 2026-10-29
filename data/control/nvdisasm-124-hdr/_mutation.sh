@@ -1,0 +1,253 @@
+#!/bin/sh
+crashcap=''
+if [ ! -f ./crashcap.so ] && [ -f ./crashcap.c ] && command -v gcc >/dev/null 2>&1; then
+  gcc -shared -fPIC -O1 -o ./crashcap.so ./crashcap.c -ldl >/dev/null 2>&1 || true
+fi
+[ -f ./crashcap.so ] && crashcap='./crashcap.so'
+f='seed_(unchanged)_0.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_77.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_24.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_48.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_29.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_109.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_44.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_214.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_123.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_217.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_63.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_31.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_25.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_23.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_148.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_73.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_157.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_52.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_190.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_32.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_105.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_218.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_238.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_185.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_127.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_124.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_153.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_253.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_229.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_37.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_214.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_175.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_250.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_20.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_160.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_179.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_233.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_47.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_242.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_31.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+f='random_byte_228.cubin'
+rm -f ".cc.$f"
+CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" nvdisasm "$f" >/dev/null 2>&1
+rc=$?
+echo "[CPG_RUN] $f::nvdisasm exit=$rc"
+if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi
+true

@@ -1,0 +1,12 @@
+{
+  "benign": [
+    "benign.cubin"
+  ],
+  "crafted": [
+    "poc_sec8_shsize_u32max.cubin",
+    "poc_sec8_shsize_u64wrap.cubin"
+  ],
+  "controls": [
+    "ctrl_sec8_shsize_restored_0x10.cubin"
+  ]
+}

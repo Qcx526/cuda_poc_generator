@@ -1,0 +1,7 @@
+cve: CVE-2024-0076
+os: Linux 6.6.87.2-microsoft-standard-WSL2 (#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025)
+arch: x86_64
+python: 3.8.10
+cuobjdump: /usr/local/cuda/bin/cuobjdump
+nvdisasm: /usr/local/cuda/bin/nvdisasm
+nvcc: /usr/local/cuda/bin/nvcc

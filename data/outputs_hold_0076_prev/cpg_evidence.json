@@ -1,0 +1,66 @@
+{
+  "cve": "CVE-2024-0076",
+  "host": {
+    "os": "Linux",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025",
+    "machine": "x86_64",
+    "python": "3.8.10"
+  },
+  "cuda_driver": {
+    "library": false,
+    "initialised": false,
+    "context": false,
+    "device_count": 0,
+    "driver_version": null
+  },
+  "toolkit_verdict": "AFFECTED",
+  "toolkit_reason": "CUDA Toolkit 11.2 predates the 12.4 fix baseline",
+  "tools": {
+    "nvcc": "/usr/local/cuda/bin/nvcc",
+    "cuobjdump": "/usr/local/cuda/bin/cuobjdump",
+    "nvdisasm": "/usr/local/cuda/bin/nvdisasm"
+  },
+  "artifacts": {
+    "benign_baseline.cubin": {
+      "role": "BENIGN",
+      "size": 2536,
+      "sha256": "8b5bdcbe9675d20eacb79c57958efc1442be6756d9be2d129863dfb4a1cfa1d5",
+      "exit_codes": [
+        0,
+        0
+      ]
+    },
+    "poc_sec08_shsize_00000000ffffffff.cubin": {
+      "role": "MALICIOUS",
+      "size": 2536,
+      "sha256": "1dde7ce9b38cfaf74ad5e622aa26aee73858421921657986b25af807b9dec835",
+      "exit_codes": [
+        1,
+        1
+      ]
+    },
+    "poc_sec08_shsize_fffffffffffffff0.cubin": {
+      "role": "MALICIOUS",
+      "size": 2536,
+      "sha256": "15d61302d4020f7c6928df3d873cc7c37c6f1d5d203b78df48bd45bfb4eefb24",
+      "exit_codes": [
+        0,
+        0
+      ]
+    },
+    "ctrl_sec08_shsize_restored_0000000000000010.cubin": {
+      "role": "CONTROL",
+      "size": 2536,
+      "sha256": "8b5bdcbe9675d20eacb79c57958efc1442be6756d9be2d129863dfb4a1cfa1d5",
+      "exit_codes": [
+        0,
+        0
+      ]
+    }
+  },
+  "differential": {
+    "reproduced": false,
+    "detail": "no crafted artifact faulted while the control exited cleanly"
+  }
+}

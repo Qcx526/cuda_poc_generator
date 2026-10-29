@@ -1,0 +1,38 @@
+{
+  "device_objects_total": 546,
+  "gpu_related": [
+    {
+      "name": "gpuenergydrv",
+      "type": "Device"
+    },
+    {
+      "name": "DxgKrnl",
+      "type": "Device"
+    },
+    {
+      "name": "NvAdminDevice",
+      "type": "Device"
+    }
+  ],
+  "open_attempts": [
+    {
+      "path": "\\\\.\\GLOBALROOT\\Device\\gpuenergydrv",
+      "opened": true,
+      "error": 0,
+      "meaning": "opened"
+    },
+    {
+      "path": "\\\\.\\GLOBALROOT\\Device\\DxgKrnl",
+      "opened": true,
+      "error": 0,
+      "meaning": "opened"
+    },
+    {
+      "path": "\\\\.\\GLOBALROOT\\Device\\NvAdminDevice",
+      "opened": true,
+      "error": 0,
+      "meaning": "opened"
+    }
+  ],
+  "nvapi": "initialised, version string unavailable"
+}

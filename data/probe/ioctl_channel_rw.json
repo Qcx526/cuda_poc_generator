@@ -1,0 +1,48 @@
+{
+  "device": "\\\\.\\NvAdminDevice",
+  "write": true,
+  "results": [
+    {
+      "code": "0x00000000",
+      "ok": false,
+      "error": 1,
+      "meaning": "invalid function - dispatch rejected it",
+      "label": "code 0"
+    },
+    {
+      "code": "0xffffffff",
+      "ok": false,
+      "error": 1,
+      "meaning": "invalid function - dispatch rejected it",
+      "label": "all bits set"
+    },
+    {
+      "code": "0x0000e000",
+      "ok": false,
+      "error": 1,
+      "meaning": "invalid function - dispatch rejected it",
+      "label": "type 0x0000, function 0xe00"
+    },
+    {
+      "code": "0x77770004",
+      "ok": false,
+      "error": 1,
+      "meaning": "invalid function - dispatch rejected it",
+      "label": "type 0x7777"
+    },
+    {
+      "code": "0xffff0008",
+      "ok": false,
+      "error": 1,
+      "meaning": "invalid function - dispatch rejected it",
+      "label": "type 0xffff"
+    },
+    {
+      "code": "0x00018000",
+      "ok": false,
+      "error": 1,
+      "meaning": "invalid function - dispatch rejected it",
+      "label": "type 0x0001"
+    }
+  ]
+}

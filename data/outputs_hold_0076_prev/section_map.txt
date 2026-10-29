@@ -1,0 +1,14 @@
+file_size=2800 e_machine=0xbe e_shoff=1800 e_shentsize=64 e_shnum=13 e_shstrndx=1
+idx=00 name=  0 type= 0 offset=       0 size=       0 link=  0 info=  0 entsize=0
+idx=01 name=  1 type= 3 offset=      64 size=     233 link=  0 info=  0 entsize=0
+idx=02 name= 11 type= 3 offset=     297 size=     277 link=  0 info=  0 entsize=0
+idx=03 name= 19 type= 2 offset=     576 size=     240 link=  2 info=  8 entsize=24
+idx=04 name=188 type= 1 offset=     816 size=     112 link=  0 info=  0 entsize=0
+idx=05 name= 41 type=1879048192 offset=     928 size=      48 link=  3 info=  0 entsize=0
+idx=06 name= 73 type=1879048192 offset=     976 size=      60 link=  3 info= 11 entsize=0
+idx=07 name=218 type=1879048203 offset=    1040 size=     208 link=  0 info=  0 entsize=8
+idx=08 name=201 type= 9 offset=    1248 size=      16 link=  3 info=  4 entsize=16
+idx=09 name=143 type= 1 offset=    1264 size=       4 link=  0 info=  0 entsize=0
+idx=10 name=157 type= 1 offset=    1268 size=     360 link=  0 info= 11 entsize=0
+idx=11 name= 50 type= 1 offset=    1664 size=     128 link=  3 info=134217737 entsize=0
+idx=12 name=127 type= 1 offset=    1792 size=       4 link=  0 info=  0 entsize=0

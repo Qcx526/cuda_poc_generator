@@ -1,0 +1,16 @@
+[
+ {
+  "cve_id": "CVE-2024-0124",
+  "status": "ERROR",
+  "iterations": 1,
+  "verdict": "",
+  "diagnosis": "STAGE_ERROR",
+  "seconds": 374.4,
+  "reason": "stage execute failed: executor rc=1: failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the d",
+  "diagnoses": [
+   "STAGE_ERROR"
+  ],
+  "attempts": 5,
+  "successes": 0
+ }
+]

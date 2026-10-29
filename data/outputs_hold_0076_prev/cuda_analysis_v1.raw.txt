@@ -1,0 +1,153 @@
+{
+  "root_cause_analysis": {
+    "cve_id": "CVE-2024-0076",
+    "cwe_id": "CWE-125",
+    "cuda_attack_surface": "CUDA Toolchain (host-side, CPU-only): the ELF64/cubin ingestion path shared by cuobjdump and nvdisasm (CUDA Binary Utilities). Entry point is the command line: '<tool> <crafted.cubin>', which loads the file into a heap buffer and walks ELF header, section header table, section data and string tables. No GPU, driver or kernel module involvement.",
+    "vulnerability_class": "out-of-bounds-read (malformed-file / file-format parser, CWE-125)",
+    "primitive": "OOB-read (heap over-read; secondary DoS via read into unmapped page). Reported as information disclosure of adjacent heap memory; not an OOB-write and not a UAF.",
+    "root_cause_description": "Per the supplied (unverified) research data, both cuobjdump and nvdisasm fail to fully validate ELF/cubin structural metadata before dereferencing it. The tool reads the whole file into a heap allocation, then uses attacker-supplied ELF64 fields - e_shoff, e_shnum, e_shentsize, and per-section sh_offset, sh_size, sh_link, sh_info, sh_name - to compute read locations. The bounds relationship 'sh_offset + sh_size <= file_size' (and equally 'e_shoff + e_shnum*e_shentsize <= file_size') is either absent or evaluated in a width/order that a crafted value can defeat (64-bit/32-bit wraparound, or truncation to a 32-bit size when the file is mapped as size_t). The result is that a section data pointer or string-table index derived from the file is dereferenced outside the bounds of the allocation, producing a heap over-read. Two plausible sub-paths are consistent with the CWE-125 classification: (a) section-data over-read, where a huge sh_size with an in-file sh_offset causes the parser to copy/dump sh_size bytes from base+sh_offset past the end of the heap buffer; (b) name/symbol over-read, where sh_name or a symbol's st_name indexes past the end of the referenced .strtab section, so the string scan walks beyond the section (and possibly beyond the allocation) until a NUL is found. The exact sub-path cannot be confirmed from the provided data; the description in the source is generic ('read memory beyond the bounds of an allocated buffer'). Impact is bounded: leaked heap bytes are printed to stdout/stderr or influence analysis output; if the over-read crosses into an unmapped page the tool terminates with an access violation (DoS).",
+    "affected_code_path": "cuobjdump / nvdisasm ELF reader: file load into heap buffer -> ELF64 header decode (e_ident class/data, e_machine expected EM_CUDA/190, e_shoff, e_shentsize, e_shnum) -> section header table iteration -> per-section dispatch (SHT_STRTAB name resolution, SHT_PROGBITS section data used by the SASS disassembly / -elf / -sass / -symbols / -ptx dump paths) -> sh_name / sh_link indirection into string and symbol tables. The vulnerable read occurs wherever the parser dereferences base+sh_offset for sh_size bytes or indexes sh_name/st_name into a string table without re-validating against the containing section and allocation extents.",
+    "controllability": "Very high and fully deterministic. The attacker controls every byte of the input file: ELF magic/class/data, e_type, e_machine, e_shoff, e_shentsize, e_shnum, e_shstrndx, and for every section: sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize, plus all section payload bytes. Specific controllable primitives: (1) choose sh_offset == file_size - k and sh_size >> k to force an over-read of length ~sh_size; (2) choose sh_offset near 2^64-1 to exercise pointer wraparound; (3) choose e_shnum/e_shentsize to overflow the section-table extent product; (4) choose sh_name/st_name offsets past the end of a deliberately small .shstrtab/.strtab; (5) control heap adjacency indirectly via file size, which sets the allocation size and therefore where the over-read lands. No race, no heap grooming, no GPU state, and no privileges are required for a basic trigger; reliability of the leak (as opposed to the crash) depends on allocator placement, which is the only non-deterministic element.",
+    "relevant_mitigations": [
+      "Update CUDA Toolkit to 12.4 or later (vendor fix per NVIDIA advisory A-5517); verify cuobjdump/nvdisasm build versions before testing",
+      "Do not run cuobjdump/nvdisasm on untrusted or third-party cubin/fatbin files; treat .cubin/.fatbin as untrusted input and process inside a disposable sandbox/container",
+      "Host ASLR and heap layout randomization (raises entropy of what an over-read leaks; does not prevent the read)",
+      "Windows: PageHeap / Application Verifier full-page heap to convert over-reads into immediate deterministic faults; Linux: glibc MALLOC_PERTURB_/MALLOC_CHECK_, and running under valgrind memcheck or an ASan-instrumented harness to detect invalid reads",
+      "Process-level hardening: seccomp/AppContainer/sandbox profile limiting the tool's syscalls and stdout capture scope, non-privileged UID, read-only working directory",
+      "Stack/CFI and Control Flow Guard are largely irrelevant to a pure over-read, but heap metadata hardening (safe-linking, tcache checks) matters if the over-read is ever chained into a write primitive",
+      "Detection: monitor for cuobjdump/nvdisasm crashes (SIGSEGV/0xC0000005) or abnormal exit codes when processing files of unknown provenance",
+      "No GPU-side mitigations (ECC, MIG, IOMMU, SR-IOV, GPU MMU isolation) apply: the flaw is entirely in host userspace and touches no device memory"
+    ]
+  },
+  "verification_strategy": {
+    "goal": "Reproduce CWE-125 out-of-bounds read in cuobjdump and nvdisasm with a crafted ELF64/cubin file, prove the read is outside the heap allocation (deterministically observable via a memory-error checker or a guard-page crash), characterize which ELF field is the faulty control (section extent vs. string-table index vs. section-table extent), and demonstrate the low-severity impact (heap-byte disclosure into tool output and/or DoS via access violation) while confirming the CUDA 12.4+ build rejects the same file cleanly. All within an authorized, isolated lab.",
+    "preconditions": [
+      "Authorized test host (VM/container) with the vulnerable CUDA Toolkit (< 12.4, e.g., 11.2) installed; cuobjdump and nvdisasm present on PATH",
+      "No GPU or NVIDIA driver required; if a GPU is present it is irrelevant to the trigger",
+      "A baseline valid cubin produced by the same-or-older toolkit (nvcc -cubin, or extracted from an existing fatbin via cuobjdump -xelf) to serve as the mutation template",
+      "Python 3 with pyelftools (or an equivalent hand-rolled ELF64 writer) for deterministic field mutation; ability to control total file size exactly",
+      "Optional but strongly recommended: valgrind memcheck (Linux) or PageHeap/Application Verifier (Windows), plus a chunk of address space mappable with a guard page (mmap PROT_NONE) for the deterministic fault test",
+      "Ability to run the tool under a non-privileged UID with stdout/stderr and exit status captured to files, and core dumps or a debugger available for crash triage",
+      "A second environment with CUDA Toolkit 12.4+ for the negative control"
+    ],
+    "steps": [
+      {
+        "step_id": "S01",
+        "description": "Fingerprint the toolchain to prove the target build is in the vulnerable range and to anchor all later results to a specific binary.",
+        "pseudocode": "run(\"cuobjdump --version\") -> capture stdout/exit\nrun(\"nvdisasm --version\") -> capture stdout/exit\nparse version string; assert major.minor < 12.4\nrecord sha256 of the two binaries for the test report",
+        "success_condition": "Both tools report a version strictly below CUDA 12.4 (e.g., 'Cuda compilation tools, release 11.2, V11.2.x'); binary hashes recorded; exit code 0 for both invocations.",
+        "failure_condition": "Version reports 12.4 or later (target already patched - abort and retest on a vulnerable image), or the tools are absent from PATH, or --version itself fails.",
+        "expected_cuda_behavior": "Both utilities print their toolkit release banner to stdout and exit 0; no CUDA driver/context initialization occurs (the tools are pure userspace parsers, so cudaGetDeviceCount/cuInit are never called and no CUDA error codes are surfaced).",
+        "expected_outcome": "Confirmed vulnerable-toolchain fingerprint (e.g., 11.2) and immutable binary identifiers for reproducibility."
+      },
+      {
+        "step_id": "S02",
+        "description": "Produce and validate a known-good baseline cubin so that subsequent mutations are attributable to specific fields rather than to a structurally invalid file.",
+        "pseudocode": "write hello.cu with __global__ void k(){}\nrun(\"nvcc -arch=sm_75 -cubin -o baseline.cubin hello.cu\")\nassert file_size(baseline.cubin) > 0\nrun(\"cuobjdump -elf baseline.cubin\")   ; expect 0\nrun(\"cuobjdump -sass baseline.cubin\")  ; expect 0\nrun(\"nvdisasm baseline.cubin\")         ; expect 0\nelf = ELFFile(open(baseline.cubin,'rb'))\nassert elf['e_ident']['EI_CLASS']==ELFCLASS64 and elf['e_machine']==190 (EM_CUDA)\nrecord e_shoff, e_shentsize, e_shnum, e_shstrndx and every (sh_name, sh_type, sh_offset, sh_size, sh_link) tuple",
+        "success_condition": "baseline.cubin parses cleanly under all three invocations (exit 0, no diagnostics), is ELF64 with e_machine 190, and its section-header table is fully within the file (e_shoff + e_shnum*e_shentsize <= file_size).",
+        "failure_condition": "nvcc unavailable or fails; cuobjdump/nvdisasm emits warnings on the baseline (baseline already abnormal, invalidating later comparisons); the produced object is not ELF64/EM_CUDA (e.g., host ELF from -c instead of -cubin).",
+        "expected_cuda_behavior": "Native toolchain behavior: nvcc invokes cudafe/ptxas to emit a valid ELF64 cubin; cuobjdump -elf prints the section table, cuobjdump -sass and nvdisasm print disassembly, all exit 0. No CUDA runtime/driver error codes are produced.",
+        "expected_outcome": "A verified-good template whose section geometry is recorded as the mutation baseline."
+      },
+      {
+        "step_id": "S03",
+        "description": "Structural pre-check: enumerate every ELF field that encodes an extent or an index, and compute for the baseline which invariants a parser must enforce. This defines the exact set of mutations to try.",
+        "pseudocode": "for each section s in elf.sections:\n    assert s.sh_offset + s.sh_size <= file_size      # section data extent\n    assert elf.e_shoff + elf.e_shnum*elf.e_shentsize <= file_size   # SHT extent\n    if s.sh_type == SHT_STRTAB:\n        for each name entry n referencing this table: assert n < s.sh_size\n        assert s.sh_offset + s.sh_size <= file_size\n    if s.sh_type == SHT_SYMTAB:\n        assert s.sh_link < e_shnum and sections[s.sh_link].sh_type == SHT_STRTAB\noutput candidate_mutations = [oversize sh_size, sh_offset at EOF, sh_offset near 2^64, e_shnum*e_shentsize overflow, sh_name past strtab end, sh_link -> out-of-range index]",
+        "success_condition": "All baseline invariants hold; the mutation list is produced with a recorded 'violated invariant -> ELF field' mapping, giving one mutation per candidate root-cause sub-path.",
+        "failure_condition": "A baseline invariant already fails (template is malformed, so the baseline run in S02 was not actually clean), or pyelftools cannot parse the cubin (unsupported ELF variant), forcing a hand-rolled parser.",
+        "expected_cuda_behavior": "Read-only host analysis; the tools are not invoked in this step. No CUDA API is exercised and no CUDA error code can appear.",
+        "expected_outcome": "A prioritized, falsifiable mutation matrix instead of blind fuzzing."
+      },
+      {
+        "step_id": "S04",
+        "description": "Mutation A - section-data extent over-read: keep the file size fixed, set a PROGBITS section's sh_offset to file_size - 16 and sh_size to a large value (or truncate the file after the header so the section payload is cut short). Tests the 'base + sh_offset for sh_size bytes' sub-path.",
+        "pseudocode": "buf = bytearray(open('baseline.cubin','rb').read())\nsidx, hdr = locate_section_header(buf, name='.text.<mangled>')   # or any SHT_PROGBITS\nplace_u64(buf, hdr + 0x18, len(buf) - 16)     # sh_offset\nplace_u64(buf, hdr + 0x20, 0x100000)          # sh_size (way past EOF)\nopen('poc_A.cubin','wb').write(buf)\nrun_capture('cuobjdump -sass poc_A.cubin')\nrun_capture('cuobjdump -elf  poc_A.cubin')\nrun_capture('nvdisasm   poc_A.cubin')",
+        "success_condition": "Under valgrind memcheck or ASan the run reports 'Invalid read of size N' / heap-buffer-overflow with a stack frame in the ELF section reader; or the tool segfaults (exit 139 / -11) where the over-read crosses an unmapped page; or section bytes beyond EOF appear verbatim in stdout. Any one of these, reproducible 3/3, confirms the bug.",
+        "failure_condition": "All three invocations exit 0 with a clean diagnostic such as 'invalid ELF file' and memcheck reports no invalid read (parser clamps or rejects the extent - this sub-path is not the bug); or the mutation accidentally invalidates the ELF such that parsing aborts before the section reader is reached.",
+        "expected_cuda_behavior": "Tool-level (not CUDA-API) behavior is expected here: historically these parsers either abort with a terse error to stderr and a nonzero exit, or proceed. No cuBLAS/cuDNN/driver call occurs. If the file is additionally offered to the runtime, cuModuleLoadData on a malformed image returns CUDA_ERROR_INVALID_IMAGE (200) - useful only as a negative confirmation that the file is not loadable, and it does not exercise the reported bug.",
+        "expected_outcome": "Deterministic evidence (checker report or fault) that sh_size is not validated against the file/allocation extent."
+      },
+      {
+        "step_id": "S05",
+        "description": "Mutation B - section-table extent overflow: set e_shnum and/or e_shentsize so that e_shoff + e_shnum*e_shentsize overflows 64-bit (e.g., e_shnum = 0xFFFFFFFFFFFFFFFF / 0x38) while the file stays small. Tests the arithmetic-overflow variant of the same validation gap.",
+        "pseudocode": "buf = bytearray(open('baseline.cubin','rb').read())\nplace_u64(buf, 0x28, 0x1000)                    # e_shoff (in-file)\nplace_u16(buf, 0x3A, 0x38)                      # e_shentsize (valid)\nplace_u16(buf, 0x3C, 0xFFFF)                    # e_shnum (max 16-bit)\nopen('poc_B.cubin','wb').write(buf)\nrun_capture('cuobjdump -elf poc_B.cubin')\n# variant B2: e_shoff near UINT64_MAX to force base+shoff wraparound\nplace_u64(buf, 0x28, 0xFFFFFFFFFFFFFFF0); open('poc_B2.cubin','wb').write(buf)\nrun_capture('nvdisasm poc_B2.cubin')",
+        "success_condition": "A checker-instrumented run shows a read outside the heap block while walking the section header table, or the tool faults instead of reporting a clean bounds error; the faulting address is demonstrably beyond the allocation (identical modulo 2^64 to a small in-heap offset if wraparound occurred).",
+        "failure_condition": "Tool prints a clean 'section header table extends past end of file' style error with exit != 0 and no invalid read (validation is present for this field, so the bug lies elsewhere); or the huge e_shnum causes an early allocation failure/OOM rather than the read.",
+        "expected_cuda_behavior": "Tool-level reject-or-crash only; regardless of path, this input is not a valid CUDA image, and cuModuleLoadData on it would yield CUDA_ERROR_INVALID_IMAGE (200) rather than CUDA_SUCCESS.",
+        "expected_outcome": "Either a second confirmed control point or a useful narrowing: the vulnerable field is not the section-table extent."
+      },
+      {
+        "step_id": "S06",
+        "description": "Mutation C - name/string-table index over-read: shrink a referenced .strtab/.shstrtab section to a few bytes while leaving sh_name / a symbol's st_name pointing past its end. Tests the NUL-scan over-read sub-path, which is the most likely source of a heap-byte information leak.",
+        "pseudocode": "buf = bytearray(open('baseline.cubin','rb').read())\nshstr = section_by_name('.shstrtab')\nplace_u64(buf, shstr.hdr + 0x20, 4)             # sh_size = 4 (shrink)\nplace_u32(buf, target_section.hdr + 0x00, 0x10000000)  # sh_name far past table\nopen('poc_C.cubin','wb').write(buf)\nrun_capture('cuobjdump -elf poc_C.cubin')       # section names are printed -> leak channel\nrun_capture('cuobjdump -symbols poc_C.cubin')\nrun_capture('nvdisasm poc_C.cubin')",
+        "success_condition": "Tool output contains printable bytes that are not part of the file's string table (heap residue) before the NUL terminator, or the checker reports an invalid read inside the name-resolution routine, reproducible across runs; the leaked bytes should differ when the allocator state is perturbed.",
+        "failure_condition": "Output shows a truncated/garbled-but-bounded name with no invalid read (index clamped), or the tool refuses the file before name resolution, or the leak is not reproducible because the allocator zero-fills the adjacent region (in which case the crash-oriented variant of S07 must carry the proof).",
+        "expected_cuda_behavior": "The tools print section/symbol names to stdout as part of -elf/-symbols; a bounded parser prints only in-section bytes. No CUDA API is invoked, so no CUDA error code applies.",
+        "expected_outcome": "Characterization of the disclosure channel (name resolution) versus the crash-only channel."
+      },
+      {
+        "step_id": "S07",
+        "description": "Deterministic faulting harness: force the over-read to land on an unmapped guard page so the vulnerability is observable regardless of heap contents and without a memory checker. Load the cubin exactly as the tool does (single read into a heap buffer sized to the file) with a following PROT_NONE mapping.",
+        "pseudocode": "size = file_size('poc_A.cubin')\npage = mmap(NULL, round_up(size,PAGE)+PAGE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON)\nmprotect(page + round_up(size,PAGE), PAGE, PROT_NONE)   # guard page\nmemcpy(page, file_bytes, size)\n# hand the buffer to the parser path being modelled AND to the real tool\n# real-tool variant (Linux):\n#   setarch -R cuobjdump -sass poc_A.cubin    (disable ASLR for stable placement)\n#   or use a preloaded allocator shim that mmaps the cubin buffer adjacent to PROT_NONE\nrun_capture('setarch -R cuobjdump -sass poc_A.cubin'); record exit status and si_code\n# also instrument with valgrind for the definitive report\nrun_capture('valgrind --error-exitcode=99 --track-origins=yes cuobjdump -sass poc_A.cubin')",
+        "success_condition": "SIGSEGV with si_code SEGV_ACCERR at an address inside the guard page, i.e., exactly buffer_end + delta (delta < sh_size), or valgrind exits 99 with an 'Invalid read of size N' whose address is > buffer_end. Reproducible 3/3 with the same delta.",
+        "failure_condition": "No fault and valgrind exits 0 (the parser never dereferences the oversized extent because it streams the file with bounded reads rather than an all-in-memory buffer), or the fault address is inside the valid mapping (mis-attribution), or the crash originates in an unrelated code path (verified by the backtrace).",
+        "expected_cuda_behavior": "Host-process signals only (SIGSEGV/SIGBUS); shell reports exit 139 (128+11). On Windows the equivalent is an access violation 0xC0000005 with the tool exiting nonzero. No CUDA error code is generated because no CUDA API is involved.",
+        "expected_outcome": "A heap-content-independent, allocator-independent proof of the out-of-bounds read with a measured over-read length and offset."
+      },
+      {
+        "step_id": "S08",
+        "description": "Quantify controllability of the over-read: sweep sh_size / sh_offset and record the resulting over-read length, fault offset and exit status to show the primitive is attacker-parameterized and deterministic.",
+        "pseudocode": "for k in [16, 64, 256, 4096, 65536, 1<<20]:\n    f = mutate(poc_A_template, sh_offset = filesize - k, sh_size = k*4)\n    r = run_capture('valgrind --error-exitcode=99 cuobjdump -sass ' + f)\n    record(k, r.invalid_read_len, r.first_bad_addr - buffer_end, r.exit, r.stdout_bytes_after_eof)\nassert over_read_len grows monotonically with sh_size and first_bad_addr == buffer_end + k",
+        "success_condition": "A monotonic, repeatable table mapping attacker-chosen sh_size/sh_offset to observed over-read length and fault address; each row reproduces identically across 3 runs.",
+        "failure_condition": "Over-read length saturates or the tool aborts for all k below a threshold (a partial clamp exists, so only a narrow window is exploitable and must be reported as such); or results are non-deterministic across runs.",
+        "expected_cuda_behavior": "Consistent host-tool behavior per row; the sweep itself performs no CUDA calls.",
+        "expected_outcome": "A quantified, reproducible primitive description suitable for the report's controllability section (documented as lab observation only)."
+      },
+      {
+        "step_id": "S09",
+        "description": "Demonstrate the information-disclosure impact: pre-fill the heap region following the cubin buffer with a recognisable sentinel and check whether sentinel bytes are emitted by the tool's normal output path.",
+        "pseudocode": "# Linux: raise heap adjacency odds for the sentinel\nENV MALLOC_PERTURB_=0x41 MALLOC_TOP_PAD_=65536 glibc-tunables\nharness: malloc(file_size) -> free -> malloc(file_size) with sentinel overwrite of the freed block\nrun_capture('cuobjdump -elf poc_C.cubin > out.txt')\nscan out.txt for sentinel pattern 0xDEADBEEF/0x41414141 sequences and for non-ASCII runs\nassert leaked_bytes lie beyond the file's own section data",
+        "success_condition": "At least one run emits bytes present in the sentinel-filled adjacent heap chunk (or, absent sentinels, clearly non-file heap residue) into out.txt, with the byte offset in the output traceable to the sh_name/st_name over-read; repeatable with the sentinel variant even if the plain variant is allocator-dependent.",
+        "failure_condition": "Output contains only bytes from the input file across many allocator configurations and file sizes (read is bounded within the allocation, or the tool truncates output at the section boundary), in which case the disclosure claim must be downgraded to 'crash/DoS only' in the report.",
+        "expected_cuda_behavior": "None beyond normal stdout/stderr emission; the tool never touches CUDA runtime state, so C/L impact in the CVSS vector (confidentiality/availability) reflects the host process only.",
+        "expected_outcome": "Evidence-backed statement of whether the primitive is a practical info leak or merely a crash, explicitly flagged as lab-observed rather than assumed."
+      },
+      {
+        "step_id": "S10",
+        "description": "Cross-tool confirmation: replay the minimized, most reliable PoC against nvdisasm (and against the alternate cuobjdump subcommands -elf, -sass, -symbols, -ptx) to establish that both utilities share the faulting reader, as the advisory claims.",
+        "pseudocode": "for tool in ['cuobjdump -elf','cuobjdump -sass','cuobjdump -symbols','cuobjdump -ptx','nvdisasm']:\n    r = run_capture('valgrind --error-exitcode=99 ' + tool + ' poc_min.cubin')\n    record(tool, r.invalid_read, r.exit, r.top_frame)\nassert identical top stack frame (same ELF-reader symbol) for cuobjdump and nvdisasm",
+        "success_condition": "Both utilities, and at least two distinct subcommands, exhibit the same invalid read / fault at the same reader frame with the same crafted file.",
+        "failure_condition": "Only one tool is affected, or the faulting frames differ materially (separate bugs), or an alternate subcommand rejects the file cleanly - each of which must be reported as a deviation from the advisory's 'both tools' claim.",
+        "expected_cuda_behavior": "Identical host-only behavior classes per tool; no CUDA API error codes are expected from any subcommand.",
+        "expected_outcome": "Confirmation or refinement of the shared-parser scope statement."
+      },
+      {
+        "step_id": "S11",
+        "description": "Negative control on patched CUDA 12.4+: run the identical PoC bytes and confirm clean rejection with no invalid read, proving the observation is version-attributable and not a harness artifact.",
+        "pseudocode": "on CUDA 12.4 host:\n  run_capture('cuobjdump --version')  ; assert >= 12.4\n  r = run_capture('valgrind --error-exitcode=99 cuobjdump -sass poc_min.cubin')\n  record(r.exit, r.stderr)\n  assert r.invalid_read is None and r.exit in (0, nonzero_clean_error)\n  # same for nvdisasm\n# also: sanity-check poc_min still faults on the 11.2 host in the same session",
+        "success_condition": "On 12.4+ the tool exits with a bounded diagnostic (e.g., an invalid/unsupported ELF message) or exits 0, with valgrind reporting zero invalid reads, while the same bytes still fault/over-read on the 11.2 host - a clean vulnerable/patched differential.",
+        "failure_condition": "The PoC also faults or over-reads on 12.4+ (fix incomplete, different root cause, or the PoC triggers a distinct unfixed path - report as such), or the patched host cannot reproduce a clean baseline (invalidating the differential).",
+        "expected_cuda_behavior": "Patched tool performs the missing validation and returns a normal error path with a nonzero exit code; no CUDA API is involved on either host.",
+        "expected_outcome": "A defensible vulnerable-vs-patched differential with all observations marked as lab-derived, not vendor-confirmed."
+      },
+      {
+        "step_id": "S12",
+        "description": "Minimize, document and package the PoC plus observations, explicitly labelling every claim by provenance (advisory-stated vs. locally observed) so no unverified assertion is presented as confirmed vulnerability evidence.",
+        "pseudocode": "poc_min = ddmin(poc_A, predicate=lambda f: valgrind_faults('cuobjdump -sass ' + f))\nreport = {\n  'derived_from_advisory': ['CWE-125','both tools affected','fixed in 12.4','CVSS 3.3 AV:L/AC:L/PR:N/UI:R'],\n  'locally_observed': [over_read_len_table, fault_offsets, exit_codes, leak_findings, patched_differential],\n  'unverified': ['exact faulty source line','whether leak is reliable on all allocators','32-bit vs 64-bit build differences']\n}\nstore poc_min.cubin, generation script, tool hashes, harness commands, and raw logs",
+        "success_condition": "A minimized file (ideally < 4 KB) that still reproduces, a complete generation script, raw logs for every step, and an explicit provenance table separating advisory claims from measured results.",
+        "failure_condition": "Minimization loses reproducibility (keep the larger reproducer as the primary artifact), or any observation is recorded without its raw log, or provenance labels are missing such that assertions appear as confirmed evidence.",
+        "expected_cuda_behavior": "Not applicable beyond tool exit codes already recorded; the packaging step makes no CUDA calls.",
+        "expected_outcome": "A reproducible, honestly scoped vulnerability verification artifact ready for defensive tuning (detection signatures, sandboxing policy) and vendor follow-up."
+      }
+    ],
+    "confidence": 0.55,
+    "cuda_version_range": "All CUDA Toolkit releases prior to 12.4 (CUDA 11.2 explicitly reported as fully affected); fixed in CUDA Toolkit 12.4 and later, per NVIDIA advisory A-5517. Version boundary is advisory-stated and not independently verified here.",
+    "gpu_arch_range": "Not applicable - the flaw is in host-side, CPU-only CUDA Binary Utilities (cuobjdump, nvdisasm) and is independent of GPU architecture, compute capability, GPU model and driver version; no GPU is required to trigger it.",
+    "evidence": [
+      "NVIDIA advisory A-5517 (https://nvidia.custhelp.com/app/answers/detail/a_id/5517) - cited as the vendor reference in the supplied data; contents not independently retrieved or verified here",
+      "Supplied research assertions: CWE-125 out-of-bounds read in cuobjdump + nvdisasm, CVSS 3.1 3.3 (AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L), fixed in CUDA Toolkit 12.4",
+      "ELF64/gABI section-header semantics (e_shoff/e_shnum/e_shentsize, sh_offset/sh_size/sh_link/sh_name) used to design the mutations; standard specification, not CVE-specific",
+      "EM_CUDA (190) machine type and cubin-as-ELF64 container layout as produced by nvcc -cubin / ptxas -cubin"
+    ]
+  }
+}

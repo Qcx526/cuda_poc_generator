@@ -1,0 +1,38 @@
+[
+ {
+  "cve_id": "CVE-2023-0196",
+  "status": "SUPPORTED",
+  "iterations": 2,
+  "verdict": "SUPPORTED",
+  "diagnosis": "INCONCLUSIVE",
+  "seconds": 771.7,
+  "reason": "受控样本 7/12 个产生崩溃退出码",
+  "diagnoses": [
+   "INCONCLUSIVE"
+  ]
+ },
+ {
+  "cve_id": "CVE-2025-23338",
+  "status": "SUPPORTED",
+  "iterations": 2,
+  "verdict": "SUPPORTED",
+  "diagnosis": "INCONCLUSIVE",
+  "seconds": 615.8,
+  "reason": "受控样本 2/5 个产生崩溃退出码",
+  "diagnoses": [
+   "INCONCLUSIVE"
+  ]
+ },
+ {
+  "cve_id": "CVE-2025-23340",
+  "status": "EXHAUSTED",
+  "iterations": 1,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "UNCLASSIFIED",
+  "seconds": 149.8,
+  "reason": "未观察到任何样本退出码；输入可能未到达解析器",
+  "diagnoses": [
+   "UNCLASSIFIED"
+  ]
+ }
+]

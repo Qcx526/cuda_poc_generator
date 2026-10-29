@@ -1,0 +1,6 @@
+ps_3_0
+def c0, 0.5, 0.25, 0.75, 1.0
+mov r0, c0
+mov r1, c0
+pow r2, r0.x, r1.x
+mov oC0, r0

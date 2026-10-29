@@ -1,0 +1,5 @@
+sxe ld:nvgpucomp64
+g
+bp nvgpucomp64+0x15030FA ".printf \"OPC=%p\\n\", poi(@r11+0x58); gc"
+g
+q

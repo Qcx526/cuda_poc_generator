@@ -1,0 +1,50 @@
+{
+  "runs": [
+    [
+      {
+        "code": "0x10001002",
+        "returncode": 1,
+        "status": -1073741811,
+        "tail": "written to data\\probe\\d3dkmt.json",
+        "verdict": "refused"
+      },
+      {
+        "code": "0x10000402",
+        "returncode": 1,
+        "status": -1073741811,
+        "tail": "written to data\\probe\\d3dkmt.json",
+        "verdict": "refused"
+      },
+      {
+        "code": "0x10000100",
+        "returncode": 1,
+        "status": -1073741811,
+        "tail": "written to data\\probe\\d3dkmt.json",
+        "verdict": "refused"
+      }
+    ],
+    [
+      {
+        "code": "0x10000101",
+        "returncode": 1,
+        "status": -1073741811,
+        "tail": "written to data\\probe\\d3dkmt.json",
+        "verdict": "refused"
+      },
+      {
+        "code": "0x10000102",
+        "returncode": 1,
+        "status": -1073741811,
+        "tail": "written to data\\probe\\d3dkmt.json",
+        "verdict": "refused"
+      },
+      {
+        "code": "0x10000103",
+        "returncode": 1,
+        "status": -1073741811,
+        "tail": "written to data\\probe\\d3dkmt.json",
+        "verdict": "refused"
+      }
+    ]
+  ]
+}

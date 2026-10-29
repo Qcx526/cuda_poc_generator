@@ -1,0 +1,17 @@
+[
+ {
+  "cve_id": "CVE-2024-0076",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "HARNESS_STEP_FAILED",
+  "seconds": 1296.6,
+  "reason": "步骤失败：[CUDA_STEP:S02] Inspect baseline ELF64 layout and select the section to mutate — FAIL: empty section header table: e_shnum=0",
+  "diagnoses": [
+   "NO_EFFECT",
+   "HARNESS_STEP_FAILED"
+  ],
+  "attempts": 3,
+  "successes": 0
+ }
+]

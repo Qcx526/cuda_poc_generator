@@ -1,0 +1,17 @@
+[
+ {
+  "cve_id": "CVE-2025-23247",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 795.8,
+  "reason": "受控样本未产生崩溃退出码（所有步骤均报告 OK）",
+  "diagnoses": [
+   "NO_EFFECT",
+   "NO_EFFECT"
+  ],
+  "attempts": 1,
+  "successes": 0
+ }
+]

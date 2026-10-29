@@ -1,0 +1,3 @@
+ba r4 0x7ff761435aec ".printf \"COPY rcx=%p rdx=%p r8=%p\\n\", @rcx, @rdx, @r8; ba r4 @rcx \"kb 6; gc\"; gc"
+g
+q

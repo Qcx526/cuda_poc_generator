@@ -1,0 +1,40 @@
+[
+ {
+  "cve_id": "CVE-2023-0196",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 539.2,
+  "reason": "受控样本未产生崩溃退出码（所有步骤均报告 OK）",
+  "diagnoses": [
+   "INCONCLUSIVE",
+   "NO_EFFECT"
+  ]
+ },
+ {
+  "cve_id": "CVE-2024-0076",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "HARNESS_STEP_FAILED",
+  "seconds": 603.8,
+  "reason": "步骤失败：[CUDA_STEP:S02] generate a baseline valid cubin and verify normal parsing — FAIL: RuntimeError: no cubin baseline could be produced or located",
+  "diagnoses": [
+   "INCONCLUSIVE",
+   "HARNESS_STEP_FAILED"
+  ]
+ },
+ {
+  "cve_id": "CVE-2024-0109",
+  "status": "SUPPORTED",
+  "iterations": 2,
+  "verdict": "SUPPORTED",
+  "diagnosis": "INCONCLUSIVE",
+  "seconds": 494.6,
+  "reason": "受控样本 99/240 个产生崩溃退出码",
+  "diagnoses": [
+   "INCONCLUSIVE"
+  ]
+ }
+]

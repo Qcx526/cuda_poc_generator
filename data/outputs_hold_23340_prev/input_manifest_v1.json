@@ -1,0 +1,1274 @@
+{
+  "schema_version": "1.0",
+  "cve_id": "CVE-2025-23340",
+  "dimensions": {
+    "os_environment": {
+      "cve_id": "CVE-2025-23340",
+      "os_name": "Windows / Linux（跨平台）",
+      "os_version": "Windows 10 x64 / 任意 Linux x86_64",
+      "kernel_version": "N/A —— nvdisasm 是纯用户态工具",
+      "architecture": "x86_64",
+      "notes": "[原文抽取] 纯 CPU 工具，无需 GPU/驱动/root。本机实测：Windows 10 x64, CUDA Toolkit v11.2 (V11.2.67), MSVC cl 14.29.30133, GPU = GeForce GTX 1660 (sm_75), 驱动 551.61。工具链路径 C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\"
+    },
+    "cuda_environment": {
+      "cve_id": "CVE-2025-23340",
+      "cuda_driver_version": "不参与触发。本机 551.61",
+      "cuda_toolkit_version": "受影响：所有低于 CUDA Toolkit 13.0 的版本。本机 11.2 在受影响区间内。",
+      "fix_version": "CUDA Toolkit 13.0（NVIDIA 公告 a_id/5661）",
+      "tested_vulnerable_version": "nvdisasm 12.8.90（Talos 实测确认）",
+      "gpu_architecture": "sm_75（仅用于生成 base cubin）",
+      "compute_capability": "7.5",
+      "gpu_model": "NVIDIA GeForce GTX 1660",
+      "affected_tools": [
+        "nvdisasm"
+      ],
+      "tool_path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvdisasm.exe",
+      "trigger_command": "nvdisasm <malformed_elf>"
+    },
+    "affected_component": {
+      "cve_id": "CVE-2025-23340",
+      "name": "nvdisasm",
+      "component_name": "NVIDIA CUDA nvdisasm (CUDA Binary Utilities)",
+      "type": "CUDA Toolkit 命令行工具 —— cubin 反汇编器",
+      "vendor": "NVIDIA Corporation",
+      "version_range": "所有 < CUDA Toolkit 13.0（13.0 修复）",
+      "vulnerable_function": "[原文抽取] 处理 SHT_RELA 节的特例分支（Talos 定位在 0x45ada0，地址对应 nvdisasm 12.8.90）",
+      "file_format_input": "ELF / cubin（含 SHT_RELA 节）",
+      "attack_entry_point": "nvdisasm <malformed_elf>",
+      "advisory_url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5661",
+      "technical_report": "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2172"
+    },
+    "attack_surface": {
+      "cve_id": "CVE-2025-23340",
+      "subsystem": "CUDA Toolchain —— nvdisasm 的 SHT_RELA 节解析路径",
+      "surface_type": "文件格式解析 —— 畸形 ELF 的 RELA 节尺寸字段",
+      "entry_type": "本地文件输入触发（需受害者运行 nvdisasm）",
+      "entry_point": "nvdisasm <malformed.elf>",
+      "required_permissions": "无需任何特权",
+      "attack_vector": "[原文抽取] 攻击者构造一个 sh_type = SHT_RELA(4) 且 sh_size < 12 的节。nvdisasm 把 sh_size 向下对齐到 24 的倍数，小于 12 的对齐结果为 0，于是以 0 作为长度调用内部 malloc 包装（实际 malloc(0+8)=8 字节），返回的可用指针已越过缓冲区末尾，随后按固定步长写入 0x18 字节，造成多处堆越界写，写入内容来自攻击者控制的输入文件字节。",
+      "attack_complexity": "低 —— 只需在合法 cubin 上把某个 RELA 节的 sh_size 改成 1..11 之间的值",
+      "remote_trigger": "需受害者对恶意 ELF 运行 nvdisasm"
+    },
+    "vulnerability_type": {
+      "cve_id": "CVE-2025-23340",
+      "cwe_id": "CWE-131",
+      "cwe_name": "Incorrect Calculation of Buffer Size",
+      "vulnerability_category": "incorrect-buffer-size",
+      "cvss_score": "7.8",
+      "cvss_severity": "HIGH",
+      "cvss_vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+      "subtype": "sh_size 向下对齐到 24 的倍数后，小于 12 的输入被算成 0，导致按 0 长度分配缓冲区后又写入 0x18 字节",
+      "classification_note": "分类分歧：Talos 归为 CWE-131（缓冲区大小计算错误），NVIDIA 公告描述为 'out-of-bounds read'（CWE-125），但 Talos 的 Valgrind 实测为 Invalid write，即越界写。",
+      "related_cwe": [
+        "CWE-125",
+        "CWE-787",
+        "CWE-190"
+      ],
+      "validation_impact": "多处 8 字节堆越界写，写入内容可控，Talos 认为可达代码执行。"
+    },
+    "impact_controllability": {
+      "cve_id": "CVE-2025-23340",
+      "impact": "[原文抽取] Valgrind 实测 3 次 Invalid write of size 8，地址分别位于一个 8 字节分配块之后 0 / 8 / 16 字节处。写入内容取自输入 ELF 的字节（攻击者完全可控）。",
+      "controllable_fields": [
+        "ELF 文件全部字节",
+        "目标节的 sh_type（需为 SHT_RELA=4）",
+        "目标节的 sh_size（触发区间：1..11）",
+        "该节内容（决定越界写入的字节）"
+      ],
+      "exploitation_difficulty": "极低。这是一个**单字段触发**的确定性缺陷：把某个 RELA 节的 sh_size 改成小于 12 即可。"
+    },
+    "root_cause": {
+      "cve_id": "CVE-2025-23340",
+      "summary": "[原文抽取，Talos TALOS-2025-2172] nvdisasm 在 0x45ada0 处理 SHT_RELA 节。它取节的 sh_size（0x45ca86），然后用编译器优化过的除法序列把长度向下对齐到 24 的倍数：`align(n) = ((((n * 0xaaaaaaaaaaaaaaab) >> 64) >> 3) * 3) << 3`。该表达式对 n < 12 的输入返回 0（n=0..11 -> 0；n=12..23 -> 24）。于是它以 0 为长度调用分配函数（0x40a610）。分配函数内部还有一个 malloc 包装（0x465700），该包装执行 `lea rbp, [rdi+0x8]` 后 `call malloc`，再 `add rax, 0x8` —— 即请求 size 时实际分配 size+8，并把 8 字节元数据留在开头。当传入 size=0 时，实际只分配到 8 字节，而返回指针已经指向这 8 字节之后。紧接着代码以 r14 为基准做偏移 0x18 的写入：先 `add r14, 0x18`，再依次写 `[r14-0x18]`、`[r14-0x10]`、`[r14-0x8]`，即相对缓冲区末尾写下 0、8、16 偏移处的 3 个 8 字节，内容全部来自输入文件。",
+      "cwe_classification": "CWE-131: Incorrect Calculation of Buffer Size",
+      "cuda_subsystem": "CUDA Toolchain —— nvdisasm RELA 节解析",
+      "alignment_formula": "def align(n):\n    return ((((n * 0xaaaaaaaaaaaaaaab) >> 64) >> 3) * 3) << 3\nalign(0..11)  = 0\nalign(12..23) = 24\nalign(24..35) = 48    （Talos 原文给出，非推测）",
+      "technical_details": [
+        "1. 攻击者构造含 SHT_RELA(4) 节的 ELF，把该节 sh_size 设为 1..11。",
+        "2. nvdisasm 取 sh_size：                     mov rsi, qword [rsp+0x8]",
+        "3. 用乘法-移位序列做除以 24 再乘 24 的对齐：",
+        "     mov rax, 0xaaaaaaaaaaaaaaab ; mul rsi ; shr rdx, 0x3",
+        "     lea rsi, [rdx+rdx*2] ; shl rsi, 0x3",
+        "   sh_size<12 时结果 rsi = 0。",
+        "4. 以 rsi=0 调用分配函数：                   call sub_40a610",
+        "5. 分配函数内部的 malloc 包装：",
+        "     lea rbp, [rdi+0x8] ; mov rdi, rbp ; call malloc ; add rax, 0x8",
+        "   即 malloc(8)，返回指针 +8 后已越过该 8 字节块。",
+        "6. 以 r14 为基准开始写：",
+        "     mov eax, dword [rbx] ; mov edx, dword [rbx+0x4]",
+        "     add r14, 0x18 ; add rbx, 0xc ; movsxd rsi, dword [rbx-0x4]",
+        "     mov qword [r14-0x18], rax     ← 越界写 #1（偏移 0）",
+        "     mov qword [r14-0x10], rax     ← 越界写 #3（偏移 16）",
+        "     mov qword [r14-0x8],  rsi     ← 越界写 #2（偏移 8）",
+        "7. 输入字节来自 rbx 指向的 ELF 内存映射，因此写入内容攻击者可控。",
+        "8. Valgrind 实测：3 次 Invalid write of size 8，地址位于 size 8 的块之后 0/8/16 字节。"
+      ],
+      "oracle": "触发成功的可观测信号：nvdisasm 异常退出（0xC0000005 / SIGSEGV）。注意 Talos 的 Valgrind 记录里，崩溃前还有一行 'fatal: poc is not a supported Elf file'，说明该路径在崩溃前已经进入了畸形检查分支 —— 判定时应以**异常退出**为准，而不是以 stderr 文本为准。",
+      "patch_analysis": "[类别推导] 修复落在 CUDA Toolkit 13.0（2025-09-23）。补丁内容未公开。",
+      "exploit_requirements": [
+        "nvcc 生成合法 cubin 作为骨架",
+        "确保骨架中存在（或可构造）一个 SHT_RELA 类型的节",
+        "把该节 sh_size 改为 1..11",
+        "运行 nvdisasm 并观察是否访问违例"
+      ],
+      "references": [
+        "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2172",
+        "https://nvidia.custhelp.com/app/answers/detail/a_id/5661"
+      ]
+    }
+  },
+  "raw_inputs": {
+    "os_environment": {
+      "cve_id": "CVE-2025-23340",
+      "os_name": "Windows / Linux（跨平台）",
+      "os_version": "Windows 10 x64 / 任意 Linux x86_64",
+      "kernel_version": "N/A —— nvdisasm 是纯用户态工具",
+      "architecture": "x86_64",
+      "notes": "[原文抽取] 纯 CPU 工具，无需 GPU/驱动/root。本机实测：Windows 10 x64, CUDA Toolkit v11.2 (V11.2.67), MSVC cl 14.29.30133, GPU = GeForce GTX 1660 (sm_75), 驱动 551.61。工具链路径 C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\"
+    },
+    "cuda_environment": {
+      "cve_id": "CVE-2025-23340",
+      "cuda_driver_version": "不参与触发。本机 551.61",
+      "cuda_toolkit_version": "受影响：所有低于 CUDA Toolkit 13.0 的版本。本机 11.2 在受影响区间内。",
+      "fix_version": "CUDA Toolkit 13.0（NVIDIA 公告 a_id/5661）",
+      "tested_vulnerable_version": "nvdisasm 12.8.90（Talos 实测确认）",
+      "gpu_architecture": "sm_75（仅用于生成 base cubin）",
+      "compute_capability": "7.5",
+      "gpu_model": "NVIDIA GeForce GTX 1660",
+      "affected_tools": [
+        "nvdisasm"
+      ],
+      "tool_path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvdisasm.exe",
+      "trigger_command": "nvdisasm <malformed_elf>"
+    },
+    "affected_component": {
+      "cve_id": "CVE-2025-23340",
+      "name": "nvdisasm",
+      "component_name": "NVIDIA CUDA nvdisasm (CUDA Binary Utilities)",
+      "type": "CUDA Toolkit 命令行工具 —— cubin 反汇编器",
+      "vendor": "NVIDIA Corporation",
+      "version_range": "所有 < CUDA Toolkit 13.0（13.0 修复）",
+      "vulnerable_function": "[原文抽取] 处理 SHT_RELA 节的特例分支（Talos 定位在 0x45ada0，地址对应 nvdisasm 12.8.90）",
+      "file_format_input": "ELF / cubin（含 SHT_RELA 节）",
+      "attack_entry_point": "nvdisasm <malformed_elf>",
+      "advisory_url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5661",
+      "technical_report": "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2172"
+    },
+    "attack_surface": {
+      "cve_id": "CVE-2025-23340",
+      "subsystem": "CUDA Toolchain —— nvdisasm 的 SHT_RELA 节解析路径",
+      "surface_type": "文件格式解析 —— 畸形 ELF 的 RELA 节尺寸字段",
+      "entry_type": "本地文件输入触发（需受害者运行 nvdisasm）",
+      "entry_point": "nvdisasm <malformed.elf>",
+      "required_permissions": "无需任何特权",
+      "attack_vector": "[原文抽取] 攻击者构造一个 sh_type = SHT_RELA(4) 且 sh_size < 12 的节。nvdisasm 把 sh_size 向下对齐到 24 的倍数，小于 12 的对齐结果为 0，于是以 0 作为长度调用内部 malloc 包装（实际 malloc(0+8)=8 字节），返回的可用指针已越过缓冲区末尾，随后按固定步长写入 0x18 字节，造成多处堆越界写，写入内容来自攻击者控制的输入文件字节。",
+      "attack_complexity": "低 —— 只需在合法 cubin 上把某个 RELA 节的 sh_size 改成 1..11 之间的值",
+      "remote_trigger": "需受害者对恶意 ELF 运行 nvdisasm"
+    },
+    "vulnerability_type": {
+      "cve_id": "CVE-2025-23340",
+      "vulnerability_type": {
+        "cwe_id": "CWE-131",
+        "cwe_name": "Incorrect Calculation of Buffer Size",
+        "vulnerability_category": "incorrect-buffer-size",
+        "cvss_score": "7.8",
+        "cvss_severity": "HIGH",
+        "cvss_vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+        "subtype": "sh_size 向下对齐到 24 的倍数后，小于 12 的输入被算成 0，导致按 0 长度分配缓冲区后又写入 0x18 字节",
+        "classification_note": "分类分歧：Talos 归为 CWE-131（缓冲区大小计算错误），NVIDIA 公告描述为 'out-of-bounds read'（CWE-125），但 Talos 的 Valgrind 实测为 Invalid write，即越界写。",
+        "related_cwe": [
+          "CWE-125",
+          "CWE-787",
+          "CWE-190"
+        ],
+        "validation_impact": "多处 8 字节堆越界写，写入内容可控，Talos 认为可达代码执行。"
+      }
+    },
+    "impact_controllability": {
+      "cve_id": "CVE-2025-23340",
+      "impact": "[原文抽取] Valgrind 实测 3 次 Invalid write of size 8，地址分别位于一个 8 字节分配块之后 0 / 8 / 16 字节处。写入内容取自输入 ELF 的字节（攻击者完全可控）。",
+      "controllable_fields": [
+        "ELF 文件全部字节",
+        "目标节的 sh_type（需为 SHT_RELA=4）",
+        "目标节的 sh_size（触发区间：1..11）",
+        "该节内容（决定越界写入的字节）"
+      ],
+      "exploitation_difficulty": "极低。这是一个**单字段触发**的确定性缺陷：把某个 RELA 节的 sh_size 改成小于 12 即可。"
+    },
+    "root_cause": {
+      "cve_id": "CVE-2025-23340",
+      "root_cause": {
+        "summary": "[原文抽取，Talos TALOS-2025-2172] nvdisasm 在 0x45ada0 处理 SHT_RELA 节。它取节的 sh_size（0x45ca86），然后用编译器优化过的除法序列把长度向下对齐到 24 的倍数：`align(n) = ((((n * 0xaaaaaaaaaaaaaaab) >> 64) >> 3) * 3) << 3`。该表达式对 n < 12 的输入返回 0（n=0..11 -> 0；n=12..23 -> 24）。于是它以 0 为长度调用分配函数（0x40a610）。分配函数内部还有一个 malloc 包装（0x465700），该包装执行 `lea rbp, [rdi+0x8]` 后 `call malloc`，再 `add rax, 0x8` —— 即请求 size 时实际分配 size+8，并把 8 字节元数据留在开头。当传入 size=0 时，实际只分配到 8 字节，而返回指针已经指向这 8 字节之后。紧接着代码以 r14 为基准做偏移 0x18 的写入：先 `add r14, 0x18`，再依次写 `[r14-0x18]`、`[r14-0x10]`、`[r14-0x8]`，即相对缓冲区末尾写下 0、8、16 偏移处的 3 个 8 字节，内容全部来自输入文件。",
+        "cwe_classification": "CWE-131: Incorrect Calculation of Buffer Size",
+        "cuda_subsystem": "CUDA Toolchain —— nvdisasm RELA 节解析",
+        "alignment_formula": "def align(n):\n    return ((((n * 0xaaaaaaaaaaaaaaab) >> 64) >> 3) * 3) << 3\nalign(0..11)  = 0\nalign(12..23) = 24\nalign(24..35) = 48    （Talos 原文给出，非推测）",
+        "technical_details": [
+          "1. 攻击者构造含 SHT_RELA(4) 节的 ELF，把该节 sh_size 设为 1..11。",
+          "2. nvdisasm 取 sh_size：                     mov rsi, qword [rsp+0x8]",
+          "3. 用乘法-移位序列做除以 24 再乘 24 的对齐：",
+          "     mov rax, 0xaaaaaaaaaaaaaaab ; mul rsi ; shr rdx, 0x3",
+          "     lea rsi, [rdx+rdx*2] ; shl rsi, 0x3",
+          "   sh_size<12 时结果 rsi = 0。",
+          "4. 以 rsi=0 调用分配函数：                   call sub_40a610",
+          "5. 分配函数内部的 malloc 包装：",
+          "     lea rbp, [rdi+0x8] ; mov rdi, rbp ; call malloc ; add rax, 0x8",
+          "   即 malloc(8)，返回指针 +8 后已越过该 8 字节块。",
+          "6. 以 r14 为基准开始写：",
+          "     mov eax, dword [rbx] ; mov edx, dword [rbx+0x4]",
+          "     add r14, 0x18 ; add rbx, 0xc ; movsxd rsi, dword [rbx-0x4]",
+          "     mov qword [r14-0x18], rax     ← 越界写 #1（偏移 0）",
+          "     mov qword [r14-0x10], rax     ← 越界写 #3（偏移 16）",
+          "     mov qword [r14-0x8],  rsi     ← 越界写 #2（偏移 8）",
+          "7. 输入字节来自 rbx 指向的 ELF 内存映射，因此写入内容攻击者可控。",
+          "8. Valgrind 实测：3 次 Invalid write of size 8，地址位于 size 8 的块之后 0/8/16 字节。"
+        ],
+        "oracle": "触发成功的可观测信号：nvdisasm 异常退出（0xC0000005 / SIGSEGV）。注意 Talos 的 Valgrind 记录里，崩溃前还有一行 'fatal: poc is not a supported Elf file'，说明该路径在崩溃前已经进入了畸形检查分支 —— 判定时应以**异常退出**为准，而不是以 stderr 文本为准。",
+        "patch_analysis": "[类别推导] 修复落在 CUDA Toolkit 13.0（2025-09-23）。补丁内容未公开。",
+        "exploit_requirements": [
+          "nvcc 生成合法 cubin 作为骨架",
+          "确保骨架中存在（或可构造）一个 SHT_RELA 类型的节",
+          "把该节 sh_size 改为 1..11",
+          "运行 nvdisasm 并观察是否访问违例"
+        ],
+        "references": [
+          "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2172",
+          "https://nvidia.custhelp.com/app/answers/detail/a_id/5661"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "os_environment": {
+      "source_file": "1_os_environment.json",
+      "sha256": "37d471b93d24f1c386bfe2f47e4531dab352d32d3a8c1eef03e6009af84b1512",
+      "size_bytes": 521
+    },
+    "cuda_environment": {
+      "source_file": "2_cuda_environment.json",
+      "sha256": "72e28fce1d3e4ee84938d1cc9212eff2c0c910d1a411357897d52403ad69ead1",
+      "size_bytes": 694
+    },
+    "affected_component": {
+      "source_file": "3_affected_component.json",
+      "sha256": "19a0ede8580c338362158ee29e09e0935e0ab64861b0455aa1e910edcfebfd02",
+      "size_bytes": 729
+    },
+    "attack_surface": {
+      "source_file": "4_attack_surface.json",
+      "sha256": "c8c2bc732f1d931aad777ffe6a7e2e53e3bc265184a6f2c26651caee0c77d083",
+      "size_bytes": 1009
+    },
+    "vulnerability_type": {
+      "source_file": "5_vulnerability_type.json",
+      "sha256": "7940021ace7046ac6ced11e9023f28c1c8abf43a320679a1b9be59b0a03f796b",
+      "size_bytes": 904
+    },
+    "impact_controllability": {
+      "source_file": "6_impact_controllability.json",
+      "sha256": "c071a8b8efef7f3e11996051bb18a84d9b69dfb59eedd4f6f99e7de6ed7b9ce5",
+      "size_bytes": 629
+    },
+    "root_cause": {
+      "source_file": "7_root_cause.json",
+      "sha256": "61c138e8400dcfb3aa1848dbb9fb57c7bee3f2dbcc82642d501be8285e605608",
+      "size_bytes": 3653
+    }
+  },
+  "field_states": {
+    "/dimensions/os_environment": "VALID",
+    "/dimensions/os_environment/cve_id": "VALID",
+    "/dimensions/os_environment/os_name": "VALID",
+    "/dimensions/os_environment/os_version": "VALID",
+    "/dimensions/os_environment/kernel_version": "VALID",
+    "/dimensions/os_environment/architecture": "VALID",
+    "/dimensions/os_environment/notes": "VALID",
+    "/dimensions/os_environment/tested_environment": "MISSING",
+    "/dimensions/os_environment/configuration_notes": "MISSING",
+    "/dimensions/os_environment/required_hardware": "MISSING",
+    "/dimensions/os_environment/key_dependencies": "MISSING",
+    "/dimensions/os_environment/software_requirements": "MISSING",
+    "/dimensions/os_environment/operating_systems": "MISSING",
+    "/dimensions/cuda_environment": "VALID",
+    "/dimensions/cuda_environment/cve_id": "VALID",
+    "/dimensions/cuda_environment/cuda_driver_version": "VALID",
+    "/dimensions/cuda_environment/cuda_toolkit_version": "VALID",
+    "/dimensions/cuda_environment/fix_version": "VALID",
+    "/dimensions/cuda_environment/tested_vulnerable_version": "VALID",
+    "/dimensions/cuda_environment/gpu_architecture": "VALID",
+    "/dimensions/cuda_environment/compute_capability": "VALID",
+    "/dimensions/cuda_environment/gpu_model": "VALID",
+    "/dimensions/cuda_environment/affected_tools": "VALID",
+    "/dimensions/cuda_environment/affected_tools/0": "VALID",
+    "/dimensions/cuda_environment/tool_path": "VALID",
+    "/dimensions/cuda_environment/trigger_command": "VALID",
+    "/dimensions/cuda_environment/windows_path_hint": "MISSING",
+    "/dimensions/cuda_environment/linux_path_hint": "MISSING",
+    "/dimensions/cuda_environment/cuda_version_affected": "MISSING",
+    "/dimensions/cuda_environment/cuda_api_surface": "MISSING",
+    "/dimensions/cuda_environment/note": "MISSING",
+    "/dimensions/cuda_environment/driver_version": "MISSING",
+    "/dimensions/affected_component": "VALID",
+    "/dimensions/affected_component/cve_id": "VALID",
+    "/dimensions/affected_component/name": "VALID",
+    "/dimensions/affected_component/component_name": "VALID",
+    "/dimensions/affected_component/type": "VALID",
+    "/dimensions/affected_component/vendor": "VALID",
+    "/dimensions/affected_component/version_range": "VALID",
+    "/dimensions/affected_component/vulnerable_function": "VALID",
+    "/dimensions/affected_component/file_format_input": "VALID",
+    "/dimensions/affected_component/attack_entry_point": "VALID",
+    "/dimensions/affected_component/advisory_url": "VALID",
+    "/dimensions/affected_component/technical_report": "VALID",
+    "/dimensions/affected_component/product_url": "MISSING",
+    "/dimensions/affected_component/tool_path": "MISSING",
+    "/dimensions/affected_component/affected_binary": "MISSING",
+    "/dimensions/affected_component/description": "MISSING",
+    "/dimensions/attack_surface": "VALID",
+    "/dimensions/attack_surface/cve_id": "VALID",
+    "/dimensions/attack_surface/subsystem": "VALID",
+    "/dimensions/attack_surface/surface_type": "VALID",
+    "/dimensions/attack_surface/entry_type": "VALID",
+    "/dimensions/attack_surface/entry_point": "VALID",
+    "/dimensions/attack_surface/required_permissions": "VALID",
+    "/dimensions/attack_surface/attack_vector": "VALID",
+    "/dimensions/attack_surface/attack_complexity": "VALID",
+    "/dimensions/attack_surface/remote_trigger": "VALID",
+    "/dimensions/attack_surface/trigger_mechanism": "MISSING",
+    "/dimensions/attack_surface/exploit_primitive": "MISSING",
+    "/dimensions/attack_surface/privilege_required": "MISSING",
+    "/dimensions/vulnerability_type": "VALID",
+    "/dimensions/vulnerability_type/cve_id": "VALID",
+    "/dimensions/vulnerability_type/cwe_id": "VALID",
+    "/dimensions/vulnerability_type/cwe_name": "VALID",
+    "/dimensions/vulnerability_type/vulnerability_category": "VALID",
+    "/dimensions/vulnerability_type/cvss_score": "VALID",
+    "/dimensions/vulnerability_type/cvss_severity": "VALID",
+    "/dimensions/vulnerability_type/cvss_vector": "VALID",
+    "/dimensions/vulnerability_type/subtype": "VALID",
+    "/dimensions/vulnerability_type/classification_note": "VALID",
+    "/dimensions/vulnerability_type/related_cwe": "VALID",
+    "/dimensions/vulnerability_type/related_cwe/0": "VALID",
+    "/dimensions/vulnerability_type/related_cwe/1": "VALID",
+    "/dimensions/vulnerability_type/related_cwe/2": "VALID",
+    "/dimensions/vulnerability_type/validation_impact": "VALID",
+    "/dimensions/impact_controllability": "VALID",
+    "/dimensions/impact_controllability/cve_id": "VALID",
+    "/dimensions/impact_controllability/impact": "VALID",
+    "/dimensions/impact_controllability/controllable_fields": "VALID",
+    "/dimensions/impact_controllability/controllable_fields/0": "VALID",
+    "/dimensions/impact_controllability/controllable_fields/1": "VALID",
+    "/dimensions/impact_controllability/controllable_fields/2": "VALID",
+    "/dimensions/impact_controllability/controllable_fields/3": "VALID",
+    "/dimensions/impact_controllability/exploitation_difficulty": "VALID",
+    "/dimensions/impact_controllability/availability_impact": "MISSING",
+    "/dimensions/impact_controllability/confidentiality_impact": "MISSING",
+    "/dimensions/impact_controllability/attack_complexity_level": "MISSING",
+    "/dimensions/impact_controllability/privilege_required_level": "MISSING",
+    "/dimensions/impact_controllability/scope": "MISSING",
+    "/dimensions/impact_controllability/trigger_feasibility": "MISSING",
+    "/dimensions/impact_controllability/limiting_factors": "MISSING",
+    "/dimensions/impact_controllability/integrity_impact": "MISSING",
+    "/dimensions/impact_controllability/user_interaction": "MISSING",
+    "/dimensions/impact_controllability/controllable_factors": "MISSING",
+    "/dimensions/root_cause": "VALID",
+    "/dimensions/root_cause/cve_id": "VALID",
+    "/dimensions/root_cause/summary": "VALID",
+    "/dimensions/root_cause/cwe_classification": "VALID",
+    "/dimensions/root_cause/cuda_subsystem": "VALID",
+    "/dimensions/root_cause/alignment_formula": "VALID",
+    "/dimensions/root_cause/technical_details": "VALID",
+    "/dimensions/root_cause/technical_details/0": "VALID",
+    "/dimensions/root_cause/technical_details/1": "VALID",
+    "/dimensions/root_cause/technical_details/2": "VALID",
+    "/dimensions/root_cause/technical_details/3": "VALID",
+    "/dimensions/root_cause/technical_details/4": "VALID",
+    "/dimensions/root_cause/technical_details/5": "VALID",
+    "/dimensions/root_cause/technical_details/6": "VALID",
+    "/dimensions/root_cause/technical_details/7": "VALID",
+    "/dimensions/root_cause/technical_details/8": "VALID",
+    "/dimensions/root_cause/technical_details/9": "VALID",
+    "/dimensions/root_cause/technical_details/10": "VALID",
+    "/dimensions/root_cause/technical_details/11": "VALID",
+    "/dimensions/root_cause/technical_details/12": "VALID",
+    "/dimensions/root_cause/technical_details/13": "VALID",
+    "/dimensions/root_cause/technical_details/14": "VALID",
+    "/dimensions/root_cause/technical_details/15": "VALID",
+    "/dimensions/root_cause/technical_details/16": "VALID",
+    "/dimensions/root_cause/technical_details/17": "VALID",
+    "/dimensions/root_cause/oracle": "VALID",
+    "/dimensions/root_cause/patch_analysis": "VALID",
+    "/dimensions/root_cause/exploit_requirements": "VALID",
+    "/dimensions/root_cause/exploit_requirements/0": "VALID",
+    "/dimensions/root_cause/exploit_requirements/1": "VALID",
+    "/dimensions/root_cause/exploit_requirements/2": "VALID",
+    "/dimensions/root_cause/exploit_requirements/3": "VALID",
+    "/dimensions/root_cause/references": "VALID",
+    "/dimensions/root_cause/references/0": "VALID",
+    "/dimensions/root_cause/references/1": "VALID",
+    "/dimensions/root_cause/fixed_code_summary": "MISSING",
+    "/dimensions/root_cause/fix_description": "MISSING",
+    "/dimensions/root_cause/file": "MISSING",
+    "/dimensions/root_cause/root_cause_detail": "MISSING",
+    "/dimensions/root_cause/introduced_by": "MISSING",
+    "/dimensions/root_cause/disclosure_timeline": "MISSING",
+    "/dimensions/root_cause/vulnerable_code_summary": "MISSING",
+    "/dimensions/root_cause/function": "MISSING",
+    "/dimensions/root_cause/reported_by": "MISSING",
+    "/dimensions/root_cause/fix_version": "MISSING",
+    "/dimensions/root_cause/fix_mechanism": "MISSING",
+    "/dimensions/root_cause/line": "MISSING"
+  },
+  "provenance": [
+    {
+      "dimension": "os_environment",
+      "normalized_path": "/dimensions/os_environment/cve_id",
+      "source_file": "1_os_environment.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "os_environment",
+      "normalized_path": "/dimensions/os_environment/os_name",
+      "source_file": "1_os_environment.json",
+      "field_path": "/os_name",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "os_environment",
+      "normalized_path": "/dimensions/os_environment/os_version",
+      "source_file": "1_os_environment.json",
+      "field_path": "/os_version",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "os_environment",
+      "normalized_path": "/dimensions/os_environment/kernel_version",
+      "source_file": "1_os_environment.json",
+      "field_path": "/kernel_version",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "os_environment",
+      "normalized_path": "/dimensions/os_environment/architecture",
+      "source_file": "1_os_environment.json",
+      "field_path": "/architecture",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "os_environment",
+      "normalized_path": "/dimensions/os_environment/notes",
+      "source_file": "1_os_environment.json",
+      "field_path": "/notes",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/cve_id",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/cuda_driver_version",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/cuda_driver_version",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/cuda_toolkit_version",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/cuda_toolkit_version",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/fix_version",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/fix_version",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/tested_vulnerable_version",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/tested_vulnerable_version",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/gpu_architecture",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/gpu_architecture",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/compute_capability",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/compute_capability",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/gpu_model",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/gpu_model",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/affected_tools",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/affected_tools",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/affected_tools/0",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/affected_tools/0",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/tool_path",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/tool_path",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "cuda_environment",
+      "normalized_path": "/dimensions/cuda_environment/trigger_command",
+      "source_file": "2_cuda_environment.json",
+      "field_path": "/trigger_command",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/cve_id",
+      "source_file": "3_affected_component.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/name",
+      "source_file": "3_affected_component.json",
+      "field_path": "/name",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/component_name",
+      "source_file": "3_affected_component.json",
+      "field_path": "/component_name",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/type",
+      "source_file": "3_affected_component.json",
+      "field_path": "/type",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/vendor",
+      "source_file": "3_affected_component.json",
+      "field_path": "/vendor",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/version_range",
+      "source_file": "3_affected_component.json",
+      "field_path": "/version_range",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/vulnerable_function",
+      "source_file": "3_affected_component.json",
+      "field_path": "/vulnerable_function",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/file_format_input",
+      "source_file": "3_affected_component.json",
+      "field_path": "/file_format_input",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/attack_entry_point",
+      "source_file": "3_affected_component.json",
+      "field_path": "/attack_entry_point",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/advisory_url",
+      "source_file": "3_affected_component.json",
+      "field_path": "/advisory_url",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "affected_component",
+      "normalized_path": "/dimensions/affected_component/technical_report",
+      "source_file": "3_affected_component.json",
+      "field_path": "/technical_report",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/cve_id",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/subsystem",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/subsystem",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/surface_type",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/surface_type",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/entry_type",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/entry_type",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/entry_point",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/entry_point",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/required_permissions",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/required_permissions",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/attack_vector",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/attack_vector",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/attack_complexity",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/attack_complexity",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "attack_surface",
+      "normalized_path": "/dimensions/attack_surface/remote_trigger",
+      "source_file": "4_attack_surface.json",
+      "field_path": "/remote_trigger",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/cve_id",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/cwe_id",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/cwe_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/cwe_name",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/cwe_name",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/vulnerability_category",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/vulnerability_category",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/cvss_score",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/cvss_score",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/cvss_severity",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/cvss_severity",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/cvss_vector",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/cvss_vector",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/subtype",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/subtype",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/classification_note",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/classification_note",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/related_cwe",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/related_cwe",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/related_cwe/0",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/related_cwe/0",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/related_cwe/1",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/related_cwe/1",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/related_cwe/2",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/related_cwe/2",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "vulnerability_type",
+      "normalized_path": "/dimensions/vulnerability_type/validation_impact",
+      "source_file": "5_vulnerability_type.json",
+      "field_path": "/vulnerability_type/validation_impact",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/cve_id",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/impact",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/impact",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/controllable_fields",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/controllable_fields",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/controllable_fields/0",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/controllable_fields/0",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/controllable_fields/1",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/controllable_fields/1",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/controllable_fields/2",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/controllable_fields/2",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/controllable_fields/3",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/controllable_fields/3",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "impact_controllability",
+      "normalized_path": "/dimensions/impact_controllability/exploitation_difficulty",
+      "source_file": "6_impact_controllability.json",
+      "field_path": "/exploitation_difficulty",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/cve_id",
+      "source_file": "7_root_cause.json",
+      "field_path": "/cve_id",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/summary",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/summary",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/cwe_classification",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/cwe_classification",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/cuda_subsystem",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/cuda_subsystem",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/alignment_formula",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/alignment_formula",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/0",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/0",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/1",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/1",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/2",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/2",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/3",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/3",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/4",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/4",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/5",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/5",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/6",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/6",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/7",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/7",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/8",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/8",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/9",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/9",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/10",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/10",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/11",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/11",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/12",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/12",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/13",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/13",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/14",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/14",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/15",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/15",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/16",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/16",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/technical_details/17",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/technical_details/17",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/oracle",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/oracle",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/patch_analysis",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/patch_analysis",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/exploit_requirements",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/exploit_requirements",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/exploit_requirements/0",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/exploit_requirements/0",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/exploit_requirements/1",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/exploit_requirements/1",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/exploit_requirements/2",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/exploit_requirements/2",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/exploit_requirements/3",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/exploit_requirements/3",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/references",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/references",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/references/0",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/references/0",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    },
+    {
+      "dimension": "root_cause",
+      "normalized_path": "/dimensions/root_cause/references/1",
+      "source_file": "7_root_cause.json",
+      "field_path": "/root_cause/references/1",
+      "state": "VALID",
+      "assertion_kind": "input_assertion",
+      "verification": "unverified"
+    }
+  ],
+  "diagnostics": [],
+  "assertion_kind": "input_assertion",
+  "verification": "unverified",
+  "run_id": "dca99ec99e46446997428e86ebbf5b87",
+  "input_status": "VALID"
+}

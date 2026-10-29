@@ -1,0 +1,14 @@
+[
+ {
+  "cve_id": "CVE-2024-0076",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 480.3,
+  "reason": "受控样本 1/4 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 3,
+  "successes": 3
+ }
+]

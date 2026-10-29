@@ -1,0 +1,20 @@
+{
+  "index_schema_version": "1.0",
+  "cve_id": "CVE-2025-23340",
+  "runs": {
+    "565c2c701d7540efa5885b9e0d052ecc": {
+      "manifest_sha256": "2ec202b0be1e68234ca104192c5e7fafe0ed96738312605d4d28a766b0f81dd3",
+      "package_kind": "GENERATION_RESEARCH_INCOMPLETE",
+      "candidate_execution_status": "NOT_EXECUTED",
+      "real_cve_verification": "NOT_VERIFIED",
+      "package": null
+    },
+    "d24848f800734b2e854e538a1b99eb00": {
+      "manifest_sha256": "a386aeb6e5b512a8c92c2f53633ad8a531407003516624a1b4f9dc2e22d0f1b1",
+      "package_kind": "GENERATION_RESEARCH_INCOMPLETE",
+      "candidate_execution_status": "NOT_EXECUTED",
+      "real_cve_verification": "NOT_VERIFIED",
+      "package": null
+    }
+  }
+}

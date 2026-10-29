@@ -1,0 +1,12 @@
+{
+  "benign": [
+    "benign.cubin"
+  ],
+  "crafted": [
+    "crafted_sec8_shsize_00000000ffffffff.cubin",
+    "crafted_sec8_shsize_fffffffffffffff0.cubin"
+  ],
+  "controls": [
+    "ctrl_sh_size_restored_0000000000000010.cubin"
+  ]
+}

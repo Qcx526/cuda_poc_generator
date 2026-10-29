@@ -1,0 +1,17 @@
+{
+  "archive_directory": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\outputs\\CVE-2024-0076\\runs\\ff2384ebec0b451186a903c13598dd01",
+  "archive_status": "ARCHIVED",
+  "candidate_execution_status": "NOT_EXECUTED",
+  "cve_id": "CVE-2024-0076",
+  "delivery_schema_version": "1.0",
+  "error_type": null,
+  "explanation_zh": "生成流程未完成，仅保存本轮不完整研究材料；没有交付 ZIP。",
+  "generation_status": "CONTEXT_ERROR",
+  "manifest_sha256": null,
+  "package_path": null,
+  "package_sha256": null,
+  "package_status": "NOT_PACKAGED",
+  "real_cve_verification": "NOT_VERIFIED",
+  "report_locale": "zh-CN",
+  "run_id": "ff2384ebec0b451186a903c13598dd01"
+}
