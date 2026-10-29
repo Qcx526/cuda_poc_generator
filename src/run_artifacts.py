@@ -12,6 +12,7 @@ someone who does not have our API key.
 """
 
 import argparse
+import json
 import subprocess
 from pathlib import Path
 from typing import List, Optional
@@ -20,6 +21,29 @@ from .grader_matrix import render_matrix_script
 
 ROLES = (("benign", "BENIGN"), ("ctrl", "CONTROL"),
          ("poc", "MALICIOUS"), ("crafted", "MALICIOUS"))
+
+
+def roles_from_manifest(directory: Path) -> dict:
+    """Roles as the generator declared them, when it left a manifest.
+
+    Guessing from filenames works for our own samples; a generated candidate may
+    name its files anything, and then every file grades as UNKNOWN. The manifest
+    is what the candidate itself asserted, and it is already in the directory.
+    """
+    path = Path(directory) / "artifacts.json"
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    mapping = {}
+    for role, names in (("BENIGN", data.get("benign")),
+                        ("CONTROL", data.get("controls")),
+                        ("MALICIOUS", data.get("crafted"))):
+        for name in names or []:
+            mapping[name] = role
+    return mapping
 
 
 def role_for(name: str) -> str:
@@ -32,7 +56,8 @@ def role_for(name: str) -> str:
 def run(directory: Path, image: str, invocations: List[List[str]],
         timeout: int = 600) -> str:
     directory = Path(directory).resolve()
-    entries = [(path.name, role_for(path.name))
+    declared = roles_from_manifest(directory)
+    entries = [(path.name, declared.get(path.name) or role_for(path.name))
                for path in sorted(directory.glob("*.cubin"))]
     script = render_matrix_script(invocations, entries)
     (directory / "_matrix.sh").write_bytes(script.encode("utf-8"))
