@@ -25,6 +25,7 @@
 | structure_e_shnum_4096.cubin | `libc.so.6+0x183000` | null-read | 12.4.1 不崩 → 非新漏洞 | UNTRIAGED |
 | sec3.sh_type_sec3.sh_type_0.cubin | `nvdisasm+0x10000` | null-read | 12.4.1 崩; 13.0.0 不崩 → 非新漏洞 | 已有人上报（KNOWN） |
 | sec8.sh_offset_sec8.sh_offset_0.cubin | `nvdisasm+0x49000` | null-read | 12.4.1 崩; 13.0.0 不崩 → 非新漏洞 | 已有人上报（KNOWN） |
+| boundary_sh_size_4294967295.cubin | `cuobjdump+0xb000` | read-out-of-bounds | 未测 | UNTRIAGED |
 
 ### CVE-2025-23340
 

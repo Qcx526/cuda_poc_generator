@@ -1,214 +1,140 @@
-# CUDA / GPU 驱动 PoC 生成与复现框架
+# CUDA / GPU 工具链漏洞：PoC 生成、复现与变异发现
 
-从"模型写一个候选 PoC"走到"框架自己判定它是否真的复现了漏洞"。
-核心不是生成，而是**判定**：候选的自述不算证据，判分器自己把产物喂给目标工具。
+给定一条 CVE 的公告，框架生成 PoC、在容器里执行、**自己判定是否真的复现**；
+再用这个 PoC 做定向变异，看能不能找到别的崩溃点，并按 CVE 的格式登记、查重。
 
-**当前状态：闭环可用（生成 → 执行 → 判分 → 归因 → 反馈重试）。**
-覆盖三层目标：用户态工具链、驱动用户态组件、驱动内核组件。前两层可复现，第三层受接口硬化限制（见 §7）。
+判定不采信候选的自述：出问题的文件、退出码、崩溃点都由框架在冻结的镜像里实测得到。
 
-## 1. 快速开始
+**当前状态**：复现能力在 3 条 CVE 上成立；变异发现能力已跑通闭环，
+在 CUDA 12.4 上找到 2 个独立崩溃点，查重后归属为 CVE-2024-53877。
+
+---
+
+## 30 秒演示（离线，不需要 API key）
 
 ```bash
-# 前置：Docker Desktop 已启动；仓库根目录有 .env（模型端点与密钥）
-pip install -e ".[rag]"          # RAG 可选
-
-# ① 单次生成（只生成与静态检查，不执行）
-python main.py --cve-id CVE-2025-23340
-
-# ② 闭环跑一个 CVE（生成→执行→判分→反馈重试）
-python -u -m src.batch_loop --cve CVE-2025-23340 --iterations 2 --repeat 1 --workdir data/loop/mine
-
-# ③ 按层批量
-python -u -m src.batch_loop --tier userland_toolchain --iterations 2 --limit 3
+docker build -t cpg/cuda112-py3:1.0 -f docker/Dockerfile .   # 首次需要
+make demo
 ```
 
-产物位置：
+`make demo` 做三件事，全部在容器内完成：
 
-| 路径 | 内容 |
-|---|---|
-| `data/outputs/<CVE>/` | 候选脚本、它产出的样本、`artifacts.json` |
-| `data/loop/<run>/<CVE>/loop_report.zh-CN.md` | 人读报告：判定、证据、每轮观察 |
-| `data/loop/<run>/<CVE>/iteration_N_observation.txt` | 原始执行输出（含协议行） |
-| `data/loop/<run>/batch_summary.zh-CN.md` | 批次汇总 |
+| 步骤 | 做什么 | 看什么 |
+|---|---|---|
+| `make verify` | 跑良性 / 受控 / 对照三个样本，再重放判定 | `verdict: SUPPORTED` 与三条件逐条理由 |
+| `make mutate` | 以 PoC 为种子改字段，采崩溃指纹 | `SAME_SITE` / `CLEAN` / `NOVEL_SITE` 三分类 |
+| `make report` | 汇总复现状态与新发现 | `demo/CVE-2024-0076/out/status.zh-CN.md` |
 
-## 2. 目标分层
+演示细节与预期输出见 [`demo/CVE-2024-0076/README.md`](demo/CVE-2024-0076/README.md)。
 
-| 层 | 输入形态 | 判定方式 | 现状 |
+---
+
+## 能力一：复现 CVE
+
+判定标准就是公告本身：**组件、现象、受影响版本**。在其中一个受影响版本上出现该现象即为复现成功；
+更新版本不再崩溃是修复生效，不是复现失败。
+
+| CVE | 公告现象 | 实测 | 判定 |
 |---|---|---|---|
-| `userland_toolchain` | 文件（ELF/cubin）喂给 CUDA 工具 | 进程退出码 / 信号 | **可复现** |
-| `driver_userland` | 着色器字节码等，喂给驱动用户态组件 | 访问违例 + **模块归因** | 可达，触发条件未解 |
-| `driver_kernel` | ioctl / escape 请求发给内核驱动 | bugcheck + 跨重启取证 | 入口可达，**分发前被拒** |
+| CVE-2024-0076 | cuobjdump/nvdisasm 畸形 ELF → 越界读 | 11.2 崩溃（`cuobjdump+0xb000`，越界读） | `SUPPORTED` |
+| CVE-2025-23339 | cuobjdump DWARF 解析崩溃 | 崩溃，基线干净 | `SUPPORTED` |
+| CVE-2025-23340 | nvdisasm 畸形 ELF → 越界读 | 11.2 崩溃（`nvdisasm+0x28000`） | `SUPPORTED` |
+| CVE-2025-23247 | cuobjdump `.nv_debug_source` 长度回绕 | 未复现 | `NOT_VERIFIED` |
 
-## 3. 架构
-
-```text
-specs/<CVE>/spec.json          规格：输入格式、锚点命令、消费字段、oracle
-        │
-        ├─ generate    LLM 读规格写出候选脚本（lint 拒绝 → 重写）
-        │
-        ├─ execute     候选在容器内运行；判分器**独立**把声明的产物喂给目标工具
-        │              （内核层：主机 + 布防标记 + 重启后取证）
-        │
-        ├─ grade       解析协议行 → 三角色判定（benign / crafted / controls）
-        │
-        ├─ diagnose    失败归因到 12 类（NO_OBSERVATION / PATH_NOT_REACHED /
-        │              FALSE_POSITIVE / PRECONDITION_VIOLATED …）
-        │
-        └─ feedback    可归因 → 带证据进入下一轮；不可归因 → 停止并说明原因
-```
-
-关键设计：**候选与判分器分离**。候选只能通过 `artifacts.json` 声明产出了什么，
-判分器按声明逐个执行，不采信候选日志里的自我描述。
-
-## 4. 判定规范
-
-三条件同时成立才算复现：
+判定结果不是单一分数，而是可追溯的三条件 + 崩溃点指纹：
 
 ```
-1. benign 样本不崩溃      （基线干净）
-2. crafted 样本崩溃        （触发成立）
-3. controls 样本不崩溃      （单变量回指，排除"怎么改都崩"）
+受控样本 1/1 个产生崩溃退出码       ← 造出来的文件确实让它崩
+良性基线 1 个全部未崩溃             ← 不是"什么都能让它崩"
+机制对照 1 个全部未崩溃             ← 改回正常值就不崩
 ```
 
-否则为 `NOT_VERIFIED`（有崩溃但不干净）或 `UNKNOWN`（没有可判读的观察）。
+## 能力二：变异发现
 
-两条硬规则：
+以已验证的 PoC 为种子，只改一个字段，每次改动都记录崩溃点指纹。
+同一个崩溃点无论多少输入到达都只算一条——去重靠位置，不靠文件名。
 
-- **崩溃必须归因到模块**。只看退出码会把 D3D 校验器的崩溃当成驱动崩溃（实测踩过）。
-- **零结果必须交叉验证**。"导出 0 个符号""0 个调用点"都出现过，都是解析错误而非事实。
+**为什么算子要"代入边界值"而不是随机翻字节**：11.2 那次崩溃需要 `sh_size = 0xFFFFFFFF`
+这样完整的多字节模式，单字节翻转凑不出来。实测：单字节随机变异在 12.4 上 124 个变体 0 崩溃；
+改用边界值（0 / 1 / 0xFFFFFFFF / 文件长度）代入 ELF 每个字段后，347 个变体里 8 个崩溃。
 
-### 4.1 未归属的崩溃（`data/findings/novel/`）
+在 CUDA **12.4**（0076 的修复版本）上得到的两个独立崩溃点：
 
-判定没通过、但确实有样本崩溃时，**崩溃不会随判定一起丢弃**。它可能是坏 PoC，
-也可能是另一个没人报过的 bug，后者比前者有价值。
+| 触发 | 崩溃点 | 类型 | 12.4 | 13.0 |
+|---|---|---|---|---|
+| 节 3 `sh_type` 为未知值 / `sh_size=1` | `nvdisasm+0x10b10` | 空指针读 | 崩 | 不崩 |
+| 节 8 `sh_offset=0` | `nvdisasm+0x495ee` | 空指针读 | 崩 | 不崩 |
+
+### 发现新崩溃之后
+
+不是"最新版本仍崩才算新漏洞"，而是：
+
+1. **登记**：像 CVE 一样写清组件、现象、触发条件、崩溃点、实测版本、推断受影响范围
+2. **查重**：检索是否有已发布的相同描述
+3. **结论**：没人报过 → 未披露问题，可带上实测影响范围上报
+
+上面两个崩溃点走完这两步，匹配到 **CVE-2024-53877**（nvdisasm 畸形 ELF → NULL 解引用，
+CWE-476，影响 12.8 之前，12.8 修复）——组件、现象、版本范围全部吻合，因此判定为**已披露问题**。
+每条发现的 `disclosure.md` 就是这份登记文档。
+
+---
+
+## 判定为什么可信
+
+| 机制 | 做法 |
+|---|---|
+| 环境冻结 | 判分只跑 `docker/Dockerfile` 构建的镜像，只读、断网、无额外工具 |
+| 不采信自述 | 候选只能产出文件；跑什么、怎么判由框架决定 |
+| 崩溃点指纹 | `LD_PRELOAD` 捕获信号，记录模块 + 偏移 + 故障地址 + 出错指令，再原样 re-raise（退出码不变） |
+| 读/写区分 | 主机侧用 capstone 解码出错指令，区分空指针读、越界读、写任意地址 |
+| 去重 | 指纹按 4 KB 取整，同一处崩溃只记一条 |
+| 分析独立 | valgrind 等工具只在 `docker/Dockerfile.analysis` 里，判分镜像不含 |
+
+---
+
+## 仓库结构
+
+```
+src/            判定、变异、指纹、报告（核心逻辑）
+  closed_loop.py        loop 控制与状态机
+  loop_stages.py        生成 / 执行 / 判分三个阶段
+  reproduction.py       三条件判定
+  mutation_campaign.py  变异战役与知识回灌
+  novel_findings.py     发现入库、CVE 式登记
+  fault_site.py         读/写判定与严重度
+  status_report.py      一页汇总
+tools/driver/crashcap.c 崩溃点采集（LD_PRELOAD）
+docker/         运行时镜像与分析镜像
+demo/           一条完整可跑演示
+specs/          各 CVE 的规格（组件、触发字段、变异轴）
+tests/          单元测试（1550+ 用例）
+docs/           方法与实验记录
+```
+
+## 环境
+
+- Python 3.12+，`pip install -r requirements.txt`（RAG 可选：`pip install -e ".[rag]"`）
+- Docker（判分与变异都在容器内执行）
+- 生成阶段需要模型端点，配置在 `.env`（演示不需要）
 
 ```bash
-python -m src.novel_findings list                 # 全部
-python -m src.novel_findings list --cve CVE-2025-23340
+python -m pytest -q        # 测试
+python -m ruff check src   # 静态检查
 ```
 
-每条记录一个目录：
+## 现状与限制
 
-```text
-data/findings/novel/<CVE>/<时间戳>_<文件名>_exit<码>/
-  finding.json      # 判定、理由、退出码、工具、指纹、sha256、triage=UNTRIAGED
-  <artifact>        # 崩溃样本副本（.cubin/.elf/.fatbin 不入库）
-  observation.txt   # 崩溃前后的日志片段
-```
+- **内核驱动路径未打通**：`driver_kernel` 层的入口可达，但分发前被驱动拒绝；
+  这需要可加载的驱动模块，不是本框架能单独解决的。
+- **变异只在 2 条 CVE 上有种子**：其余规格缺少能稳定崩溃的样本，变异无法展开。
+- **未测规模**：3 条 CVE 复现、2 条变异，样本量不足以给出成功率，文中不提供此类数字。
+- **文档中标注了两处公告与实测的偏差**（0076 与 23340 的触发窗口比公告更窄）。
 
-指纹形如 `nvdisasm+0x28000`（模块 + 4 KB 取整的偏移）：**同一处崩溃只记一条**，
-不同处才视为新发现。记录**不改变判定**，也不判断这是不是真 bug——分诊留给能花时间看的人。
-判定为 `SUPPORTED` 的样本不在此列：它已由本轮运行本身保存。
+## 文档
 
-### 4.2 变异战役（`src/mutation_campaign.py`）
-
-按规格声明的轴逐个改字段，一次容器内跑完，按**崩溃指纹**分类：
-
-```bash
-python -m src.mutation_campaign --cve CVE-2025-23340 --workdir data/mutation/demo
-```
-
-| 结果 | 含义 |
+| 文件 | 内容 |
 |---|---|
-| `SAME_SITE` | 又打中同一处 → 同一个 bug |
-| `NOVEL_SITE` | 崩在别处 → 候选新发现 |
-| `CLEAN` | 改了就不崩 → 该字段是必要条件 |
-
-产物：`data/mutation/<run>/report.md`（含自动结论）、`variants.json`，
-以及写入 `data/knowledge_bases/mutation/<CVE>.md` 的知识条目——下一轮生成会检索到
-"改哪个字段不会改变崩溃点"，不必重新试错。
-
-索引按文档修改时间自动失效重建，新增条目不会被旧索引挡住。
-
-## 5. 规格（`specs/`）
-
-7 份规格，每份把 CVE 描述变成可执行定义：
-
-```json
-{
-  "cve_id": "CVE-2025-23340",
-  "anchor": {"binary": "nvdisasm", "invocation": ["nvdisasm", "{artifact}"],
-             "input_magic": "0x7f454c46", "baseline_recipe": "..."},
-  "parser": {"consumed_fields": [{"name": "sh_size", "offset": 32, "bound_check": "none"}]},
-  "oracle": {"field": "sh_size", "condition": "sh_type == SHT_RELA(4) and 0 <= sh_size <= 11"},
-  "claims": {"每条结论": "带 source / verified_by / confidence"}
-}
-```
-
-`oracle` 决定策略：有精确 oracle 时走**定点变异**（`MUTATE_DIRECTED`），无需盲搜。
-
-## 6. 协议行（判分器读这个，不读自然语言）
-
-| 行 | 含义 |
-|---|---|
-| `[CPG_RUN] <file>::<tool> exit=<n>` | 一次受控执行及其退出码 |
-| `[CPG_MANIFEST] <n> artifacts declared` / `missing` | 候选是否声明了产物 |
-| `[CPG_CANDIDATE_FAULT] <exception>` | 候选自身抛异常，无可判分内容 |
-| `[CPG_CRASH] <file> sig=.. off=.. addr=.. module=..` | 崩溃点与故障地址（用于指纹） |
-| `[CPG_STEP:...]` | 工具链步骤（编译/汇编）成功或失败 |
-
-## 7. 已知边界（实测结论）
-
-**内核层未打通，且不是技术细节问题。** 六条否证（详见 `docs/P4_Z_KERNEL_ESCAPE_PROBE.md`）：
-
-1. NVAPI 不经过 `kernel32!DeviceIoControl` 触达驱动（IAT 钩子拦截到 0 次）
-2. 二进制里的 `0x1000xxxx` 立即数多为结构体版本字，不是 escape 码
-3. 设备是否带命令缓冲不影响结果
-4. UMD 不导入任何 D3DKMT 函数（走回调表，IAT 无处可补）
-5. DxgKrnl 的 ETW 提供程序不记录通用 escape
-6. 硬件 access 的 escape 在分发前返回 `0xC0000022`
-
-主流程**没有**：真实 CVE 的通用根因验证器、跨 CVE 成功率基准。
-"生成出候选"不等于"漏洞已复现"，报告里始终显式区分这两件事。
-
-## 8. 目录
-
-```text
-main.py                     单次生成入口
-src/batch_loop.py           闭环入口（按 CVE / 按层）
-src/closed_loop.py          循环控制（迭代、终止、反馈）
-src/loop_stages.py          generate / execute / grade
-src/reproduction.py         日志解析与三条件判定
-src/failure_taxonomy.py     12 类失败归因与重试判定
-src/spec_model.py           规格加载与提示词生成
-src/driver_probe.py         内核层布防与跨重启取证
-src/driver_crash.py         崩溃转储解析
-specs/                      7 份 CVE 规格
-data/knowledge_bases/       RAG 语料（含驱动方法条目）
-docs/                       合同、验收、勘误与实测记录
-tests/                      1486 passed / 66 skipped
-```
-
-## 9. 测试
-
-```bash
-python -m pytest -q -p no:cacheprovider
-```
-
-覆盖重点不是覆盖率，而是**不变量**：判定必须归因、零结果必须可交叉验证、
-候选崩溃必须可反馈、解码失败不得伪装成"没有观察"。
-
-## 10. 文档索引
-
-| 文档 | 内容 |
-|---|---|
-| `docs/P5_A_GPU_POC_FEASIBILITY.md` | 一天 11 组实验的可行性报告（含三条结构性原因） |
-| `docs/P5_B_FIRST_RUN.md` | 第一次自己跑的手把手流程 |
-| `docs/P5_C_POC_MUTATION_METHOD.md` | PoC 变异方法、文献定位、创新点与评测设计 |
-| `docs/P5_D_MUTATION_SCALE.md` | 两个 CVE、16 个变体的规模数据与边界 |
-| `docs/P4_Z_KERNEL_ESCAPE_PROBE.md` | 内核 escape 六条否证与判定方法 |
-| `docs/P4_V_DRIVER_RE_MAP.md` | CVE-2024-0107 逆向地图与勘误 |
-| `docs/P4_X_STAGE_SUMMARY.md` | 阶段总结与工具能力清单 |
-| `docs/CVE_ARTIFACT_PACKAGING.md` | 归档与交付合同（ZIP、包外 SHA、离线校验） |
-| `docs/REPOSITORY_MAINLINE.md` | 主线选择与外部数据迁移规则 |
-
-历史阶段（P0–P4）的合同与验收记录保留在 `docs/`，不随本次重写删除。
-
-## 11. 安全边界与许可
-
-仅用于经过授权的安全研究和防御验证。不得自动运行真实漏洞 PoC、提权或破坏性样本；
-不得把模型结论当作客观证据；不得提交 API Key、私有日志、GPU UUID 或主机绝对路径。
-
-本工程继承原有 CUDA 专项系统，保留源码中的作者标识 `CUDA Security Research Framework`
-及原免责声明；维护仓库为 [Qcx526/cuda_poc_generator](https://github.com/Qcx526/cuda_poc_generator)。
-仓库未提供独立 `LICENSE` 文件，本轮不新增或推断其他开源许可证。
+| `docs/P5_C_POC_MUTATION_METHOD.md` | 变异方法、判定口径、已知偏差 |
+| `docs/P5_D_MUTATION_SCALE.md` | 两个 CVE 的变异数据与对照实验 |
+| `docs/P5_E_CUDA124_SWEEP.md` | 修复版本上的变异扫描与发现 |
+| `docs/05-交接说明.md` | 输入格式、配置字段、交接要点 |
