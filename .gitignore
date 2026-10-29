@@ -62,7 +62,9 @@ data/knowledge_bases/.chromadb/
 .chromadb/
 logs/
 runs/
-artifacts/
+data/outputs/*/artifacts/
+!demo/*/artifacts/
+!demo/*/artifacts/*.cubin
 tmp/
 .tmp/
 benchmark/results/
@@ -116,3 +118,8 @@ data/findings/**/crashcap.c
 !data/control/.gitkeep
 !data/mutation/.gitkeep
 !data/tmp_evs/.gitkeep
+
+# 根目录的运行日志
+/out/
+demo/*/artifacts/*.so
+demo/*/artifacts/observation.txt
