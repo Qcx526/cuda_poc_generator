@@ -88,13 +88,14 @@ class Nvapi:
             return None
         return fn(self.session, self.profile, buf)
 
-    def call(self, ident: int, offset: int, value: int, size: int = 4096) -> dict:
+    def call(self, ident: int, offset: int, value: int, size: int = 4096,
+             version: int = 1) -> dict:
         """One struct-taking call, with one dword optionally overwritten."""
         if not (self.session and self.profile):
             return {"call": None, "reason": "handle chain incomplete"}
         buf = (ctypes.c_ubyte * size)()
         # NVAPI packs size and version into the first dword of most structs.
-        ctypes.memmove(buf, ctypes.byref(ctypes.c_uint32((size & 0xFFFF) | (1 << 16))), 4)
+        ctypes.memmove(buf, ctypes.byref(ctypes.c_uint32((size & 0xFFFF) | (version << 16))), 4)
         if 0 <= offset <= size - 4:
             ctypes.memmove(ctypes.byref(buf, offset),
                            ctypes.byref(ctypes.c_uint32(value & 0xFFFFFFFF)), 4)
@@ -110,6 +111,7 @@ def main(argv=None) -> int:
     parser.add_argument("--at", type=int, default=-1, help="offset of the dword to set")
     parser.add_argument("--value", type=lambda text: int(text, 0), default=0)
     parser.add_argument("--bytes", type=int, default=4096)
+    parser.add_argument("--version", type=int, default=1, help="struct version number")
     parser.add_argument("--calibrate", action="store_true",
                         help="search the size|version dword the driver accepts")
     args = parser.parse_args(argv)
@@ -129,7 +131,7 @@ def main(argv=None) -> int:
                 row.append("%d:%d" % (claim, status) if status is not None else "?")
             print("ver=%d  %s" % (version, "  ".join(row)))
         return 0
-    result = nv.call(int(args.fn, 0), args.at, args.value, args.bytes)
+    result = nv.call(int(args.fn, 0), args.at, args.value, args.bytes, args.version)
     print("chain init=%(init)s session=%(session)s load=%(load)s profile=%(profile)s"
           % {"init": steps.get("init"), "session": steps.get("session"),
              "load": steps.get("load"), "profile": steps.get("profile")})

@@ -1,0 +1,170 @@
+[
+ {
+  "label": "set.baseline",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": -1,
+  "value": 0
+ },
+ {
+  "label": "set.gpuSupport=0x0",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4100,
+  "value": 0
+ },
+ {
+  "label": "set.gpuSupport=0x1",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4100,
+  "value": 1
+ },
+ {
+  "label": "set.gpuSupport=0x2",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4100,
+  "value": 2
+ },
+ {
+  "label": "set.gpuSupport=0x7fffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4100,
+  "value": 2147483647
+ },
+ {
+  "label": "set.gpuSupport=0xffffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4100,
+  "value": 4294967295
+ },
+ {
+  "label": "set.isPredefined=0x0",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4104,
+  "value": 0
+ },
+ {
+  "label": "set.isPredefined=0x1",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4104,
+  "value": 1
+ },
+ {
+  "label": "set.isPredefined=0x2",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4104,
+  "value": 2
+ },
+ {
+  "label": "set.isPredefined=0x7fffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4104,
+  "value": 2147483647
+ },
+ {
+  "label": "set.isPredefined=0xffffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4104,
+  "value": 4294967295
+ },
+ {
+  "label": "set.numOfApps=0x0",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4108,
+  "value": 0
+ },
+ {
+  "label": "set.numOfApps=0x1",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4108,
+  "value": 1
+ },
+ {
+  "label": "set.numOfApps=0x2",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4108,
+  "value": 2
+ },
+ {
+  "label": "set.numOfApps=0x7fffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4108,
+  "value": 2147483647
+ },
+ {
+  "label": "set.numOfApps=0xffffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4108,
+  "value": 4294967295
+ },
+ {
+  "label": "set.numOfSettings=0x0",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4112,
+  "value": 0
+ },
+ {
+  "label": "set.numOfSettings=0x1",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4112,
+  "value": 1
+ },
+ {
+  "label": "set.numOfSettings=0x2",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4112,
+  "value": 2
+ },
+ {
+  "label": "set.numOfSettings=0x7fffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4112,
+  "value": 2147483647
+ },
+ {
+  "label": "set.numOfSettings=0xffffffff",
+  "fn": "0x16ABD3A9",
+  "size": 4116,
+  "version": 1,
+  "offset": 4112,
+  "value": 4294967295
+ }
+]
