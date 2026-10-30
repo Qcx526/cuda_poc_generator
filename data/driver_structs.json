@@ -1,0 +1,32 @@
+{
+  "_note": "size|version dword accepted by the driver, found by calibration; the low 16 bits are the exact sizeof, not a claim",
+  "NVDRS_PROFILE": {
+    "version": 1,
+    "size": 4116,
+    "functions": {
+      "NvAPI_DRS_GetProfileInfo": "0x61CD6FD6",
+      "NvAPI_DRS_SetProfileInfo": "0x16ABD3A9",
+      "NvAPI_DRS_CreateProfile": "0xCC176068"
+    }
+  },
+  "NVDRS_SETTING": {
+    "version": null,
+    "size": null,
+    "functions": {
+      "NvAPI_DRS_SetSetting": "0x577DD202"
+    }
+  },
+  "chain": {
+    "NvAPI_Initialize": "0x0150E828",
+    "NvAPI_DRS_CreateSession": "0x0694D52E",
+    "NvAPI_DRS_LoadSettings": "0x375DBD6B",
+    "NvAPI_DRS_GetBaseProfile": "0xDA8466A0",
+    "NvAPI_DRS_GetNumProfiles": "0x1DAE4FBC",
+    "NvAPI_DRS_EnumProfiles": "0xBC371EE0"
+  },
+  "observations": {
+    "profiles_enumerated": 5508,
+    "gpu": "GeForce GTX 1660",
+    "driver": "31.0.15.5161"
+  }
+}
