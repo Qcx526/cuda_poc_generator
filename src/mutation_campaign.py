@@ -18,6 +18,7 @@ Two rules make the result readable:
 
 import argparse
 import json
+import re
 import shutil
 import struct
 import subprocess
@@ -60,6 +61,10 @@ class Variant:
     payload: bytes = b""
     # How the artifact was made, when an edit triple cannot describe it.
     meta: dict = field(default_factory=dict)
+    # Bytes the tool printed before exiting. A file the parser rejects produces
+    # nothing; one it walks end to end produces thousands of bytes. Cheap,
+    # instrumentation-free proxy for how far it got.
+    stdout_bytes: int = 0
 
 
 def widen(value: int, width: int) -> bytes:
@@ -147,6 +152,17 @@ def missing_axes(spec: dict, variants: Sequence[Variant]) -> List[str]:
     return [name for name in required if name not in present]
 
 
+_OUT_LINE = re.compile(r"\[CPG_OUT\]\s+(\S+)\s+bytes=(\d+)")
+
+
+def attach_depth(variants: Sequence[Variant], text: str) -> None:
+    """Record how much each artifact made the tool print."""
+    depth = {name: int(count) for name, count in _OUT_LINE.findall(text or "")}
+    for variant in variants:
+        if variant.path:
+            variant.stdout_bytes = depth.get(Path(variant.path).name, 0)
+
+
 def classify(variants: Sequence[Variant], baseline: str) -> List[Variant]:
     """Same fault, no fault, or a fault somewhere new."""
     for variant in variants:
@@ -206,8 +222,10 @@ def _matrix_script(variants: Sequence[Variant],
             # the refusal text survives, and the model is the one who can act on
             # it. stdout is discarded - it is the tool's normal output.
             lines.append('CRASHCAP_OUT=".cc.$f" LD_PRELOAD="$crashcap" '
-                         'timeout 10 %s >/dev/null 2>".err.$f"' % command)
+                         'timeout 10 %s >".out.$f" 2>".err.$f"' % command)
             lines.append("rc=$?")
+            lines.append('echo "[CPG_OUT] $f bytes=$(wc -c < \".out.$f\" 2>/dev/null '
+                         '|| echo 0)"')
             lines.append('echo "[CPG_RUN] $f::%s exit=$rc"' % tool_name(invocation))
             lines.append('if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi')
     lines.append("true")
@@ -277,7 +295,11 @@ def run(variants: Sequence[Variant], seed: bytes, invocations: Sequence[Sequence
             variant.fault_address = crash.address
             variant.access = crash.access
             variant.severity = crash.severity
-    return completed.stdout or ""
+    text = completed.stdout or ""
+    # Attaching here rather than at each call site: depth is a property of the
+    # run, and three callers that forget it would silently lose the signal.
+    attach_depth(variants, text)
+    return text
 
 
 def novel_lines(raw: str, names: Sequence[str]) -> str:
