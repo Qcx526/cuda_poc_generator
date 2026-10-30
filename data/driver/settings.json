@@ -1,0 +1,1161 @@
+[
+ {
+  "id": "0x2089bf6c",
+  "name": "Antialiasing - Line gamma",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x2072c5a3",
+  "name": "OpenGL GDI compatibility",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20d690f8",
+  "name": "Vulkan/OpenGL present method",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x2097c2f6",
+  "name": "Deep color for 3D applications",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x206a6582",
+  "name": "OpenGL default swap interval",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x206c4581",
+  "name": "OpenGL default swap interval fraction",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20655cfa",
+  "name": "OpenGL default swap interval sign",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x209df23e",
+  "name": "Event Log Severity Threshold",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20ff7493",
+  "name": "Extension String version",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x201f619f",
+  "name": "Buffer-flipping mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x204d9a0c",
+  "name": "Force Stereo shuttering",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x208e55e3",
+  "name": "Maximum frames allowed",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x209ae66f",
+  "name": "Exported Overlay pixel types",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x206c28c4",
+  "name": "Enable overlay",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20797d6c",
+  "name": "High level control of the rendering quality on OpenGL",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20a29055",
+  "name": "Unified back/depth buffer",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x2092d3be",
+  "name": "Enable NV_gpu_multicast extension",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20c1221e",
+  "name": "Threaded optimization",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x202888c1",
+  "name": "Event Log Tmon Severity Threshold",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20fdd1f9",
+  "name": "Triple buffering",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10ecdb82",
+  "name": "Antialiasing - Behavior Flags",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10fc2d9c",
+  "name": "Antialiasing - Transparency Multisampling",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x107d639d",
+  "name": "Antialiasing - Gamma correction",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10d773d2",
+  "name": "Antialiasing - Setting",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10d48a85",
+  "name": "Antialiasing - Transparency Supersampling",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x107efc5b",
+  "name": "Antialiasing - Mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x107afc5b",
+  "name": "Antialiasing - SLI AA",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x101e61a9",
+  "name": "Anisotropic filtering setting",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10d2bb16",
+  "name": "Anisotropic filtering mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1035db89",
+  "name": "NVIDIA Predefined Ansel Usage",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1085da8a",
+  "name": "Ansel flags for enabled applications",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1075d972",
+  "name": "Enable Ansel",
+  "type": null,
+  "rc": -160,
+  "accepted_types": []
+ },
+ {
+  "id": "0x10835016",
+  "name": "Idle Application Max FPS Limit",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10835017",
+  "name": "Idle Application Threshold Time out in seconds",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x104554b6",
+  "name": "Application Profile Notification Popup Timeout",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x107cddbc",
+  "name": "Steam Application ID",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10115c8c",
+  "name": "Battery Boost Application FPS",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x106d5cff",
+  "name": "Do not display this profile in the Control Panel",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x108f0841",
+  "name": "Export Performance Counters",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10115c8d",
+  "name": "External Quiet Mode (XQM)",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10835002",
+  "name": "Frame Rate Limiter",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1034cb89",
+  "name": "NVIDIA Predefined FXAA Usage",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1074c972",
+  "name": "Enable FXAA",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1068fb9c",
+  "name": "Enable FXAA Indicator",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1095f170",
+  "name": "Autoalign flash indicator",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10287051",
+  "name": "SLI indicator",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41df4",
+  "name": "Override DLSS mode to be DLAA",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10562d0f",
+  "name": "Override maximum DLSSG dynamic multi frame count",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10cf4125",
+  "name": "Override DLSSG Target Frame Rate",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10308298",
+  "name": "Override DLSSG mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x104d6667",
+  "name": "Override DLSSG multi-frame count",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41e03",
+  "name": "Enable DLSS-FG override",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41df1",
+  "name": "Override DLSS-FG preset",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d57e",
+  "name": "Override reserved key 1 for FG",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d519",
+  "name": "Override reserved key 2 for FG",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41e04",
+  "name": "Enable DLSS NR override",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41df8",
+  "name": "Override DLSS NR presets",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41e05",
+  "name": "Enable DLSS NR SL override",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10afb76c",
+  "name": "Override DLSS performance mode to be ultra-perfomance",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10bd9423",
+  "name": "Override DLSS-RR performance mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41e02",
+  "name": "Enable DLSS-RR override",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41df7",
+  "name": "Override DLSS-RR preset",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d86c",
+  "name": "Override reserved key 1 for RR",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d597",
+  "name": "Override reserved key 2 for RR",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d4a2",
+  "name": "Override scaling ratio for DLSS-RR",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10afb768",
+  "name": "Override DLSS-SR performance mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41e01",
+  "name": "Enable DLSS-SR override",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41df3",
+  "name": "Override DLSS-SR presets",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d684",
+  "name": "Override reserved key 1 for SR",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10c7d82c",
+  "name": "Override reserved key 2 for SR",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10e41df5",
+  "name": "Override scaling ratio for DLSS-SR",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10444444",
+  "name": "NVIDIA Quality upscaling",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10f9dc83",
+  "name": "Maximum AA samples allowed for a given application",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1094f16f",
+  "name": "Display the PhysX indicator",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1057eb71",
+  "name": "Power management mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x103bccb5",
+  "name": "No override of Anisotropic filtering",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10f9dc82",
+  "name": "Maximum resolution allowed for a given application",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10f9dc80",
+  "name": "Optimus flags for enabled applications",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10f9dc81",
+  "name": "Enable application for Optimus",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10f9dc84",
+  "name": "Shim Rendering Mode Options per application for Optimus",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1033dcd1",
+  "name": "Number of GPUs to use on SLI rendering mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1033dcd2",
+  "name": "NVIDIA predefined number of GPUs to use on SLI rendering mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1033dcd3",
+  "name": "NVIDIA predefined number of GPUs to use on SLI rendering mode on DirectX 10",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1033cec1",
+  "name": "NVIDIA predefined SLI mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1033cec2",
+  "name": "NVIDIA predefined SLI mode on DirectX 10",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1033ced1",
+  "name": "SLI rendering mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10111133",
+  "name": "Virtual Reality pre-rendered frames",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1094f157",
+  "name": "Toggle the VRR global feature",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1095f16f",
+  "name": "Display the VRR Overlay Indicator",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1094f1f7",
+  "name": "VRR requested state",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10a879cf",
+  "name": "G-SYNC",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10a879ac",
+  "name": "G-SYNC",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x1194f158",
+  "name": "Enable G-SYNC globally",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x101ae763",
+  "name": "Flag to control smooth AFR behavior",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10a879ce",
+  "name": "Variable refresh Rate",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10fdec23",
+  "name": "Vsync - Behavior Flags",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x11ae435c",
+  "name": "Stereo - Swap eyes",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x11e91a61",
+  "name": "Stereo - Display mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x112493bd",
+  "name": "Stereo - Dongle Support",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x11aa9e99",
+  "name": "Stereo - Enable",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x11333333",
+  "name": "Stereo - swap mode",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x667329",
+  "name": "Ambient Occlusion",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x664339",
+  "name": "NVIDIA Predefined Ambient Occlusion Usage",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x638e8f",
+  "name": "Texture filtering - Driver Controlled LOD Bias",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xb65e72",
+  "name": "Export Performance Counters for DX9 only",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x738e8f",
+  "name": "Texture filtering - LOD Bias",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x98c1ac",
+  "name": "Enable sample interleaving (MFAA)",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x7ba09e",
+  "name": "Maximum pre-rendered frames",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xd74ef6",
+  "name": "Offline Shader Compile",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x198fff",
+  "name": "Shader Cache",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xac8497",
+  "name": "Shader disk cache maximum size",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xe73211",
+  "name": "Texture filtering - Anisotropic sample optimization",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x84cd70",
+  "name": "Texture filtering - Anisotropic filter optimization",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x2ecaf2",
+  "name": "Texture filtering - Trilinear optimization",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x19bb68",
+  "name": "Texture filtering - Negative LOD bias",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xce2691",
+  "name": "Texture filtering - Quality",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xce2692",
+  "name": "Texture filtering - Quality Substitution",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x64b541",
+  "name": "Preferred refresh rate",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xae785c",
+  "name": "PowerThrottle",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xab8687",
+  "name": "VAB Default Data",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xa879cf",
+  "name": "Vertical Sync",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x5a375c",
+  "name": "Vertical Sync Tear Control",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x20d0f3e6",
+  "name": "Preferred OpenGL GPU",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10354ff8",
+  "name": "List of Universal GPU ids",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x10d1ef29",
+  "name": "Maximum GPU Power",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x104bc9a1",
+  "name": "Exceptions to blocking apps",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0xdb1337",
+  "name": "ICafe Settings",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x19a002",
+  "name": "shader cache path to dll",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ },
+ {
+  "id": "0x50957b56",
+  "name": "Allow for GPU re-ordering. The format must be a list of UniversalGPUid as formatted by NvApp and NvCpl, the order of the list will be the order in which the GPU are exposed. See UniversalGPUid.h for the format",
+  "type": null,
+  "rc": -160,
+  "accepted_types": [
+   0
+  ]
+ }
+]

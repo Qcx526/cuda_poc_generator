@@ -1,0 +1,388 @@
+id	name	value	status
+0x2089bf6c	Antialiasing - Line gamma	0xffffffff	0
+0x2089bf6c	Antialiasing - Line gamma	0x7fffffff	0
+0x2089bf6c	Antialiasing - Line gamma	0x10000	0
+0x2072c5a3	OpenGL GDI compatibility	0xffffffff	0
+0x2072c5a3	OpenGL GDI compatibility	0x7fffffff	0
+0x2072c5a3	OpenGL GDI compatibility	0x10000	0
+0x20d690f8	Vulkan/OpenGL present method	0xffffffff	0
+0x20d690f8	Vulkan/OpenGL present method	0x7fffffff	0
+0x20d690f8	Vulkan/OpenGL present method	0x10000	0
+0x2097c2f6	Deep color for 3D applications	0xffffffff	0
+0x2097c2f6	Deep color for 3D applications	0x7fffffff	0
+0x2097c2f6	Deep color for 3D applications	0x10000	0
+0x206a6582	OpenGL default swap interval	0xffffffff	0
+0x206a6582	OpenGL default swap interval	0x7fffffff	0
+0x206a6582	OpenGL default swap interval	0x10000	0
+0x206c4581	OpenGL default swap interval fraction	0xffffffff	0
+0x206c4581	OpenGL default swap interval fraction	0x7fffffff	0
+0x206c4581	OpenGL default swap interval fraction	0x10000	0
+0x20655cfa	OpenGL default swap interval sign	0xffffffff	0
+0x20655cfa	OpenGL default swap interval sign	0x7fffffff	0
+0x20655cfa	OpenGL default swap interval sign	0x10000	0
+0x209df23e	Event Log Severity Threshold	0xffffffff	0
+0x209df23e	Event Log Severity Threshold	0x7fffffff	0
+0x209df23e	Event Log Severity Threshold	0x10000	0
+0x20ff7493	Extension String version	0xffffffff	0
+0x20ff7493	Extension String version	0x7fffffff	0
+0x20ff7493	Extension String version	0x10000	0
+0x201f619f	Buffer-flipping mode	0xffffffff	0
+0x201f619f	Buffer-flipping mode	0x7fffffff	0
+0x201f619f	Buffer-flipping mode	0x10000	0
+0x204d9a0c	Force Stereo shuttering	0xffffffff	0
+0x204d9a0c	Force Stereo shuttering	0x7fffffff	0
+0x204d9a0c	Force Stereo shuttering	0x10000	0
+0x208e55e3	Maximum frames allowed	0xffffffff	0
+0x208e55e3	Maximum frames allowed	0x7fffffff	0
+0x208e55e3	Maximum frames allowed	0x10000	0
+0x209ae66f	Exported Overlay pixel types	0xffffffff	0
+0x209ae66f	Exported Overlay pixel types	0x7fffffff	0
+0x209ae66f	Exported Overlay pixel types	0x10000	0
+0x206c28c4	Enable overlay	0xffffffff	0
+0x206c28c4	Enable overlay	0x7fffffff	0
+0x206c28c4	Enable overlay	0x10000	0
+0x20797d6c	High level control of the rendering quality on OpenGL	0xffffffff	0
+0x20797d6c	High level control of the rendering quality on OpenGL	0x7fffffff	0
+0x20797d6c	High level control of the rendering quality on OpenGL	0x10000	0
+0x20a29055	Unified back/depth buffer	0xffffffff	0
+0x20a29055	Unified back/depth buffer	0x7fffffff	0
+0x20a29055	Unified back/depth buffer	0x10000	0
+0x2092d3be	Enable NV_gpu_multicast extension	0xffffffff	0
+0x2092d3be	Enable NV_gpu_multicast extension	0x7fffffff	0
+0x2092d3be	Enable NV_gpu_multicast extension	0x10000	0
+0x20c1221e	Threaded optimization	0xffffffff	0
+0x20c1221e	Threaded optimization	0x7fffffff	0
+0x20c1221e	Threaded optimization	0x10000	0
+0x202888c1	Event Log Tmon Severity Threshold	0xffffffff	0
+0x202888c1	Event Log Tmon Severity Threshold	0x7fffffff	0
+0x202888c1	Event Log Tmon Severity Threshold	0x10000	0
+0x20fdd1f9	Triple buffering	0xffffffff	0
+0x20fdd1f9	Triple buffering	0x7fffffff	0
+0x20fdd1f9	Triple buffering	0x10000	0
+0x10ecdb82	Antialiasing - Behavior Flags	0xffffffff	0
+0x10ecdb82	Antialiasing - Behavior Flags	0x7fffffff	0
+0x10ecdb82	Antialiasing - Behavior Flags	0x10000	0
+0x10fc2d9c	Antialiasing - Transparency Multisampling	0xffffffff	0
+0x10fc2d9c	Antialiasing - Transparency Multisampling	0x7fffffff	0
+0x10fc2d9c	Antialiasing - Transparency Multisampling	0x10000	0
+0x107d639d	Antialiasing - Gamma correction	0xffffffff	0
+0x107d639d	Antialiasing - Gamma correction	0x7fffffff	0
+0x107d639d	Antialiasing - Gamma correction	0x10000	0
+0x10d773d2	Antialiasing - Setting	0xffffffff	0
+0x10d773d2	Antialiasing - Setting	0x7fffffff	0
+0x10d773d2	Antialiasing - Setting	0x10000	0
+0x10d48a85	Antialiasing - Transparency Supersampling	0xffffffff	0
+0x10d48a85	Antialiasing - Transparency Supersampling	0x7fffffff	0
+0x10d48a85	Antialiasing - Transparency Supersampling	0x10000	0
+0x107efc5b	Antialiasing - Mode	0xffffffff	0
+0x107efc5b	Antialiasing - Mode	0x7fffffff	0
+0x107efc5b	Antialiasing - Mode	0x10000	0
+0x107afc5b	Antialiasing - SLI AA	0xffffffff	0
+0x107afc5b	Antialiasing - SLI AA	0x7fffffff	0
+0x107afc5b	Antialiasing - SLI AA	0x10000	0
+0x101e61a9	Anisotropic filtering setting	0xffffffff	0
+0x101e61a9	Anisotropic filtering setting	0x7fffffff	0
+0x101e61a9	Anisotropic filtering setting	0x10000	0
+0x10d2bb16	Anisotropic filtering mode	0xffffffff	0
+0x10d2bb16	Anisotropic filtering mode	0x7fffffff	0
+0x10d2bb16	Anisotropic filtering mode	0x10000	0
+0x1035db89	NVIDIA Predefined Ansel Usage	0xffffffff	0
+0x1035db89	NVIDIA Predefined Ansel Usage	0x7fffffff	0
+0x1035db89	NVIDIA Predefined Ansel Usage	0x10000	0
+0x1085da8a	Ansel flags for enabled applications	0xffffffff	0
+0x1085da8a	Ansel flags for enabled applications	0x7fffffff	0
+0x1085da8a	Ansel flags for enabled applications	0x10000	0
+0x1075d972	Enable Ansel	0xffffffff	-104
+0x1075d972	Enable Ansel	0x7fffffff	-104
+0x1075d972	Enable Ansel	0x10000	-104
+0x10835016	Idle Application Max FPS Limit	0xffffffff	0
+0x10835016	Idle Application Max FPS Limit	0x7fffffff	0
+0x10835016	Idle Application Max FPS Limit	0x10000	0
+0x10835017	Idle Application Threshold Time out in seconds	0xffffffff	0
+0x10835017	Idle Application Threshold Time out in seconds	0x7fffffff	0
+0x10835017	Idle Application Threshold Time out in seconds	0x10000	0
+0x104554b6	Application Profile Notification Popup Timeout	0xffffffff	0
+0x104554b6	Application Profile Notification Popup Timeout	0x7fffffff	0
+0x104554b6	Application Profile Notification Popup Timeout	0x10000	0
+0x107cddbc	Steam Application ID	0xffffffff	0
+0x107cddbc	Steam Application ID	0x7fffffff	0
+0x107cddbc	Steam Application ID	0x10000	0
+0x10115c8c	Battery Boost Application FPS	0xffffffff	0
+0x10115c8c	Battery Boost Application FPS	0x7fffffff	0
+0x10115c8c	Battery Boost Application FPS	0x10000	0
+0x106d5cff	Do not display this profile in the Control Panel	0xffffffff	0
+0x106d5cff	Do not display this profile in the Control Panel	0x7fffffff	0
+0x106d5cff	Do not display this profile in the Control Panel	0x10000	0
+0x108f0841	Export Performance Counters	0xffffffff	0
+0x108f0841	Export Performance Counters	0x7fffffff	0
+0x108f0841	Export Performance Counters	0x10000	0
+0x10115c8d	External Quiet Mode (XQM)	0xffffffff	0
+0x10115c8d	External Quiet Mode (XQM)	0x7fffffff	0
+0x10115c8d	External Quiet Mode (XQM)	0x10000	0
+0x10835002	Frame Rate Limiter	0xffffffff	0
+0x10835002	Frame Rate Limiter	0x7fffffff	0
+0x10835002	Frame Rate Limiter	0x10000	0
+0x1034cb89	NVIDIA Predefined FXAA Usage	0xffffffff	0
+0x1034cb89	NVIDIA Predefined FXAA Usage	0x7fffffff	0
+0x1034cb89	NVIDIA Predefined FXAA Usage	0x10000	0
+0x1074c972	Enable FXAA	0xffffffff	0
+0x1074c972	Enable FXAA	0x7fffffff	0
+0x1074c972	Enable FXAA	0x10000	0
+0x1068fb9c	Enable FXAA Indicator	0xffffffff	0
+0x1068fb9c	Enable FXAA Indicator	0x7fffffff	0
+0x1068fb9c	Enable FXAA Indicator	0x10000	0
+0x1095f170	Autoalign flash indicator	0xffffffff	0
+0x1095f170	Autoalign flash indicator	0x7fffffff	0
+0x1095f170	Autoalign flash indicator	0x10000	0
+0x10287051	SLI indicator	0xffffffff	0
+0x10287051	SLI indicator	0x7fffffff	0
+0x10287051	SLI indicator	0x10000	0
+0x10e41df4	Override DLSS mode to be DLAA	0xffffffff	0
+0x10e41df4	Override DLSS mode to be DLAA	0x7fffffff	0
+0x10e41df4	Override DLSS mode to be DLAA	0x10000	0
+0x10562d0f	Override maximum DLSSG dynamic multi frame count	0xffffffff	0
+0x10562d0f	Override maximum DLSSG dynamic multi frame count	0x7fffffff	0
+0x10562d0f	Override maximum DLSSG dynamic multi frame count	0x10000	0
+0x10cf4125	Override DLSSG Target Frame Rate	0xffffffff	0
+0x10cf4125	Override DLSSG Target Frame Rate	0x7fffffff	0
+0x10cf4125	Override DLSSG Target Frame Rate	0x10000	0
+0x10308298	Override DLSSG mode	0xffffffff	0
+0x10308298	Override DLSSG mode	0x7fffffff	0
+0x10308298	Override DLSSG mode	0x10000	0
+0x104d6667	Override DLSSG multi-frame count	0xffffffff	0
+0x104d6667	Override DLSSG multi-frame count	0x7fffffff	0
+0x104d6667	Override DLSSG multi-frame count	0x10000	0
+0x10e41e03	Enable DLSS-FG override	0xffffffff	0
+0x10e41e03	Enable DLSS-FG override	0x7fffffff	0
+0x10e41e03	Enable DLSS-FG override	0x10000	0
+0x10e41df1	Override DLSS-FG preset	0xffffffff	0
+0x10e41df1	Override DLSS-FG preset	0x7fffffff	0
+0x10e41df1	Override DLSS-FG preset	0x10000	0
+0x10c7d57e	Override reserved key 1 for FG	0xffffffff	0
+0x10c7d57e	Override reserved key 1 for FG	0x7fffffff	0
+0x10c7d57e	Override reserved key 1 for FG	0x10000	0
+0x10c7d519	Override reserved key 2 for FG	0xffffffff	0
+0x10c7d519	Override reserved key 2 for FG	0x7fffffff	0
+0x10c7d519	Override reserved key 2 for FG	0x10000	0
+0x10e41e04	Enable DLSS NR override	0xffffffff	0
+0x10e41e04	Enable DLSS NR override	0x7fffffff	0
+0x10e41e04	Enable DLSS NR override	0x10000	0
+0x10e41df8	Override DLSS NR presets	0xffffffff	0
+0x10e41df8	Override DLSS NR presets	0x7fffffff	0
+0x10e41df8	Override DLSS NR presets	0x10000	0
+0x10e41e05	Enable DLSS NR SL override	0xffffffff	0
+0x10e41e05	Enable DLSS NR SL override	0x7fffffff	0
+0x10e41e05	Enable DLSS NR SL override	0x10000	0
+0x10afb76c	Override DLSS performance mode to be ultra-perfomance	0xffffffff	0
+0x10afb76c	Override DLSS performance mode to be ultra-perfomance	0x7fffffff	0
+0x10afb76c	Override DLSS performance mode to be ultra-perfomance	0x10000	0
+0x10bd9423	Override DLSS-RR performance mode	0xffffffff	0
+0x10bd9423	Override DLSS-RR performance mode	0x7fffffff	0
+0x10bd9423	Override DLSS-RR performance mode	0x10000	0
+0x10e41e02	Enable DLSS-RR override	0xffffffff	0
+0x10e41e02	Enable DLSS-RR override	0x7fffffff	0
+0x10e41e02	Enable DLSS-RR override	0x10000	0
+0x10e41df7	Override DLSS-RR preset	0xffffffff	0
+0x10e41df7	Override DLSS-RR preset	0x7fffffff	0
+0x10e41df7	Override DLSS-RR preset	0x10000	0
+0x10c7d86c	Override reserved key 1 for RR	0xffffffff	0
+0x10c7d86c	Override reserved key 1 for RR	0x7fffffff	0
+0x10c7d86c	Override reserved key 1 for RR	0x10000	0
+0x10c7d597	Override reserved key 2 for RR	0xffffffff	0
+0x10c7d597	Override reserved key 2 for RR	0x7fffffff	0
+0x10c7d597	Override reserved key 2 for RR	0x10000	0
+0x10c7d4a2	Override scaling ratio for DLSS-RR	0xffffffff	0
+0x10c7d4a2	Override scaling ratio for DLSS-RR	0x7fffffff	0
+0x10c7d4a2	Override scaling ratio for DLSS-RR	0x10000	0
+0x10afb768	Override DLSS-SR performance mode	0xffffffff	0
+0x10afb768	Override DLSS-SR performance mode	0x7fffffff	0
+0x10afb768	Override DLSS-SR performance mode	0x10000	0
+0x10e41e01	Enable DLSS-SR override	0xffffffff	0
+0x10e41e01	Enable DLSS-SR override	0x7fffffff	0
+0x10e41e01	Enable DLSS-SR override	0x10000	0
+0x10e41df3	Override DLSS-SR presets	0xffffffff	0
+0x10e41df3	Override DLSS-SR presets	0x7fffffff	0
+0x10e41df3	Override DLSS-SR presets	0x10000	0
+0x10c7d684	Override reserved key 1 for SR	0xffffffff	0
+0x10c7d684	Override reserved key 1 for SR	0x7fffffff	0
+0x10c7d684	Override reserved key 1 for SR	0x10000	0
+0x10c7d82c	Override reserved key 2 for SR	0xffffffff	0
+0x10c7d82c	Override reserved key 2 for SR	0x7fffffff	0
+0x10c7d82c	Override reserved key 2 for SR	0x10000	0
+0x10e41df5	Override scaling ratio for DLSS-SR	0xffffffff	0
+0x10e41df5	Override scaling ratio for DLSS-SR	0x7fffffff	0
+0x10e41df5	Override scaling ratio for DLSS-SR	0x10000	0
+0x10444444	NVIDIA Quality upscaling	0xffffffff	0
+0x10444444	NVIDIA Quality upscaling	0x7fffffff	0
+0x10444444	NVIDIA Quality upscaling	0x10000	0
+0x10f9dc83	Maximum AA samples allowed for a given application	0xffffffff	0
+0x10f9dc83	Maximum AA samples allowed for a given application	0x7fffffff	0
+0x10f9dc83	Maximum AA samples allowed for a given application	0x10000	0
+0x1094f16f	Display the PhysX indicator	0xffffffff	0
+0x1094f16f	Display the PhysX indicator	0x7fffffff	0
+0x1094f16f	Display the PhysX indicator	0x10000	0
+0x1057eb71	Power management mode	0xffffffff	0
+0x1057eb71	Power management mode	0x7fffffff	0
+0x1057eb71	Power management mode	0x10000	0
+0x103bccb5	No override of Anisotropic filtering	0xffffffff	0
+0x103bccb5	No override of Anisotropic filtering	0x7fffffff	0
+0x103bccb5	No override of Anisotropic filtering	0x10000	0
+0x10f9dc82	Maximum resolution allowed for a given application	0xffffffff	0
+0x10f9dc82	Maximum resolution allowed for a given application	0x7fffffff	0
+0x10f9dc82	Maximum resolution allowed for a given application	0x10000	0
+0x10f9dc80	Optimus flags for enabled applications	0xffffffff	0
+0x10f9dc80	Optimus flags for enabled applications	0x7fffffff	0
+0x10f9dc80	Optimus flags for enabled applications	0x10000	0
+0x10f9dc81	Enable application for Optimus	0xffffffff	0
+0x10f9dc81	Enable application for Optimus	0x7fffffff	0
+0x10f9dc81	Enable application for Optimus	0x10000	0
+0x10f9dc84	Shim Rendering Mode Options per application for Optimus	0xffffffff	0
+0x10f9dc84	Shim Rendering Mode Options per application for Optimus	0x7fffffff	0
+0x10f9dc84	Shim Rendering Mode Options per application for Optimus	0x10000	0
+0x1033dcd1	Number of GPUs to use on SLI rendering mode	0xffffffff	0
+0x1033dcd1	Number of GPUs to use on SLI rendering mode	0x7fffffff	0
+0x1033dcd1	Number of GPUs to use on SLI rendering mode	0x10000	0
+0x1033dcd2	NVIDIA predefined number of GPUs to use on SLI rendering mode	0xffffffff	0
+0x1033dcd2	NVIDIA predefined number of GPUs to use on SLI rendering mode	0x7fffffff	0
+0x1033dcd2	NVIDIA predefined number of GPUs to use on SLI rendering mode	0x10000	0
+0x1033dcd3	NVIDIA predefined number of GPUs to use on SLI rendering mode on DirectX 10	0xffffffff	0
+0x1033dcd3	NVIDIA predefined number of GPUs to use on SLI rendering mode on DirectX 10	0x7fffffff	0
+0x1033dcd3	NVIDIA predefined number of GPUs to use on SLI rendering mode on DirectX 10	0x10000	0
+0x1033cec1	NVIDIA predefined SLI mode	0xffffffff	0
+0x1033cec1	NVIDIA predefined SLI mode	0x7fffffff	0
+0x1033cec1	NVIDIA predefined SLI mode	0x10000	0
+0x1033cec2	NVIDIA predefined SLI mode on DirectX 10	0xffffffff	0
+0x1033cec2	NVIDIA predefined SLI mode on DirectX 10	0x7fffffff	0
+0x1033cec2	NVIDIA predefined SLI mode on DirectX 10	0x10000	0
+0x1033ced1	SLI rendering mode	0xffffffff	0
+0x1033ced1	SLI rendering mode	0x7fffffff	0
+0x1033ced1	SLI rendering mode	0x10000	0
+0x10111133	Virtual Reality pre-rendered frames	0xffffffff	0
+0x10111133	Virtual Reality pre-rendered frames	0x7fffffff	0
+0x10111133	Virtual Reality pre-rendered frames	0x10000	0
+0x1094f157	Toggle the VRR global feature	0xffffffff	0
+0x1094f157	Toggle the VRR global feature	0x7fffffff	0
+0x1094f157	Toggle the VRR global feature	0x10000	0
+0x1095f16f	Display the VRR Overlay Indicator	0xffffffff	0
+0x1095f16f	Display the VRR Overlay Indicator	0x7fffffff	0
+0x1095f16f	Display the VRR Overlay Indicator	0x10000	0
+0x1094f1f7	VRR requested state	0xffffffff	0
+0x1094f1f7	VRR requested state	0x7fffffff	0
+0x1094f1f7	VRR requested state	0x10000	0
+0x10a879cf	G-SYNC	0xffffffff	0
+0x10a879cf	G-SYNC	0x7fffffff	0
+0x10a879cf	G-SYNC	0x10000	0
+0x10a879ac	G-SYNC	0xffffffff	0
+0x10a879ac	G-SYNC	0x7fffffff	0
+0x10a879ac	G-SYNC	0x10000	0
+0x1194f158	Enable G-SYNC globally	0xffffffff	0
+0x1194f158	Enable G-SYNC globally	0x7fffffff	0
+0x1194f158	Enable G-SYNC globally	0x10000	0
+0x101ae763	Flag to control smooth AFR behavior	0xffffffff	0
+0x101ae763	Flag to control smooth AFR behavior	0x7fffffff	0
+0x101ae763	Flag to control smooth AFR behavior	0x10000	0
+0x10a879ce	Variable refresh Rate	0xffffffff	0
+0x10a879ce	Variable refresh Rate	0x7fffffff	0
+0x10a879ce	Variable refresh Rate	0x10000	0
+0x10fdec23	Vsync - Behavior Flags	0xffffffff	0
+0x10fdec23	Vsync - Behavior Flags	0x7fffffff	0
+0x10fdec23	Vsync - Behavior Flags	0x10000	0
+0x11ae435c	Stereo - Swap eyes	0xffffffff	0
+0x11ae435c	Stereo - Swap eyes	0x7fffffff	0
+0x11ae435c	Stereo - Swap eyes	0x10000	0
+0x11e91a61	Stereo - Display mode	0xffffffff	0
+0x11e91a61	Stereo - Display mode	0x7fffffff	0
+0x11e91a61	Stereo - Display mode	0x10000	0
+0x112493bd	Stereo - Dongle Support	0xffffffff	0
+0x112493bd	Stereo - Dongle Support	0x7fffffff	0
+0x112493bd	Stereo - Dongle Support	0x10000	0
+0x11aa9e99	Stereo - Enable	0xffffffff	0
+0x11aa9e99	Stereo - Enable	0x7fffffff	0
+0x11aa9e99	Stereo - Enable	0x10000	0
+0x11333333	Stereo - swap mode	0xffffffff	0
+0x11333333	Stereo - swap mode	0x7fffffff	0
+0x11333333	Stereo - swap mode	0x10000	0
+0x667329	Ambient Occlusion	0xffffffff	0
+0x667329	Ambient Occlusion	0x7fffffff	0
+0x667329	Ambient Occlusion	0x10000	0
+0x664339	NVIDIA Predefined Ambient Occlusion Usage	0xffffffff	0
+0x664339	NVIDIA Predefined Ambient Occlusion Usage	0x7fffffff	0
+0x664339	NVIDIA Predefined Ambient Occlusion Usage	0x10000	0
+0x638e8f	Texture filtering - Driver Controlled LOD Bias	0xffffffff	0
+0x638e8f	Texture filtering - Driver Controlled LOD Bias	0x7fffffff	0
+0x638e8f	Texture filtering - Driver Controlled LOD Bias	0x10000	0
+0xb65e72	Export Performance Counters for DX9 only	0xffffffff	0
+0xb65e72	Export Performance Counters for DX9 only	0x7fffffff	0
+0xb65e72	Export Performance Counters for DX9 only	0x10000	0
+0x738e8f	Texture filtering - LOD Bias	0xffffffff	0
+0x738e8f	Texture filtering - LOD Bias	0x7fffffff	0
+0x738e8f	Texture filtering - LOD Bias	0x10000	0
+0x98c1ac	Enable sample interleaving (MFAA)	0xffffffff	0
+0x98c1ac	Enable sample interleaving (MFAA)	0x7fffffff	0
+0x98c1ac	Enable sample interleaving (MFAA)	0x10000	0
+0x7ba09e	Maximum pre-rendered frames	0xffffffff	0
+0x7ba09e	Maximum pre-rendered frames	0x7fffffff	0
+0x7ba09e	Maximum pre-rendered frames	0x10000	0
+0xd74ef6	Offline Shader Compile	0xffffffff	0
+0xd74ef6	Offline Shader Compile	0x7fffffff	0
+0xd74ef6	Offline Shader Compile	0x10000	0
+0x198fff	Shader Cache	0xffffffff	0
+0x198fff	Shader Cache	0x7fffffff	0
+0x198fff	Shader Cache	0x10000	0
+0xac8497	Shader disk cache maximum size	0xffffffff	0
+0xac8497	Shader disk cache maximum size	0x7fffffff	0
+0xac8497	Shader disk cache maximum size	0x10000	0
+0xe73211	Texture filtering - Anisotropic sample optimization	0xffffffff	0
+0xe73211	Texture filtering - Anisotropic sample optimization	0x7fffffff	0
+0xe73211	Texture filtering - Anisotropic sample optimization	0x10000	0
+0x84cd70	Texture filtering - Anisotropic filter optimization	0xffffffff	0
+0x84cd70	Texture filtering - Anisotropic filter optimization	0x7fffffff	0
+0x84cd70	Texture filtering - Anisotropic filter optimization	0x10000	0
+0x2ecaf2	Texture filtering - Trilinear optimization	0xffffffff	0
+0x2ecaf2	Texture filtering - Trilinear optimization	0x7fffffff	0
+0x2ecaf2	Texture filtering - Trilinear optimization	0x10000	0
+0x19bb68	Texture filtering - Negative LOD bias	0xffffffff	0
+0x19bb68	Texture filtering - Negative LOD bias	0x7fffffff	0
+0x19bb68	Texture filtering - Negative LOD bias	0x10000	0
+0xce2691	Texture filtering - Quality	0xffffffff	0
+0xce2691	Texture filtering - Quality	0x7fffffff	0
+0xce2691	Texture filtering - Quality	0x10000	0
+0xce2692	Texture filtering - Quality Substitution	0xffffffff	0
+0xce2692	Texture filtering - Quality Substitution	0x7fffffff	0
+0xce2692	Texture filtering - Quality Substitution	0x10000	0
+0x64b541	Preferred refresh rate	0xffffffff	0
+0x64b541	Preferred refresh rate	0x7fffffff	0
+0x64b541	Preferred refresh rate	0x10000	0
+0xae785c	PowerThrottle	0xffffffff	0
+0xae785c	PowerThrottle	0x7fffffff	0
+0xae785c	PowerThrottle	0x10000	0
+0xab8687	VAB Default Data	0xffffffff	0
+0xab8687	VAB Default Data	0x7fffffff	0
+0xab8687	VAB Default Data	0x10000	0
+0xa879cf	Vertical Sync	0xffffffff	0
+0xa879cf	Vertical Sync	0x7fffffff	0
+0xa879cf	Vertical Sync	0x10000	0
+0x5a375c	Vertical Sync Tear Control	0xffffffff	0
+0x5a375c	Vertical Sync Tear Control	0x7fffffff	0
+0x5a375c	Vertical Sync Tear Control	0x10000	0
+0x20d0f3e6	Preferred OpenGL GPU	0xffffffff	0
+0x20d0f3e6	Preferred OpenGL GPU	0x7fffffff	0
+0x20d0f3e6	Preferred OpenGL GPU	0x10000	0
+0x10354ff8	List of Universal GPU ids	0xffffffff	0
+0x10354ff8	List of Universal GPU ids	0x7fffffff	0
+0x10354ff8	List of Universal GPU ids	0x10000	0
+0x10d1ef29	Maximum GPU Power	0xffffffff	0
+0x10d1ef29	Maximum GPU Power	0x7fffffff	0
+0x10d1ef29	Maximum GPU Power	0x10000	0
+0x104bc9a1	Exceptions to blocking apps	0xffffffff	0
+0x104bc9a1	Exceptions to blocking apps	0x7fffffff	0
+0x104bc9a1	Exceptions to blocking apps	0x10000	0
+0xdb1337	ICafe Settings	0xffffffff	0
+0xdb1337	ICafe Settings	0x7fffffff	0
+0xdb1337	ICafe Settings	0x10000	0
+0x19a002	shader cache path to dll	0xffffffff	0
+0x19a002	shader cache path to dll	0x7fffffff	0
+0x19a002	shader cache path to dll	0x10000	0
+0x50957b56	Allow for GPU re-ordering. The format must be a list of UniversalGPUid as formatted by NvApp and NvCpl, the order of the list will be the order in which the GPU are exposed. See UniversalGPUid.h for the format	0xffffffff	0
+0x50957b56	Allow for GPU re-ordering. The format must be a list of UniversalGPUid as formatted by NvApp and NvCpl, the order of the list will be the order in which the GPU are exposed. See UniversalGPUid.h for the format	0x7fffffff	0
+0x50957b56	Allow for GPU re-ordering. The format must be a list of UniversalGPUid as formatted by NvApp and NvCpl, the order of the list will be the order in which the GPU are exposed. See UniversalGPUid.h for the format	0x10000	0
