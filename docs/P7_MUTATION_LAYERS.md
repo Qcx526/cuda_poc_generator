@@ -113,8 +113,52 @@ python -m src.mutate --cve <CVE> --seed <PoC> \
 四个点是 `cuobjdump+0x66000/+0x67000/+0x68000`、`libc+0xa5000`，
 与独立跑 757 变体值穷举得到的集合**完全一致**——流程没有漏，也没有多报。
 
-## 七、还没做的
+## 七、每个崩溃点都存一条可重建的配方
+
+台账里每个点除了指纹和版本，还存了**触发它的编辑**——绝对偏移、位宽、值：
+
+```json
+"cuobjdump+0x68000": {
+  "triggers": [{"stage": "value", "edits": [[1688, 8, 0]],
+                "fields": {"sec4.sh_offset": 0},
+                "seed_sha256": "9f2c1a7b3e5d0c41"}]
+}
+```
+
+为什么必须存：变体文件在临时目录里，通常早就清掉了。没有配方时，想回答
+「`+0x68000` 是哪个变异打出来的」只能翻几百个文件——而且已经翻不到了。
+
+重建：
+
+```bash
+python -m src.replay --site cuobjdump+0x68000 --seed <cubin> \
+    --image <镜像> --tool "cuobjdump --dump-elf {artifact}"
+```
+
+```
+重建 replay_cuobjdump_0x68000.cubin（2536 字节，1 处编辑）
+退出码 139 | 崩溃点 cuobjdump+0x68000
+一致：重建的文件崩在同一处
+```
+
+`seed_sha256` 前 16 位对不上时直接拒绝——偏移是对的，但种子不是同一份，
+重放出来的是另一件事。
+
+实测台账里的五条：
+
+| 崩溃点 | 阶段 | 触发 |
+|---|---|---|
+| `cuobjdump+0x66000` | value | `sec5.sh_size = 0xFFFFFFFFFFFFFFFF` |
+| `cuobjdump+0x67000` | value | `sec3.sh_type = 0` |
+| `cuobjdump+0x68000` | value | `sec4.sh_offset = 0` |
+| `libc.so.6+0xa5000` | value | `sec4.sh_size = 0xFFFFFFFFFFFFFFFF` |
+| `libc.so.6+0x19d000` | value | `sec8.sh_offset = 8` |
+
+**一行一个**，这就是「哪个变异触发了哪个点」的答案。
+
+## 八、还没做的
 
 - 第 4/5/6/7 层只有名字与跳过理由，没有实现
-- 台账目前只记指纹与版本，没有记"触发它的字段组合"（下一步应补，否则复现一个点要回翻变体文件）
 - 跨版本验证（12.4 → 13.0）仍是单独命令，没有接进本流程
+- 台账只按 `module+offset` 去重（4 KB 取整），同一桶内不同性质的两个缺陷会被合并；
+  访问类型（读/写）已记录在发现里，但台账还没有用它做二次区分

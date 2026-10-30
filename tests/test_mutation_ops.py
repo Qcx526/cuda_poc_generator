@@ -159,3 +159,55 @@ def test_a_site_is_reported_once_even_if_two_stages_find_it(tmp_path):
                         ["cuobjdump+0x68000"], [], {})
     section = text.split("## 崩溃点")[1]
     assert section.count("cuobjdump+0x68000") == 1
+
+
+# ---- triggers: a site's claim has to be rebuildable --------------------------
+
+def test_a_trigger_records_absolute_edits():
+    from src import mutation_campaign as campaign
+    from src.mutate import run_stage  # noqa: F401  (import keeps the contract honest)
+
+    seed = _cubin()
+    variant = campaign.Variant(axis="value", field="sec2.sh_size", value=0,
+                               offset=64 + 64 + 32, width=8)
+    variant.path = "value_sec2.sh_size_0.cubin"
+    edits = variant.edits or [[variant.offset, variant.width, variant.value]]
+    assert edits == [[160, 8, 0]]
+
+
+def test_the_trigger_rebuilds_the_same_bytes():
+    from src import mutation_campaign as campaign
+    from src.replay import rebuild
+
+    seed = _cubin()
+    trigger = {"edits": [[160, 8, 0]]}
+    rebuilt = rebuild(seed, trigger)
+    assert rebuilt == campaign.apply(seed, 160, 8, 0)
+    assert rebuilt != seed
+
+
+def test_ledger_keeps_distinct_triggers_only():
+    sites = {}
+    trigger = {"stage": "value", "edits": [[160, 8, 0]]}
+    site_ledger.record(sites, "cuobjdump+0x68000", cve="CVE-X", tool="t",
+                       source="value", image="i", trigger=trigger)
+    site_ledger.record(sites, "cuobjdump+0x68000", cve="CVE-X", tool="t",
+                       source="value", image="i", trigger=dict(trigger))
+    assert len(sites["cuobjdump+0x68000"]["triggers"]) == 1
+
+    other = {"stage": "relation", "edits": [[168, 8, 24]]}
+    site_ledger.record(sites, "cuobjdump+0x68000", cve="CVE-X", tool="t",
+                       source="relation", image="i", trigger=other)
+    assert len(sites["cuobjdump+0x68000"]["triggers"]) == 2
+
+
+def test_triggers_are_capped(tmp_path):
+    path = tmp_path / "sites.json"
+    sites = {}
+    for index in range(9):
+        site_ledger.record(sites, "cuobjdump+0x68000", cve="CVE-X", tool="t",
+                           source="value", image="i",
+                           trigger={"stage": "value", "edits": [[100 + index, 8, 0]]})
+    site_ledger.save(sites, str(path))
+    loaded = site_ledger.load(str(path))
+    assert len(loaded["cuobjdump+0x68000"]["triggers"]) == site_ledger.MAX_TRIGGERS

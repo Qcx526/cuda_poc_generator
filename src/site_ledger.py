@@ -36,7 +36,7 @@ def save(sites: Dict[str, dict], path: str = DEFAULT_PATH) -> None:
 
 def record(sites: Dict[str, dict], fingerprint: str, *, cve: str, tool: str,
            source: str, image: str, crashed: bool = True,
-           attribution: str = "") -> bool:
+           attribution: str = "", trigger: Optional[dict] = None) -> bool:
     """Add a sighting; returns True when the site was not known before.
 
     A known site still gets the new version appended: a site that crashes on one
@@ -49,10 +49,35 @@ def record(sites: Dict[str, dict], fingerprint: str, *, cve: str, tool: str,
     if entry is None:
         entry = {"fingerprint": fingerprint, "cve": cve, "tool": tool,
                  "first_source": source, "attribution": attribution,
-                 "versions": {}}
+                 "versions": {}, "triggers": []}
         sites[fingerprint] = entry
     entry["versions"][image] = bool(crashed)
+    if trigger:
+        _add_trigger(entry, trigger)
     return is_new
+
+
+MAX_TRIGGERS = 5
+
+
+def _add_trigger(entry: dict, trigger: dict) -> None:
+    """Keep the first few distinct recipes for a site.
+
+    Without them, finding out which mutation reached a crash means searching
+    hundreds of variant files by hand - and the artifact files themselves are
+    usually gone by the time anyone asks. The recipe is the durable part: edits
+    are absolute offsets and widths, so it replays against the same seed byte for
+    byte without needing the tooling that produced it.
+    """
+    triggers = entry.setdefault("triggers", [])
+    key = (trigger.get("stage", ""),
+           tuple(sorted(tuple(edit) for edit in trigger.get("edits") or [])))
+    for existing in triggers:
+        if (existing.get("stage", ""),
+                tuple(sorted(tuple(edit) for edit in existing.get("edits") or []))) == key:
+            return
+    if len(triggers) < MAX_TRIGGERS:
+        triggers.append(trigger)
 
 
 def seen(sites: Dict[str, dict], fingerprint: str) -> bool:

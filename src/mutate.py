@@ -15,8 +15,8 @@ so a crash is either new or known without anyone comparing offsets by hand.
 """
 
 import argparse
+import hashlib
 import json
-import struct
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -91,10 +91,22 @@ def run_stage(name: str, variants: List[campaign.Variant], seed: bytes,
     other = [v for v in variants
              if _is_site(v.fingerprint) and v.fingerprint != baseline.fingerprint]
     sites: Dict[str, int] = {}
+    triggers: Dict[str, dict] = {}
+    seed_sha = hashlib.sha256(seed).hexdigest()[:16]
     for variant in other:
         sites[variant.fingerprint] = sites.get(variant.fingerprint, 0) + 1
+        if variant.fingerprint not in triggers:
+            edits = variant.edits or [[variant.offset, variant.width, variant.value]]
+            triggers[variant.fingerprint] = {
+                "stage": name,
+                "artifact": Path(variant.path).name,
+                "edits": edits,
+                "fields": {variant.field: variant.value},
+                "seed_sha256": seed_sha,
+            }
     return {"stage": name, "variants": len(variants), "refused": len(refused),
             "same": len(same), "crashed": len(other), "sites": sites,
+            "triggers": triggers,
             "baseline": baseline.fingerprint, "variants_detail": variants}
 
 
@@ -218,7 +230,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             elif site not in new_sites:
                 new_sites.append(site)
             site_ledger.record(ledger, site, cve=args.cve, tool=row["tool"],
-                               source=name, image=args.image)
+                               source=name, image=args.image,
+                               trigger=(row.get("triggers") or {}).get(site))
         print("%-9s 变体 %4d | 拒绝 %3d | 同种子 %4d | 新点位 %3d | 崩溃点 %d"
               % (name, row["variants"], row["refused"], row["same"],
                  row["crashed"], len(row["sites"])), flush=True)
