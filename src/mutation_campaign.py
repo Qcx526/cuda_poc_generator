@@ -55,6 +55,11 @@ class Variant:
     # Several fields changed in one artifact. Empty means the single
     # offset/width/value triple applies, which is the common case.
     edits: list = field(default_factory=list)
+    # A whole file, for mutations that change the layout rather than a field:
+    # truncation, padding, a relocated table. When set it wins over the edits.
+    payload: bytes = b""
+    # How the artifact was made, when an edit triple cannot describe it.
+    meta: dict = field(default_factory=dict)
 
 
 def widen(value: int, width: int) -> bytes:
@@ -68,6 +73,20 @@ def widen(value: int, width: int) -> bytes:
     if width == 4:
         return struct.pack("<I", value & 0xFFFFFFFF)
     return struct.pack("<Q", value & 0xFFFFFFFFFFFFFFFF)
+
+
+def materialise(seed: bytes, variant) -> bytes:
+    """The bytes a variant stands for.
+
+    Three shapes, in order of specificity: a whole file, several field edits, or a
+    single field. Materialising is separated from running so a test can check the
+    bytes without a container.
+    """
+    if variant.payload:
+        return variant.payload
+    if variant.edits:
+        return apply_many(seed, variant.edits)
+    return apply(seed, variant.offset, variant.width, variant.value)
 
 
 def apply_many(seed: bytes, edits) -> bytes:
@@ -215,11 +234,7 @@ def run(variants: Sequence[Variant], seed: bytes, invocations: Sequence[Sequence
     for variant in variants:
         variant.path = str(workdir / ("%s_%s_%d.cubin"
                                       % (variant.axis, variant.field, variant.value)))
-        if variant.edits:
-            Path(variant.path).write_bytes(apply_many(seed, variant.edits))
-        else:
-            Path(variant.path).write_bytes(
-                apply(seed, variant.offset, variant.width, variant.value))
+        Path(variant.path).write_bytes(materialise(seed, variant))
 
     source = Path(__file__).resolve().parent.parent / "tools" / "driver" / "crashcap.c"
     if source.is_file():

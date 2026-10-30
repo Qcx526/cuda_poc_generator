@@ -70,11 +70,16 @@ def _add_trigger(entry: dict, trigger: dict) -> None:
     byte without needing the tooling that produced it.
     """
     triggers = entry.setdefault("triggers", [])
-    key = (trigger.get("stage", ""),
-           tuple(sorted(tuple(edit) for edit in trigger.get("edits") or [])))
+
+    def key_of(item: dict) -> tuple:
+        return (item.get("stage", ""),
+                item.get("op", ""),
+                tuple(sorted((k, str(v)) for k, v in (item.get("params") or {}).items())),
+                tuple(sorted(tuple(edit) for edit in item.get("edits") or [])))
+
+    key = key_of(trigger)
     for existing in triggers:
-        if (existing.get("stage", ""),
-                tuple(sorted(tuple(edit) for edit in existing.get("edits") or []))) == key:
+        if key_of(existing) == key:
             return
     if len(triggers) < MAX_TRIGGERS:
         triggers.append(trigger)

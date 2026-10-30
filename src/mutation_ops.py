@@ -21,6 +21,7 @@ are named in STAGES so a report can say they were skipped and why, rather than
 leaving the impression that they were tried.
 """
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -29,10 +30,9 @@ from .mutation_campaign import Variant
 
 # Layers, in the order they should be tried: cost rises fast after the first two.
 STAGES = ("value", "relation", "layout", "payload", "naming", "container")
-IMPLEMENTED = ("value", "relation")
+IMPLEMENTED = ("value", "relation", "layout")
 
 SKIP_REASON = {
-    "layout": "尚未实现：需要重写节表与文件长度的写入器",
     "payload": "尚未实现：需要按节类型解析并重写记录（符号表项、nv.info、重定位项）",
     "naming": "尚未实现：需要字符串表内容级写入",
     "container": "尚未实现：需要 fatbin / 目标文件包装",
@@ -142,7 +142,127 @@ def relation_stage(seed: bytes) -> List[Variant]:
     return out
 
 
-BUILDERS = {"value": value_stage, "relation": relation_stage}
+# ---- layout: the shape of the file, not the value of a field ----------------
+
+def rebuild_layout(seed: bytes, op: str, params: dict) -> bytes:
+    """Produce the artifact a layout mutation describes.
+
+    Every layout variant must be describable from the seed alone, because that is
+    what the ledger stores: an operation and its parameters, not a file. A recipe
+    that cannot be replayed is a claim nobody can check later.
+    """
+    import struct
+
+    if op == "truncate":
+        return seed[:int(params["at"])]
+    if op == "pad":
+        return seed + b"\x00" * int(params["bytes"])
+    if op == "prepend":
+        return b"\x00" * int(params["bytes"]) + seed
+    if op == "copy_table_to_end":
+        shoff = struct.unpack_from("<Q", seed, 0x28)[0]
+        entsize = struct.unpack_from("<H", seed, 0x3A)[0]
+        count = struct.unpack_from("<H", seed, 0x3C)[0]
+        table = seed[shoff:shoff + entsize * count]
+        if not table:
+            return seed
+        out = bytearray(seed + table)
+        struct.pack_into("<Q", out, 0x28, len(seed))
+        return bytes(out)
+    if op == "relocate_and_grow":
+        shoff = struct.unpack_from("<Q", seed, 0x28)[0]
+        entsize = struct.unpack_from("<H", seed, 0x3A)[0]
+        count = struct.unpack_from("<H", seed, 0x3C)[0]
+        extra = int(params["extra"])
+        table = seed[shoff:shoff + entsize * count]
+        if not table or entsize <= 0:
+            return seed
+        # Copy the table to the end, then extend it there: a table that really is
+        # longer than the one the writer produced, in a place it can grow.
+        out = bytearray(seed + table + b"\x00" * (entsize * extra))
+        struct.pack_into("<Q", out, 0x28, len(seed))
+        struct.pack_into("<H", out, 0x3C, count + extra)
+        return bytes(out)
+    if op == "grow_table":
+        shoff = struct.unpack_from("<Q", seed, 0x28)[0]
+        entsize = struct.unpack_from("<H", seed, 0x3A)[0]
+        extra = int(params["extra"])
+        # The table has to end the file for growth to add entries rather than
+        # overwrite whatever follows it.
+        if shoff + entsize * struct.unpack_from("<H", seed, 0x3C)[0] != len(seed):
+            return seed
+        out = bytearray(seed + b"\x00" * (entsize * extra))
+        struct.pack_into("<H", out, 0x3C, struct.unpack_from("<H", seed, 0x3C)[0] + extra)
+        return bytes(out)
+    raise ValueError("unknown layout op %s" % op)
+
+
+def layout_stage(seed: bytes) -> List[Variant]:
+    """Cut the file, pad it, move the table - things a field edit cannot say.
+
+    These are the mutations that answer "what if the file is not the shape the
+    parser expects" rather than "what if a number is wrong". A parser that has
+    hardened every boundary value can still assume the table it read is inside the
+    file, or that the file ends where the last section says it does.
+    """
+    table = elf_fields.table(seed)
+    length = len(seed)
+    shoff = table.get("e_shoff", {}).get("value", 0)
+    entsize = table.get("e_shentsize", {}).get("value", 0)
+    out: List[Variant] = []
+
+    def add(op: str, label: str, params: dict) -> None:
+        payload = rebuild_layout(seed, op, params)
+        if payload == seed or not payload:
+            return
+        variant = Variant(axis="layout", field=label, value=0, offset=0, width=0)
+        variant.payload = payload
+        variant.meta = {"op": op, "params": params}
+        out.append(variant)
+
+    # Cut at meaningful places: inside the table, exactly at it, inside the last
+    # section, and at boundaries a length check is usually written against.
+    for at in sorted({length - 1, length // 2, shoff + 1, shoff,
+                      max(0, shoff - 1), 64, 63}):
+        if 0 < at < length:
+            add("truncate", "truncate@%d" % at, {"at": at})
+
+    # Padding shifts nothing but changes what "the end of the file" means.
+    for size in (1, 64, 4096):
+        add("pad", "pad@%d" % size, {"bytes": size})
+
+    # A table at a new address: parseable, but not where the writer put it.
+    add("copy_table_to_end", "table@eof", {})
+
+    # A table that really is longer than the one the file shipped with. Growing in
+    # place only works when the table ends the file; otherwise it is moved to the
+    # end first, which is also what a linker would have to do.
+    for extra in (1, 8):
+        if entsize and shoff + entsize * table.get("e_shnum", {}).get("value", 0) == length:
+            add("grow_table", "table+%d" % extra, {"extra": extra})
+        else:
+            add("relocate_and_grow", "table@eof+%d" % extra, {"extra": extra})
+
+    return out
+
+
+def variant_key(variant) -> tuple:
+    """Identity of a mutation, for deduplication across stages.
+
+    Field variants are identified by where they write and what they write. Layout
+    variants write nowhere in particular - their offset, width and value are all
+    zero - so keying them the same way collapsed thirteen distinct files into one.
+    The payload's digest is what distinguishes them.
+    """
+    if variant.payload:
+        return ("payload", hashlib.sha256(variant.payload).hexdigest()[:16])
+    if variant.edits:
+        return ("edits", tuple(tuple(edit) for edit in variant.edits))
+    return ("field", variant.offset, variant.width, variant.value)
+
+
+BUILDERS = {"value": value_stage, "relation": relation_stage,
+            "layout": layout_stage}
 
 
 def build(seed: bytes, selected: Optional[List[str]] = None) -> Stages:
@@ -153,7 +273,7 @@ def build(seed: bytes, selected: Optional[List[str]] = None) -> Stages:
     for name in STAGES:
         if name in wanted and name in BUILDERS:
             for variant in BUILDERS[name](seed):
-                key = (variant.offset, variant.width, variant.value)
+                key = variant_key(variant)
                 if key in seen:
                     continue
                 seen.add(key)

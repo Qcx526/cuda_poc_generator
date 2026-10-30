@@ -28,7 +28,15 @@ def find_trigger(sites: dict, fingerprint: str) -> Optional[dict]:
 
 
 def rebuild(seed: bytes, trigger: dict) -> bytes:
-    """Apply the stored edits; offsets and widths are absolute, so this is exact."""
+    """Recreate the artifact from its recipe.
+
+    Two shapes: field edits (absolute offsets, exact) or a layout operation applied
+    to the seed. Both are reproducible from the seed alone, which is the point.
+    """
+    if trigger.get("op"):
+        from .mutation_ops import rebuild_layout
+
+        return rebuild_layout(seed, trigger["op"], trigger.get("params") or {})
     return campaign.apply_many(seed, [tuple(edit) for edit in trigger["edits"]])
 
 
@@ -69,7 +77,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     # campaign.run materialises every variant from offset/width/value and would
     # overwrite the file just rebuilt; carrying the edits makes it re-apply the
     # same recipe instead, which is also what a re-run should be.
-    variant.edits = [tuple(edit) for edit in trigger["edits"]]
+    if not trigger.get("op"):
+        variant.edits = [tuple(edit) for edit in trigger["edits"]]
+    else:
+        variant.payload = artifact.read_bytes()
     variant.path = str(artifact)
     invocations = [args.tool.split()] if args.tool else \
         [["cuobjdump", "--dump-elf", "{artifact}"]]

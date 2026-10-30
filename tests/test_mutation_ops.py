@@ -75,9 +75,11 @@ def test_relation_stage_puts_names_at_the_end_of_the_string_table():
 
 
 def test_unimplemented_layers_are_reported_not_silently_dropped():
-    built = mutation_ops.build(_cubin(), ["value", "layout", "payload"])
-    assert set(built.skipped) == {"layout", "payload"}
-    assert "尚未实现" in mutation_ops.SKIP_REASON["layout"]
+    built = mutation_ops.build(_cubin(), ["value", "layout", "payload", "naming"])
+    assert set(built.skipped) == {"payload", "naming"}
+    assert "尚未实现" in mutation_ops.SKIP_REASON["payload"]
+    # layout is implemented now, so it must contribute variants, not a skip note
+    assert any(v.axis == "layout" for v in built.variants)
 
 
 def test_build_deduplicates_across_stages():
@@ -236,3 +238,77 @@ def test_a_site_that_never_crashes_says_so():
 
     assert verdict_for({"cuda:13.0": False}, "cuda:13.0") == "各版本均未崩"
     assert verdict_for({}, "cuda:13.0") == "未跨版本"
+
+
+# ---- layout: the shape of the file -------------------------------------------
+
+def test_truncation_cuts_exactly_where_it_says():
+    from src.mutation_ops import layout_stage
+
+    seed = _cubin()
+    labels = {v.field: v for v in layout_stage(seed)}
+    cut = labels["truncate@63"]
+    assert len(cut.payload) == 63
+    assert cut.payload == seed[:63]
+
+
+def test_padding_changes_the_file_length_without_moving_bytes():
+    from src.mutation_ops import layout_stage
+
+    seed = _cubin()
+    labels = {v.field: v for v in layout_stage(seed)}
+    padded = labels["pad@64"]
+    assert padded.payload[:len(seed)] == seed
+    assert len(padded.payload) == len(seed) + 64
+
+
+def test_the_table_is_moved_to_the_end_and_the_pointer_follows():
+    from src.mutation_ops import layout_stage
+
+    seed = _cubin()
+    labels = {v.field: v for v in layout_stage(seed)}
+    moved = labels["table@eof"]
+    assert len(moved.payload) > len(seed)
+    assert struct.unpack_from("<Q", moved.payload, 0x28)[0] == len(seed)
+
+
+def test_growing_a_moved_table_adds_real_entries():
+    from src.mutation_ops import layout_stage
+
+    seed = _cubin()
+    labels = {v.field: v for v in layout_stage(seed)}
+    grown = labels["table@eof+8"]
+    before = struct.unpack_from("<H", seed, 0x3C)[0]
+    after = struct.unpack_from("<H", grown.payload, 0x3C)[0]
+    assert after == before + 8
+
+
+def test_a_layout_variant_carries_a_replayable_recipe():
+    """The ledger stores an operation, not a file - so it must rebuild."""
+    from src.mutation_ops import layout_stage, rebuild_layout
+
+    seed = _cubin()
+    for variant in layout_stage(seed):
+        meta = variant.meta
+        assert meta["op"]
+        assert rebuild_layout(seed, meta["op"], meta["params"]) == variant.payload
+
+
+def test_materialise_prefers_the_whole_file_over_edits():
+    from src import mutation_campaign as campaign
+
+    variant = campaign.Variant(axis="layout", field="truncate@10", value=0,
+                               offset=0, width=0)
+    variant.payload = b"payload"
+    variant.edits = [[0, 8, 1]]
+    assert campaign.materialise(b"seed", variant) == b"payload"
+
+
+def test_layout_variants_are_not_collapsed_by_deduplication():
+    """Their offset, width and value are all zero; the payload is the identity."""
+    from src import mutation_ops
+
+    built = mutation_ops.build(_cubin(), ["layout"])
+    layout = [v for v in built.variants if v.axis == "layout"]
+    assert len(layout) >= 8
+    assert len({mutation_ops.variant_key(v) for v in layout}) == len(layout)

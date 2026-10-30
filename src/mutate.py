@@ -96,14 +96,19 @@ def run_stage(name: str, variants: List[campaign.Variant], seed: bytes,
     for variant in other:
         sites[variant.fingerprint] = sites.get(variant.fingerprint, 0) + 1
         if variant.fingerprint not in triggers:
-            edits = variant.edits or [[variant.offset, variant.width, variant.value]]
-            triggers[variant.fingerprint] = {
-                "stage": name,
-                "artifact": Path(variant.path).name,
-                "edits": edits,
-                "fields": {variant.field: variant.value},
-                "seed_sha256": seed_sha,
-            }
+            record = {"stage": name, "artifact": Path(variant.path).name,
+                      "fields": {variant.field: variant.value},
+                      "seed_sha256": seed_sha}
+            if variant.meta:
+                # A layout mutation is described by an operation, not by edits:
+                # the bytes it produces are not a patch of the seed's fields.
+                record["op"] = variant.meta.get("op", "")
+                record["params"] = variant.meta.get("params", {})
+            else:
+                record["edits"] = (variant.edits
+                                   or [[variant.offset, variant.width,
+                                        variant.value]])
+            triggers[variant.fingerprint] = record
     return {"stage": name, "variants": len(variants), "refused": len(refused),
             "same": len(same), "crashed": len(other), "sites": sites,
             "triggers": triggers,
@@ -135,7 +140,7 @@ def verify_site(site: str, trigger: Optional[dict], seed: bytes,
     """Rebuild the artifact from its recipe and run it on each release."""
     from .replay import rebuild
 
-    if not trigger or not trigger.get("edits"):
+    if not trigger or not (trigger.get("edits") or trigger.get("op")):
         return {}
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
@@ -279,7 +284,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         (name, []) for name in mutation_ops.STAGES)
     seen = set()
     for variant in built.variants:
-        key = (variant.offset, variant.width, variant.value)
+        key = mutation_ops.variant_key(variant)
         if key in seen:
             continue
         seen.add(key)
