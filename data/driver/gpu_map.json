@@ -1,0 +1,356 @@
+{
+ "NvAPI_GPU_GetConnectedSLIOutputs": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetShaderSubPipeCount": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetAdapterIdFromPhysicalGpu": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetConnectedOutputs": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetBusType": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetBusId": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetBoardInfo": {
+  "ver": 1,
+  "size": 20,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetBusSlotId": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetVbiosOEMRevision": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_I2CRead": {
+  "ver": 1,
+  "size": 8,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_ValidateOutputCombination": {
+  "ver": 1,
+  "size": 8,
+  "status": -1,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetLicensableFeatures": {
+  "ver": 1,
+  "size": 560,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetVirtualizationInfo": {
+  "ver": 1,
+  "size": 12,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetPhysicalFrameBufferSize": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetOverclockStatus": {
+  "ver": 1,
+  "size": 72,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GetPhysicalGPUFromUnAttachedDisplay": {
+  "ver": 1,
+  "size": 8,
+  "status": -106,
+  "overrun_at": null
+ },
+ "NvAPI_GetPhysicalGPUFromGPUID": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetGspFeatures": {
+  "ver": 1,
+  "size": 72,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetVirtualFrameBufferSize": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetTachReading": {
+  "ver": 1,
+  "size": 8,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetDynamicPstatesInfoEx": {
+  "ver": 1,
+  "size": 72,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GetGPUIDfromPhysicalGPU": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetAGPAperture": {
+  "ver": 1,
+  "size": 8,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetECCConfigurationInfo": {
+  "ver": 1,
+  "size": 8,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetRamBusWidth": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetAllOutputs": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetPerfDecreaseInfo": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_QueryWorkstationFeatureSupport": {
+  "ver": 1,
+  "size": 8,
+  "status": -160,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetVRReadyData": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetCurrentPstate": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetConnectedSLIOutputsWithLidState": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_SYS_GetPhysicalGpuFromDisplayId": {
+  "ver": 1,
+  "size": 8,
+  "status": -5,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetVbiosVersionString": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": 8
+ },
+ "NvAPI_GPU_GetVbiosRevision": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GetLogicalGPUFromPhysicalGPU": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates": {
+  "ver": 1,
+  "size": 224,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_NVLINK_GetCapsEx": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetGPUInfo": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetSystemType": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_NVLINK_GetCaps": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetGPUType": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetGpuCoreCount": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetECCErrorInfo": {
+  "ver": 1,
+  "size": 40,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetCurrentAGPRate": {
+  "ver": 1,
+  "size": 8,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetECCStatusInfo": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetFullName": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": 8
+ },
+ "NvAPI_GPU_GetConnectedOutputsWithLidState": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetCurrentPCIEDownstreamWidth": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetArchInfo": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetEncoderSessionsInfo": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_EnumTCCPhysicalGPUs": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetUUID": {
+  "ver": 1,
+  "size": 20,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetAllClockFrequencies": {
+  "ver": 1,
+  "size": 264,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetQuadroStatus": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetActiveOutputs": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetIRQ": {
+  "ver": 1,
+  "size": 8,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_I2CWrite": {
+  "ver": 1,
+  "size": 8,
+  "status": -104,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetHDCPSupportStatus": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ },
+ "NvAPI_GPU_GetEncoderStatistics": {
+  "ver": 1,
+  "size": 16,
+  "status": 0,
+  "overrun_at": null
+ }
+}
