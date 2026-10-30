@@ -211,3 +211,28 @@ def test_triggers_are_capped(tmp_path):
     site_ledger.save(sites, str(path))
     loaded = site_ledger.load(str(path))
     assert len(loaded["cuobjdump+0x68000"]["triggers"]) == site_ledger.MAX_TRIGGERS
+
+
+# ---- the version ladder decides what a site means ----------------------------
+
+def test_a_site_that_survives_the_newest_release_is_a_candidate():
+    from src.mutate import verdict_for
+
+    images = ["cuda:12.4", "cuda:13.0"]
+    assert "候选新漏洞" in verdict_for({"cuda:12.4": True, "cuda:13.0": True},
+                                      "cuda:13.0")
+
+
+def test_a_site_fixed_by_the_newest_release_is_not_a_candidate():
+    from src.mutate import verdict_for
+
+    text = verdict_for({"cuda:12.4": True, "cuda:13.0": False}, "cuda:13.0")
+    assert "已修复" in text and "13.0" in text
+    assert "候选" not in text
+
+
+def test_a_site_that_never_crashes_says_so():
+    from src.mutate import verdict_for
+
+    assert verdict_for({"cuda:13.0": False}, "cuda:13.0") == "各版本均未崩"
+    assert verdict_for({}, "cuda:13.0") == "未跨版本"

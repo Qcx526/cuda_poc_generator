@@ -110,10 +110,60 @@ def run_stage(name: str, variants: List[campaign.Variant], seed: bytes,
             "baseline": baseline.fingerprint, "variants_detail": variants}
 
 
+def verdict_for(versions: Dict[str, bool], newest: str) -> str:
+    """What the version ladder says about one site.
+
+    A site that crashes on an older release and not on the newest is a defect
+    someone already fixed. A site that crashes on the newest is the only case
+    worth carrying forward as a candidate.
+    """
+    if not versions:
+        return "未跨版本"
+    crashing = [image for image, hit in versions.items() if hit]
+    if not crashing:
+        return "各版本均未崩"
+    if newest in crashing:
+        return "**最新版仍崩（候选新漏洞）**"
+    fixed_from = sorted(str(i).split(":")[-1].split("-")[0] for i in versions
+                        if not versions[i])
+    return "已修复（%s 起不崩）" % "/".join(fixed_from)
+
+
+def verify_site(site: str, trigger: Optional[dict], seed: bytes,
+                images: List[str], invocations: List[List[str]], workdir: Path,
+                timeout: int) -> Dict[str, bool]:
+    """Rebuild the artifact from its recipe and run it on each release."""
+    from .replay import rebuild
+
+    if not trigger or not trigger.get("edits"):
+        return {}
+    workdir = Path(workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+    artifact = workdir / ("verify_%s.cubin" % site.replace("+", "_").replace(".", "_"))
+    artifact.write_bytes(rebuild(seed, trigger))
+    measured: Dict[str, bool] = {}
+    for image in images:
+        variant = campaign.Variant(axis="verify", field=site, value=0,
+                                   offset=0, width=0)
+        variant.edits = [tuple(edit) for edit in trigger["edits"]]
+        variant.path = str(artifact)
+        stage_dir = workdir / ("verify_%s" % image.split(":")[-1].split("-")[0])
+        stage_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            campaign.run([variant], seed, invocations, stage_dir, image,
+                         timeout=timeout)
+        except Exception:  # noqa: BLE001 - a missing image must not kill the run
+            measured[image] = False
+            continue
+        measured[image] = bool(_is_site(variant.fingerprint))
+    return measured
+
+
 def build_report(cve: str, seed_path: Path, seed: bytes, image: str,
                  stages: List[dict], skipped: List[str],
                  new_sites: List[str], known_sites: List[str],
-                 ledger: Dict[str, dict]) -> str:
+                 ledger: Dict[str, dict],
+                 verdicts: Optional[Dict[str, dict]] = None) -> str:
     lines = ["# 变异报告：%s" % cve, "",
              "| 项 | 值 |", "|---|---|",
              "| 种子 | `%s`（%d 字节）|" % (seed_path.name, len(seed)),
@@ -150,18 +200,44 @@ def build_report(cve: str, seed_path: Path, seed: bytes, image: str,
     if not new_sites and not known_sites:
         lines += ["没有崩溃。"]
     else:
-        lines += ["| 崩溃点 | 判定 | 归属 |", "|---|---|---|"]
+        lines += ["| 崩溃点 | 台账 | 版本表现 | 结论 |", "|---|---|---|---|"]
         for site in new_sites:
-            lines.append("| `%s` | **台账中没有** | 待查重 |" % site)
+            info = (verdicts or {}).get(site) or {}
+            shown = "; ".join("%s %s" % (str(image).split(":")[-1].split("-")[0],
+                                         "崩" if hit else "不崩")
+                              for image, hit in (info.get("versions") or {}).items())
+            lines.append("| `%s` | 新 | %s | %s |"
+                         % (site, shown or "—", info.get("verdict", "待查重")))
         for site in known_sites:
             entry = ledger.get(site) or {}
-            lines.append("| `%s` | 已知 | %s |"
-                         % (site, entry.get("attribution") or entry.get("cve", "—")))
+            info = (verdicts or {}).get(site) or {}
+            shown = "; ".join("%s %s" % (str(image).split(":")[-1].split("-")[0],
+                                         "崩" if hit else "不崩")
+                              for image, hit in (info.get("versions") or {}).items())
+            lines.append("| `%s` | 已知 | %s | %s |"
+                         % (site, shown or "—",
+                            entry.get("attribution") or entry.get("cve", "—")))
 
     lines += ["", "## 结论", ""]
-    if new_sites:
-        lines.append("发现 %d 个台账中没有的崩溃点，需要做跨版本验证与查重。"
-                     % len(new_sites))
+    verdicts = verdicts or {}
+    candidates = [site for site in new_sites
+                  if "候选" in (verdicts.get(site) or {}).get("verdict", "")]
+    if new_sites and verdicts:
+        if candidates:
+            lines.append("%d 个新崩溃点里，**%d 个在最新版本上仍然崩溃**：%s。"
+                         % (len(new_sites), len(candidates),
+                            "、".join("`%s`" % site for site in candidates)))
+            lines.append("")
+            lines.append("下一步：跨版本区间确认（哪一版开始崩）、登记、查重。")
+        else:
+            lines.append("%d 个新崩溃点全部在最新版本上不再出现，"
+                         "说明它们是已修复的缺陷，不是新漏洞。" % len(new_sites))
+            lines.append("")
+            lines.append("仍有一步没做：查重——确认它们是否为已披露的 CVE，"
+                         "而不是仅仅「已修复但未公开」。")
+    elif new_sites:
+        lines.append("发现 %d 个台账中没有的崩溃点，但未做跨版本验证——"
+                     "无法判断是新缺陷还是已修复。" % len(new_sites))
     elif known_sites:
         lines.append("只打中台账里已有的崩溃点，没有新发现。")
     else:
@@ -179,6 +255,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--stages", default="value,relation")
     parser.add_argument("--workdir", required=True)
     parser.add_argument("--ledger", default=site_ledger.DEFAULT_PATH)
+    parser.add_argument("--versions", default="",
+                        help="comma-separated images to check each new site on, "
+                             "newest last")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args(argv)
 
@@ -236,9 +315,28 @@ def main(argv: Optional[List[str]] = None) -> int:
               % (name, row["variants"], row["refused"], row["same"],
                  row["crashed"], len(row["sites"])), flush=True)
 
+    verdicts: Dict[str, dict] = {}
+    images = [item.strip() for item in args.versions.split(",") if item.strip()]
+    if images and new_sites:
+        newest = images[-1]
+        print("\n跨版本验证 %d 个点 × %d 个镜像" % (len(new_sites), len(images)),
+              flush=True)
+        for site in new_sites:
+            trigger = site_ledger.find(ledger, site) or {}
+            trigger = (trigger.get("triggers") or [None])[0]
+            measured = verify_site(site, trigger, seed, images, invocations,
+                                   workdir / "versions", args.timeout)
+            for image, hit in measured.items():
+                site_ledger.record(ledger, site, cve=args.cve,
+                                   tool=" ".join(invocations[0]),
+                                   source="version", image=image, crashed=hit)
+            verdict = verdict_for(measured, newest)
+            verdicts[site] = {"versions": measured, "verdict": verdict}
+            print("  %-24s %s" % (site, verdict), flush=True)
+
     site_ledger.save(ledger, args.ledger)
     report = build_report(args.cve, seed_path, seed, args.image, rows, skipped,
-                          new_sites, known_sites, ledger)
+                          new_sites, known_sites, ledger, verdicts)
     (workdir / "mutation_report.md").write_text(report, encoding="utf-8")
 
     print("\n新崩溃点 %d 个，已知 %d 个" % (len(new_sites), len(known_sites)))
