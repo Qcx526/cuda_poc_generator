@@ -28,5 +28,23 @@
     "profiles_enumerated": 5508,
     "gpu": "GeForce GTX 1660",
     "driver": "31.0.15.5161"
-  }
+  },
+  "NVDRS_APPLICATION": {
+    "version": 2,
+    "size": 16392,
+    "layout": {
+      "version": 0,
+      "isPredefined": 4,
+      "appName": 8,
+      "userFriendlyName": 4104,
+      "launcher": 8200,
+      "fileInFolder": 12296
+    },
+    "functions": {
+      "NvAPI_DRS_CreateApplication": "0x4347A9DE",
+      "NvAPI_DRS_DeleteApplicationEx": "0xC5EA85A1",
+      "NvAPI_DRS_EnumApplications": "0x7FA2173A"
+    }
+  },
+  "driver_installed": "32.0.16.1047 (610.47, Windows 10)"
 }
