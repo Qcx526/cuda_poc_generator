@@ -1,0 +1,23 @@
+{
+ "channel": {
+  "open_adapter": "D3DKMTOpenAdapterFromGdiDisplayName",
+  "display": "\\\\.\\DISPLAY34",
+  "create_device": "D3DKMT_CreateDevice (pCreateDevice=NULL, Size=0)",
+  "escape": "D3DKMT_Escape"
+ },
+ "status_map": {
+  "flags=0": "INVALID_PARAMETER",
+  "flags=1": "ACCESS_DENIED",
+  "flags=2": "NOT_SUPPORTED",
+  "flags=0x14": "BUFFER_TOO_SMALL",
+  "flags=0x1e": "BUFFER_TOO_SMALL/NOT_SUPPORTED",
+  "flags=0xd": "NOT_FOUND",
+  "flags=0x41": "INVALID_PARAMETER (ACCESS_DENIED 消失)"
+ },
+ "notes": [
+  "ACCESS_DENIED 在任何缓冲区处理之前触发，是调用者身份检查",
+  "DriverKnownEscape(0x40) 位使 ACCESS_DENIED 变为 INVALID_PARAMETER，但 512 个命令号仍全部 INVALID_PARAMETER",
+  "create_device 返回的 hDevice 与 hAdapter 相同，疑未真正分配设备"
+ ],
+ "cmd_scan": "0..511 全部 INVALID_PARAMETER（flags=0x41/0x81）"
+}
