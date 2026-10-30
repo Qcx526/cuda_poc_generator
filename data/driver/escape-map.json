@@ -17,7 +17,9 @@
  "notes": [
   "ACCESS_DENIED 在任何缓冲区处理之前触发，是调用者身份检查",
   "DriverKnownEscape(0x40) 位使 ACCESS_DENIED 变为 INVALID_PARAMETER，但 512 个命令号仍全部 INVALID_PARAMETER",
-  "create_device 返回的 hDevice 与 hAdapter 相同，疑未真正分配设备"
+  "create_device 返回的 hDevice 与 hAdapter 相同，疑未真正分配设备",
+  "创建真实 D3D11 设备(feature level 11_0)后，flags=1 仍返回 ACCESS_DENIED —— 授权门不是按进程判定，而是按 hDevice 是不是该客户端的真实设备"
  ],
- "cmd_scan": "0..511 全部 INVALID_PARAMETER（flags=0x41/0x81）"
+ "cmd_scan": "0..511 全部 INVALID_PARAMETER（flags=0x41/0x81）",
+ "next": "需要真正的 NV 设备句柄：D3DKMT_CreateDevice 返回的 hDevice 与 hAdapter 相同，疑未分配"
 }
