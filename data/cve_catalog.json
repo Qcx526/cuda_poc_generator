@@ -1,0 +1,192 @@
+{
+  "CVE-2022-21821": {
+    "advisory": "",
+    "affected": "All versions prior to 11.6 Update 2. CUDA 11.2 is fully affected.",
+    "component": "cuobjdump",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2023-0196": {
+    "advisory": "",
+    "affected": "All versions prior to CUDA Toolkit 12.1. CUDA 11.2 is fully affected.",
+    "component": "cuobjdump",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0076": {
+    "advisory": "NVIDIA a_id/5517 (2024-04-03), CWE-125, CVSS 3.3",
+    "affected": "all versions prior to CUDA Toolkit 12.4",
+    "component": "NVIDIA CUDA cuobjdump + nvdisasm (ELF/cubin section header parser)",
+    "cwe": "CWE-125",
+    "fixed_in": "12.4 (12.4U1)",
+    "source": "spec"
+  },
+  "CVE-2024-0090": {
+    "advisory": "",
+    "affected": "gpu_display_driver: >=470 <470.256.02, >=535 <535.183.01, >=550 <550.90.07, >=555 <555.52.04；vGPU: <13.11, 14.0–16.5, 17.0–17.1",
+    "component": "NVIDIA GPU Display Driver",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0091": {
+    "advisory": "",
+    "affected": "",
+    "component": "NVIDIA GPU Display Driver - driver API layer",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "spec"
+  },
+  "CVE-2024-0107": {
+    "advisory": "",
+    "affected": "",
+    "component": "NVIDIA GPU Display Driver user-mode shader compiler (nvgpucomp64.dll)",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "spec"
+  },
+  "CVE-2024-0109": {
+    "advisory": "",
+    "affected": "<= CUDA Toolkit 12.6（12.6U1 修复）",
+    "component": "cuobjdump",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0110": {
+    "advisory": "",
+    "affected": "<= CUDA Toolkit 12.6（12.6U1 修复）",
+    "component": "cuobjdump",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0111": {
+    "advisory": "",
+    "affected": "<= CUDA Toolkit 12.6（12.6U1 修复）",
+    "component": "cuobjdump",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0115": {
+    "advisory": "",
+    "affected": "0.1.0 至 0.6.0",
+    "component": "CV-CUDA",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0124": {
+    "advisory": "",
+    "affected": "",
+    "component": "nvdisasm",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-0125": {
+    "advisory": "",
+    "affected": "所有 <= CUDA Toolkit 12.6U1（12.6U2 修复）",
+    "component": "nvdisasm",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2024-53877": {
+    "advisory": "",
+    "affected": "所有 <= CUDA Toolkit 12.8 的版本",
+    "component": "nvdisasm",
+    "cwe": "",
+    "fixed_evidence": "本仓库实测：12.4 崩、13.0 不崩",
+    "fixed_in": "13.0",
+    "source": "inputs"
+  },
+  "CVE-2025-23247": {
+    "advisory": "",
+    "affected": "",
+    "component": "cuobjdump .nv_debug_source parser",
+    "cwe": "",
+    "fixed_evidence": "a_id/5661 同批次，13.0 之前",
+    "fixed_in": "13.0",
+    "source": "spec"
+  },
+  "CVE-2025-23273": {
+    "advisory": "",
+    "affected": "所有低于 nvJPEG 13.0.0 / CUDA Toolkit 13.0 的版本",
+    "component": "nvJPEG",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2025-23308": {
+    "advisory": "",
+    "affected": "All versions up to and including 12.9.88. Fixed in CUDA Toolkit 13.0 (2025-09-23).",
+    "component": "nvdisasm",
+    "cwe": "",
+    "fixed_evidence": "a_id/5661 同批次，13.0 之前",
+    "fixed_in": "13.0",
+    "source": "inputs"
+  },
+  "CVE-2025-23316": {
+    "advisory": "",
+    "affected": "所有 < 25.08 的版本",
+    "component": "Triton Inference Server",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2025-23338": {
+    "advisory": "",
+    "affected": "所有 < CUDA Toolkit 13.0（13.0 修复）",
+    "component": "nvdisasm",
+    "cwe": "",
+    "fixed_evidence": "a_id/5661 同批次，13.0 之前",
+    "fixed_in": "13.0",
+    "source": "inputs"
+  },
+  "CVE-2025-23339": {
+    "advisory": "",
+    "affected": "",
+    "component": "NVIDIA CUDA cuobjdump (DWARF .debug_abbrev parser)",
+    "cwe": "CWE-121",
+    "fixed_evidence": "advisory a_id/5661：所有 13.0 之前版本",
+    "fixed_in": "13.0",
+    "source": "spec"
+  },
+  "CVE-2025-23340": {
+    "advisory": "NVIDIA a_id/5661 (2025-09-24), CWE-125, CVSS 3.3",
+    "affected": "all versions prior to CUDA Toolkit 13.0",
+    "component": "NVIDIA CUDA nvdisasm (SHT_RELA section handler)",
+    "cwe": "CWE-125",
+    "fixed_in": "13.0",
+    "source": "spec"
+  },
+  "CVE-2025-23346": {
+    "advisory": "",
+    "affected": "所有 < CUDA Toolkit 13.0（13.0 修复）",
+    "component": "cuobjdump",
+    "cwe": "",
+    "fixed_evidence": "a_id/5661 同批次，13.0 之前",
+    "fixed_in": "13.0",
+    "source": "inputs"
+  },
+  "CVE-2025-33231": {
+    "advisory": "",
+    "affected": "所有早于 CUDA Toolkit 13.1 的 Nsight Systems for Windows 版本",
+    "component": "Nsight Systems",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  },
+  "CVE-2026-24191": {
+    "advisory": "",
+    "affected": "见 cuda_environment.affected_versions",
+    "component": "NVIDIA Display Driver",
+    "cwe": "",
+    "fixed_in": "",
+    "source": "inputs"
+  }
+}
