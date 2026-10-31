@@ -1,0 +1,131 @@
+{
+  "CVE-2026-24193": {
+    "bulletin": "5821 (GPU Display Driver - May 2026)",
+    "cwe": "CWE-787",
+    "vector": "AV:L",
+    "score": 7.8,
+    "windows": [
+      {
+        "product": "GeForce",
+        "branch": "R580",
+        "fixed": "582.53",
+        "arch": "Maxwell/Volta/Pascal only"
+      },
+      {
+        "product": "RTX/Quadro/NVS",
+        "branch": "R580",
+        "fixed": "582.53",
+        "arch": ""
+      },
+      {
+        "product": "RTX/Quadro/NVS",
+        "branch": "R535",
+        "fixed": "539.72",
+        "arch": ""
+      },
+      {
+        "product": "Tesla",
+        "branch": "R580",
+        "fixed": "582.53",
+        "arch": ""
+      },
+      {
+        "product": "Tesla",
+        "branch": "R535",
+        "fixed": "539.72",
+        "arch": ""
+      }
+    ],
+    "linux": [
+      {
+        "product": "GeForce",
+        "branch": "R580",
+        "fixed": "580.159.03",
+        "arch": ""
+      },
+      {
+        "product": "GeForce",
+        "branch": "R535",
+        "fixed": "535.309.01",
+        "arch": ""
+      },
+      {
+        "product": "RTX/Quadro/NVS",
+        "branch": "R580",
+        "fixed": "580.159.03",
+        "arch": ""
+      },
+      {
+        "product": "RTX/Quadro/NVS",
+        "branch": "R535",
+        "fixed": "535.309.01",
+        "arch": ""
+      },
+      {
+        "product": "Tesla",
+        "branch": "R580",
+        "fixed": "580.159.03",
+        "arch": ""
+      },
+      {
+        "product": "Tesla",
+        "branch": "R535",
+        "fixed": "535.309.01",
+        "arch": ""
+      }
+    ],
+    "note": "Windows 下没有 GeForce R535 条目 —— 该组合不成立"
+  },
+  "CVE-2026-47571": {
+    "bulletin": "5861",
+    "cwe": "CWE-863",
+    "vector": "AV:L",
+    "score": 7.8,
+    "windows": [
+      {
+        "product": "GeForce",
+        "branch": "R580",
+        "fixed": "582.78",
+        "arch": "Maxwell/Volta/Pascal only"
+      },
+      {
+        "product": "GeForce",
+        "branch": "R610",
+        "fixed": "610.60",
+        "arch": ""
+      },
+      {
+        "product": "GeForce",
+        "branch": "R615",
+        "fixed": "616.56",
+        "arch": ""
+      },
+      {
+        "product": "RTX/Quadro/NVS",
+        "branch": "R610",
+        "fixed": "610.88",
+        "arch": ""
+      },
+      {
+        "product": "RTX/Quadro/NVS",
+        "branch": "R615",
+        "fixed": "616.92",
+        "arch": ""
+      },
+      {
+        "product": "Tesla",
+        "branch": "R610",
+        "fixed": "610.88",
+        "arch": ""
+      },
+      {
+        "product": "Tesla",
+        "branch": "R615",
+        "fixed": "616.92",
+        "arch": ""
+      }
+    ],
+    "linux": [],
+    "note": "Windows-only；GeForce R610 <610.60 无架构限制 → GTX 1660 + 610.47 在范围内"
+  }
+}
