@@ -126,3 +126,8 @@ demo/*/artifacts/observation.txt
 
 # 根目录的运行产物（demo 下的样本不受影响）
 /artifacts/
+
+# 厂商二进制：体积大且不可分发，只记录路径与结论
+data/driver/binary/*.sys
+data/driver/binary/*.dll
+data/driver/binary/*.exe
