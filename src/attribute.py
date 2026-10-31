@@ -71,6 +71,32 @@ def _same_release(left: str, right: str) -> bool:
     return key(left) == key(right)
 
 
+WRITE_CWES = ("CWE-121", "CWE-787", "CWE-122")
+READ_CWES = ("CWE-125", "CWE-476", "CWE-457")
+
+
+def access_of(entry: dict) -> str:
+    """'read' / 'write' / '' as recorded with the trigger."""
+    for trigger in entry.get("triggers") or []:
+        label = str(trigger.get("access") or trigger.get("severity") or "")
+        if "write" in label.lower():
+            return "write"
+        if "read" in label.lower():
+            return "read"
+    return ""
+
+
+def _compatible(entry_access: str, cwe: str) -> bool:
+    """A read cannot be a write-type defect, and the other way round."""
+    if not entry_access or not cwe:
+        return True
+    if entry_access == "read":
+        return cwe not in WRITE_CWES
+    if entry_access == "write":
+        return cwe not in READ_CWES
+    return True
+
+
 def attribute(site: str, entry: dict, catalog: Dict[str, dict]) -> dict:
     """Compare one site against the catalog."""
     module = module_of(site)
@@ -80,6 +106,12 @@ def attribute(site: str, entry: dict, catalog: Dict[str, dict]) -> dict:
 
     candidates = [cve for cve, item in catalog.items()
                   if module.lower() in str(item.get("component", "")).lower()]
+    access = access_of(entry)
+    if access:
+        filtered = [cve for cve in candidates
+                    if _compatible(access, str(catalog[cve].get("cwe") or ""))]
+        if filtered:
+            candidates = filtered
     if not candidates:
         return {"verdict": NEW, "cve": "", "reason": "目录里没有组件为 %s 的公告" % module,
                 "crashed": crashed, "clean": clean}
@@ -93,12 +125,13 @@ def attribute(site: str, entry: dict, catalog: Dict[str, dict]) -> dict:
 
     if len(resolved) == 1:
         return {"verdict": KNOWN, "cve": resolved[0],
-                "reason": "组件相同，且 %s 之后不再崩溃，与该公告的修复版本一致" % clean[0],
-                "crashed": crashed, "clean": clean}
+                "reason": "组件相同，且 %s 之后不再崩溃，与该公告的修复版本一致"
+                          % ("/".join(clean) or "—"),
+                "crashed": crashed, "clean": clean, "access": access}
     if len(resolved) > 1:
         return {"verdict": UNRESOLVED, "cve": ",".join(resolved),
                 "reason": "多个同组件公告的修复版本都吻合，无法唯一确定",
-                "crashed": crashed, "clean": clean}
+                "crashed": crashed, "clean": clean, "access": access}
     if not any(catalog[cve].get("fixed_in") for cve in candidates):
         return {"verdict": UNKNOWN, "cve": "",
                 "reason": "同组件有 %d 个公告，但目录里都没有修复版本" % len(candidates),
@@ -109,12 +142,61 @@ def attribute(site: str, entry: dict, catalog: Dict[str, dict]) -> dict:
             "candidates": candidates[:6]}
 
 
+def backfill(sites: Dict[str, dict], seed_path: Path, image: str, tool: str,
+             workdir: Path) -> int:
+    """Replay sites that were recorded before access type was stored.
+
+    Without it an attribution has to consider every advisory for the component,
+    including ones whose defect is a write while ours is a read.
+    """
+    from . import mutation_campaign as campaign
+    from .replay import rebuild
+
+    seed = seed_path.read_bytes()
+    workdir.mkdir(parents=True, exist_ok=True)
+    filled = 0
+    for site, entry in sites.items():
+        triggers = entry.get("triggers") or []
+        if not triggers or any(t.get("access") for t in triggers):
+            continue
+        trigger = triggers[0]
+        try:
+            payload = rebuild(seed, trigger)
+        except (KeyError, ValueError):
+            continue
+        variant = campaign.Variant(axis="backfill", field=site, value=0,
+                                   offset=0, width=0)
+        variant.payload = payload
+        variant.path = str(workdir / ("backfill_%s.cubin"
+                                      % site.replace("+", "_").replace(".", "_")))
+        Path(variant.path).write_bytes(payload)
+        try:
+            campaign.run([variant], seed, [tool.split()], workdir, image)
+        except Exception:  # noqa: BLE001 - a missing image must not stop the pass
+            continue
+        if variant.access or variant.severity:
+            trigger["access"] = variant.access
+            trigger["severity"] = variant.severity
+            trigger["access_measured_on"] = image
+            filled += 1
+            print("%-24s access=%s severity=%s" % (site, variant.access, variant.severity))
+        else:
+            print("%-24s 重放未复现，未记录" % site)
+    return filled
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="attribute crash sites to CVEs")
     parser.add_argument("--ledger", default=site_ledger.DEFAULT_PATH)
     parser.add_argument("--site", default="")
     parser.add_argument("--show", action="store_true")
     parser.add_argument("--write", action="store_true", help="store verdicts in the ledger")
+    parser.add_argument("--backfill", action="store_true",
+                        help="replay sites to record their access type")
+    parser.add_argument("--seed", default="")
+    parser.add_argument("--image", default="nvidia/cuda:12.4.1-devel-ubuntu22.04")
+    parser.add_argument("--tool", default="cuobjdump --dump-elf {artifact}")
+    parser.add_argument("--workdir", default="data/mutation/backfill")
     args = parser.parse_args(argv)
 
     sites = site_ledger.load(args.ledger)
@@ -122,6 +204,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not sites:
         print("台账为空")
         return 2
+
+    if args.backfill:
+        if not args.seed:
+            print("--backfill 需要 --seed")
+            return 2
+        filled = backfill(sites, Path(args.seed), args.image, args.tool,
+                          Path(args.workdir))
+        site_ledger.save(sites, args.ledger)
+        print("补了 %d 个点的访问类型" % filled)
 
     rows = []
     for site in sorted(sites):

@@ -98,7 +98,10 @@ def run_stage(name: str, variants: List[campaign.Variant], seed: bytes,
         if variant.fingerprint not in triggers:
             record = {"stage": name, "artifact": Path(variant.path).name,
                       "fields": {variant.field: variant.value},
-                      "seed_sha256": seed_sha}
+                      "seed_sha256": seed_sha,
+                      # read vs write decides which CWE an attribution may
+                      # consider: a site that reads cannot be the stack overflow.
+                      "access": variant.access, "severity": variant.severity}
             if variant.meta:
                 # A layout mutation is described by an operation, not by edits:
                 # the bytes it produces are not a patch of the seed's fields.
