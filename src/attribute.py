@@ -18,6 +18,7 @@ investigation.
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -44,24 +45,37 @@ def module_of(fingerprint: str) -> str:
     return fingerprint.split("+", 1)[0] if "+" in fingerprint else fingerprint
 
 
-def short(image: str) -> str:
-    """A comparable release label.
+# ``cuda112`` / ``cuda1310`` - the toolkit version squeezed into a repo name.
+_CUDA_MARK = re.compile(r"cuda(\d+)(?!\d)", re.IGNORECASE)
 
-    The images are named two ways: ``nvidia/cuda:12.4.1-devel-...`` and the
-    project's own ``cpg/cuda112-py3:1.0``, where the toolkit version is in the
-    repository name and the tag is a build number. Reading the tag alone turns
-    11.2 into "1.0", which then matches nothing.
+
+def short(image: str) -> str:
+    """A comparable release label, whatever the image is called.
+
+    Three shapes occur and all three must give the same kind of answer:
+
+        nvidia/cuda:12.4.1-devel-ubuntu22.04      -> 12.4   (tag carries it)
+        cpg/cuda112-py3:1.0                       -> 11.2   (repo name carries it)
+        localhost/cuda:13.1.0-base                -> 13.1
+
+    A table of known names would work until the next base image, so the shapes are
+    parsed instead: a ``cuda<digits>`` marker wins, otherwise the leading numeric
+    part of the tag. Both are reduced to major.minor because that is the
+    granularity advisories use.
     """
     text = str(image)
-    marker = text.split("/")[-1]
-    for digits, version in (("cuda112", "11.2"), ("cuda113", "11.3"),
-                            ("cuda118", "11.8"), ("cuda120", "12.0"),
-                            ("cuda124", "12.4"), ("cuda130", "13.0"),
-                            ("cuda131", "13.1")):
-        if digits in marker:
-            return version
-    tail = text.split(":")[-1].split("-")[0]
-    return ".".join(tail.split(".")[:2])
+    repo = text.split(":")[0].split("/")[-1]
+    mark = _CUDA_MARK.search(repo)
+    if mark:
+        digits = mark.group(1)
+        # 112 -> 11.2, 131 -> 13.1, 1310 -> 13.10
+        if len(digits) >= 3:
+            return "%s.%s" % (digits[:-1], digits[-1])
+    tag = text.split(":")[-1].split("-")[0]
+    parts = tag.split(".")
+    if len(parts) >= 2 and all(part.isdigit() for part in parts[:2]):
+        return ".".join(parts[:2])
+    return tag
 
 
 def _same_release(left: str, right: str) -> bool:
@@ -196,6 +210,8 @@ def backfill(sites: Dict[str, dict], seed_path: Path, image: str, tool: str,
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="attribute crash sites to CVEs")
     parser.add_argument("--ledger", default=site_ledger.DEFAULT_PATH)
+    parser.add_argument("--catalog", default=str(CATALOG),
+                        help="advisory catalog to match against")
     parser.add_argument("--site", default="")
     parser.add_argument("--show", action="store_true")
     parser.add_argument("--write", action="store_true", help="store verdicts in the ledger")
@@ -208,7 +224,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     sites = site_ledger.load(args.ledger)
-    catalog = load_catalog()
+    catalog = load_catalog(Path(args.catalog))
     if not sites:
         print("台账为空")
         return 2

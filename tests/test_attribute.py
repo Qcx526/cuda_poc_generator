@@ -84,3 +84,22 @@ def test_access_type_excludes_read_defects_for_a_write_site():
     verdict = attribute("cuobjdump+0x68000", entry, CATALOG)
     assert verdict["verdict"] == KNOWN
     assert verdict["cve"] == "CVE-2025-23339"
+
+
+# ---- release labels must be parsed, not tabulated ---------------------------
+
+def test_release_labels_from_every_image_shape():
+    """A table of known image names breaks on the next base image; parsing does not."""
+    cases = {
+        "nvidia/cuda:12.4.1-devel-ubuntu22.04": "12.4",
+        "nvidia/cuda:13.1.0-devel-ubuntu24.04": "13.1",
+        "nvidia/cuda:11.8.0-runtime-ubuntu20.04": "11.8",
+        "cpg/cuda112-py3:1.0": "11.2",
+        "localhost:5000/cuda:13.0.0-base": "13.0",
+    }
+    for image, expected in cases.items():
+        assert short(image) == expected, image
+
+
+def test_an_unknown_name_falls_back_to_the_tag():
+    assert short("registry.example/custom:9.9.9") == "9.9"
