@@ -31,6 +31,7 @@ UNPUBLISHED = "已修复但无对应公告"
 UNRESOLVED = "同组件，版本区间不一致"
 NEW = "无对应公告（候选新发现）"
 UNKNOWN = "无法判定（缺版本数据）"
+UNTESTED = "未跨版本（无法判断是否已修复）"
 
 
 def load_catalog(path: Path = CATALOG) -> Dict[str, dict]:
@@ -103,6 +104,13 @@ def attribute(site: str, entry: dict, catalog: Dict[str, dict]) -> dict:
     versions = entry.get("versions") or {}
     crashed = [short(image) for image, hit in versions.items() if hit]
     clean = [short(image) for image, hit in versions.items() if not hit]
+
+    if len(versions) <= 1 or not clean:
+        # One release is not a comparison: nothing can be said about whether the
+        # defect was fixed, so no advisory can be ruled in or out.
+        return {"verdict": UNTESTED, "cve": "",
+                "reason": "只测了 %s，没有不崩的版本可比" % ("/".join(crashed) or "—"),
+                "crashed": crashed, "clean": clean}
 
     candidates = [cve for cve, item in catalog.items()
                   if module.lower() in str(item.get("component", "")).lower()]

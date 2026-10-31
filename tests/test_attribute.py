@@ -5,8 +5,10 @@ from src.attribute import KNOWN, NEW, UNPUBLISHED, UNRESOLVED, attribute, short
 
 CATALOG = {
     "CVE-2024-0076": {"component": "NVIDIA CUDA cuobjdump + nvdisasm", "fixed_in": "12.4"},
-    "CVE-2025-23339": {"component": "cuobjdump DWARF", "fixed_in": "13.0"},
-    "CVE-2025-23247": {"component": "cuobjdump .nv_debug_source", "fixed_in": "13.0"},
+    "CVE-2025-23339": {"component": "cuobjdump DWARF", "fixed_in": "13.0",
+                       "cwe": "CWE-121"},
+    "CVE-2025-23247": {"component": "cuobjdump .nv_debug_source", "fixed_in": "13.0",
+                       "cwe": "CWE-125"},
     "CVE-2025-23340": {"component": "nvdisasm SHT_RELA", "fixed_in": "13.0"},
 }
 
@@ -49,6 +51,36 @@ def test_an_advisory_without_a_fix_version_cannot_be_used():
     assert verdict["verdict"] in (UNPUBLISHED, "无法判定（缺版本数据）")
 
 
-def test_a_site_that_never_stops_crashing_is_not_attributed():
+def test_a_site_without_a_clean_release_is_not_attributed():
+    """No release stopped crashing means there is no fix interval to compare."""
     verdict = attribute("cuobjdump+0x1", _site(["12.4"], []), CATALOG)
-    assert verdict["verdict"] == UNPUBLISHED
+    assert verdict["verdict"].startswith("未跨版本")
+
+
+def test_a_version_can_be_clean_without_matching_anything():
+    """Clean at 12.4 matches 0076; a second advisory at 13.0 does not apply."""
+    verdict = attribute("cuobjdump+0x68000", _site(["11.2"], ["12.4"]), CATALOG)
+    assert verdict["cve"] == "CVE-2024-0076"
+
+
+def test_access_type_excludes_write_defects_for_a_read_site():
+    """23339 is a stack overflow (write); a null-read cannot be it.
+
+    Two advisories share the component and the fix release, so version alone is
+    ambiguous. The access type breaks the tie: what is left is unique.
+    """
+    entry = _site(["12.4"], ["13.0"])
+    entry["triggers"] = [{"access": "read", "severity": "null-read"}]
+    verdict = attribute("cuobjdump+0x68000", entry, CATALOG)
+    assert verdict["verdict"] == KNOWN
+    assert verdict["cve"] == "CVE-2025-23247"
+    assert "23339" not in verdict["cve"]
+
+
+def test_access_type_excludes_read_defects_for_a_write_site():
+    """The mirror case: a write site cannot be the out-of-bounds read."""
+    entry = _site(["12.4"], ["13.0"])
+    entry["triggers"] = [{"access": "write", "severity": "write-out-of-bounds"}]
+    verdict = attribute("cuobjdump+0x68000", entry, CATALOG)
+    assert verdict["verdict"] == KNOWN
+    assert verdict["cve"] == "CVE-2025-23339"

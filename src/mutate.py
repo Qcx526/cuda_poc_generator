@@ -67,6 +67,45 @@ def _stage_of(variants: List[campaign.Variant]) -> Dict[str, str]:
             for variant in variants}
 
 
+def verify_sites(candidates: Dict[str, List[campaign.Variant]], seed: bytes,
+                 invocations: List[List[str]], workdir: Path, image: str,
+                 timeout: int, rounds: int = 2) -> Dict[str, bool]:
+    """Re-run one variant per site and require the same fingerprint.
+
+    A site is recorded from whichever variant happened to reach it first, and that
+    variant does not necessarily reach it again - three of five recorded sites
+    failed to reproduce on replay. An attribution built on such a recipe is built
+    on nothing, so a site is only trusted once the recipe has been shown to work
+    twice.
+    """
+    verified: Dict[str, bool] = {}
+    verify_dir = workdir / "verify"
+    for attempt in range(rounds):
+        pending = [site for site in candidates if site not in verified]
+        batch = []
+        for site in pending:
+            choices = candidates[site]
+            if attempt >= len(choices):
+                continue
+            source = choices[attempt]
+            copy = campaign.Variant(axis="verify", field=site, value=0,
+                                    offset=0, width=0)
+            copy.payload = source.payload or campaign.materialise(seed, source)
+            copy.path = str(verify_dir / ("%s_%d.cubin"
+                                          % (site.replace("+", "_").replace(".", "_"),
+                                             attempt)))
+            batch.append((site, copy))
+        if not batch:
+            break
+        verify_dir.mkdir(parents=True, exist_ok=True)
+        campaign.run([item for _, item in batch], seed, invocations, verify_dir,
+                     image, timeout=timeout)
+        for site, item in batch:
+            if item.fingerprint == site:
+                verified[site] = True
+    return verified
+
+
 def run_stage(name: str, variants: List[campaign.Variant], seed: bytes,
               invocations: List[List[str]], workdir: Path, image: str,
               timeout: int) -> dict:
@@ -92,16 +131,24 @@ def run_stage(name: str, variants: List[campaign.Variant], seed: bytes,
              if _is_site(v.fingerprint) and v.fingerprint != baseline.fingerprint]
     sites: Dict[str, int] = {}
     triggers: Dict[str, dict] = {}
-    seed_sha = hashlib.sha256(seed).hexdigest()[:16]
+    by_site: Dict[str, List[campaign.Variant]] = {}
     for variant in other:
         sites[variant.fingerprint] = sites.get(variant.fingerprint, 0) + 1
+        by_site.setdefault(variant.fingerprint, []).append(variant)
+
+    verified = verify_sites(by_site, seed, invocations, workdir, image, timeout) \
+        if other else {}
+    seed_sha = hashlib.sha256(seed).hexdigest()[:16]
+
+    for variant in other:
         if variant.fingerprint not in triggers:
             record = {"stage": name, "artifact": Path(variant.path).name,
                       "fields": {variant.field: variant.value},
                       "seed_sha256": seed_sha,
                       # read vs write decides which CWE an attribution may
                       # consider: a site that reads cannot be the stack overflow.
-                      "access": variant.access, "severity": variant.severity}
+                      "access": variant.access, "severity": variant.severity,
+                      "verified": bool(verified.get(variant.fingerprint))}
             if variant.meta:
                 # A layout mutation is described by an operation, not by edits:
                 # the bytes it produces are not a patch of the seed's fields.
