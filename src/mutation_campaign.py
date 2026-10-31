@@ -17,6 +17,7 @@ Two rules make the result readable:
 """
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -230,6 +231,17 @@ def _matrix_script(variants: Sequence[Variant],
             lines.append('if [ -f ".cc.$f" ]; then sed "s/^/[CPG_CRASH] $f /" ".cc.$f"; rm -f ".cc.$f"; fi')
     lines.append("true")
     return "\n".join(lines) + "\n"
+
+
+def _jsonable(variant) -> dict:
+    """Variant fields as JSON, with binary payloads described rather than inlined."""
+    out = {}
+    for key, value in variant.__dict__.items():
+        if isinstance(value, (bytes, bytearray)):
+            out[key] = {"bytes": len(value), "sha256": hashlib.sha256(value).hexdigest()[:16]}
+        else:
+            out[key] = value
+    return out
 
 
 def _worse(candidate: int, current: int) -> bool:
@@ -550,8 +562,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     variants = [seed_variant] + variants
     text = report(variants, args.cve, baseline, missing)
     (workdir / "report.md").write_text(text, encoding="utf-8")
+    # A layout variant carries a whole file in `payload`; bytes are not JSON, and
+    # writing the raw file again would double the output for nothing.
     (workdir / "variants.json").write_text(
-        json.dumps([variant.__dict__ for variant in variants],
+        json.dumps([_jsonable(variant) for variant in variants],
                    ensure_ascii=False, indent=2), encoding="utf-8")
     novel = [v for v in variants if v.outcome == NOVEL]
     if novel:
