@@ -1,0 +1,10 @@
+b95a5c8d2b626b16f829296491cd36adc00851b50a23f619d8e7f52a5cc71077 *%SystemDrive%/ProgramData/Microsoft/Windows/Caches/cversions.2.db
+cca542f827a1f0eda53037f2bbddac324828b03ce0cd76382635e05bb7a22deb *%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{5F06C730-AB6B-4C31-8FCD-2CE5900910FD}.2.ver0x0000000000000001.db
+69420c24bccf9bc3f19654001bbada0bba5043c667b4a8337b6536e41cf83dc4 *%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{6AF0698E-D558-4F6E-9B3C-3716689AF493}.2.ver0x0000000000000001.db
+780801e95861081267412dd01b6e868be87ca7804e373d348187a700b574b2a7 *%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{98EF0DEE-0321-41B1-9C90-D6C139A97F4B}.2.ver0x0000000000000001.db
+8e43e908109d99efbad02dfa638dcbef21bde6f985d88253fb00abeab348fb3a *%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{DDF571F2-BE98-426D-8288-1A9A39C3FDA2}.2.ver0x0000000000000001.db
+%SystemDrive%/ProgramData/Microsoft/Windows/Caches/cversions.2.db	16384	2026-11-02 15:50
+%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{5F06C730-AB6B-4C31-8FCD-2CE5900910FD}.2.ver0x0000000000000001.db	1240	2026-11-02 15:50
+%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{6AF0698E-D558-4F6E-9B3C-3716689AF493}.2.ver0x0000000000000001.db	296552	2026-11-02 15:50
+%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{98EF0DEE-0321-41B1-9C90-D6C139A97F4B}.2.ver0x0000000000000001.db	1064	2026-11-02 15:50
+%SystemDrive%/ProgramData/Microsoft/Windows/Caches/{DDF571F2-BE98-426D-8288-1A9A39C3FDA2}.2.ver0x0000000000000001.db	638224	2026-11-02 15:50

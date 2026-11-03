@@ -104,7 +104,12 @@ class TestGrader(unittest.TestCase):
         # The candidate aborted at its own step; that is feedback for the next
         # iteration, not a reason to end the run.
         from types import SimpleNamespace
-        context = StageContext(workdir=Path(tempfile.mkdtemp()), tier="driver_userland",
+        # Driver tiers now route through driver_exec and no longer consume an
+        # injected runner; the property this test protects - a candidate's own
+        # step failure is feedback, not an executor fault - still belongs to the
+        # toolchain path, where the runner is the executor.
+        context = StageContext(workdir=Path(tempfile.mkdtemp()),
+                               tier="userland_toolchain",
                                project_root=Path("."), cve_id="CVE-X",
                                container_image="img")
         runner = lambda *a, **k: SimpleNamespace(

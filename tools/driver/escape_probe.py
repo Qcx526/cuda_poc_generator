@@ -33,13 +33,19 @@ class D3DKMT_CLOSEADAPTER(ctypes.Structure):
 
 
 class D3DKMT_ESCAPE(ctypes.Structure):
-    """Layout matters: the padding after Flags and after the size is real."""
-    _fields_ = [("hAdapter", wintypes.UINT),
-                ("hDevice", wintypes.UINT),
-                ("Flags", wintypes.UINT),
-                ("pPrivateDriverData", ctypes.c_void_p),
-                ("PrivateDriverDataSize", wintypes.UINT),
-                ("hContext", wintypes.UINT)]
+    """D3DKMT_ESCAPE in WDK order: Type at 8, Flags at 12.
+
+    An earlier version of this file had no Type member, so the value passed as
+    "flags" landed in Type and the real Flags slot stayed zero. Every result
+    produced with that layout describes a different call than the one intended.
+    """
+    _fields_ = [("hAdapter", wintypes.UINT),                 # 0
+                ("hDevice", wintypes.UINT),                  # 4
+                ("Type", wintypes.UINT),                     # 8
+                ("Flags", wintypes.UINT),                    # 12
+                ("pPrivateDriverData", ctypes.c_void_p),     # 16
+                ("PrivateDriverDataSize", wintypes.UINT),    # 24
+                ("hContext", wintypes.UINT)]                 # 28
 
 
 def display_name(index: int = 0) -> Optional[str]:
@@ -71,11 +77,23 @@ def close_adapter(handle: int) -> int:
 
 
 class D3DKMT_CREATEDEVICE(ctypes.Structure):
-    """hAdapter in, hDevice out - the union is how the API overloads the field."""
-    _fields_ = [("hAdapter", wintypes.UINT),
-                ("Flags", wintypes.UINT),
-                ("pCreateDevice", ctypes.c_void_p),
-                ("Size", wintypes.UINT)]
+    """The full 64-byte structure, not a four-field abbreviation.
+
+    The first member is a union of ``hAdapter`` and ``pAdapter``; because the
+    pointer is 8 bytes on x64, ``Flags`` sits at 8 and the returned ``hDevice``
+    at 12. An abbreviated structure both reads the wrong field and hands the API
+    a buffer shorter than it was written for.
+    """
+    _fields_ = [("hAdapter", wintypes.UINT),                  # 0  union low half
+                ("Reserved0", wintypes.UINT),                 # 4  union high half
+                ("Flags", wintypes.UINT),                     # 8
+                ("hDevice", wintypes.UINT),                   # 12  out
+                ("pCommandBuffer", ctypes.c_void_p),          # 16
+                ("CommandBufferSize", wintypes.UINT),         # 24
+                ("pAllocationList", ctypes.c_void_p),         # 32
+                ("AllocationListSize", wintypes.UINT),        # 40
+                ("pPatchLocationList", ctypes.c_void_p),      # 48
+                ("PatchLocationListSize", wintypes.UINT)]     # 56
 
 
 class D3DKMT_DESTROYDEVICE(ctypes.Structure):
@@ -83,19 +101,21 @@ class D3DKMT_DESTROYDEVICE(ctypes.Structure):
 
 
 def create_device(handle: int) -> dict:
-    """A device on the adapter.
+    """A device on the adapter; the handle comes back at offset 12.
 
-    NVIDIA's escapes are dispatched per device, not per adapter: with only an
-    adapter handle every command comes back STATUS_INVALID_PARAMETER, which looks
-    like an unknown command but is a missing device.
+    NVIDIA's escapes are dispatched per device, not per adapter, so this must
+    succeed before any escape means anything. The success flag alone is not
+    enough: ``hDevice`` is checked to be non-zero and different from the adapter,
+    because a handle equal to the adapter is the signature of reading the wrong
+    field.
     """
     request = D3DKMT_CREATEDEVICE()
     request.hAdapter = handle
     request.Flags = 0
-    request.pCreateDevice = None
-    request.Size = 0
     status = gdi32.D3DKMTCreateDevice(ctypes.byref(request))
-    return {"status": status, "hDevice": request.hAdapter}
+    device = request.hDevice
+    usable = status == 0 and device not in (0, handle)
+    return {"status": status, "hDevice": device, "usable": usable}
 
 
 def destroy_device(handle: int) -> int:
@@ -103,7 +123,7 @@ def destroy_device(handle: int) -> int:
 
 
 def escape(handle: int, command: int, size: int, fill: int = 0x00,
-           device: int = 0) -> dict:
+           device: int = 0, escape_type: int = 0, flags: int = 0) -> dict:
     """One escape with a buffer we control byte for byte.
 
     The first dword carries the command; the rest is whatever the caller puts
@@ -117,7 +137,8 @@ def escape(handle: int, command: int, size: int, fill: int = 0x00,
     request = D3DKMT_ESCAPE()
     request.hAdapter = handle
     request.hDevice = device
-    request.Flags = 0
+    request.Type = escape_type
+    request.Flags = flags
     request.pPrivateDriverData = ctypes.cast(buffer, ctypes.c_void_p)
     request.PrivateDriverDataSize = len(buffer)
     request.hContext = 0
@@ -144,8 +165,8 @@ def main(argv=None) -> int:
         return 3
 
     made = create_device(opened["hAdapter"])
-    print("create device: status=%(status)s hDevice=%(hDevice)s" % made)
-    device = made["hDevice"] if made["status"] == 0 else 0
+    print("create device: status=%(status)s hDevice=%(hDevice)s usable=%(usable)s" % made)
+    device = made["hDevice"] if made.get("usable") else 0
     result = escape(opened["hAdapter"], args.cmd, args.size, args.fill, device)
     print("escape cmd=0x%x size=%d device=%s -> status=%s ret=%s"
           % (args.cmd, args.size, device, result["status"], result["ret"]))

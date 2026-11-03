@@ -73,15 +73,19 @@ class CREATEDEVICE(ctypes.Structure):
 
 
 class ESCAPE(ctypes.Structure):
-    """Flags precede the escape code: a code read from the wrong offset is an
-    invalid parameter, which looks exactly like a driver that rejects the code."""
-    _fields_ = [("hAdapter", wintypes.UINT),
-                ("hDevice", wintypes.UINT),
-                ("Flags", wintypes.UINT),
-                ("EscapeCode", wintypes.UINT),
-                ("pPrivateDriverData", ctypes.c_void_p),
-                ("PrivateDriverDataSize", wintypes.UINT),
-                ("hContext", wintypes.UINT)]
+    """D3DKMT_ESCAPE, in the WDK order.
+
+    Getting this wrong is quiet rather than loud: writing a vendor command number
+    into the Type slot makes the call an "unknown escape type", and writing it into
+    Flags makes it a bit mask. Both look like the driver rejecting the command.
+    """
+    _fields_ = [("hAdapter", wintypes.UINT),      # offset 0
+                ("hDevice", wintypes.UINT),       # offset 4
+                ("Type", wintypes.UINT),          # offset 8  D3DKMT_ESCAPETYPE
+                ("Flags", wintypes.UINT),         # offset 12 D3DDDI_ESCAPEFLAGS
+                ("pPrivateDriverData", ctypes.c_void_p),   # 16
+                ("PrivateDriverDataSize", wintypes.UINT),  # 24
+                ("hContext", wintypes.UINT)]      # 28
 
 
 class DISPLAY_DEVICEW(ctypes.Structure):
@@ -152,12 +156,19 @@ def destroy_device(h_adapter: int, h_device: int) -> int:
     return gdi32.D3DKMTDestroyDevice(ctypes.byref(request))
 
 
-def send_escape(h_adapter: int, h_device: int, code: int, payload: bytes):
+def send_escape(h_adapter: int, h_device: int, flags: int, payload: bytes,
+                escape_type: int = 0):
+    """One escape with D3DKMT_ESCAPE_DRIVERPRIVATE as the type by default.
+
+    ``flags`` is the D3DDDI_ESCAPEFLAGS bit field, not a command number. The
+    vendor command, if any, belongs in ``payload``.
+    """
     buffer = ctypes.create_string_buffer(payload, len(payload))
     request = ESCAPE()
     request.hAdapter = h_adapter
     request.hDevice = h_device
-    request.EscapeCode = code
+    request.Type = escape_type
+    request.Flags = flags
     request.pPrivateDriverData = ctypes.cast(buffer, ctypes.c_void_p)
     request.PrivateDriverDataSize = len(payload)
     status = gdi32.D3DKMTEscape(ctypes.byref(request))
@@ -168,7 +179,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="climb the D3DKMT interface")
     parser.add_argument("--stage", default="adapter",
                         choices=["adapter", "device", "escape"])
-    parser.add_argument("--escape-code", default="0x0")
+    parser.add_argument("--escape-type", default="0x0",
+                        help="D3DKMT_ESCAPETYPE; 0 = DRIVERPRIVATE (the KMD path)")
+    parser.add_argument("--escape-code", default="0x0",
+                        help="legacy alias: value for D3DDDI_ESCAPEFLAGS, not a command number")
     parser.add_argument("--payload-size", type=int, default=16)
     parser.add_argument("--json", default="data/probe/d3dkmt.json")
     args = parser.parse_args()
@@ -209,19 +223,26 @@ def main() -> int:
         return 1
 
     if args.stage == "device":
-        destroy_device(h_adapter, handle)
+        # The destroy result is the second half of the handle check: a handle the
+        # driver never issued cannot be destroyed.
+        report["destroy_device"] = destroy_device(h_adapter, handle)
         gdi32.DeleteDC(hdc)
         _write(report, args.json)
         return 0
 
-    code = int(args.escape_code, 16) if args.escape_code.lower().startswith("0x") \
-        else int(args.escape_code)
+    def as_int(text: str) -> int:
+        return int(text, 16) if text.lower().startswith("0x") else int(text)
+
+    flags = as_int(args.escape_code)
+    escape_type = as_int(args.escape_type)
     payload = bytes(args.payload_size)
-    escape_status, _ = send_escape(h_adapter, handle, code, payload)
-    report["escape"] = {"code": "0x%x" % code, "payload_size": args.payload_size,
+    escape_status, _ = send_escape(h_adapter, handle, flags, payload, escape_type)
+    report["escape"] = {"escape_type": "0x%x" % escape_type,
+                        "flags": "0x%x" % flags,
+                        "payload_size": args.payload_size,
                         "status": escape_status}
-    print("escape         code=0x%x size=%d status=%d"
-          % (code, args.payload_size, escape_status))
+    print("escape         type=0x%x flags=0x%x size=%d status=%d"
+          % (escape_type, flags, args.payload_size, escape_status))
 
     destroy_device(h_adapter, handle)
     gdi32.DeleteDC(hdc)

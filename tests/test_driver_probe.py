@@ -113,20 +113,17 @@ class TestScanMode(unittest.TestCase):
 
 
 class TestDriverStage(unittest.TestCase):
-    def test_three_variants_are_armed_and_reported(self):
+    def test_kernel_tier_is_refused_without_authorisation(self):
+        """The stage no longer arms benign/crafted/control itself.
+
+        Those three labels belonged to the ioctl-matrix path. A driver candidate
+        is now one program run once through a backend, and a kernel-tier run
+        without allow_kernel is reported as NEEDS_BACKEND instead of silently
+        being executed as userspace. The benign-first ordering is therefore not
+        implemented on this path - recorded as an open gap, not quietly dropped.
+        """
         from src.closed_loop import LoopState
         from src.loop_stages import StageContext, make_execute_stage
-
-        seen = []
-
-        class Result:
-            returncode = 0
-            stdout = ""
-            stderr = ""
-
-        def runner(command, **kwargs):
-            seen.append(command)
-            return Result()
 
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -135,14 +132,7 @@ class TestDriverStage(unittest.TestCase):
             context = StageContext(project_root=root, cve_id="CVE-X",
                                    container_image="img", workdir=root / "wd",
                                    tier="driver_kernel", python_exe="python")
-            state = make_execute_stage(context, runner=runner)(
-                LoopState(iteration=1, candidate_file=str(candidate)))
-
-            text = Path(state.observation_file).read_text(encoding="utf-8")
-
-        # A parameter set per arm, and the variant is named on the command line.
-        self.assertEqual(len(seen), 3)
-        self.assertIn("--variant", seen[1])
-        self.assertIn("crafted", " ".join(seen[1]))
-        for prefix in ("benign", "crafted", "ctrl"):
-            self.assertIn("[CPG_PROBE] %s_poc outcome=" % prefix, text)
+            state = make_execute_stage(context)(LoopState(
+                iteration=1, candidate_file=str(candidate)))
+            self.assertIsNotNone(state.stage_error)
+            self.assertIn("NEEDS_BACKEND", state.stage_error or "")

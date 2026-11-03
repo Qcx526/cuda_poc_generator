@@ -1,26 +1,78 @@
 # -*- coding: utf-8 -*-
-"""D3DKMT structs are positional; a wrong size is an invalid parameter, not an error."""
+"""D3DKMT structs are positional; a wrong size is an invalid parameter, not an error.
+
+These assertions cover every field the API writes back. An earlier version
+asserted only the first member of CREATEDEVICE, so an abbreviated 24-byte
+structure passed the suite while reading the wrong field.
+"""
 
 import ctypes
 import unittest
 
 from tools.probe_d3dkmt import CREATEDEVICE, ESCAPE, OPENADAPTERFROMHDC
+from tools.driver import escape_probe as probe
 
 
-class TestLayout(unittest.TestCase):
+class TestProbeLayout(unittest.TestCase):
     def test_open_adapter_from_hdc_is_24_bytes(self):
         self.assertEqual(ctypes.sizeof(OPENADAPTERFROMHDC), 24)
+        self.assertEqual(OPENADAPTERFROMHDC.hDc.offset, 0)
         self.assertEqual(OPENADAPTERFROMHDC.hAdapter.offset, 8)
+        self.assertEqual(OPENADAPTERFROMHDC.AdapterLuid.offset, 12)
+        self.assertEqual(OPENADAPTERFROMHDC.VidPnSourceId.offset, 20)
 
-    def test_escape_puts_flags_before_the_code(self):
+    def test_escape_type_precedes_flags(self):
+        """WDK order is Type at 8 and Flags at 12; the reverse is a silent misuse."""
+        self.assertEqual(ctypes.sizeof(ESCAPE), 32)
         self.assertEqual(ESCAPE.hAdapter.offset, 0)
         self.assertEqual(ESCAPE.hDevice.offset, 4)
-        self.assertEqual(ESCAPE.Flags.offset, 8)
-        self.assertEqual(ESCAPE.EscapeCode.offset, 12)
+        self.assertEqual(ESCAPE.Type.offset, 8)
+        self.assertEqual(ESCAPE.Flags.offset, 12)
+        self.assertEqual(ESCAPE.pPrivateDriverData.offset, 16)
+        self.assertEqual(ESCAPE.PrivateDriverDataSize.offset, 24)
+        self.assertEqual(ESCAPE.hContext.offset, 28)
 
-    def test_created_device_puts_the_returned_handle_first(self):
-        """hAdapter in, hDevice out, in the same four bytes."""
+    def test_created_device_is_the_full_64_bytes(self):
+        self.assertEqual(ctypes.sizeof(CREATEDEVICE), 64)
         self.assertEqual(CREATEDEVICE.hAdapter.offset, 0)
+        self.assertEqual(CREATEDEVICE.Flags.offset, 8)
+        self.assertEqual(CREATEDEVICE.hDevice.offset, 12)
+        self.assertEqual(CREATEDEVICE.pCommandBuffer.offset, 16)
+        self.assertEqual(CREATEDEVICE.PatchLocationListSize.offset, 56)
+
+
+class TestEscapeProbeLayout(unittest.TestCase):
+    """The probe that produces new results must match the same WDK layout."""
+
+    def test_escape_has_type_at_8(self):
+        self.assertEqual(ctypes.sizeof(probe.D3DKMT_ESCAPE), 32)
+        self.assertEqual(probe.D3DKMT_ESCAPE.Type.offset, 8)
+        self.assertEqual(probe.D3DKMT_ESCAPE.Flags.offset, 12)
+
+    def test_created_device_is_not_abbreviated(self):
+        self.assertEqual(ctypes.sizeof(probe.D3DKMT_CREATEDEVICE), 64)
+        self.assertEqual(probe.D3DKMT_CREATEDEVICE.Flags.offset, 8)
+        self.assertEqual(probe.D3DKMT_CREATEDEVICE.hDevice.offset, 12)
+
+    def test_create_device_rejects_a_handle_equal_to_the_adapter(self):
+        """That equality is the signature of reading the wrong field."""
+
+        class FakeGdi:
+            @staticmethod
+            def D3DKMTCreateDevice(ref):
+                request = ref._obj
+                request.hDevice = request.hAdapter
+                return 0
+
+        original = probe.gdi32
+        probe.gdi32 = FakeGdi
+        try:
+            result = probe.create_device(0x40000000)
+        finally:
+            probe.gdi32 = original
+
+        self.assertEqual(result["status"], 0)
+        self.assertFalse(result["usable"], "equal-to-adapter must not count as usable")
 
 
 if __name__ == "__main__":

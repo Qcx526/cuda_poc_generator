@@ -87,6 +87,49 @@ def _find_candidate(project_root: Path, cve_id: str,
     return str(candidates[0]) if candidates else None
 
 
+DRIVER_TIERS = ("driver_kernel", "driver_userland")
+
+
+def make_driver_generate_stage(context: StageContext):
+    """Generate a driver probe from an existing analysis, never from the CUDA path.
+
+    The previous arrangement ran ``main.py`` for every tier. For a driver target
+    that did not fail loudly: it produced a CUDA candidate, which then failed
+    every driver check and was recorded as a negative result about the driver.
+    A missing analysis is therefore an error here, not a fallback.
+    """
+    def stage(state: LoopState) -> LoopState:
+        from . import driver_generator
+        from .config_loader import ConfigLoader
+        from .llm_client import LLMClient
+
+        analysis_path = Path(context.workdir) / "analysis.json"
+        if not analysis_path.is_file():
+            raise RuntimeError(
+                "driver tier 需要先运行 driver_loop 产出 %s；"
+                "不退回 CUDA 生成器（那会把 CUDA 候选记成驱动阴性结果）"
+                % analysis_path)
+        analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
+        spec_path = Path(context.project_root) / "specs" / context.cve_id / "spec.json"
+        spec = json.loads(spec_path.read_text(encoding="utf-8")) if spec_path.is_file() else None
+        client = LLMClient(ConfigLoader())
+        candidate = driver_generator.generate(
+            client, cve=context.cve_id, analysis=analysis, spec=spec,
+            last_run=state.last_outcome if hasattr(state, "last_outcome") else None,
+            workdir=Path(context.workdir), round_index=state.iteration)
+        return LoopState(iteration=state.iteration,
+                         observation_file=state.observation_file,
+                         candidate_file=str(candidate))
+    return stage
+
+
+def select_generate_stage(context: StageContext, runner=None, use_rag: bool = False):
+    """Pick the generator by tier, so the CUDA path stays the CUDA path."""
+    if str(context.tier) in DRIVER_TIERS:
+        return make_driver_generate_stage(context)
+    return make_generate_stage(context, runner or _default_runner, use_rag)
+
+
 def make_generate_stage(context: StageContext,
                         runner: Runner = _default_runner,
                         use_rag: bool = False) -> Callable[[LoopState], LoopState]:
@@ -306,36 +349,32 @@ _DRIVER_VARIANTS = (("benign", "benign"), ("crafted", "crafted"), ("ctrl", "ctrl
 
 def _driver_stage(context: StageContext, candidate: Path, state: LoopState,
                   runner: Runner) -> LoopState:
-    """Run each parameter set in turn, armed before it starts.
+    """Route a driver candidate through the one execution interface.
 
-    Ordered benign first: if the baseline faults, the finding is that the driver
-    is broken for this entry, not that a crafted value did something - and the
-    later sets never run, which is the correct outcome.
+    This used to arm a marker file and call ``driver_probe.launch`` itself, which
+    meant the loop and the driver CLI each had their own notion of "ran". Now the
+    backend decides, the observation is written in one format, and the old probe
+    marker is gone from this path - a second state machine is worse than none.
     """
-    from .driver_probe import arm, harvest, launch
+    from . import driver_exec
 
+    tier = str(getattr(context, "tier", "driver_userland"))
+    allow = bool(getattr(context, "allow_kernel", False))
     context.workdir.mkdir(parents=True, exist_ok=True)
-    lines = []
-    for variant, prefix in _DRIVER_VARIANTS:
-        arm(context.workdir, candidate, variant=variant)
-        try:
-            code = launch(candidate, timeout=_EXECUTE_TIMEOUT, variant=variant,
-                          runner=runner)
-        except subprocess.TimeoutExpired:
-            code = None
-        result = harvest(context.workdir, exit_code=code)
-        name = "%s_%s" % (prefix, candidate.stem)
-        bug = (result.get("bugcheck") or {}).get("code") or ""
-        lines.append("[CPG_PROBE] %s outcome=%s%s"
-                     % (name, result.get("outcome"), (" bugcheck=%s" % bug) if bug else ""))
-        if result.get("outcome") == "crashed":
-            break
+    try:
+        backend = driver_exec.build_backend(tier, allow_kernel=allow)
+        run = driver_exec.observe(candidate, backend, timeout=_EXECUTE_TIMEOUT)
+    except RuntimeError as exc:
+        return LoopState(iteration=state.iteration,
+                         candidate_file=str(candidate),
+                         stage_error="NEEDS_BACKEND: %s" % exc)
 
-    output = "\n".join(lines) + "\n"
+    text = driver_exec.observation_text(str(candidate), run)
     log = context.workdir / ("iteration_%d_observation.txt" % state.iteration)
-    log.write_text(output, encoding="utf-8")
+    log.write_text(text, encoding="utf-8")
     return LoopState(iteration=state.iteration, observation_file=str(log),
-                     candidate_file=str(candidate))
+                     candidate_file=str(candidate),
+                     reached=run.outcome.state == driver_exec.driver_outcome.TARGET_REACHED)
 
 
 def _candidate_crashed(output: str, candidate: Path) -> str:

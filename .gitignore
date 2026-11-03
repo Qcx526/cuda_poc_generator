@@ -131,3 +131,7 @@ demo/*/artifacts/observation.txt
 data/driver/binary/*.sys
 data/driver/binary/*.dll
 data/driver/binary/*.exe
+
+# Windows 在测试期间会重建该字面量目录（无代码引用），不入库
+%SystemDrive%/
+.pytest-tmp/
