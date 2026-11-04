@@ -1,0 +1,350 @@
+{
+  "seeds": [
+    {
+      "seed_id": "display0",
+      "api": "EnumDisplayDevicesW",
+      "params": {
+        "iDevNum": 0,
+        "cb": 840
+      },
+      "status": 1,
+      "sequence": [
+        "EnumDisplayDevicesW"
+      ],
+      "handles": [],
+      "input_digest": "387af37fd6e1de40",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": "device=\\\\.\\DISPLAY44"
+    },
+    {
+      "seed_id": "dc0",
+      "api": "CreateDCW",
+      "params": {
+        "driver": "DISPLAY",
+        "device": "\\\\.\\DISPLAY44"
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "",
+          "value": 18446744071562142492
+        }
+      ],
+      "input_digest": "387af37fd6e1de40",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": ""
+    },
+    {
+      "seed_id": "adapter_hdc",
+      "api": "D3DKMTOpenAdapterFromHdc",
+      "params": {
+        "hDc": "hdc"
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW",
+        "D3DKMTOpenAdapterFromHdc"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "",
+          "value": 18446744071562142492
+        },
+        {
+          "name": "hAdapter",
+          "kind": "hAdapter",
+          "created_by": "D3DKMTOpenAdapterFromHdc",
+          "released_by": "",
+          "value": 1073741824
+        }
+      ],
+      "input_digest": "387af37fd6e1de40",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": "luid=b33b765e:00000000"
+    },
+    {
+      "seed_id": "device0",
+      "api": "D3DKMTCreateDevice",
+      "params": {
+        "hAdapter": "hAdapter"
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW",
+        "D3DKMTOpenAdapterFromHdc",
+        "D3DKMTCreateDevice"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "",
+          "value": 18446744071562142492
+        },
+        {
+          "name": "hAdapter",
+          "kind": "hAdapter",
+          "created_by": "D3DKMTOpenAdapterFromHdc",
+          "released_by": "",
+          "value": 1073741824
+        },
+        {
+          "name": "hDevice",
+          "kind": "hDevice",
+          "created_by": "D3DKMTCreateDevice",
+          "released_by": "",
+          "value": 1073741888
+        }
+      ],
+      "input_digest": "a2873d434714eb41",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": ""
+    },
+    {
+      "seed_id": "context0",
+      "api": "D3DKMTCreateContext",
+      "params": {
+        "hDevice": "hDevice",
+        "NodeOrdinal": 0,
+        "EngineAffinity": 0
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW",
+        "D3DKMTOpenAdapterFromHdc",
+        "D3DKMTCreateDevice",
+        "D3DKMTCreateContext"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "",
+          "value": 18446744071562142492
+        },
+        {
+          "name": "hAdapter",
+          "kind": "hAdapter",
+          "created_by": "D3DKMTOpenAdapterFromHdc",
+          "released_by": "",
+          "value": 1073741824
+        },
+        {
+          "name": "hDevice",
+          "kind": "hDevice",
+          "created_by": "D3DKMTCreateDevice",
+          "released_by": "",
+          "value": 1073741888
+        },
+        {
+          "name": "hContext",
+          "kind": "hContext",
+          "created_by": "D3DKMTCreateContext",
+          "released_by": "",
+          "value": 1073741952
+        }
+      ],
+      "input_digest": "da42ca320cbb22f5",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": ""
+    },
+    {
+      "seed_id": "destroy_context0",
+      "api": "D3DKMTDestroyContext",
+      "params": {
+        "hContext": "hContext"
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW",
+        "D3DKMTOpenAdapterFromHdc",
+        "D3DKMTCreateDevice",
+        "D3DKMTCreateContext",
+        "D3DKMTDestroyContext"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "",
+          "value": 18446744071562142492
+        },
+        {
+          "name": "hAdapter",
+          "kind": "hAdapter",
+          "created_by": "D3DKMTOpenAdapterFromHdc",
+          "released_by": "",
+          "value": 1073741824
+        },
+        {
+          "name": "hDevice",
+          "kind": "hDevice",
+          "created_by": "D3DKMTCreateDevice",
+          "released_by": "",
+          "value": 1073741888
+        },
+        {
+          "name": "hContext",
+          "kind": "hContext",
+          "created_by": "D3DKMTCreateContext",
+          "released_by": "D3DKMTDestroyContext",
+          "value": 1073741952
+        }
+      ],
+      "input_digest": "e152de5507973435",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": ""
+    },
+    {
+      "seed_id": "destroy_device0",
+      "api": "D3DKMTDestroyDevice",
+      "params": {
+        "hDevice": "hDevice"
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW",
+        "D3DKMTOpenAdapterFromHdc",
+        "D3DKMTCreateDevice",
+        "D3DKMTCreateContext",
+        "D3DKMTDestroyContext",
+        "D3DKMTDestroyDevice"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "",
+          "value": 18446744071562142492
+        },
+        {
+          "name": "hAdapter",
+          "kind": "hAdapter",
+          "created_by": "D3DKMTOpenAdapterFromHdc",
+          "released_by": "",
+          "value": 1073741824
+        },
+        {
+          "name": "hDevice",
+          "kind": "hDevice",
+          "created_by": "D3DKMTCreateDevice",
+          "released_by": "D3DKMTDestroyDevice",
+          "value": 1073741888
+        },
+        {
+          "name": "hContext",
+          "kind": "hContext",
+          "created_by": "D3DKMTCreateContext",
+          "released_by": "D3DKMTDestroyContext",
+          "value": 1073741952
+        }
+      ],
+      "input_digest": "da42ca320cbb22f5",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": ""
+    },
+    {
+      "seed_id": "teardown0",
+      "api": "DeleteDC",
+      "params": {
+        "hdc": "hdc"
+      },
+      "status": 0,
+      "sequence": [
+        "EnumDisplayDevicesW",
+        "CreateDCW",
+        "D3DKMTOpenAdapterFromHdc",
+        "D3DKMTCreateDevice",
+        "D3DKMTCreateContext",
+        "D3DKMTDestroyContext",
+        "D3DKMTDestroyDevice",
+        "D3DKMTCloseAdapter",
+        "DeleteDC"
+      ],
+      "handles": [
+        {
+          "name": "hdc",
+          "kind": "hdc",
+          "created_by": "CreateDCW",
+          "released_by": "DeleteDC",
+          "value": 18446744071562142492
+        },
+        {
+          "name": "hAdapter",
+          "kind": "hAdapter",
+          "created_by": "D3DKMTOpenAdapterFromHdc",
+          "released_by": "D3DKMTCloseAdapter",
+          "value": 1073741824
+        },
+        {
+          "name": "hDevice",
+          "kind": "hDevice",
+          "created_by": "D3DKMTCreateDevice",
+          "released_by": "D3DKMTDestroyDevice",
+          "value": 1073741888
+        },
+        {
+          "name": "hContext",
+          "kind": "hContext",
+          "created_by": "D3DKMTCreateContext",
+          "released_by": "D3DKMTDestroyContext",
+          "value": 1073741952
+        }
+      ],
+      "input_digest": "a827a41e53424b10",
+      "provenance": "captured",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": ""
+    },
+    {
+      "seed_id": "escape_shape",
+      "api": "D3DKMTEscape",
+      "params": {
+        "Type": 0,
+        "Flags": 0,
+        "pPrivateDriverData": null,
+        "PrivateDriverDataSize": 0,
+        "hContext": 0
+      },
+      "status": 0,
+      "sequence": [
+        "D3DKMTEscape"
+      ],
+      "handles": [],
+      "input_digest": "676c1407cae8745b",
+      "provenance": "synthetic",
+      "environment": "windows-10 x64 / nvlddmkm 610.47",
+      "note": "shape only, not executed"
+    }
+  ],
+  "counts": {
+    "captured": 8,
+    "synthetic": 1
+  }
+}
