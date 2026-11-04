@@ -1,0 +1,266 @@
+[
+  {
+    "name": "DxgkDdiAddDevice",
+    "offset": "0x8"
+  },
+  {
+    "name": "DxgkDdiStartDevice",
+    "offset": "0x10"
+  },
+  {
+    "name": "DxgkDdiStopDevice",
+    "offset": "0x18"
+  },
+  {
+    "name": "DxgkDdiRemoveDevice",
+    "offset": "0x20"
+  },
+  {
+    "name": "DxgkDdiDispatchIoRequest",
+    "offset": "0x28"
+  },
+  {
+    "name": "DxgkDdiInterruptRoutine",
+    "offset": "0x30"
+  },
+  {
+    "name": "DxgkDdiDpcRoutine",
+    "offset": "0x38"
+  },
+  {
+    "name": "DxgkDdiQueryChildRelations",
+    "offset": "0x40"
+  },
+  {
+    "name": "DxgkDdiQueryChildStatus",
+    "offset": "0x48"
+  },
+  {
+    "name": "DxgkDdiQueryDeviceDescriptor",
+    "offset": "0x50"
+  },
+  {
+    "name": "DxgkDdiSetPowerState",
+    "offset": "0x58"
+  },
+  {
+    "name": "DxgkDdiNotifyAcpiEvent",
+    "offset": "0x60"
+  },
+  {
+    "name": "DxgkDdiResetDevice",
+    "offset": "0x68"
+  },
+  {
+    "name": "DxgkDdiUnload",
+    "offset": "0x70"
+  },
+  {
+    "name": "DxgkDdiQueryInterface",
+    "offset": "0x78"
+  },
+  {
+    "name": "DxgkDdiControlEtwLogging",
+    "offset": "0x80"
+  },
+  {
+    "name": "DxgkDdiQueryAdapterInfo",
+    "offset": "0x88"
+  },
+  {
+    "name": "DxgkDdiCreateDevice",
+    "offset": "0x90"
+  },
+  {
+    "name": "DxgkDdiCreateAllocation",
+    "offset": "0x98"
+  },
+  {
+    "name": "DxgkDdiDestroyAllocation",
+    "offset": "0xa0"
+  },
+  {
+    "name": "DxgkDdiDescribeAllocation",
+    "offset": "0xa8"
+  },
+  {
+    "name": "DxgkDdiGetStandardAllocationDriverData",
+    "offset": "0xb0"
+  },
+  {
+    "name": "DxgkDdiAcquireSwizzlingRange",
+    "offset": "0xb8"
+  },
+  {
+    "name": "DxgkDdiReleaseSwizzlingRange",
+    "offset": "0xc0"
+  },
+  {
+    "name": "DxgkDdiPatch",
+    "offset": "0xc8"
+  },
+  {
+    "name": "DxgkDdiSubmitCommand",
+    "offset": "0xd0"
+  },
+  {
+    "name": "DxgkDdiPreemptCommand",
+    "offset": "0xd8"
+  },
+  {
+    "name": "DxgkDdiBuildPagingBuffer",
+    "offset": "0xe0"
+  },
+  {
+    "name": "DxgkDdiSetPalette",
+    "offset": "0xe8"
+  },
+  {
+    "name": "DxgkDdiSetPointerPosition",
+    "offset": "0xf0"
+  },
+  {
+    "name": "DxgkDdiSetPointerShape",
+    "offset": "0xf8"
+  },
+  {
+    "name": "DxgkDdiResetFromTimeout",
+    "offset": "0x100"
+  },
+  {
+    "name": "DxgkDdiRestartFromTimeout",
+    "offset": "0x108"
+  },
+  {
+    "name": "DxgkDdiEscape",
+    "offset": "0x110"
+  },
+  {
+    "name": "DxgkDdiCollectDbgInfo",
+    "offset": "0x118"
+  },
+  {
+    "name": "DxgkDdiQueryCurrentFence",
+    "offset": "0x120"
+  },
+  {
+    "name": "DxgkDdiIsSupportedVidPn",
+    "offset": "0x128"
+  },
+  {
+    "name": "DxgkDdiRecommendFunctionalVidPn",
+    "offset": "0x130"
+  },
+  {
+    "name": "DxgkDdiEnumVidPnCofuncModality",
+    "offset": "0x138"
+  },
+  {
+    "name": "DxgkDdiSetVidPnSourceAddress",
+    "offset": "0x140"
+  },
+  {
+    "name": "DxgkDdiSetVidPnSourceVisibility",
+    "offset": "0x148"
+  },
+  {
+    "name": "DxgkDdiCommitVidPn",
+    "offset": "0x150"
+  },
+  {
+    "name": "DxgkDdiUpdateActiveVidPnPresentPath",
+    "offset": "0x158"
+  },
+  {
+    "name": "DxgkDdiRecommendMonitorModes",
+    "offset": "0x160"
+  },
+  {
+    "name": "DxgkDdiRecommendVidPnTopology",
+    "offset": "0x168"
+  },
+  {
+    "name": "DxgkDdiGetScanLine",
+    "offset": "0x170"
+  },
+  {
+    "name": "DxgkDdiStopCapture",
+    "offset": "0x178"
+  },
+  {
+    "name": "DxgkDdiControlInterrupt",
+    "offset": "0x180"
+  },
+  {
+    "name": "DxgkDdiCreateOverlay",
+    "offset": "0x188"
+  },
+  {
+    "name": "DxgkDdiDestroyDevice",
+    "offset": "0x190"
+  },
+  {
+    "name": "DxgkDdiOpenAllocation",
+    "offset": "0x198"
+  },
+  {
+    "name": "DxgkDdiCloseAllocation",
+    "offset": "0x1a0"
+  },
+  {
+    "name": "DxgkDdiRender",
+    "offset": "0x1a8"
+  },
+  {
+    "name": "DxgkDdiPresent",
+    "offset": "0x1b0"
+  },
+  {
+    "name": "DxgkDdiUpdateOverlay",
+    "offset": "0x1b8"
+  },
+  {
+    "name": "DxgkDdiFlipOverlay",
+    "offset": "0x1c0"
+  },
+  {
+    "name": "DxgkDdiDestroyOverlay",
+    "offset": "0x1c8"
+  },
+  {
+    "name": "DxgkDdiCreateContext",
+    "offset": "0x1d0"
+  },
+  {
+    "name": "DxgkDdiDestroyContext",
+    "offset": "0x1d8"
+  },
+  {
+    "name": "DxgkDdiLinkDevice",
+    "offset": "0x1e0"
+  },
+  {
+    "name": "DxgkDdiSetDisplayPrivateDriverFormat",
+    "offset": "0x1e8"
+  },
+  {
+    "name": "DxgkDdiRenderKm",
+    "offset": "0x1f0"
+  },
+  {
+    "name": "DxgkDdiQueryVidPnHWCapability",
+    "offset": "0x1f8"
+  },
+  {
+    "name": "DxgkDdiQueryDependentEngineGroup",
+    "offset": "0x200"
+  },
+  {
+    "name": "DxgkDdiQueryEngineStatus",
+    "offset": "0x208"
+  },
+  {
+    "name": "DxgkDdiResetEngine",
+    "offset": "0x210"
+  }
+]

@@ -1,0 +1,116 @@
+[
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_VISTA",
+    "value": "0x1052",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 34
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_VISTA_SP1",
+    "value": "0x1053",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 35
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WIN7",
+    "value": "0x2005",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 36
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WIN8",
+    "value": "0x300E",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 37
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM1_3",
+    "value": "0x4002",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 38
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM1_3_PATH_INDEPENDENT_ROTATION",
+    "value": "0x4003",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 39
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_0",
+    "value": "0x5023",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 40
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_1",
+    "value": "0x6003",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 41
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_2",
+    "value": "0x700A",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 44
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_3",
+    "value": "0x8001",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 45
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_4",
+    "value": "0x9006",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 46
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_5",
+    "value": "0xA00B",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 47
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_6",
+    "value": "0xB004",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 48
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_7",
+    "value": "0xC004",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 49
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_8",
+    "value": "0xD001",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 50
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM2_9",
+    "value": "0xE003",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 51
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM3_0",
+    "value": "0xF003",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 52
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM3_1",
+    "value": "0x10004",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 53
+  },
+  {
+    "macro": "DXGKDDI_INTERFACE_VERSION_WDDM3_2",
+    "value": "0x11007",
+    "file": "D:\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\\d3dukmdt.h",
+    "line": 54
+  }
+]
