@@ -64,7 +64,8 @@ def _feedback_block(feedback: Optional[dict], previous_code: str) -> str:
 
 def build_prompt(*, cve: str, analysis: dict, spec: Optional[dict],
                  last_run: Optional[dict], feedback: Optional[dict] = None,
-                 previous_code: str = "", history_text: str = "") -> list:
+                 previous_code: str = "", history_text: str = "",
+                 mutation_context: str = "") -> list:
     spec_text = json.dumps(spec, ensure_ascii=False, indent=2)[:2500] if spec else "（无）"
     run_text = json.dumps(last_run, ensure_ascii=False, indent=2)[:2000] if last_run else "（首轮）"
     feedback_block = _feedback_block(feedback, previous_code)
@@ -76,6 +77,9 @@ def build_prompt(*, cve: str, analysis: dict, spec: Optional[dict],
 
 ## 规格
 {spec_text}
+
+## 本轮可用的合法变异（由变异引擎给出，不得越界）
+{mutation_context.strip() or "（本组不启用结构化变异）"}
 
 ## 上一轮执行结果
 {run_text}
@@ -172,7 +176,8 @@ def parse_reuse(code: str) -> dict:
 def generate(client, *, cve: str, analysis: dict, spec: Optional[dict] = None,
              last_run: Optional[dict] = None, workdir: Path = DEFAULT_WORKDIR,
              round_index: int = 1, feedback: Optional[dict] = None,
-             previous_code: str = "", history_text: str = "") -> Path:
+             previous_code: str = "", history_text: str = "",
+             mutation_context: str = "") -> Path:
     """Ask for one program and write it where the runner can execute it.
 
     The failure block is not decoration: it is the only place the model learns
@@ -183,7 +188,8 @@ def generate(client, *, cve: str, analysis: dict, spec: Optional[dict] = None,
     target_dir.mkdir(parents=True, exist_ok=True)
     messages = build_prompt(cve=cve, analysis=analysis, spec=spec,
                             last_run=last_run, feedback=feedback,
-                            previous_code=previous_code, history_text=history_text)
+                            previous_code=previous_code, history_text=history_text,
+                            mutation_context=mutation_context)
     (target_dir / "generator_prompt.txt").write_text(
         "\n\n".join("%s://n%s" % (m["role"], m["content"]) for m in messages),
         encoding="utf-8")

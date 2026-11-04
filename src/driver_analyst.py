@@ -222,7 +222,8 @@ def advisory_block(cve: str) -> str:
 def build_prompt(*, cve: str, description: str, spec: Optional[dict] = None,
                  last_run: Optional[dict] = None,
                  history_text: str = "",
-                 static_facts: str = "") -> List[Dict[str, str]]:
+                 static_facts: str = "",
+                 mutation_context: str = "") -> List[Dict[str, str]]:
     spec_text = json.dumps(spec, ensure_ascii=False, indent=2)[:3000] if spec else "（无）"
     run_text = json.dumps(last_run, ensure_ascii=False, indent=2)[:2500] if last_run else "（首轮，无执行结果）"
     user = f"""## CVE
@@ -236,6 +237,9 @@ def build_prompt(*, cve: str, description: str, spec: Optional[dict] = None,
 
 ## 现有规格 specs/{cve}/spec.json
 {spec_text}
+
+## 结构化变异上下文（合法变体，非厂商私有协议）
+{mutation_context.strip() or "（本组不启用结构化变异）"}
 
 ## 驱动静态事实（只读，来自二进制分析）
 {static_facts.strip() or CONTRACT_UNKNOWN_FACTS}
@@ -304,6 +308,7 @@ CONTRACT_UNKNOWN_FACTS = ("（本组未提供静态事实。不要假设已知�
 def analyse(client, *, cve: str, description: str, spec: Optional[dict] = None,
             last_run: Optional[dict] = None, history_text: str = "",
             static_facts: str = "",
+            mutation_context: str = "",
             record_dir: Optional[Path] = None, round_index: int = 1) -> DriverAnalysis:
     """One analysis pass; optionally persist the exact prompt and response.
 
@@ -312,7 +317,8 @@ def analyse(client, *, cve: str, description: str, spec: Optional[dict] = None,
     """
     messages = build_prompt(cve=cve, description=description, spec=spec,
                             last_run=last_run, history_text=history_text,
-                            static_facts=static_facts)
+                            static_facts=static_facts,
+                            mutation_context=mutation_context)
     if record_dir is not None:
         target = Path(record_dir) / cve
         target.mkdir(parents=True, exist_ok=True)

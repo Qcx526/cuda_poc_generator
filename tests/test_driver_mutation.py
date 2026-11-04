@@ -67,3 +67,15 @@ def test_diff_lists_the_changed_fields_only():
     diff = mut.Mutation(after, ["hContext"], "x").diff(before)
     assert diff["changed_fields"] == ["hContext"]
     assert diff["before"]["Type"] == diff["after"]["Type"] == 0
+
+
+def test_context_block_reports_the_changed_field_by_header_name():
+    base = mut.EscapeInput(context="none")
+    case = mut.EscapeInput(context="own")
+    block = mut.context_block(base, case, rng_seed=1234)
+    import json
+
+    payload = json.loads(block)
+    assert payload["changed_fields"] == ["hContext"]
+    assert payload["seed"]["provenance"] == "synthetic"
+    assert payload["unknowns"]

@@ -22,6 +22,9 @@ MAX_TYPE = 0
 MAX_FLAGS = 0
 CONTEXT_CHOICES = ("none", "own")
 
+# Header field name -> attribute name; hContext is stored as ``context``.
+_FIELD_TO_ATTR = {"Type": "type", "Flags": "flags", "hContext": "context"}
+
 ALLOWED = {
     "Type": {"kind": "const", "value": MAX_TYPE,
              "why": "厂商私有 Type 未验证，不得构造"},
@@ -121,3 +124,45 @@ def next_round(executed: Sequence[Tuple[EscapeInput, Optional[int]]],
     pending = [c for c in legal_space() if c.key() not in corpus.seen]
     rng.shuffle(pending)
     return [Mutation(c, ["hContext"], "未执行组合") for c in pending[:4]]
+
+
+def context_block(base: EscapeInput, case: EscapeInput, *, rng_seed: int,
+                  seed_id: str = "escape_shape",
+                  provenance: str = "synthetic",
+                  tried: Optional[Sequence[Tuple[EscapeInput, Optional[int]]]] = None,
+                  last_run: Optional[dict] = None,
+                  unknowns: Optional[Sequence[str]] = None) -> str:
+    """Structured mutation context for the analyst and generator prompts.
+
+    It states what changed, what it was derived from, and what is still unknown.
+    The last part matters: a context that only lists tried combinations invites
+    the model to treat the untried space as safe.
+    """
+    tried = list(tried or [])
+    payload = {
+        "seed": {"id": seed_id, "provenance": provenance,
+                 "legal": provenance == "captured",
+                 "executed": bool(tried)},
+        "rng_seed": rng_seed,
+        "base": base.as_params(),
+        "candidate": case.as_params(),
+        "changed_fields": [name for name in ("Type", "Flags", "hContext")
+                           if getattr(base, _FIELD_TO_ATTR[name])
+                           != getattr(case, _FIELD_TO_ATTR[name])],
+        "constraints": ALLOWED,
+        "tried_combinations": [
+            {"params": c.as_params(), "status": status} for c, status in tried],
+        "untried_count": max(0, len(legal_space()) - len(tried)),
+        "last_run": last_run or {},
+        "unknowns": list(unknowns or [
+            "私有 Type 与命令体格式未验证，禁止构造",
+            "Flags 位语义未建立",
+            "0xC000000D 的具体拒绝来源未知",
+        ]),
+        "rules": ["不得扩大 Type/Flags/body 的取值范围",
+                  "hContext 只能用已验证存在的句柄",
+                  "生成程序必须自行构建 ABI 调用与清理，不得只输出参数"],
+    }
+    import json
+
+    return json.dumps(payload, ensure_ascii=False, indent=2)

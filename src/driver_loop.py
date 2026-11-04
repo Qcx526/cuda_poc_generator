@@ -116,7 +116,7 @@ def _history_block(workdir: Path, cve: str) -> str:
 
 def build_stages(*, cve: str, client: LLMClient, backend, spec: Optional[dict],
                  workdir: Path, timeout: int,
-                 static_facts: str = "") -> Dict[str, Callable]:
+                 static_facts: str = "", mutation_context: str = "") -> Dict[str, Callable]:
     description = describe(spec, cve)
     target_dir = workdir / cve
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -150,6 +150,7 @@ def build_stages(*, cve: str, client: LLMClient, backend, spec: Optional[dict],
 
         analysis = driver_analyst.analyse(client, cve=cve, description=description,
                                           static_facts=static_facts,
+                                          mutation_context=mutation_context,
                                           spec=spec, last_run=last_run,
                                           history_text=history_text,
                                           record_dir=workdir,
@@ -161,7 +162,8 @@ def build_stages(*, cve: str, client: LLMClient, backend, spec: Optional[dict],
             client, cve=cve, analysis=payload, spec=spec, last_run=last_run,
             workdir=workdir, round_index=state.iteration,
             feedback=None if feedback is None else feedback.as_dict(),
-            previous_code=previous_source, history_text=history_text)
+            previous_code=previous_source, history_text=history_text,
+            mutation_context=mutation_context)
         memory["payload"] = last_run
         memory["source"] = Path(candidate).read_text(encoding="utf-8", errors="replace")
         return state.model_copy(update={"candidate_file": str(candidate)})
@@ -195,7 +197,8 @@ def build_controller(*, cve: str, tier: str = TargetTier.DRIVER_USERLAND,
                      iterations: int = 2, allow_kernel: bool = False,
                      workdir: Path = DEFAULT_WORKDIR, timeout: int = 120,
                      client: Optional[LLMClient] = None,
-                     backend=None, static_facts: str = "") -> ClosedLoopController:
+                     backend=None, static_facts: str = "",
+                     mutation_context: str = "") -> ClosedLoopController:
     client = client or LLMClient(ConfigLoader())
     backend = backend or driver_exec.build_backend(tier, allow_kernel=allow_kernel)
     spec = load_spec(cve)
@@ -204,18 +207,20 @@ def build_controller(*, cve: str, tier: str = TargetTier.DRIVER_USERLAND,
                         project_root=str(ROOT), samples_dir=str(workdir / cve))
     stages = build_stages(cve=cve, client=client, backend=backend, spec=spec,
                           workdir=Path(workdir), timeout=timeout,
-                          static_facts=static_facts)
+                          static_facts=static_facts,
+                          mutation_context=mutation_context)
     return ClosedLoopController(config, stages, driver_grader)
 
 
 def run(cve: str, rounds: int = 1, tier: str = TargetTier.DRIVER_USERLAND,
         allow_kernel: bool = False, workdir: Path = DEFAULT_WORKDIR,
         timeout: int = 120, client: Optional[LLMClient] = None,
-        backend=None, static_facts: str = "") -> list:
+        backend=None, static_facts: str = "", mutation_context: str = "") -> list:
     controller = build_controller(cve=cve, tier=tier, iterations=rounds,
                                   allow_kernel=allow_kernel, workdir=Path(workdir),
                                   timeout=timeout, client=client, backend=backend,
-                                  static_facts=static_facts)
+                                  static_facts=static_facts,
+                          mutation_context=mutation_context)
     result = controller.run()
     print("[%s] %s after %d iteration(s)" % (result.status, cve, result.iterations_used))
     for item in result.trace:
@@ -235,11 +240,24 @@ def main(argv=None) -> int:
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--static-facts", default="",
                         help="path to verified static facts; empty means baseline")
+    parser.add_argument("--mutation-seed", type=int, default=None,
+                        help="enable structured mutation with this RNG seed")
     args = parser.parse_args(argv)
     facts = Path(args.static_facts).read_text(encoding="utf-8") if args.static_facts else ""
+    mutation = ""
+    if args.mutation_seed is not None:
+        import random
+
+        from . import driver_mutation
+
+        base = driver_mutation.EscapeInput()
+        case = driver_mutation.mutate(base, random.Random(args.mutation_seed)).case
+        mutation = driver_mutation.context_block(base, case,
+                                                 rng_seed=args.mutation_seed)
     trace = run(args.cve, rounds=args.rounds, tier=args.tier,
                 allow_kernel=args.allow_kernel, workdir=Path(args.workdir),
-                timeout=args.timeout, static_facts=facts)
+                timeout=args.timeout, static_facts=facts,
+                mutation_context=mutation)
     print(json.dumps(trace, ensure_ascii=False, indent=2)[:2000])
     return 0
 
