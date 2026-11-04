@@ -214,7 +214,8 @@ def run(cve: str, rounds: int = 1, tier: str = TargetTier.DRIVER_USERLAND,
         backend=None, static_facts: str = "") -> list:
     controller = build_controller(cve=cve, tier=tier, iterations=rounds,
                                   allow_kernel=allow_kernel, workdir=Path(workdir),
-                                  timeout=timeout, client=client, backend=backend)
+                                  timeout=timeout, client=client, backend=backend,
+                                  static_facts=static_facts)
     result = controller.run()
     print("[%s] %s after %d iteration(s)" % (result.status, cve, result.iterations_used))
     for item in result.trace:
