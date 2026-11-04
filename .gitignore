@@ -135,3 +135,15 @@ data/driver/binary/*.exe
 # Windows 在测试期间会重建该字面量目录（无代码引用），不入库
 %SystemDrive%/
 .pytest-tmp/
+
+# Ghidra 工程数据库（体积大、可重建，不入库）
+data/driver/ghidra/
+
+# Ghidra 工程数据库（体积大、可重建，不入库）
+data/driver/ghidra/
+
+# MSVC 构建产物（由 tools/driver/abi_reference.c 重建）
+tools/driver/abi_reference.exe
+tools/driver/*.obj
+tools/driver/*.pdb
+tools/driver/*.ilk

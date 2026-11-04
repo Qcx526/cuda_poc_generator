@@ -221,7 +221,8 @@ def advisory_block(cve: str) -> str:
 
 def build_prompt(*, cve: str, description: str, spec: Optional[dict] = None,
                  last_run: Optional[dict] = None,
-                 history_text: str = "") -> List[Dict[str, str]]:
+                 history_text: str = "",
+                 static_facts: str = "") -> List[Dict[str, str]]:
     spec_text = json.dumps(spec, ensure_ascii=False, indent=2)[:3000] if spec else "（无）"
     run_text = json.dumps(last_run, ensure_ascii=False, indent=2)[:2500] if last_run else "（首轮，无执行结果）"
     user = f"""## CVE
@@ -235,6 +236,9 @@ def build_prompt(*, cve: str, description: str, spec: Optional[dict] = None,
 
 ## 现有规格 specs/{cve}/spec.json
 {spec_text}
+
+## 驱动静态事实（只读，来自二进制分析）
+{static_facts.strip() or CONTRACT_UNKNOWN_FACTS}
 
 ## 方法笔记
 {_read(KNOWLEDGE, 2000) or "（无）"}
@@ -293,8 +297,13 @@ def extract_json(text: str) -> Dict[str, Any]:
     raise ValueError("模型输出中没有可解析的 JSON 对象")
 
 
+CONTRACT_UNKNOWN_FACTS = ("（本组未提供静态事实。不要假设已知任何内核函数地址、"
+                          "授权分支或私有命令格式；缺口一律记为 UNKNOWN。）")
+
+
 def analyse(client, *, cve: str, description: str, spec: Optional[dict] = None,
             last_run: Optional[dict] = None, history_text: str = "",
+            static_facts: str = "",
             record_dir: Optional[Path] = None, round_index: int = 1) -> DriverAnalysis:
     """One analysis pass; optionally persist the exact prompt and response.
 
@@ -302,7 +311,8 @@ def analyse(client, *, cve: str, description: str, spec: Optional[dict] = None,
     claim that has to be checkable after the fact, not inferred from the output.
     """
     messages = build_prompt(cve=cve, description=description, spec=spec,
-                            last_run=last_run, history_text=history_text)
+                            last_run=last_run, history_text=history_text,
+                            static_facts=static_facts)
     if record_dir is not None:
         target = Path(record_dir) / cve
         target.mkdir(parents=True, exist_ok=True)

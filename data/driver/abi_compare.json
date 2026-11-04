@@ -1,0 +1,62 @@
+{
+  "mismatches": 6,
+  "rows": [
+    {
+      "struct": "D3DKMT_ESCAPE",
+      "sizeof_c": 32,
+      "sizeof_ctypes": 32,
+      "match": true
+    },
+    {
+      "struct": "D3DKMT_OPENADAPTERFROMHDC",
+      "sizeof_c": 24,
+      "sizeof_ctypes": 32,
+      "match": false
+    },
+    {
+      "struct": "D3DKMT_OPENADAPTERFROMLUID",
+      "sizeof_c": 12,
+      "sizeof_ctypes": 16,
+      "match": false
+    },
+    {
+      "struct": "D3DKMT_CREATEDEVICE",
+      "sizeof_c": 64,
+      "sizeof_ctypes": 64,
+      "match": true
+    },
+    {
+      "struct": "D3DKMT_CREATECONTEXT",
+      "sizeof_c": 96,
+      "sizeof_ctypes": 88,
+      "match": false
+    },
+    {
+      "struct": "D3DKMT_DESTROYCONTEXT",
+      "sizeof_c": 4,
+      "sizeof_ctypes": 4,
+      "match": true
+    },
+    {
+      "struct": "D3DKMT_OPENADAPTERFROMHDC",
+      "field": "AdapterLuid",
+      "offset_c": 12,
+      "offset_ctypes": 16,
+      "match": false
+    },
+    {
+      "struct": "D3DKMT_OPENADAPTERFROMHDC",
+      "field": "VidPnSourceId",
+      "offset_c": 20,
+      "offset_ctypes": 24,
+      "match": false
+    },
+    {
+      "struct": "D3DKMT_CREATEDEVICE",
+      "field": "hAdapter",
+      "offset_c": 0,
+      "offset_ctypes": null,
+      "match": false
+    }
+  ]
+}

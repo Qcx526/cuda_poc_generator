@@ -31,7 +31,17 @@ SYSTEM = """你在为 NVIDIA GPU 驱动漏洞的触发验证写一个可运行�
 2. 程序必须自己打印一行结果，格式严格为：
    CPG_RESULT {"stage": "...", "status": <int>, "reached": <bool>, "calls": [{"api": "...", "status": <int>}], "notes": "..."}
    这一行必须是最后一行输出。
-3. ABI 只能使用提示中给出的结构体定义与字段偏移；不确定就跳过该字段，不要臆造偏移。
+3. ABI 必须复用公共模块，不得自行定义任何 D3DKMT 结构体或句柄类型：
+   在文件开头写
+       import sys; sys.path.insert(0, r"F://qcx//code//test//cuda_poc_generator")
+       from src.driver_abi import (D3DKMT_ESCAPE, D3DKMT_OPENADAPTERFROMHDC,
+           D3DKMT_CREATEDEVICE, D3DKMT_CREATECONTEXT, D3DKMT_DESTROYCONTEXT,
+           D3DKMT_DESTROYDEVICE, D3DKMT_CLOSEADAPTER, DISPLAY_DEVICEW,
+           bind_gdi32, bind_user32)
+   已知官方事实（不要改）：D3DKMT_HANDLE 是 4 字节 UINT；用户态 D3DKMT_* 与内核
+   DXGKARG_* 是不同结构，字段偏移不可混用；D3DKMTCreateDevice 首字段是
+   含 void* 的 union（8 字节）。用 CreateDCW("DISPLAY", 设备名) 得到的 HDC 才能
+   通过 D3DKMTOpenAdapterFromHdc；GetDC(NULL) 会被拒（0xC000000D）。
 4. 只执行一次，不写重试循环，不扫描 IOCTL 范围，不遍历命令号。
 5. 任何会写内核或触发蓝屏的操作只允许一次调用。
 6. 失败要有信息量：把每一步的返回值写进 calls，即使失败也要打印 CPG_RESULT。

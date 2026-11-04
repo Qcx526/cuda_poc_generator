@@ -115,7 +115,8 @@ def _history_block(workdir: Path, cve: str) -> str:
 
 
 def build_stages(*, cve: str, client: LLMClient, backend, spec: Optional[dict],
-                 workdir: Path, timeout: int) -> Dict[str, Callable]:
+                 workdir: Path, timeout: int,
+                 static_facts: str = "") -> Dict[str, Callable]:
     description = describe(spec, cve)
     target_dir = workdir / cve
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -148,6 +149,7 @@ def build_stages(*, cve: str, client: LLMClient, backend, spec: Optional[dict],
                     % feedback.failed_api)
 
         analysis = driver_analyst.analyse(client, cve=cve, description=description,
+                                          static_facts=static_facts,
                                           spec=spec, last_run=last_run,
                                           history_text=history_text,
                                           record_dir=workdir,
@@ -193,7 +195,7 @@ def build_controller(*, cve: str, tier: str = TargetTier.DRIVER_USERLAND,
                      iterations: int = 2, allow_kernel: bool = False,
                      workdir: Path = DEFAULT_WORKDIR, timeout: int = 120,
                      client: Optional[LLMClient] = None,
-                     backend=None) -> ClosedLoopController:
+                     backend=None, static_facts: str = "") -> ClosedLoopController:
     client = client or LLMClient(ConfigLoader())
     backend = backend or driver_exec.build_backend(tier, allow_kernel=allow_kernel)
     spec = load_spec(cve)
@@ -201,14 +203,15 @@ def build_controller(*, cve: str, tier: str = TargetTier.DRIVER_USERLAND,
                         allow_kernel=allow_kernel, timeout_seconds=max(60, timeout),
                         project_root=str(ROOT), samples_dir=str(workdir / cve))
     stages = build_stages(cve=cve, client=client, backend=backend, spec=spec,
-                          workdir=Path(workdir), timeout=timeout)
+                          workdir=Path(workdir), timeout=timeout,
+                          static_facts=static_facts)
     return ClosedLoopController(config, stages, driver_grader)
 
 
 def run(cve: str, rounds: int = 1, tier: str = TargetTier.DRIVER_USERLAND,
         allow_kernel: bool = False, workdir: Path = DEFAULT_WORKDIR,
         timeout: int = 120, client: Optional[LLMClient] = None,
-        backend=None) -> list:
+        backend=None, static_facts: str = "") -> list:
     controller = build_controller(cve=cve, tier=tier, iterations=rounds,
                                   allow_kernel=allow_kernel, workdir=Path(workdir),
                                   timeout=timeout, client=client, backend=backend)
@@ -229,10 +232,13 @@ def main(argv=None) -> int:
     parser.add_argument("--allow-kernel", action="store_true")
     parser.add_argument("--workdir", default=str(DEFAULT_WORKDIR))
     parser.add_argument("--timeout", type=int, default=120)
+    parser.add_argument("--static-facts", default="",
+                        help="path to verified static facts; empty means baseline")
     args = parser.parse_args(argv)
+    facts = Path(args.static_facts).read_text(encoding="utf-8") if args.static_facts else ""
     trace = run(args.cve, rounds=args.rounds, tier=args.tier,
                 allow_kernel=args.allow_kernel, workdir=Path(args.workdir),
-                timeout=args.timeout)
+                timeout=args.timeout, static_facts=facts)
     print(json.dumps(trace, ensure_ascii=False, indent=2)[:2000])
     return 0
 
