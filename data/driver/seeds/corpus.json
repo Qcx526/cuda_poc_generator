@@ -15,7 +15,9 @@
       "input_digest": "387af37fd6e1de40",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": "device=\\\\.\\DISPLAY44"
+      "note": "device=\\\\.\\DISPLAY44",
+      "eligibility": "STRUCTURE_CHECKED_ONLY",
+      "executed": true
     },
     {
       "seed_id": "dc0",
@@ -35,13 +37,15 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "",
-          "value": 18446744071562142492
+          "value": 2130782450
         }
       ],
       "input_digest": "387af37fd6e1de40",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": ""
+      "note": "",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "adapter_hdc",
@@ -61,7 +65,7 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "",
-          "value": 18446744071562142492
+          "value": 2130782450
         },
         {
           "name": "hAdapter",
@@ -74,7 +78,9 @@
       "input_digest": "387af37fd6e1de40",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": "luid=b33b765e:00000000"
+      "note": "luid=b33b765e:00000000",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "device0",
@@ -95,7 +101,7 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "",
-          "value": 18446744071562142492
+          "value": 2130782450
         },
         {
           "name": "hAdapter",
@@ -115,7 +121,9 @@
       "input_digest": "a2873d434714eb41",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": ""
+      "note": "",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "context0",
@@ -139,7 +147,7 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "",
-          "value": 18446744071562142492
+          "value": 2130782450
         },
         {
           "name": "hAdapter",
@@ -166,7 +174,9 @@
       "input_digest": "da42ca320cbb22f5",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": ""
+      "note": "",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "destroy_context0",
@@ -189,7 +199,7 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "",
-          "value": 18446744071562142492
+          "value": 2130782450
         },
         {
           "name": "hAdapter",
@@ -216,7 +226,9 @@
       "input_digest": "e152de5507973435",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": ""
+      "note": "",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "destroy_device0",
@@ -240,7 +252,7 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "",
-          "value": 18446744071562142492
+          "value": 2130782450
         },
         {
           "name": "hAdapter",
@@ -267,7 +279,9 @@
       "input_digest": "da42ca320cbb22f5",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": ""
+      "note": "",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "teardown0",
@@ -275,7 +289,7 @@
       "params": {
         "hdc": "hdc"
       },
-      "status": 0,
+      "status": 1,
       "sequence": [
         "EnumDisplayDevicesW",
         "CreateDCW",
@@ -293,7 +307,7 @@
           "kind": "hdc",
           "created_by": "CreateDCW",
           "released_by": "DeleteDC",
-          "value": 18446744071562142492
+          "value": 2130782450
         },
         {
           "name": "hAdapter",
@@ -317,10 +331,12 @@
           "value": 1073741952
         }
       ],
-      "input_digest": "a827a41e53424b10",
+      "input_digest": "5fd8a204a63755c3",
       "provenance": "captured",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": ""
+      "note": "",
+      "eligibility": "VERIFIED_LEGAL",
+      "executed": true
     },
     {
       "seed_id": "escape_shape",
@@ -332,7 +348,7 @@
         "PrivateDriverDataSize": 0,
         "hContext": 0
       },
-      "status": 0,
+      "status": null,
       "sequence": [
         "D3DKMTEscape"
       ],
@@ -340,7 +356,9 @@
       "input_digest": "676c1407cae8745b",
       "provenance": "synthetic",
       "environment": "windows-10 x64 / nvlddmkm 610.47",
-      "note": "shape only, not executed"
+      "note": "shape only, not executed",
+      "eligibility": "SYNTHETIC_UNVERIFIED",
+      "executed": false
     }
   ],
   "counts": {

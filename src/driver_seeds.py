@@ -44,7 +44,7 @@ class Seed:
     seed_id: str
     api: str
     params: Dict[str, object]
-    status: int
+    status: Optional[int]
     sequence: List[str] = field(default_factory=list)
     handles: List[Handle] = field(default_factory=list)
     input_digest: str = ""
@@ -169,10 +169,10 @@ def capture_baseline() -> List[Seed]:
 
     gdi32.D3DKMTCloseAdapter(ctypes.byref(abi.D3DKMT_CLOSEADAPTER(opened.hAdapter)))
     adapter.released_by = "D3DKMTCloseAdapter"
-    gdi.DeleteDC(hdc)
+    delete_status = gdi.DeleteDC(hdc)
     hdc_handle.released_by = "DeleteDC"
     sequence += ["D3DKMTCloseAdapter", "DeleteDC"]
-    seeds.append(Seed("teardown0", "DeleteDC", {"hdc": "hdc"}, 0, list(sequence),
+    seeds.append(Seed("teardown0", "DeleteDC", {"hdc": "hdc"}, delete_status, list(sequence),
                       snapshot(handles), digest({"hdc": hdc}), CAPTURED))
     return seeds
 
@@ -184,17 +184,57 @@ def synthetic_escape() -> Seed:
     private body is deliberately empty, because inventing one is exactly what
     this project forbids.
     """
+    # status is None, not 0: a seed that never ran must not look like a success.
     return Seed("escape_shape", "D3DKMTEscape",
                 {"Type": 0, "Flags": 0, "pPrivateDriverData": None,
                  "PrivateDriverDataSize": 0, "hContext": 0},
-                0, ["D3DKMTEscape"], [], digest({"Type": 0, "Flags": 0}),
+                None, ["D3DKMTEscape"], [], digest({"Type": 0, "Flags": 0}),
                 SYNTHETIC, note="shape only, not executed")
+
+
+VERIFIED_LEGAL = "VERIFIED_LEGAL"            # ran here, returned success
+STRUCTURE_ONLY = "STRUCTURE_CHECKED_ONLY"    # type/layout checked, never run
+SYNTHETIC_UNVERIFIED = "SYNTHETIC_UNVERIFIED"  # written by hand, unknown validity
+OFFLINE_ONLY = "OFFLINE_EVALUATION_ONLY"     # must not run on this host
+
+
+# Win32 BOOL APIs succeed on non-zero; D3DKMT ones succeed on STATUS_SUCCESS (0).
+BOOL_APIS = {"EnumDisplayDevicesW", "DeleteDC"}
+
+
+def succeeded(seed: Seed) -> bool:
+    if seed.status is None:
+        return False
+    if seed.api in BOOL_APIS:
+        return seed.status != 0
+    return seed.status == 0
+
+
+def eligibility(seed: Seed, runnable_on_host: bool = True) -> str:
+    """Which of the five states a seed is in.
+
+    The distinction that matters: entering the mutation context does not grant a
+    seed the right to be executed. A synthetic shape stays synthetic.
+    """
+    if seed.provenance == SYNTHETIC:
+        return SYNTHETIC_UNVERIFIED if runnable_on_host else OFFLINE_ONLY
+    if succeeded(seed) and seed.handles:
+        return VERIFIED_LEGAL
+    if succeeded(seed):
+        return STRUCTURE_ONLY
+    return OFFLINE_ONLY
 
 
 def save(seeds: List[Seed], path: Path = CORPUS) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"seeds": [s.to_dict() for s in seeds],
+    records = []
+    for seed in seeds:
+        record = seed.to_dict()
+        record["eligibility"] = eligibility(seed)
+        record["executed"] = seed.status is not None
+        records.append(record)
+    payload = {"seeds": records,
                "counts": {CAPTURED: sum(1 for s in seeds if s.provenance == CAPTURED),
                           SYNTHETIC: sum(1 for s in seeds if s.provenance == SYNTHETIC)}}
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
