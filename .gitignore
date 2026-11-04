@@ -147,3 +147,7 @@ tools/driver/abi_reference.exe
 tools/driver/*.obj
 tools/driver/*.pdb
 tools/driver/*.ilk
+
+# ETW 原始采集与可重建中间产物（归档在 data/driver/etw/archive/）
+data/driver/etw/*.etl
+data/driver/etw/*.csv

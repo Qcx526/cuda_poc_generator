@@ -1,0 +1,32 @@
+{
+ "total": 119377,
+ "by_event": {
+  "Microsoft-Windows-DxgKrnl|Info": 45707,
+  "Microsoft-Windows-DxgKrnl|Start": 36849,
+  "Microsoft-Windows-DxgKrnl|Stop": 36819,
+  "EventTrace|Header": 1,
+  "EventTrace|PartitionInfoExtensionV2": 1
+ },
+ "pids": {
+  "0x000111E0": 39463,
+  "0x00000004": 33351,
+  "0x00000000": 31602,
+  "0x00000460": 7369,
+  "0x000036B0": 2589,
+  "0x0000E6A8": 2015,
+  "0x0000F354": 987,
+  "0x000105FC": 280,
+  "0x000007C0": 215,
+  "0x0000E8A4": 128,
+  "0x00011EBC": 118,
+  "0x00000DD4": 106,
+  "0x00009660": 103,
+  "0x00003DF8": 100,
+  "0x0000E8D8": 94,
+  "0x00009700": 71,
+  "0x0000B6A4": 63,
+  "0x00000ACC": 54,
+  "0x000026D4": 49,
+  "0x0000D734": 49
+ }
+}
