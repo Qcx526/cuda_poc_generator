@@ -19,8 +19,13 @@ export LIB="$MSVC\\lib\\x64;$L\\ucrt\\x64;$L\\um\\x64"
 | 编译器 | MSVC 19.29.30159 (x64)，工具集 14.29.30133 |
 | SDK | 10.0.26100.0 |
 | 选项 | `-O1 -LD`，x64 |
-| 产物 | `mock_gpu.dll`，102,912 字节 |
-| SHA256 | `9cf8b3e55df3705eacd37275f6f3802b6b10910e5169c68822e7cfadb39a6a8a` |
+| 产物 | `mock_gpu.dll`，见下方 SHA |
+| SHA256 (v2) | `cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53` |
+| SHA256 (v1) | `9cf8b3e55df3705eacd37275f6f3802b6b10910e5169c68822e7cfadb39a6a8a`（作废） |
+
+**v2 变更**：`AUTHZ_BYPASS` 的记录从"授权检查被跳过"推到"整次调用最终成功"。
+v1 会在跨设备 + PRIVILEGED + 非法 payload 时返回 `INVALID_PARAMETER` 却仍记录触发，
+把被拒的调用伪装成成功。v1 产出的实验结果一律标记为旧 Benchmark 版本，不与 v2 混用。
 
 `.dll` / `.lib` / `.exp` / `.obj` / `.pdb` 为可重建产物，已在 `.gitignore` 排除。
 

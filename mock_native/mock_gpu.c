@@ -124,9 +124,9 @@ __declspec(dllexport) int MockEscape(int adapter, int device, int context, int t
     if (c->parent != device && !privileged) {
         return MOCK_ACCESS_DENIED;
     }
-    if (c->parent != device && privileged) {
-        record_trigger(1);
-    }
+    /* Flaw 1 is recorded only if the call ultimately succeeds: a request that is
+     * later rejected for a bad payload did not bypass anything, and counting it
+     * would let a rejected call masquerade as a trigger. */
 
     /* Flaw 2: exactly one byte of over-declaration is accepted. */
     if (length >= 4) {
@@ -136,6 +136,10 @@ __declspec(dllexport) int MockEscape(int adapter, int device, int context, int t
             if (declared > length - 4 + 1) return MOCK_INVALID_PARAMETER;
             if (declared == length - 4 + 1) record_trigger(2);
         }
+    }
+
+    if (c->parent != device && privileged) {
+        record_trigger(1);
     }
     return MOCK_OK;
 }

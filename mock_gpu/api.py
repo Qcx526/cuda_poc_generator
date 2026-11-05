@@ -111,33 +111,51 @@ def create_context(hDevice: int, node: int = 0) -> Tuple[int, int]:
     return STATUS_SUCCESS, handle
 
 
+def _note_escape(hAdapter, hDevice, hContext, type_, flags, payload, status):
+    """Every attempt is recorded, including the rejected ones.
+
+    A trace that only keeps successes makes a refused call look like it never
+    happened, which is exactly the impression a rejected probe should not give.
+    """
+    _state.trace.append({"op": "escape", "hAdapter": hAdapter, "hDevice": hDevice,
+                         "hContext": hContext, "type": type_, "flags": flags,
+                         "payload": payload.hex(), "status": status})
+    return status
+
+
 def escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
            payload: bytes) -> int:
     # Existence, not just "not destroyed": a random handle was never created, and
     # the native DLL rejects it as an invalid parameter rather than as a permissions
     # problem. Diverging here would make the two implementations disagree on the
     # very cases the benchmark is meant to discriminate.
+    def reject() -> int:
+        return _note_escape(hAdapter, hDevice, hContext, type_, flags, payload,
+                            STATUS_INVALID_PARAMETER)
+
     if hAdapter not in _state.adapters or hDevice not in _state.devices:
-        return STATUS_INVALID_PARAMETER
+        return reject()
     if hContext not in _state.contexts:
-        return STATUS_INVALID_PARAMETER
+        return reject()
     if type_ < 0 or type_ > 7:
-        return STATUS_INVALID_PARAMETER
+        return reject()
     if len(payload) > 1024:
-        return STATUS_INVALID_PARAMETER
+        return reject()
 
     owner_device, _node = _state.contexts.get(hContext, (0, 0))
     privileged = bool(flags & 0x2)
 
     # Flaw 1: the ownership check is skipped when the caller claims PRIVILEGED.
     if owner_device != hDevice and not privileged:
-        return STATUS_ACCESS_DENIED
+        return _note_escape(hAdapter, hDevice, hContext, type_, flags, payload,
+                            STATUS_ACCESS_DENIED)
 
     # Flaw 2: an off-by-one length check lets a one-byte-over read through.
     declared = int.from_bytes(payload[:4], "little") if len(payload) >= 4 else 0
     if declared > 0:
         if declared > len(payload) - 4 + 1:
-            return STATUS_INVALID_PARAMETER
+            return _note_escape(hAdapter, hDevice, hContext, type_, flags, payload,
+                                STATUS_INVALID_PARAMETER)
         if declared == len(payload) - 4 + 1:
             _judge("OOB_READ", {"type": type_, "declared": declared,
                                 "payload_len": len(payload)})
@@ -145,9 +163,7 @@ def escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
         _judge("AUTHZ_BYPASS", {"type": type_, "flags": flags,
                                 "hContext": hContext, "hDevice": hDevice})
 
-    _state.trace.append({"op": "escape", "hAdapter": hAdapter, "hDevice": hDevice,
-                         "hContext": hContext, "type": type_, "flags": flags,
-                         "payload": payload.hex(), "status": STATUS_SUCCESS})
+    _note_escape(hAdapter, hDevice, hContext, type_, flags, payload, STATUS_SUCCESS)
     return STATUS_SUCCESS
 
 
