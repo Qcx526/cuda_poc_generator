@@ -84,14 +84,15 @@ def _declared_sha() -> str:
 
 
 def run_candidate(candidate: Path, timeout: int = 60,
-                  trace_path: Path = None) -> dict:
+                  trace_path: Path = None, max_calls: int = 0) -> dict:
     if not DLL.is_file():
         raise FileNotFoundError("原生 DLL 缺失，正式验收不允许跳过: %s" % DLL)
 
     candidate = Path(candidate).resolve()
     workdir = Path(tempfile.mkdtemp(prefix="bench_"))
     server = subprocess.Popen(
-        [sys.executable, "-B", "-m", "mock_native.server", "--dll", str(DLL)],
+        [sys.executable, "-B", "-m", "mock_native.server", "--dll", str(DLL),
+         "--max-calls", str(max_calls)],
         cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
         creds = _read_handshake(server)

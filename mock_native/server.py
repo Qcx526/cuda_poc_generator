@@ -23,7 +23,6 @@ itself. Strong isolation needs a separate user or a sandboxed container.
 import argparse
 import ctypes
 import hashlib
-import hashlib
 import json
 import os
 import secrets
@@ -44,7 +43,7 @@ from binding import TRIGGER_AUTHZ, TRIGGER_OOB, _Binding  # noqa: E402
 class Session:
     """Owns the loaded DLL, the authoritative trace and the trigger list."""
 
-    def __init__(self, dll_source: Path):
+    def __init__(self, dll_source: Path, max_calls: int = 0):
         self.workdir = Path(tempfile.mkdtemp(prefix="mockrun_"))
         self.dll_path = self.workdir / ("m_%s.dll" % secrets.token_hex(8))
         shutil.copy2(dll_source, self.dll_path)
@@ -53,14 +52,30 @@ class Session:
         self.trace = []
         # Shadow bookkeeping, so the verdict can say whether the objects an escape
         # referenced were actually alive - not just that some call happened.
+        self.max_calls = max_calls          # 0 = unlimited
+        self.calls_made = 0
         self.adapters = set()
         self.devices = {}
         self.contexts = {}
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()   # call() and _call_with_budget nest
         self.sha256 = hashlib.sha256(self.dll_path.read_bytes()).hexdigest()
 
     def call(self, op: str, args: dict) -> dict:
         with self.lock:
+            before = len(self.binding.triggers())
+            result = self._call_with_budget(op, args)
+            if len(self.binding.triggers()) > before and self.trace:
+                # Which call, by number, first produced a confirmed trigger.
+                self.trace[-1]["trigger_at_call"] = self.calls_made
+            return result
+
+    def _call_with_budget(self, op: str, args: dict) -> dict:
+        with self.lock:
+            if self.max_calls and self.calls_made >= self.max_calls:
+                # A budget that only one arm respects is not a budget. Refusing here
+                # keeps every arm on the same number of real driver calls.
+                return {"error": "budget_exhausted", "status": 0xC000000D}
+            self.calls_made += 1
             return self._call(op, args)
 
     def _call(self, op: str, args: dict) -> dict:
@@ -98,8 +113,7 @@ class Session:
             record = {"op": op, "args": {"hAdapter": adapter, "hDevice": device,
                                          "hContext": context,
                                          "type": int(args["type"]),
-                                         "flags": int(args["flags"]),
-                                         "payload_len": len(payload)},
+                                         "flags": int(args["flags"])},
                       "status": status, "objects_valid": objects_valid,
                       # Full body, not a prefix: the benchmark caps payloads at
                       # 1024 bytes and carries nothing sensitive, so a complete
@@ -135,6 +149,10 @@ class Session:
         return {"triggered": bool(kinds), "flaws": sorted(set(names)),
                 "trigger_count": len(kinds), "dll_sha256": self.sha256,
                 "trace_len": len(self.trace),
+                "trace_complete": len(self.trace) <= 500,
+                "trace_limit": 500,
+                "calls_made": self.calls_made,
+                "max_calls": self.max_calls,
                 "facts": self.facts(),
                 "trace": self.trace[-500:]}
 
@@ -186,8 +204,8 @@ class Server(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
 
-def serve(dll: Path) -> None:
-    session = Session(dll)
+def serve(dll: Path, max_calls: int = 0) -> None:
+    session = Session(dll, max_calls)
     server = Server(("127.0.0.1", 0), Handler)
     server.session = session
     server.client_token = secrets.token_hex(16)
@@ -209,8 +227,9 @@ def serve(dll: Path) -> None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dll", required=True)
+    parser.add_argument("--max-calls", type=int, default=0)
     args = parser.parse_args(argv)
-    serve(Path(args.dll))
+    serve(Path(args.dll), args.max_calls)
     return 0
 
 

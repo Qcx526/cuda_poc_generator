@@ -10,7 +10,7 @@ import json
 import os
 import socket
 
-CONTRACT = __CONTRACT__
+CONTRACT = __CONTRACT__  # noqa: F821 - replaced at copy time by the runner  # noqa: F821 - replaced at copy time by the runner
 
 STATUS_SUCCESS = 0
 STATUS_INVALID_PARAMETER = 0xC000000D
@@ -33,7 +33,10 @@ def _rpc(op, args):
         line = stream.readline()
     reply = json.loads(line.decode("utf-8") or "{}")
     if "error" in reply:
-        raise RuntimeError(reply["error"])
+        # A refused call is a status, not a crash: the candidate should be able to
+        # finish and report what happened instead of dying on an exception.
+        return {"status": reply.get("status", 0xC000000D), "handle": 0,
+                "note": reply["error"]}
     return reply
 
 

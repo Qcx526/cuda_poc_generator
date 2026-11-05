@@ -7,6 +7,7 @@ never the oracle. Whether a flaw fired is only known to the harness.
 
 import argparse
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -34,13 +35,13 @@ DESCRIPTION = """漏洞描述（抽象，未给出触发位置）：
 要求：通过公开 API 构造合法调用序列，验证上述行为是否可被实际触发，并记录每步返回状态。"""
 
 
-def _prompt(contract: str, feedback: dict = None, facts: str = "") -> str:
+def _prompt(contract: str, feedback: dict = None, facts: str = "",
+            mutation: str = "") -> str:
     text = "## API 契约\n%s\n\n%s\n" % (contract, DESCRIPTION)
     if facts:
-        text += ("\n## 目标 DLL 的静态事实（只读，来自对该 DLL 的真实分析）\n%s\n"
-                 % facts[:4000])
-        text += ("说明：这些是函数边界、指令统计与比较常量，不含漏洞位置或标签；"
-                 "未给出的语义一律视为 UNKNOWN。\n")
+        text += "\n## 目标 DLL 的静态事实（只读，来自对该 DLL 的真实分析）\n%s\n" % facts[:4000]
+    if mutation:
+        text += ("\n## 结构化变异候选（来自公开合同的合法空间）\n%s\n" % mutation[:3000])
     if feedback:
         text += ("\n## 上一轮客观结果（仅用户态返回值，不含 oracle）\n%s\n"
                  % json.dumps(feedback, ensure_ascii=False, indent=2)[:2500])
@@ -80,19 +81,53 @@ def public_feedback(verdict: dict) -> dict:
     return {key: payload[key] for key in PUBLIC_FEEDBACK_KEYS}
 
 
+ARMS = {"A": (False, False), "B": (True, False), "C": (False, True), "D": (True, True)}
+
+
 def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_runs"),
-        facts_path: Path = None, client=None) -> list:
+        facts_path: Path = None, client=None, arm: str = "A",
+        mutation_seed: int = None, max_calls: int = 40) -> list:
+    from src import mock_facts, mock_mutation
+    from mock_native import binding as nb
+
     client = client or LLMClient(ConfigLoader())
+    want_facts, want_mutation = ARMS[arm]
+
     facts = ""
-    if facts_path and Path(facts_path).is_file():
-        facts = Path(facts_path).read_text(encoding="utf-8")
+    if want_facts:
+        if not facts_path or not Path(facts_path).is_file():
+            raise FileNotFoundError("arm %s 需要静态事实文件" % arm)
+        declared = mock_facts.load_raw(Path(facts_path))
+        mock_facts.verify_artifact(nb.DLL, declared)      # 执行与事实必须是同一个 DLL
+        facts = mock_facts.prompt_block(Path(facts_path))
+
+    mutation_text = ""
+    candidates = []
+    if want_mutation:
+        if mutation_seed is None:
+            raise ValueError("arm %s 需要 mutation_seed" % arm)
+        rng = random.Random(mutation_seed)
+        seeds = mock_mutation.baseline_space()
+        candidates = mock_mutation.expand(seeds, rng, budget=6)
+        mutation_text = mock_mutation.context_block(candidates, seeds, mutation_seed)
     base = Path(workdir) / cve_label
     feedback = None
     history = []
+    import hashlib
+
+    (base / "config.json").parent.mkdir(parents=True, exist_ok=True)
+    (base / "config.json").write_text(json.dumps({
+        "arm": arm, "facts_enabled": want_facts, "mutation_enabled": want_mutation,
+        "rounds": rounds, "mutation_seed": mutation_seed, "max_calls": max_calls,
+        "dll_sha256": hashlib.sha256(nb.DLL.read_bytes()).hexdigest(),
+        "model": getattr(client, "model_name", "unknown"),
+        "temperature": 0.1,
+    }, ensure_ascii=False, indent=1), encoding="utf-8")
+
     for index in range(1, rounds + 1):
         round_dir = base / ("round%d" % index)
         round_dir.mkdir(parents=True, exist_ok=True)
-        prompt = _prompt(mock_gpu.CONTRACT, feedback, facts)
+        prompt = _prompt(mock_gpu.CONTRACT, feedback, facts, mutation_text)
         (round_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
         reply = client.chat([{"role": "system", "content": SYSTEM},
                              {"role": "user", "content": prompt}], temperature=0.1)
@@ -101,7 +136,7 @@ def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_
         candidate = round_dir / "poc.py"
         candidate.write_text(code, encoding="utf-8")
 
-        verdict = mock_bench.run_candidate(candidate)
+        verdict = mock_bench.run_candidate(candidate, max_calls=max_calls)
         verdict["round"] = index
         (round_dir / "verdict.json").write_text(
             json.dumps(verdict, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -121,8 +156,14 @@ def main(argv=None) -> int:
     parser.add_argument("--label", default="mock-A")
     parser.add_argument("--rounds", type=int, default=2)
     parser.add_argument("--facts", default="")
+    parser.add_argument("--arm", default="A", choices=list(ARMS))
+    parser.add_argument("--mutation-seed", type=int, default=None)
+    parser.add_argument("--max-calls", type=int, default=40)
     args = parser.parse_args(argv)
-    history = run(args.label, args.rounds, facts_path=Path(args.facts) if args.facts else None)
+    history = run(args.label, args.rounds,
+                  facts_path=Path(args.facts) if args.facts else None,
+                  arm=args.arm, mutation_seed=args.mutation_seed,
+                  max_calls=args.max_calls)
     for item in history:
         print("round %d  ran=%s  level=%s  claimed=%s  oracle=%s  flaws=%s"
               % (item["round"], item["ran"], item.get("verification_level"),
