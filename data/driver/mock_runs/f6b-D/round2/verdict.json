@@ -1,0 +1,1158 @@
+{
+  "candidate": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\mock_runs\\f6b-D\\round2\\poc.py",
+  "exit_code": 0,
+  "ran": true,
+  "claimed": {
+    "reached": true,
+    "calls": [
+      {
+        "api": "reset",
+        "status": 0
+      },
+      {
+        "api": "open_adapter",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "open_adapter",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "destroy_context",
+        "status": 0
+      },
+      {
+        "api": "destroy_context",
+        "status": 0
+      },
+      {
+        "api": "destroy_context",
+        "status": 0
+      },
+      {
+        "api": "destroy_device",
+        "status": 0
+      },
+      {
+        "api": "destroy_device",
+        "status": 0
+      },
+      {
+        "api": "destroy_device",
+        "status": 0
+      },
+      {
+        "api": "close_adapter",
+        "status": 0
+      },
+      {
+        "api": "close_adapter",
+        "status": 0
+      }
+    ],
+    "notes": "baseline=le_avail/type=0; context ownership bypassed"
+  },
+  "external": {
+    "triggered": true,
+    "flaws": [
+      "AUTHZ_BYPASS"
+    ],
+    "trigger_count": 4,
+    "dll_sha256": "cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53",
+    "trace_len": 62,
+    "trace_complete": true,
+    "trace_limit": 500,
+    "calls_made": 62,
+    "max_calls": 200,
+    "facts": {
+      "native_api_called": true,
+      "valid_objects_built": true,
+      "escape_called": true,
+      "escape_with_valid_objects": true,
+      "oracle_confirmed": true
+    },
+    "trace": [
+      {
+        "op": "open_adapter",
+        "status": 0,
+        "handle": 8192
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8192
+        },
+        "status": 0,
+        "handle": 8256
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8256,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8320
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "e6525ba6cc636e73aeaeed22dc8091a705155755497952a5f150b5a508e00a86",
+        "payload_hex": "10000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "9c744e43939b79a9c0d3fedde43da40acf0ae66d1c3a19d31dce44ad94869541",
+        "payload_hex": "10101010101010101010101010101010",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "6b6f14e6af2627186bf8a55e474dcf6ef3f6ce81af560da871ec51eb670171a9",
+        "payload_hex": "04000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "5ac6a5945f16500911219129984ba8b387a06f24fe383ce4e81a73294065461b",
+        "payload_hex": "ffffffffffffffffffffffffffffffff",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 0,
+        "payload_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "payload_hex": "",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "c6372e79824311fe4ec8ca68a5a469f0cfa00451f4928e78355042bf69e4a965",
+        "payload_hex": "00040000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "231f5cecc61699ca90f5e9acdbc4c47552f66daeb7ef55327cb7574cda9f29e5",
+        "payload_hex": "ffffffff000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8192
+        },
+        "status": 0,
+        "handle": 8384
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8384,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8448
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8384,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8384,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8384,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8384,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true,
+        "trigger_at_call": 18
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8384,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true,
+        "trigger_at_call": 19
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true,
+        "trigger_at_call": 21
+      },
+      {
+        "op": "open_adapter",
+        "status": 0,
+        "handle": 8512
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8512
+        },
+        "status": 0,
+        "handle": 8576
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8576,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8640
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8512,
+          "hDevice": 8576,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8512,
+          "hDevice": 8576,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true,
+        "trigger_at_call": 26
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 0,
+        "payload_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "payload_hex": "",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 0,
+        "payload_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "payload_hex": "",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1,
+        "payload_sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "payload_hex": "00",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1,
+        "payload_sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "payload_hex": "00",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 2,
+        "payload_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7",
+        "payload_hex": "0000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 2,
+        "payload_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7",
+        "payload_hex": "0000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 3,
+        "payload_sha256": "709e80c88487a2411e1ee4dfb9f22a861492d20c4765150c0c794abd70f8147c",
+        "payload_hex": "000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 3,
+        "payload_sha256": "709e80c88487a2411e1ee4dfb9f22a861492d20c4765150c0c794abd70f8147c",
+        "payload_hex": "000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d",
+        "payload_hex": "0400000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+        "payload_hex": "0000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 15,
+        "payload_sha256": "8a829d8ebef25eb4431c0fdbee1dd814eb1b544a60dba2a61da03de49e3f75bc",
+        "payload_hex": "0b0000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 15,
+        "payload_sha256": "5322fecfc92a5e3248a297a3df3eddfb9bd9049504272e4f572b87fa36d4b3bd",
+        "payload_hex": "000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "a64a5761bc0e57ccd66210ee52f6025ee9fff0beeeed623dbda9a319a3d42371",
+        "payload_hex": "0c000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "cb36275e2821f31543073ec1479d2289dbb47691f72817cdbff5083ab4d28a1f",
+        "payload_hex": "0d00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "0a88111852095cae045340ea1f0b279944b2a756a213d9b50107d7489771e159",
+        "payload_hex": "0000000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "722c0755db27e9e0f16f0807f7834b55b3e1c6d3880ef24f2640e31e0ca0ae62",
+        "payload_hex": "fc030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+        "payload_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "6e1ae50c2c807c6630b5a02ea29761a723e422e503100fc2ee23f2d715d3a001",
+        "payload_hex": "00040000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "ad95131bc0b799c0b1af477fb14fcf26a6a9f76079e48bf090acb7e8367bfd0e",
+        "payload_hex": "ffffffff",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "fef02424157f106b48d04276276c15ebba9c516e6024d4f82ea2f648af3e09c8",
+        "payload_hex": "0004000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "72a4fa3544e43a836ffcb268ce06ccdbc55d44d5e6b1b1c19216a53ea98301fd",
+        "payload_hex": "ffffffff00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "c6372e79824311fe4ec8ca68a5a469f0cfa00451f4928e78355042bf69e4a965",
+        "payload_hex": "00040000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "231f5cecc61699ca90f5e9acdbc4c47552f66daeb7ef55327cb7574cda9f29e5",
+        "payload_hex": "ffffffff000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "d79955542c40e35457a36c07ae05665949dc9d18d05acfb8f85fabe4063ce7b5",
+        "payload_hex": "0004000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8320,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "d60022e4b14c7f8130d97de5bda1826bfb261de7b938b614c402eac5a0c9eb05",
+        "payload_hex": "ffffffff00000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "destroy_context",
+        "args": {
+          "hContext": 8640
+        },
+        "status": 0
+      },
+      {
+        "op": "destroy_context",
+        "args": {
+          "hContext": 8448
+        },
+        "status": 0
+      },
+      {
+        "op": "destroy_context",
+        "args": {
+          "hContext": 8320
+        },
+        "status": 0
+      },
+      {
+        "op": "destroy_device",
+        "args": {
+          "hDevice": 8576
+        },
+        "status": 0
+      },
+      {
+        "op": "destroy_device",
+        "args": {
+          "hDevice": 8384
+        },
+        "status": 0
+      },
+      {
+        "op": "destroy_device",
+        "args": {
+          "hDevice": 8256
+        },
+        "status": 0
+      },
+      {
+        "op": "close_adapter",
+        "args": {
+          "hAdapter": 8512
+        },
+        "status": 0
+      },
+      {
+        "op": "close_adapter",
+        "args": {
+          "hAdapter": 8192
+        },
+        "status": 0
+      }
+    ]
+  },
+  "verification_level": "TRIGGER_CONFIRMED",
+  "executed_on_native": true,
+  "facts": {
+    "native_api_called": true,
+    "valid_objects_built": true,
+    "escape_called": true,
+    "escape_with_valid_objects": true,
+    "oracle_confirmed": true
+  },
+  "oracle_confirmed": true,
+  "self_report_matches_external": true,
+  "false_positive": false,
+  "dll_sha256_matches_facts": true,
+  "observed_calls": [],
+  "stderr_tail": "",
+  "round": 2
+}

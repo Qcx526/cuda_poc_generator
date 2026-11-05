@@ -1,0 +1,6341 @@
+{
+  "candidate": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\mock_runs\\f6b-B\\round1\\poc.py",
+  "exit_code": 0,
+  "ran": true,
+  "claimed": {
+    "reached": true,
+    "calls": [
+      {
+        "api": "open_adapter",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "escape",
+        "status": 3221225485
+      },
+      {
+        "api": "destroy_context",
+        "status": 3221225485
+      },
+      {
+        "api": "destroy_context",
+        "status": 3221225485
+      },
+      {
+        "api": "destroy_context",
+        "status": 3221225485
+      },
+      {
+        "api": "destroy_device",
+        "status": 3221225485
+      },
+      {
+        "api": "destroy_device",
+        "status": 3221225485
+      },
+      {
+        "api": "close_adapter",
+        "status": 3221225485
+      }
+    ],
+    "notes": "context-ownership bypass; cross type=0 flags=2"
+  },
+  "external": {
+    "triggered": true,
+    "flaws": [
+      "AUTHZ_BYPASS"
+    ],
+    "trigger_count": 16,
+    "dll_sha256": "cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53",
+    "trace_len": 200,
+    "trace_complete": true,
+    "trace_limit": 500,
+    "calls_made": 200,
+    "max_calls": 200,
+    "facts": {
+      "native_api_called": true,
+      "valid_objects_built": true,
+      "escape_called": true,
+      "escape_with_valid_objects": true,
+      "oracle_confirmed": true
+    },
+    "trace": [
+      {
+        "op": "open_adapter",
+        "status": 0,
+        "handle": 8192
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8192
+        },
+        "status": 0,
+        "handle": 8256
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8192
+        },
+        "status": 0,
+        "handle": 8320
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8256,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8384
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8320,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8448
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8256,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8512
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 7,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 10
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 11
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 14
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 15
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 18
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 19
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 22
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 23
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 4,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 4,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 4,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 26
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 4,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 27
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 5,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 5,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 5,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 30
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 5,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 31
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 6,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 6,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 6,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 34
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 6,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 35
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 7,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 7,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 7,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 38
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8448,
+          "type": 7,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true,
+        "trigger_at_call": 39
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "2c153275e7c51b6ed97af60e9afad579a81c53ad6110d66b818a063573de5c16",
+        "payload_hex": "ffffffff41414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+        "payload_hex": "01000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "26b25d457597a7b0463f9620f666dd10aa2c4373a505967c7c8d70922a2d6ece",
+        "payload_hex": "02000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "9d9f290527a6be626a8f5985b26e19b237b44872b03631811df4416fc1713178",
+        "payload_hex": "03000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "fb5e512425fc9449316ec95969ebe71e2d576dbab833d61e2a5b9330fd70ee02",
+        "payload_hex": "04000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "6ceeead255faa2a01be5d6c46a1a01cdc3d1eea24bbe4fcfd2343aa2617bc157",
+        "payload_hex": "0200000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "88eefe4b4469db07a92930a71a31e66f5b574c7de031aeecf3e130384f63ebc4",
+        "payload_hex": "0300000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "af8e3b8019f23f5b36f9d7c0b91a29a9c4bb60744bdc059e34c69cb531d2e1b9",
+        "payload_hex": "0400000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "4e0180b7ed4824a3c146524d5403225e178e1f121eae71d23daab375b74515cb",
+        "payload_hex": "0500000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "af6d5255e0476729fa69eced758055b7759bf05903ad8dea6a09a9d2903cf545",
+        "payload_hex": "030000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "c7c8b8d942cc2959fb428448c833342a72e71ebc73256b02f058a1317065d9d7",
+        "payload_hex": "040000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "f6ccefbdfcd5360e0c60b8d8c7a7ce292eb71fb15c13a6890bf9b14864b696b0",
+        "payload_hex": "050000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "e652466d3257b7433d4bbd6e07b3a6862119991f1fd7625efabd5c9fd07ecce2",
+        "payload_hex": "060000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "df03295e0e464b07327b1a97f9780824c5fd4f4ffd6a83d3cf96aaaae73c375e",
+        "payload_hex": "04000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "85005ab819d84e66291a859b6e9f383a8d227f64c4700a361e5644a92dcc8bf9",
+        "payload_hex": "05000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "a4cd5e934a1d9d7b1c84a8015046bfc995405c2c9529d6acd96dac604e109168",
+        "payload_hex": "06000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "af8e83ce0a4bf425ac8fd1c6f0cee7441e87331ddef5e5ebeedd921ed44c9bb5",
+        "payload_hex": "07000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "9ea028c90897dfc92c48c6464b523ef13d8f7fb88571c0c6dc617edefa8ee962",
+        "payload_hex": "0500000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "f649b82e800db1b019252d8ff08b820fe294a819a22986c7c2408761a7742578",
+        "payload_hex": "0600000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "dbf61354e6fb8d7e37f2d401b88ba318a368f5c893e3c6da3a36441e267457ba",
+        "payload_hex": "0700000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "11c106f520e8c033091ce76bbb362da68d6ee389662f587c1b9f128180993b68",
+        "payload_hex": "0800000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "516520fd843f9a5b39e03296150650a19642a8689795e8934462b0ac3e557c65",
+        "payload_hex": "0d000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "c8fe27ad603fa0df5ab46c9e928101d0a449ade555d88bc0aa18abfde41c0347",
+        "payload_hex": "0e000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "30ca04fc0ae3c85ec12bde65a7708c4df03c66f006a77d773df8a483a3123b6b",
+        "payload_hex": "0f000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "e5a066ed013781aada2d61e1c11b447ab2d204e9b30ca72a6ec76a0a9fbd20cc",
+        "payload_hex": "10000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "58134de103e4369bd9d4595425d52fce124b57642513b01430e4977540962614",
+        "payload_hex": "0e00000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "223ea17c14370691eb1a3469a43ff98e36d725f12fda3edd49f0fee24a085a77",
+        "payload_hex": "0f00000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "d3f13af5457b25c861d428b61a5b83c7888ea36744e79bad6ce7c8f5f3bda5c4",
+        "payload_hex": "1000000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "990efdd933aae96de7d0074f3007dd0499c636a3cce1e1617fd8fc8d5d1952a4",
+        "payload_hex": "1100000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "0044fd8982fdc666a27f52d5aa73a14b0a1ce983ce380578839bc2bd261de543",
+        "payload_hex": "10000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "b9930a8c0d0e2fe19d669bebeae82c4eae63b7bdf6c0f74ca08e7a0531e361db",
+        "payload_hex": "11000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "7caa66bb2a3b40da25388fb5b5f999f7d058b87f0267baaf184580b38afda273",
+        "payload_hex": "12000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "aaa5ba489367a8871cf5fc7b46704de91fa8fa60b56ab3cec3d472bc8182868f",
+        "payload_hex": "13000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "9a8eed1c33da63623483347c4495d904f993cd2001f4675991f0d8a2ff9f079c",
+        "payload_hex": "1100000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "e9bb740d0aa9ce3fc4a06e6d1008b3f19715dfeb4422034ff4b537fdb51088da",
+        "payload_hex": "1200000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "bcf2ac602524889695890f2ef7784e4ada57e24f897da08a45991cca13212ffb",
+        "payload_hex": "1300000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "441d44fbdcd38bcc0b339e722ce4e163ce4ef23b407692d6e1f96a05bc1e1804",
+        "payload_hex": "1400000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "ad5cf4d42c1176c63485c3c5c8967ead56df3e3ed774f1d64a8395d9d4914b8d",
+        "payload_hex": "150000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "b9ed63894f6a5cb870ffeaa65dea9247e502a8a3c8dbf0e7fd69a50b74c4bd22",
+        "payload_hex": "160000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "3dccf7a28c5cb35d4d5b55901738c6ec5a2ebe8ed323bdf0189d38e7e9855179",
+        "payload_hex": "170000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "cb6ba2b7f399d745723b78698c4c89505f014c1144102d5bb73754bbfdef180f",
+        "payload_hex": "180000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "cd30f6087ea6fcea6cee31c31f8b71072441978ef5ed3bb217a88ed2bc4b7c28",
+        "payload_hex": "fd030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "62b7707ac0b4aec55a34509a9db1154cac63228b86d461239b71a7102552294c",
+        "payload_hex": "fe030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "c668c1f1d5f7b6db203d6e331bccbb4829e807925c5c8dbf0d3833ba9135249a",
+        "payload_hex": "ff030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "28b61fdcaca6d4bde5974e9f468d554867947f5719b1468ba00090e541210fdc",
+        "payload_hex": "00040000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "2c153275e7c51b6ed97af60e9afad579a81c53ad6110d66b818a063573de5c16",
+        "payload_hex": "ffffffff41414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+        "payload_hex": "01000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "26b25d457597a7b0463f9620f666dd10aa2c4373a505967c7c8d70922a2d6ece",
+        "payload_hex": "02000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "9d9f290527a6be626a8f5985b26e19b237b44872b03631811df4416fc1713178",
+        "payload_hex": "03000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "fb5e512425fc9449316ec95969ebe71e2d576dbab833d61e2a5b9330fd70ee02",
+        "payload_hex": "04000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "6ceeead255faa2a01be5d6c46a1a01cdc3d1eea24bbe4fcfd2343aa2617bc157",
+        "payload_hex": "0200000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "88eefe4b4469db07a92930a71a31e66f5b574c7de031aeecf3e130384f63ebc4",
+        "payload_hex": "0300000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "af8e3b8019f23f5b36f9d7c0b91a29a9c4bb60744bdc059e34c69cb531d2e1b9",
+        "payload_hex": "0400000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "4e0180b7ed4824a3c146524d5403225e178e1f121eae71d23daab375b74515cb",
+        "payload_hex": "0500000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "af6d5255e0476729fa69eced758055b7759bf05903ad8dea6a09a9d2903cf545",
+        "payload_hex": "030000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "c7c8b8d942cc2959fb428448c833342a72e71ebc73256b02f058a1317065d9d7",
+        "payload_hex": "040000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "f6ccefbdfcd5360e0c60b8d8c7a7ce292eb71fb15c13a6890bf9b14864b696b0",
+        "payload_hex": "050000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "e652466d3257b7433d4bbd6e07b3a6862119991f1fd7625efabd5c9fd07ecce2",
+        "payload_hex": "060000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "df03295e0e464b07327b1a97f9780824c5fd4f4ffd6a83d3cf96aaaae73c375e",
+        "payload_hex": "04000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "85005ab819d84e66291a859b6e9f383a8d227f64c4700a361e5644a92dcc8bf9",
+        "payload_hex": "05000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "a4cd5e934a1d9d7b1c84a8015046bfc995405c2c9529d6acd96dac604e109168",
+        "payload_hex": "06000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "af8e83ce0a4bf425ac8fd1c6f0cee7441e87331ddef5e5ebeedd921ed44c9bb5",
+        "payload_hex": "07000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "9ea028c90897dfc92c48c6464b523ef13d8f7fb88571c0c6dc617edefa8ee962",
+        "payload_hex": "0500000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "f649b82e800db1b019252d8ff08b820fe294a819a22986c7c2408761a7742578",
+        "payload_hex": "0600000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "dbf61354e6fb8d7e37f2d401b88ba318a368f5c893e3c6da3a36441e267457ba",
+        "payload_hex": "0700000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "11c106f520e8c033091ce76bbb362da68d6ee389662f587c1b9f128180993b68",
+        "payload_hex": "0800000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "516520fd843f9a5b39e03296150650a19642a8689795e8934462b0ac3e557c65",
+        "payload_hex": "0d000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "c8fe27ad603fa0df5ab46c9e928101d0a449ade555d88bc0aa18abfde41c0347",
+        "payload_hex": "0e000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "30ca04fc0ae3c85ec12bde65a7708c4df03c66f006a77d773df8a483a3123b6b",
+        "payload_hex": "0f000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "e5a066ed013781aada2d61e1c11b447ab2d204e9b30ca72a6ec76a0a9fbd20cc",
+        "payload_hex": "10000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "58134de103e4369bd9d4595425d52fce124b57642513b01430e4977540962614",
+        "payload_hex": "0e00000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "223ea17c14370691eb1a3469a43ff98e36d725f12fda3edd49f0fee24a085a77",
+        "payload_hex": "0f00000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "d3f13af5457b25c861d428b61a5b83c7888ea36744e79bad6ce7c8f5f3bda5c4",
+        "payload_hex": "1000000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "990efdd933aae96de7d0074f3007dd0499c636a3cce1e1617fd8fc8d5d1952a4",
+        "payload_hex": "1100000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "0044fd8982fdc666a27f52d5aa73a14b0a1ce983ce380578839bc2bd261de543",
+        "payload_hex": "10000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "b9930a8c0d0e2fe19d669bebeae82c4eae63b7bdf6c0f74ca08e7a0531e361db",
+        "payload_hex": "11000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "7caa66bb2a3b40da25388fb5b5f999f7d058b87f0267baaf184580b38afda273",
+        "payload_hex": "12000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "aaa5ba489367a8871cf5fc7b46704de91fa8fa60b56ab3cec3d472bc8182868f",
+        "payload_hex": "13000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "9a8eed1c33da63623483347c4495d904f993cd2001f4675991f0d8a2ff9f079c",
+        "payload_hex": "1100000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "e9bb740d0aa9ce3fc4a06e6d1008b3f19715dfeb4422034ff4b537fdb51088da",
+        "payload_hex": "1200000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "bcf2ac602524889695890f2ef7784e4ada57e24f897da08a45991cca13212ffb",
+        "payload_hex": "1300000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "441d44fbdcd38bcc0b339e722ce4e163ce4ef23b407692d6e1f96a05bc1e1804",
+        "payload_hex": "1400000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "ad5cf4d42c1176c63485c3c5c8967ead56df3e3ed774f1d64a8395d9d4914b8d",
+        "payload_hex": "150000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "b9ed63894f6a5cb870ffeaa65dea9247e502a8a3c8dbf0e7fd69a50b74c4bd22",
+        "payload_hex": "160000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "3dccf7a28c5cb35d4d5b55901738c6ec5a2ebe8ed323bdf0189d38e7e9855179",
+        "payload_hex": "170000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "cb6ba2b7f399d745723b78698c4c89505f014c1144102d5bb73754bbfdef180f",
+        "payload_hex": "180000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "cd30f6087ea6fcea6cee31c31f8b71072441978ef5ed3bb217a88ed2bc4b7c28",
+        "payload_hex": "fd030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "62b7707ac0b4aec55a34509a9db1154cac63228b86d461239b71a7102552294c",
+        "payload_hex": "fe030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "c668c1f1d5f7b6db203d6e331bccbb4829e807925c5c8dbf0d3833ba9135249a",
+        "payload_hex": "ff030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "28b61fdcaca6d4bde5974e9f468d554867947f5719b1468ba00090e541210fdc",
+        "payload_hex": "00040000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "2c153275e7c51b6ed97af60e9afad579a81c53ad6110d66b818a063573de5c16",
+        "payload_hex": "ffffffff41414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+        "payload_hex": "01000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "26b25d457597a7b0463f9620f666dd10aa2c4373a505967c7c8d70922a2d6ece",
+        "payload_hex": "02000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "9d9f290527a6be626a8f5985b26e19b237b44872b03631811df4416fc1713178",
+        "payload_hex": "03000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "fb5e512425fc9449316ec95969ebe71e2d576dbab833d61e2a5b9330fd70ee02",
+        "payload_hex": "04000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "6ceeead255faa2a01be5d6c46a1a01cdc3d1eea24bbe4fcfd2343aa2617bc157",
+        "payload_hex": "0200000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "88eefe4b4469db07a92930a71a31e66f5b574c7de031aeecf3e130384f63ebc4",
+        "payload_hex": "0300000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "af8e3b8019f23f5b36f9d7c0b91a29a9c4bb60744bdc059e34c69cb531d2e1b9",
+        "payload_hex": "0400000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "4e0180b7ed4824a3c146524d5403225e178e1f121eae71d23daab375b74515cb",
+        "payload_hex": "0500000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "af6d5255e0476729fa69eced758055b7759bf05903ad8dea6a09a9d2903cf545",
+        "payload_hex": "030000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "c7c8b8d942cc2959fb428448c833342a72e71ebc73256b02f058a1317065d9d7",
+        "payload_hex": "040000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "f6ccefbdfcd5360e0c60b8d8c7a7ce292eb71fb15c13a6890bf9b14864b696b0",
+        "payload_hex": "050000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "e652466d3257b7433d4bbd6e07b3a6862119991f1fd7625efabd5c9fd07ecce2",
+        "payload_hex": "060000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "df03295e0e464b07327b1a97f9780824c5fd4f4ffd6a83d3cf96aaaae73c375e",
+        "payload_hex": "04000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "85005ab819d84e66291a859b6e9f383a8d227f64c4700a361e5644a92dcc8bf9",
+        "payload_hex": "05000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "a4cd5e934a1d9d7b1c84a8015046bfc995405c2c9529d6acd96dac604e109168",
+        "payload_hex": "06000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "af8e83ce0a4bf425ac8fd1c6f0cee7441e87331ddef5e5ebeedd921ed44c9bb5",
+        "payload_hex": "07000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "9ea028c90897dfc92c48c6464b523ef13d8f7fb88571c0c6dc617edefa8ee962",
+        "payload_hex": "0500000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "f649b82e800db1b019252d8ff08b820fe294a819a22986c7c2408761a7742578",
+        "payload_hex": "0600000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "dbf61354e6fb8d7e37f2d401b88ba318a368f5c893e3c6da3a36441e267457ba",
+        "payload_hex": "0700000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "11c106f520e8c033091ce76bbb362da68d6ee389662f587c1b9f128180993b68",
+        "payload_hex": "0800000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "516520fd843f9a5b39e03296150650a19642a8689795e8934462b0ac3e557c65",
+        "payload_hex": "0d000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "c8fe27ad603fa0df5ab46c9e928101d0a449ade555d88bc0aa18abfde41c0347",
+        "payload_hex": "0e000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "30ca04fc0ae3c85ec12bde65a7708c4df03c66f006a77d773df8a483a3123b6b",
+        "payload_hex": "0f000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "e5a066ed013781aada2d61e1c11b447ab2d204e9b30ca72a6ec76a0a9fbd20cc",
+        "payload_hex": "10000000414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "58134de103e4369bd9d4595425d52fce124b57642513b01430e4977540962614",
+        "payload_hex": "0e00000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "223ea17c14370691eb1a3469a43ff98e36d725f12fda3edd49f0fee24a085a77",
+        "payload_hex": "0f00000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "d3f13af5457b25c861d428b61a5b83c7888ea36744e79bad6ce7c8f5f3bda5c4",
+        "payload_hex": "1000000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 17,
+        "payload_sha256": "990efdd933aae96de7d0074f3007dd0499c636a3cce1e1617fd8fc8d5d1952a4",
+        "payload_hex": "1100000041414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "0044fd8982fdc666a27f52d5aa73a14b0a1ce983ce380578839bc2bd261de543",
+        "payload_hex": "10000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "b9930a8c0d0e2fe19d669bebeae82c4eae63b7bdf6c0f74ca08e7a0531e361db",
+        "payload_hex": "11000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "7caa66bb2a3b40da25388fb5b5f999f7d058b87f0267baaf184580b38afda273",
+        "payload_hex": "12000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 19,
+        "payload_sha256": "aaa5ba489367a8871cf5fc7b46704de91fa8fa60b56ab3cec3d472bc8182868f",
+        "payload_hex": "13000000414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "9a8eed1c33da63623483347c4495d904f993cd2001f4675991f0d8a2ff9f079c",
+        "payload_hex": "1100000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "e9bb740d0aa9ce3fc4a06e6d1008b3f19715dfeb4422034ff4b537fdb51088da",
+        "payload_hex": "1200000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "bcf2ac602524889695890f2ef7784e4ada57e24f897da08a45991cca13212ffb",
+        "payload_hex": "1300000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 20,
+        "payload_sha256": "441d44fbdcd38bcc0b339e722ce4e163ce4ef23b407692d6e1f96a05bc1e1804",
+        "payload_hex": "1400000041414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "ad5cf4d42c1176c63485c3c5c8967ead56df3e3ed774f1d64a8395d9d4914b8d",
+        "payload_hex": "150000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "b9ed63894f6a5cb870ffeaa65dea9247e502a8a3c8dbf0e7fd69a50b74c4bd22",
+        "payload_hex": "160000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "3dccf7a28c5cb35d4d5b55901738c6ec5a2ebe8ed323bdf0189d38e7e9855179",
+        "payload_hex": "170000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 24,
+        "payload_sha256": "cb6ba2b7f399d745723b78698c4c89505f014c1144102d5bb73754bbfdef180f",
+        "payload_hex": "180000004141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "cd30f6087ea6fcea6cee31c31f8b71072441978ef5ed3bb217a88ed2bc4b7c28",
+        "payload_hex": "fd030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "62b7707ac0b4aec55a34509a9db1154cac63228b86d461239b71a7102552294c",
+        "payload_hex": "fe030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "c668c1f1d5f7b6db203d6e331bccbb4829e807925c5c8dbf0d3833ba9135249a",
+        "payload_hex": "ff030000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 1024,
+        "payload_sha256": "28b61fdcaca6d4bde5974e9f468d554867947f5719b1468ba00090e541210fdc",
+        "payload_hex": "00040000414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+        "payload_hex": "00000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "2c153275e7c51b6ed97af60e9afad579a81c53ad6110d66b818a063573de5c16",
+        "payload_hex": "ffffffff41414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+        "payload_hex": "01000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "26b25d457597a7b0463f9620f666dd10aa2c4373a505967c7c8d70922a2d6ece",
+        "payload_hex": "02000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "9d9f290527a6be626a8f5985b26e19b237b44872b03631811df4416fc1713178",
+        "payload_hex": "03000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 4,
+        "payload_sha256": "fb5e512425fc9449316ec95969ebe71e2d576dbab833d61e2a5b9330fd70ee02",
+        "payload_hex": "04000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "6ceeead255faa2a01be5d6c46a1a01cdc3d1eea24bbe4fcfd2343aa2617bc157",
+        "payload_hex": "0200000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "88eefe4b4469db07a92930a71a31e66f5b574c7de031aeecf3e130384f63ebc4",
+        "payload_hex": "0300000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "af8e3b8019f23f5b36f9d7c0b91a29a9c4bb60744bdc059e34c69cb531d2e1b9",
+        "payload_hex": "0400000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 5,
+        "payload_sha256": "4e0180b7ed4824a3c146524d5403225e178e1f121eae71d23daab375b74515cb",
+        "payload_hex": "0500000041",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "af6d5255e0476729fa69eced758055b7759bf05903ad8dea6a09a9d2903cf545",
+        "payload_hex": "030000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "c7c8b8d942cc2959fb428448c833342a72e71ebc73256b02f058a1317065d9d7",
+        "payload_hex": "040000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "f6ccefbdfcd5360e0c60b8d8c7a7ce292eb71fb15c13a6890bf9b14864b696b0",
+        "payload_hex": "050000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 6,
+        "payload_sha256": "e652466d3257b7433d4bbd6e07b3a6862119991f1fd7625efabd5c9fd07ecce2",
+        "payload_hex": "060000004141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "df03295e0e464b07327b1a97f9780824c5fd4f4ffd6a83d3cf96aaaae73c375e",
+        "payload_hex": "04000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "85005ab819d84e66291a859b6e9f383a8d227f64c4700a361e5644a92dcc8bf9",
+        "payload_hex": "05000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "a4cd5e934a1d9d7b1c84a8015046bfc995405c2c9529d6acd96dac604e109168",
+        "payload_hex": "06000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 7,
+        "payload_sha256": "af8e83ce0a4bf425ac8fd1c6f0cee7441e87331ddef5e5ebeedd921ed44c9bb5",
+        "payload_hex": "07000000414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "9ea028c90897dfc92c48c6464b523ef13d8f7fb88571c0c6dc617edefa8ee962",
+        "payload_hex": "0500000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "f649b82e800db1b019252d8ff08b820fe294a819a22986c7c2408761a7742578",
+        "payload_hex": "0600000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "dbf61354e6fb8d7e37f2d401b88ba318a368f5c893e3c6da3a36441e267457ba",
+        "payload_hex": "0700000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 3221225485,
+        "objects_valid": true,
+        "payload_len": 8,
+        "payload_sha256": "11c106f520e8c033091ce76bbb362da68d6ee389662f587c1b9f128180993b68",
+        "payload_hex": "0800000041414141",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8256,
+          "hContext": 8384,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "516520fd843f9a5b39e03296150650a19642a8689795e8934462b0ac3e557c65",
+        "payload_hex": "0d000000414141414141414141414141",
+        "replayable": true
+      }
+    ]
+  },
+  "verification_level": "TRIGGER_CONFIRMED",
+  "executed_on_native": true,
+  "facts": {
+    "native_api_called": true,
+    "valid_objects_built": true,
+    "escape_called": true,
+    "escape_with_valid_objects": true,
+    "oracle_confirmed": true
+  },
+  "oracle_confirmed": true,
+  "self_report_matches_external": true,
+  "false_positive": false,
+  "dll_sha256_matches_facts": true,
+  "observed_calls": [],
+  "stderr_tail": "",
+  "round": 1
+}

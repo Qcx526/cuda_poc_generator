@@ -1,0 +1,1233 @@
+{
+  "candidate": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\mock_runs\\f6-C\\round2\\poc.py",
+  "exit_code": 0,
+  "ran": true,
+  "claimed": {
+    "reached": true,
+    "calls": [
+      {
+        "api": "reset",
+        "status": 0
+      },
+      {
+        "api": "open_adapter",
+        "status": 0
+      },
+      {
+        "api": "open_adapter",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_device",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "create_context",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 0
+      },
+      {
+        "api": "escape",
+        "status": 3221225506
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "escape",
+        "status": -1
+      },
+      {
+        "api": "destroy_context",
+        "status": -1
+      },
+      {
+        "api": "destroy_context",
+        "status": -1
+      },
+      {
+        "api": "destroy_device",
+        "status": -1
+      },
+      {
+        "api": "destroy_device",
+        "status": -1
+      },
+      {
+        "api": "close_adapter",
+        "status": -1
+      },
+      {
+        "api": "close_adapter",
+        "status": -1
+      }
+    ],
+    "notes": "CTX_BYPASS t=0 f=2; CTX_BYPASS t=0 f=3; CTX_BYPASS t=1 f=2; CTX_BYPASS t=1 f=3; CTX_BYPASS t=2 f=2; CTX_BYPASS t=2 f=3; CTX_BYPASS t=3 f=2; CTX_BYPASS t=3 f=3; escape(t=4,f=1,len=16) raised RuntimeError; escape(t=4,f=1,len=16) raised RuntimeError; escape(t=4,f=2,len=16) raised RuntimeError; escape(t=4,f=2,len=16) raised RuntimeError; escape(t=4,f=3,len=16) raised RuntimeError; escape(t=4,f=3,len=16) raised RuntimeError; escape(t=5,f=0,len=16) raised RuntimeError; escape(t=5,f=0,len=16) raised RuntimeError; escape(t=5,f=1,len=16) raised RuntimeError; escape(t=5,f=1,len=16) raised RuntimeError; escape(t=5,f=2,len=16) raised RuntimeError; escape(t=5,f=2,len=16) raised RuntimeError; escape(t=5,f=3,len=16) raised RuntimeError; escape(t=5,f=3,len=16) raised RuntimeError; escape(t=6,f=0,len=16) raised RuntimeError; escape(t=6,f=0,len=16) raised RuntimeError; escape(t=6,f=1,len=16) raised RuntimeError; escape(t=6,f=1,len=16) raised RuntimeError; escape(t=6,f=2,len=16) raised RuntimeError; escape(t=6,f=2,len=16) raised RuntimeError; escape(t=6,f=3,len=16) raised RuntimeError; escape(t=6,f=3,len=16) raised RuntimeError; escape(t=7,f=0,len=16) raised RuntimeError; escape(t=7,f=0,len=16) raised RuntimeError; escape(t=7,f=1,len=16) raised RuntimeError; escape(t=7,f=1,len=16) raised RuntimeError; escape(t=7,f=2,len=16) raised RuntimeError; escape(t=7,f=2,len=16) raised RuntimeError; escape(t=7,f=3,len=16) raised RuntimeError; escape(t=7,f=3,len=16) raised RuntimeError; escape(t=0,f=0,len=16) raised RuntimeError; escape(t=0,f=0,len=16) raised RuntimeError; escape(t=0,f=1,len=16) raised RuntimeError; escape(t=0,f=1,len=16) raised RuntimeError; escape(t=0,f=2,len=16) raised RuntimeError; escape(t=0,f=2,len=16) raised RuntimeError; escape(t=0,f=3,len=16) raised RuntimeError; escape(t=0,f=3,len=16) raised RuntimeError; escape(t=1,f=0,len=16) raised RuntimeError; escape(t=1,f=0,len=16) raised RuntimeError; escape(t=1,f=1,len=16) raised RuntimeError; escape(t=1,f=1,len=16) raised Run..."
+  },
+  "external": {
+    "triggered": true,
+    "flaws": [
+      "AUTHZ_BYPASS"
+    ],
+    "trigger_count": 8,
+    "dll_sha256": "cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53",
+    "trace_len": 40,
+    "trace_complete": true,
+    "trace_limit": 500,
+    "calls_made": 40,
+    "max_calls": 40,
+    "facts": {
+      "native_api_called": true,
+      "valid_objects_built": true,
+      "escape_called": true,
+      "escape_with_valid_objects": true,
+      "oracle_confirmed": true
+    },
+    "trace": [
+      {
+        "op": "open_adapter",
+        "status": 0,
+        "handle": 8192
+      },
+      {
+        "op": "open_adapter",
+        "status": 0,
+        "handle": 8256
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8192
+        },
+        "status": 0,
+        "handle": 8320
+      },
+      {
+        "op": "create_device",
+        "args": {
+          "hAdapter": 8256
+        },
+        "status": 0,
+        "handle": 8384
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8320,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8448
+      },
+      {
+        "op": "create_context",
+        "args": {
+          "hDevice": 8384,
+          "node": 0
+        },
+        "status": 0,
+        "handle": 8512
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 0,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 1
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 0,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 0,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 0,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 0,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 1,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 1
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 1,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 1,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 1,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 1,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 2,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 1
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 2,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 2,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 2,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 2,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 3,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 1
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 3,
+          "flags": 1
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 3,
+          "flags": 2
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 3,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 3,
+          "flags": 3
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8448,
+          "type": 4,
+          "flags": 0
+        },
+        "status": 0,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      },
+      {
+        "op": "escape",
+        "args": {
+          "hAdapter": 8192,
+          "hDevice": 8320,
+          "hContext": 8512,
+          "type": 4,
+          "flags": 0
+        },
+        "status": 3221225506,
+        "objects_valid": true,
+        "payload_len": 16,
+        "payload_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "payload_hex": "00000000000000000000000000000000",
+        "replayable": true
+      }
+    ]
+  },
+  "verification_level": "TRIGGER_CONFIRMED",
+  "executed_on_native": true,
+  "facts": {
+    "native_api_called": true,
+    "valid_objects_built": true,
+    "escape_called": true,
+    "escape_with_valid_objects": true,
+    "oracle_confirmed": true
+  },
+  "oracle_confirmed": true,
+  "self_report_matches_external": true,
+  "false_positive": false,
+  "dll_sha256_matches_facts": true,
+  "observed_calls": [],
+  "stderr_tail": "",
+  "round": 2
+}

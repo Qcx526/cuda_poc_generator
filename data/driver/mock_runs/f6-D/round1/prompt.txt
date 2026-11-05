@@ -1,0 +1,312 @@
+## API 契约
+Mock GPU Driver API（用户态，非真实驱动）
+
+open_adapter(hint: str = "") -> (status: int, hAdapter: int)
+create_device(hAdapter: int) -> (status: int, hDevice: int)
+create_context(hDevice: int, node: int = 0) -> (status: int, hContext: int)
+escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
+       payload: bytes) -> status: int
+destroy_context(hContext: int) -> int
+destroy_device(hDevice: int) -> int
+close_adapter(hAdapter: int) -> int
+reset() -> None
+
+规则：
+- 句柄必须按 open -> create_device -> create_context 顺序获得，销毁后不可再用。
+- escape 的 type_ 取值 0..7；flags 为位掩码，0x1 = ASYNC，0x2 = PRIVILEGED。
+- payload 为 bytes，长度 0..1024。
+- 返回 0 表示成功，非 0 为 NTSTATUS 风格错误码（0xC000000D 参数非法，
+  0xC0000022 拒绝访问，0xC000009A 资源不足，0xC0000010 请求非法）。
+- 每个句柄来自一次成功调用；失败时返回的句柄为 0。
+
+
+漏洞描述（抽象，未给出触发位置）：
+该 GPU 用户态组件的 escape 接口存在两类可疑行为：
+(1) 对 context 归属的校验，可能在某些请求属性下被跳过；
+(2) 对私有数据声明长度的校验，可能存在边界误差。
+要求：通过公开 API 构造合法调用序列，验证上述行为是否可被实际触发，并记录每步返回状态。
+
+## 目标 DLL 的静态事实（只读，来自对该 DLL 的真实分析）
+以下是你将调用的那个 DLL 的静态测量结果（函数边界、指令统计、比较常量）。它们只是测量值；缺失的语义一律视为 UNKNOWN。
+{
+ "artifact": {
+  "sha256": "cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53",
+  "compiler": "MSVC 19.29.30159 x64",
+  "flags": "-O1 -LD",
+  "path": "mock_native\\mock_gpu.dll"
+ },
+ "functions": [
+  {
+   "name": "MockCloseAdapter",
+   "rva": "0x1008",
+   "size": 40,
+   "instructions": 26,
+   "basic_blocks": 6,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rcx+*1+8] I:1",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockCreateContext",
+   "rva": "0x1030",
+   "size": 61,
+   "instructions": 40,
+   "basic_blocks": 10,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rax+*1+8] I:2",
+    "mov ecx I:3",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockCreateDevice",
+   "rva": "0x1070",
+   "size": 61,
+   "instructions": 40,
+   "basic_blocks": 10,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rax+*1+8] I:1",
+    "mov ecx I:2",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockDestroyContext",
+   "rva": "0x10b0",
+   "size": 40,
+   "instructions": 26,
+   "basic_blocks": 6,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rcx+*1+8] I:3",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockDestroyDevice",
+   "rva": "0x10d8",
+   "size": 40,
+   "instructions": 26,
+   "basic_blocks": 6,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rcx+*1+8] I:2",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockEscape",
+   "rva": "0x1100",
+   "size": 330,
+   "instructions": 174,
+   "basic_blocks": 28,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:32",
+    "cmp M[rax+*1+8] I:3",
+    "cmp ebp I:7",
+    "cmp ecx I:16",
+    "cmp r11d I:1024",
+    "cmp r11d I:4",
+    "mov r10d I:1",
+    "shl eax I:24",
+    "shl edx I:8",
+    "sub rsp I:32"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockOpenAdapter",
+   "rva": "0x124c",
+   "size": 43,
+   "instructions": 30,
+   "basic_blocks": 7,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockReset",
+   "rva": "0x1278",
+   "size": 46,
+   "instructions": 18,
+   "basic_blocks": 2,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "and M[rip+*1+ADDR] I:0",
+    "mov M[rip+*1+ADDR] I:8192",
+    "mov r8d I:1024",
+    "sub rsp I:40"
+   ],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockTriggerAt",
+   "rva": "0x12a8",
+   "size": 0,
+   "instructions": 0,
+   "basic_blocks": 0,
+   "returns": 0,
+   "cmp_constants": [],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockTriggerCount",
+   "rva": "0x12c8",
+   "size": 0,
+   "instructions": 0,
+   "basic_blocks": 0,
+   "returns": 0,
+   "cmp_constants": [],
+   "evidence": "PE export table + .pdata + capstone shapes"
+  }
+ ]
+}
+
+## 结构化变异候选（来自公开合同的合法空间）
+{
+ "rng_seed": 11,
+ "seeded_from": [
+  {
+   "type": 0,
+   "flags": 0,
+   "payload_len": 0,
+   "payload_kind": "empty",
+   "object_plan": "single",
+   "category": "boundary",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 0,
+   "flags": 0,
+   "payload_len": 16,
+   "payload_kind": "zeros",
+   "object_plan": "single",
+   "category": "normal",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 0,
+   "flags": 0,
+   "payload_len": 16,
+   "payload_kind": "zeros",
+   "object_plan": "cross_device",
+   "category": "normal",
+   "provenance": "public_contract"
+  }
+ ],
+ "candidates": [
+  {
+   "type": 1,
+   "flags": 0,
+   "payload_len": 16,
+   "payload_kind": "zeros",
+   "object_plan": "single",
+   "category": "normal",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 0,
+   "flags": 1,
+   "payload_len": 16,
+   "payload_kind": "zeros",
+   "object_plan": "single",
+   "category": "normal",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 0,
+   "flags": 0,
+   "payload_len": 0,
+   "payload_kind": "empty",
+   "object_plan": "cross_device",
+   "category": "boundary",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 1,
+   "flags": 0,
+   "payload_len": 16,
+   "payload_kind": "zeros",
+   "object_plan": "cross_device",
+   "category": "normal",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 0,
+   "flags": 3,
+   "payload_len": 0,
+   "payload_kind": "empty",
+   "object_plan": "cross_device",
+   "category": "boundary",
+   "provenance": "public_contract"
+  },
+  {
+   "type": 0,
+   "flags": 2,
+   "payload_len": 16,
+   "payload_kind": "zeros",
+   "object_plan": "single",
+   "category": "normal",
+   "provenance": "public_contract"
+  }
+ ],
+ "space": {
+  "type": [
+   0,
+   7
+  ],
+  "flags_bits": {
+   "ASYNC": 1,
+   "PRIVILEGED": 2
+  },
+  "payload_len": [
+   0,
+   1024
+  ],
+  "payload_kinds": [
+   "empty",
+   "zeros",
+   "fill",
+   "random"
+  ],
+  "object_plans": [
+   "single",
+   "cross_device"
+  ]
+ },
+ "categories": {
+  "normal": "合同内常规输入",
+  "boundary": "合同边界值",
+  "expected_invalid": "预期被拒绝，用于确认错误路径"
+ },
+ "rules": [
+  "只允许上述字段与取值",
+  "payload 字节含义未知，不得假设内部结构",
+  "命中或未命中都不改变取值范围",
+  "生成完整程序，不是参数列表"
+ ],
+ "unknowns": [
+  "payload 的内部结构未公开",
+  "flags 各位语义未验证",
+  "哪些组合会被拒绝未知"
+ ]
+}

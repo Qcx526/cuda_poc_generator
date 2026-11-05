@@ -1,0 +1,148 @@
+```python
+import mock_gpu
+
+calls = []
+
+def log(api, status):
+    calls.append((api, status))
+    return status
+
+def le32(n):
+    n = n & 0xffffffff
+    return bytes((n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff))
+
+def esc(a, d, c, t, f, p, tag=""):
+    s = mock_gpu.escape(a, d, c, t, f, p)
+    calls.append(("escape", s))
+    return s
+
+def jstr(s):
+    return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+mock_gpu.reset()
+
+A = B = DA = DB = CA = CB = 0
+
+st, A = mock_gpu.open_adapter("probe-A")
+calls.append(("open_adapter", st))
+if st == 0:
+    st, DA = mock_gpu.create_device(A)
+    calls.append(("create_device", st))
+    if st == 0:
+        st, CA = mock_gpu.create_context(DA, 0)
+        calls.append(("create_context", st))
+
+st, B = mock_gpu.open_adapter("probe-B")
+calls.append(("open_adapter", st))
+if st == 0:
+    st, DB = mock_gpu.create_device(B)
+    calls.append(("create_device", st))
+    if st == 0:
+        st, CB = mock_gpu.create_context(DB, 0)
+        calls.append(("create_context", st))
+
+ownership_hit = False
+length_check_seen = False
+length_hit = False
+
+p16 = b'\x00' * 16
+p0 = b''
+
+if CA != 0 and CB != 0:
+    esc(A, DA, CA, 0, 0, p16, "same_ctrl")
+
+    s0 = esc(A, DA, CB, 0, 0, p16, "cross_t0_f0")
+    s1 = esc(A, DA, CB, 0, 1, p16, "cross_t0_f1")
+    s2 = esc(A, DA, CB, 0, 2, p16, "cross_t0_f2")
+    s3 = esc(A, DA, CB, 0, 3, p0, "cross_t0_f3_len0")
+    if s0 != 0 and (s1 == 0 or s2 == 0 or s3 == 0):
+        ownership_hit = True
+    if s0 == 0:
+        ownership_hit = True
+
+    s10 = esc(A, DA, CB, 1, 0, p16, "cross_t1_f0")
+    s11 = esc(A, DA, CB, 1, 1, p16, "cross_t1_f1")
+    s12 = esc(A, DA, CB, 1, 2, p16, "cross_t1_f2")
+    s13 = esc(A, DA, CB, 1, 3, p0, "cross_t1_f3_len0")
+    if s10 != 0 and (s11 == 0 or s12 == 0 or s13 == 0):
+        ownership_hit = True
+    if s0 != 0 and s10 == 0:
+        ownership_hit = True
+
+if CA != 0:
+    for L in (0, 1, 2, 3):
+        esc(A, DA, CA, 1, 0, b'\x00' * L, "len_missing_%d" % L)
+
+    s15 = esc(A, DA, CA, 1, 0, b'\x00' * 15, "len15")
+    s16 = esc(A, DA, CA, 1, 0, b'\x00' * 16, "len16")
+    s17 = esc(A, DA, CA, 1, 0, b'\x00' * 17, "len17")
+    s18 = esc(A, DA, CA, 1, 0, b'\x00' * 18, "len18")
+    s1024 = esc(A, DA, CA, 1, 0, b'\x00' * 1024, "len1024")
+    if s17 == 0 and s18 != 0:
+        length_hit = True
+
+    for L in (8, 16, 17, 32):
+        for off in (0, 4, 8):
+            if off + 4 > L:
+                continue
+            p = bytearray(L)
+            p[off:off + 4] = b'\xff\xff\xff\xff'
+            s_bad = esc(A, DA, CA, 1, 0, bytes(p), "L%d_off%d_bad" % (L, off))
+            if s_bad != 0:
+                length_check_seen = True
+                avail = L - (off + 4)
+
+                p = bytearray(L)
+                p[off:off + 4] = le32(L)
+                s_L = esc(A, DA, CA, 1, 0, bytes(p), "L%d_off%d_declL" % (L, off))
+
+                p = bytearray(L)
+                p[off:off + 4] = le32(L + 1)
+                s_L1 = esc(A, DA, CA, 1, 0, bytes(p), "L%d_off%d_declL1" % (L, off))
+                if s_L == 0 and s_L1 == 0:
+                    length_hit = True
+
+                if avail >= 0:
+                    p = bytearray(L)
+                    p[off:off + 4] = le32(avail)
+                    s_av = esc(A, DA, CA, 1, 0, bytes(p), "L%d_off%d_declAv" % (L, off))
+
+                    p = bytearray(L)
+                    p[off:off + 4] = le32(avail + 1)
+                    s_av1 = esc(A, DA, CA, 1, 0, bytes(p), "L%d_off%d_declAv1" % (L, off))
+                    if s_av == 0 and s_av1 == 0:
+                        length_hit = True
+
+if CA != 0:
+    st = mock_gpu.destroy_context(CA)
+    calls.append(("destroy_context", st))
+if CB != 0:
+    st = mock_gpu.destroy_context(CB)
+    calls.append(("destroy_context", st))
+if DA != 0:
+    st = mock_gpu.destroy_device(DA)
+    calls.append(("destroy_device", st))
+if DB != 0:
+    st = mock_gpu.destroy_device(DB)
+    calls.append(("destroy_device", st))
+if A != 0:
+    st = mock_gpu.close_adapter(A)
+    calls.append(("close_adapter", st))
+if B != 0:
+    st = mock_gpu.close_adapter(B)
+    calls.append(("close_adapter", st))
+
+reached = bool(ownership_hit or length_hit)
+notes = (
+    "Fixes: reset first; cleanup is strictly context->device->adapter with no double-destroy "
+    "or post-close handle use. Ownership probes use a second device/context and compare "
+    "cross-context flags 0/1/2/3. Length probes craft little-endian declared lengths at "
+    "offsets 0/4/8 and compare over-by-one against total and data-only bounds, with "
+    "0xffffffff controls and payload-length 15/16/17/18/1024 probes. "
+    "ownership_hit=%s length_check_seen=%s length_hit=%s"
+) % (ownership_hit, length_check_seen, length_hit)
+
+calls_json = ",".join('{"api":%s,"status":%d}' % (jstr(api), st) for api, st in calls)
+print('CPG_RESULT {"reached": %s, "calls": [%s], "notes": %s}' % (
+    'true' if reached else 'false', calls_json, jstr(notes)))
+```

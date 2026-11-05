@@ -1,0 +1,203 @@
+import mock_gpu as g
+
+calls = []
+
+
+def rec(api, status):
+    try:
+        s = int(status)
+    except Exception:
+        s = -1
+    calls.append({"api": api, "status": s})
+    return s
+
+
+def do_open(hint):
+    try:
+        st, h = g.open_adapter(hint)
+    except Exception:
+        st, h = -1, 0
+    rec("open_adapter", st)
+    return h if st == 0 else 0
+
+
+def do_create_device(ad):
+    try:
+        st, h = g.create_device(ad)
+    except Exception:
+        st, h = -1, 0
+    rec("create_device", st)
+    return h if st == 0 else 0
+
+
+def do_create_context(dev, node=0):
+    try:
+        st, h = g.create_context(dev, node)
+    except Exception:
+        st, h = -1, 0
+    rec("create_context", st)
+    return h if st == 0 else 0
+
+
+def esc(ad, dev, ctx, t, f, payload):
+    try:
+        st = g.escape(ad, dev, ctx, t, f, payload)
+    except Exception:
+        st = -1
+    return rec("escape", st)
+
+
+def do_destroy_context(ctx):
+    if not ctx:
+        return 0
+    try:
+        st = g.destroy_context(ctx)
+    except Exception:
+        st = -1
+    return rec("destroy_context", st)
+
+
+def do_destroy_device(dev):
+    if not dev:
+        return 0
+    try:
+        st = g.destroy_device(dev)
+    except Exception:
+        st = -1
+    return rec("destroy_device", st)
+
+
+def do_close_adapter(ad):
+    if not ad:
+        return 0
+    try:
+        st = g.close_adapter(ad)
+    except Exception:
+        st = -1
+    return rec("close_adapter", st)
+
+
+def make_payload(declared, data):
+    return (declared & 0xFFFFFFFF).to_bytes(4, "little") + data
+
+
+def build_result(reached, notes):
+    safe = notes.replace("\\", "/").replace('"', "'").replace("\n", " ").replace("\r", " ")
+    items = []
+    for c in calls:
+        items.append('{"api": "%s", "status": %d}' % (c["api"], c["status"]))
+    return '{"reached": %s, "calls": [%s], "notes": "%s"}' % (
+        "true" if reached else "false",
+        ", ".join(items),
+        safe,
+    )
+
+
+def main():
+    g.reset()
+
+    ad_a = do_open("probe-a")
+    dev_a = do_create_device(ad_a) if ad_a else 0
+    ctx_a = do_create_context(dev_a, 0) if dev_a else 0
+
+    ad_b = do_open("probe-b")
+    dev_b = do_create_device(ad_b) if ad_b else 0
+    ctx_b = do_create_context(dev_b, 0) if dev_b else 0
+
+    own_payload = make_payload(16, b"A" * 16)
+    own_bypass = []
+    own_total = 0
+
+    if ad_a and dev_a and ctx_a and ctx_b:
+        for t in range(8):
+            for f in (0x0, 0x1, 0x2, 0x3):
+                base_st = esc(ad_a, dev_a, ctx_a, t, f, own_payload)
+                cross_st = esc(ad_a, dev_a, ctx_b, t, f, own_payload)
+                own_total += 1
+                if cross_st == 0:
+                    own_bypass.append((t, f, base_st))
+        if ad_b and dev_b:
+            for f in (0x0, 0x1, 0x2, 0x3):
+                base_st = esc(ad_b, dev_b, ctx_b, 0, f, own_payload)
+                cross_st = esc(ad_b, dev_b, ctx_a, 0, f, own_payload)
+                own_total += 1
+                if cross_st == 0:
+                    own_bypass.append((0, f, base_st))
+
+    over_accept = []
+    len_total = 0
+
+    if ad_a and dev_a and ctx_a:
+        for D in (0, 1, 2, 15, 16, 17, 63, 64, 1016, 1020):
+            data = b"B" * D
+            for N in (D - 1, D, D + 1, D + 2, D + 4, D + 5, D + 6):
+                if N < 0:
+                    continue
+                st = esc(ad_a, dev_a, ctx_a, 0, 0, make_payload(N, data))
+                len_total += 1
+                if N > D and st == 0:
+                    over_accept.append((D, N, st))
+
+        for N in (0xFFFFFFFF, 0x7FFFFFFF, 0x10000, 1025, 1024):
+            st = esc(ad_a, dev_a, ctx_a, 0, 0, make_payload(N, b""))
+            len_total += 1
+            if st == 0:
+                over_accept.append((0, N, st))
+
+        for f in (0x0, 0x1, 0x2, 0x3):
+            st = esc(ad_a, dev_a, ctx_a, 0, f, make_payload(64, b"B" * 32))
+            len_total += 1
+            if st == 0:
+                over_accept.append((32, 64, st))
+
+        for pl in (b"C" * 1024, b"C" * 1023):
+            st = esc(ad_a, dev_a, ctx_a, 0, 0, pl)
+            len_total += 1
+            if len(pl) >= 4:
+                declared = int.from_bytes(pl[:4], "little")
+                if declared > len(pl) - 4 and st == 0:
+                    over_accept.append((len(pl) - 4, declared, st))
+
+        esc(ad_a, dev_a, ctx_a, 0, 0, b"")
+        len_total += 1
+
+    do_destroy_context(ctx_b)
+    do_destroy_context(ctx_a)
+    do_destroy_device(dev_b)
+    do_destroy_device(dev_a)
+    do_close_adapter(ad_b)
+    do_close_adapter(ad_a)
+    g.reset()
+
+    parts = []
+    if own_bypass:
+        flags_hit = sorted(set(f for _, f, _ in own_bypass))
+        types_hit = sorted(set(t for t, _, _ in own_bypass))
+        t0, f0, b0 = own_bypass[0]
+        parts.append(
+            "cross-context escape succeeded (status 0): ownership check bypassed for flags %s, types %s (first: type=%d flags=0x%X valid-ctx-status=%d)"
+            % (",".join("0x%X" % f for f in flags_hit), types_hit, t0, f0, b0)
+        )
+    else:
+        parts.append("all %d cross-context escape probes were rejected" % own_total)
+
+    if over_accept:
+        deltas = sorted(set(N - D for D, N, _ in over_accept if 0 < N - D <= 4096))
+        parts.append(
+            "over-declared private-data length accepted (status 0) in %d probes; declared-minus-actual deltas %s (length check boundary error)"
+            % (len(over_accept), deltas)
+        )
+    else:
+        parts.append("all %d over-declared length probes were rejected" % len_total)
+
+    reached = bool(own_bypass) or bool(over_accept)
+    return reached, "; ".join(parts)
+
+
+try:
+    reached, notes = main()
+except Exception as exc:
+    reached = False
+    notes = "probe aborted: %s" % type(exc).__name__
+
+print("CPG_RESULT " + build_result(reached, notes))

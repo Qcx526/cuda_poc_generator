@@ -1,0 +1,216 @@
+import mock_gpu
+
+calls = []
+escape_records = []
+cross_results = []
+notes_list = []
+reached = False
+
+def rec(api, status):
+    try:
+        st = int(status)
+    except Exception:
+        st = 0
+    calls.append((api, st))
+    return status
+
+def open_adapter(hint=""):
+    s, h = mock_gpu.open_adapter(hint)
+    rec("open_adapter", s)
+    return s, h
+
+def create_device(hAdapter):
+    s, h = mock_gpu.create_device(hAdapter)
+    rec("create_device", s)
+    return s, h
+
+def create_context(hDevice, node=0):
+    s, h = mock_gpu.create_context(hDevice, node)
+    rec("create_context", s)
+    return s, h
+
+def escape(hAdapter, hDevice, hContext, type_, flags, payload):
+    s = mock_gpu.escape(hAdapter, hDevice, hContext, type_, flags, payload)
+    rec("escape", s)
+    return s
+
+def destroy_context(hContext):
+    s = mock_gpu.destroy_context(hContext)
+    rec("destroy_context", s)
+    return s
+
+def destroy_device(hDevice):
+    s = mock_gpu.destroy_device(hDevice)
+    rec("destroy_device", s)
+    return s
+
+def close_adapter(hAdapter):
+    s = mock_gpu.close_adapter(hAdapter)
+    rec("close_adapter", s)
+    return s
+
+def make_payload(length, declared, offsets):
+    if length < 0:
+        length = 0
+    if length > 1024:
+        length = 1024
+    b = bytearray(length)
+    if declared is not None:
+        for off in offsets:
+            if off >= 0 and off + 4 <= length:
+                b[off:off+4] = declared.to_bytes(4, 'little', signed=False)
+    return bytes(b)
+
+def main():
+    global reached
+    hA = hB = 0
+    hDA1 = hDA2 = hDB = 0
+    hCA1 = hCA2 = hCB = 0
+    try:
+        mock_gpu.reset()
+        rec("reset", 0)
+
+        s, hA = open_adapter("A")
+        if s == 0:
+            s, hDA1 = create_device(hA)
+        if s == 0:
+            s, hCA1 = create_context(hDA1)
+        if s == 0:
+            s, hDA2 = create_device(hA)
+        if s == 0:
+            s, hCA2 = create_context(hDA2)
+
+        s2, hB = open_adapter("B")
+        if s2 == 0:
+            s2, hDB = create_device(hB)
+        if s2 == 0:
+            s2, hCB = create_context(hDB)
+
+        # Baseline single-context calls.
+        if hA and hDA1 and hCA1:
+            for t in (0, 1):
+                for f in (0, 1, 2, 3):
+                    escape(hA, hDA1, hCA1, t, f, b"")
+                    escape(hA, hDA1, hCA1, t, f, b"\x00" * 16)
+
+        # Cross-context calls:
+        # (a) same adapter, different device
+        # (b) different adapter
+        if hA and hDA1 and hCA2:
+            for f in (0, 1, 2, 3):
+                st = escape(hA, hDA1, hCA2, 0, f, b"")
+                cross_results.append(("same_adapt_diff_dev", f, st))
+        if hA and hDA2 and hCA1:
+            for f in (0, 1, 2, 3):
+                st = escape(hA, hDA2, hCA1, 0, f, b"")
+                cross_results.append(("same_adapt_diff_dev", f, st))
+        if hA and hDA1 and hCB:
+            for f in (0, 1, 2, 3):
+                st = escape(hA, hDA1, hCB, 0, f, b"")
+                cross_results.append(("diff_adapt", f, st))
+        if hB and hDA1 and hCA1:
+            for f in (0, 1, 2, 3):
+                st = escape(hB, hDA1, hCA1, 0, f, b"")
+                cross_results.append(("diff_adapt", f, st))
+
+        # Length-boundary probes for all escape types.
+        checks_enabled = {}
+        if hA and hDA1 and hCA1:
+            for t in range(8):
+                # Probe whether declared length is validated at all,
+                # using a payload length that is plausible for every type.
+                p = make_payload(20, 0xFFFFFFFF, [0, 16])
+                st = escape(hA, hDA1, hCA1, t, 0, p)
+                escape_records.append({"type": t, "plen": 20, "decl": 0xFFFFFFFF, "off": -2, "flags": 0, "status": st})
+                checks_enabled[t] = (st != 0)
+
+                # Boundary probe 1: plen=20, decl=17 at both offsets.
+                # Overflow under either 4-byte or 16-byte header assumption.
+                p = make_payload(20, 17, [0, 16])
+                st = escape(hA, hDA1, hCA1, t, 0, p)
+                escape_records.append({"type": t, "plen": 20, "decl": 17, "off": -2, "flags": 0, "status": st})
+
+                # Boundary probe 2: plen=4, decl=16 at offset 0.
+                # Directly tests the max-declared-length boundary with no room for data.
+                p = make_payload(4, 16, [0])
+                st = escape(hA, hDA1, hCA1, t, 0, p)
+                escape_records.append({"type": t, "plen": 4, "decl": 16, "off": 0, "flags": 0, "status": st})
+                st = escape(hA, hDA1, hCA1, t, 2, p)
+                escape_records.append({"type": t, "plen": 4, "decl": 16, "off": 0, "flags": 2, "status": st})
+
+                # Empty-payload boundary.
+                st = escape(hA, hDA1, hCA1, t, 0, b"")
+                escape_records.append({"type": t, "plen": 0, "decl": None, "off": -1, "flags": 0, "status": st})
+
+        # Analyze observed results.
+        ownership_bypass = any(st == 0 for _, _, st in cross_results)
+        length_boundary = False
+        for r in escape_records:
+            t = r["type"]
+            if r["decl"] is None:
+                continue
+            if not checks_enabled.get(t, False):
+                continue
+            if r["status"] != 0:
+                continue
+            if r["off"] == 0:
+                cap = r["plen"] - 4
+                if cap < 0:
+                    cap = 0
+                if r["decl"] > cap:
+                    length_boundary = True
+                    notes_list.append("len overflow t=%d plen=%d decl=%d flags=%d" % (t, r["plen"], r["decl"], r["flags"]))
+                    break
+            elif r["off"] == -2:
+                cap4 = r["plen"] - 4
+                cap16 = r["plen"] - 16
+                if cap4 < 0:
+                    cap4 = 0
+                if cap16 < 0:
+                    cap16 = 0
+                if r["decl"] > cap4 or r["decl"] > cap16:
+                    length_boundary = True
+                    notes_list.append("len overflow multi t=%d plen=%d decl=%d flags=%d" % (t, r["plen"], r["decl"], r["flags"]))
+                    break
+
+        if ownership_bypass:
+            notes_list.append("cross-context escape accepted")
+        if length_boundary:
+            notes_list.append("declared length overflow accepted")
+        if not ownership_bypass and not length_boundary:
+            notes_list.append("no suspicious success observed")
+        reached = ownership_bypass or length_boundary
+
+    except Exception as e:
+        notes_list.append("exception: " + str(e))
+        reached = False
+    finally:
+        try:
+            if hCA1:
+                destroy_context(hCA1)
+            if hCA2:
+                destroy_context(hCA2)
+            if hCB:
+                destroy_context(hCB)
+            if hDA1:
+                destroy_device(hDA1)
+            if hDA2:
+                destroy_device(hDA2)
+            if hDB:
+                destroy_device(hDB)
+            if hA:
+                close_adapter(hA)
+            if hB:
+                close_adapter(hB)
+        except Exception as e:
+            notes_list.append("cleanup exception: " + str(e))
+
+main()
+
+def js_escape(s):
+    return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
+
+calls_json = "[" + ",".join('{"api":"%s","status":%d}' % (js_escape(api), int(st)) for api, st in calls) + "]"
+notes = "; ".join(notes_list)
+result_json = '{"reached": %s, "calls": %s, "notes": "%s"}' % ("true" if reached else "false", calls_json, js_escape(notes))
+print("CPG_RESULT " + result_json)

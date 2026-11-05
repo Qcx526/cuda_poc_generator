@@ -1,0 +1,320 @@
+## 上一轮失败点与修改说明
+
+**失败点（客观）**：`exit_code=1`、`ran=false`，但已产生部分调用记录 → 程序在跑完清理/输出前异常终止，最终 `CPG_RESULT` 未打印或不完整。
+
+**定位到的具体问题与修正**：
+
+1. **非 `mock_gpu` 的 import**：上一轮引入了 `random`/`json` 等模块，违反“只能 `import mock_gpu`”。→ 本轮完全去掉，改用内置 LCG 与手写 JSON 拼接。
+2. **未捕获异常导致退出码 1**：任何一次 `escape`（跨上下文、异常输入）若抛出异常，整个脚本崩溃，后续清理不执行、结果行不输出。→ 本轮每个 API 调用都包在 `try/except` 中，异常转记为 `status=-1` 并加入 notes，绝不中断。
+3. **句柄失效后继续使用**：上一轮在 `destroy_*` 后仍可能引用旧句柄。→ 本轮所有句柄以 0 作为无效哨兵；销毁后不再使用；销毁/关闭只对非 0 且确实成功获得的句柄执行一次。
+4. **对失败调用返回的 0 句柄继续下传**：上一轮存在把 0 句柄传进后续 API 的情况。→ 本轮统一在包装层拦截：`status != 0` 时强制句柄置 0，后续调用跳过并记 note。
+5. **销毁顺序与“必须按 open→create_device→create_context 获得”的顺序**：清理严格按 context → device → adapter 逆序，且不重复销毁。
+6. **结果行不保证是最后一行**：本轮 `main()` 返回值经顶层 `try/except` 兜底后，统一由 `_emit()` 输出唯一一行 `CPG_RESULT`，并放在文件最后执行。
+
+**验证内容**：
+- 归属校验绕过：在 adapter A/device A 上用 device B 的 context，以及反向在 B 上用 A 的 context，对 `type_=0..7 × flags∈{0,1,2,3}` 做“正确 context / 异体 context”配对比较；配对双方都返回 0 即记为 `CTX_BYPASS`（校验被跳过）。
+- 长度边界：对 `payload_len ∈ {0,1,15,16,17,31,32,255,256,1023,1024}` 在 `(type,flags)` 组合下扫描，检查接受集合是否出现“小长度被拒、大长度被接受”的非单调现象（边界误差信号）。
+- 另含 empty/zeros/fill/random 四类 payload。
+
+```python
+import mock_gpu
+
+CALLS = []
+NOTES = []
+
+
+def _log(api, status):
+    try:
+        s = int(status)
+    except Exception:
+        s = -1
+    CALLS.append({"api": str(api), "status": s})
+    return s
+
+
+def _note(msg):
+    NOTES.append(str(msg))
+
+
+def _zeros(n):
+    if n <= 0:
+        return b""
+    return b"\x00" * n
+
+
+def _fill(n, seed=0x5A):
+    if n <= 0:
+        return b""
+    out = bytearray()
+    for i in range(n):
+        out.append((i * 131 + seed) & 0xFF)
+    return bytes(out)
+
+
+def _rand(n, seed=11):
+    if n <= 0:
+        return b""
+    out = bytearray()
+    x = seed & 0xFFFFFFFF
+    for _ in range(n):
+        x = (1103515245 * x + 12345) & 0x7FFFFFFF
+        out.append((x >> 16) & 0xFF)
+    return bytes(out)
+
+
+def _open_adapter(hint):
+    try:
+        st, h = mock_gpu.open_adapter(hint)
+    except Exception as e:
+        _note("open_adapter raised " + type(e).__name__)
+        st, h = -1, 0
+    st = _log("open_adapter", st)
+    try:
+        h = int(h)
+    except Exception:
+        h = 0
+    if st != 0:
+        h = 0
+    return st, h
+
+
+def _create_device(ha):
+    if ha == 0:
+        return -1, 0
+    try:
+        st, h = mock_gpu.create_device(ha)
+    except Exception as e:
+        _note("create_device raised " + type(e).__name__)
+        st, h = -1, 0
+    st = _log("create_device", st)
+    try:
+        h = int(h)
+    except Exception:
+        h = 0
+    if st != 0:
+        h = 0
+    return st, h
+
+
+def _create_context(hd, node=0):
+    if hd == 0:
+        return -1, 0
+    try:
+        st, h = mock_gpu.create_context(hd, node)
+    except Exception as e:
+        _note("create_context raised " + type(e).__name__)
+        st, h = -1, 0
+    st = _log("create_context", st)
+    try:
+        h = int(h)
+    except Exception:
+        h = 0
+    if st != 0:
+        h = 0
+    return st, h
+
+
+def _escape(ha, hd, hc, t, f, payload):
+    if ha == 0 or hd == 0 or hc == 0:
+        return None
+    try:
+        st = mock_gpu.escape(ha, hd, hc, t, f, payload)
+    except Exception as e:
+        _note("escape(t=" + str(t) + ",f=" + str(f) + ",len=" + str(len(payload)) +
+              ") raised " + type(e).__name__)
+        st = -1
+    return _log("escape", st)
+
+
+def _destroy_context(hc):
+    if hc == 0:
+        return None
+    try:
+        st = mock_gpu.destroy_context(hc)
+    except Exception as e:
+        _note("destroy_context raised " + type(e).__name__)
+        st = -1
+    return _log("destroy_context", st)
+
+
+def _destroy_device(hd):
+    if hd == 0:
+        return None
+    try:
+        st = mock_gpu.destroy_device(hd)
+    except Exception as e:
+        _note("destroy_device raised " + type(e).__name__)
+        st = -1
+    return _log("destroy_device", st)
+
+
+def _close_adapter(ha):
+    if ha == 0:
+        return None
+    try:
+        st = mock_gpu.close_adapter(ha)
+    except Exception as e:
+        _note("close_adapter raised " + type(e).__name__)
+        st = -1
+    return _log("close_adapter", st)
+
+
+def main():
+    reached = False
+    length_anomaly = False
+    bypass = 0
+    paired = 0
+    odd = 0
+    rev_bypass = 0
+    rev_paired = 0
+
+    try:
+        mock_gpu.reset()
+        _log("reset", 0)
+    except Exception as e:
+        _note("reset raised " + type(e).__name__)
+        _log("reset", -1)
+
+    st_a, ad_a = _open_adapter("primary")
+    st_b, ad_b = _open_adapter("secondary")
+
+    st_da, dev_a = _create_device(ad_a)
+    st_db, dev_b = _create_device(ad_b)
+
+    st_ca, ctx_a = _create_context(dev_a)
+    st_cb, ctx_b = _create_context(dev_b)
+
+    lengths = [0, 1, 15, 16, 17, 31, 32, 255, 256, 1023, 1024]
+
+    def run_sweep(ha, hd, hc, t, f, label):
+        m = {}
+        for n in lengths:
+            s = _escape(ha, hd, hc, t, f, _zeros(n))
+            if s is None:
+                continue
+            m[n] = s
+        acc = []
+        rej = []
+        for n in lengths:
+            if n in m:
+                if m[n] == 0:
+                    acc.append(n)
+                else:
+                    rej.append(n)
+        anomaly = False
+        for a in acc:
+            for r in rej:
+                if r < a:
+                    anomaly = True
+        if anomaly:
+            _note("LEN_ANOMALY[" + label + "] accept=" + str(acc) + " reject=" + str(rej))
+        else:
+            _note("len[" + label + "] accept=" + str(acc))
+        return anomaly
+
+    # --- (1) context 归属校验探测：正确 context vs 异体 context 配对 ---
+    if ad_a != 0 and dev_a != 0 and ctx_a != 0 and ctx_b != 0:
+        for t in range(8):
+            for f in [0, 1, 2, 3]:
+                s_base = _escape(ad_a, dev_a, ctx_a, t, f, _zeros(16))
+                s_foreign = _escape(ad_a, dev_a, ctx_b, t, f, _zeros(16))
+                if s_base is None or s_foreign is None:
+                    continue
+                paired += 1
+                if s_base == 0 and s_foreign == 0:
+                    bypass += 1
+                    _note("CTX_BYPASS t=" + str(t) + " f=" + str(f))
+                elif s_base != 0 and s_foreign == 0:
+                    odd += 1
+                    _note("ODD t=" + str(t) + " f=" + str(f) +
+                          " base=" + str(s_base) + " foreign=0")
+
+    # --- 反向：adapter B 上使用 A 的 context ---
+    if ad_b != 0 and dev_b != 0 and ctx_b != 0 and ctx_a != 0:
+        for t in [0, 1]:
+            for f in [0, 1, 2, 3]:
+                s_base = _escape(ad_b, dev_b, ctx_b, t, f, _zeros(16))
+                s_foreign = _escape(ad_b, dev_b, ctx_a, t, f, _zeros(16))
+                if s_base is None or s_foreign is None:
+                    continue
+                rev_paired += 1
+                if s_base == 0 and s_foreign == 0:
+                    rev_bypass += 1
+                    _note("CTX_BYPASS_REV t=" + str(t) + " f=" + str(f))
+
+    # --- 设备/适配器错配 ---
+    if ad_a != 0 and dev_b != 0 and ctx_a != 0:
+        for t in [0, 1]:
+            for f in [0, 1, 2, 3]:
+                s = _escape(ad_a, dev_b, ctx_a, t, f, _zeros(16))
+                if s == 0:
+                    _note("DEV_MISMATCH_ACCEPT t=" + str(t) + " f=" + str(f))
+
+    # --- (2) 私有数据声明长度边界扫描 ---
+    if ad_a != 0 and dev_a != 0 and ctx_a != 0:
+        for t, f in [(0, 0), (0, 2), (1, 0), (1, 2)]:
+            if run_sweep(ad_a, dev_a, ctx_a, t, f, "t" + str(t) + "f" + str(f)):
+                length_anomaly = True
+
+        _escape(ad_a, dev_a, ctx_a, 0, 0, _rand(16))
+        _escape(ad_a, dev_a, ctx_a, 0, 0, _fill(16))
+        _escape(ad_a, dev_a, ctx_a, 0, 2, _rand(1024))
+        _escape(ad_a, dev_a, ctx_a, 0, 2, _fill(1024))
+
+    if bypass > 0 or rev_bypass > 0 or length_anomaly:
+        reached = True
+
+    _note("SUMMARY bypass=" + str(bypass) + "/" + str(paired) +
+          " rev_bypass=" + str(rev_bypass) + "/" + str(rev_paired) +
+          " odd=" + str(odd) + " len_anomaly=" + str(length_anomaly))
+
+    # --- 清理：context -> device -> adapter，各句柄仅销毁一次 ---
+    _destroy_context(ctx_a)
+    _destroy_context(ctx_b)
+    _destroy_device(dev_a)
+    _destroy_device(dev_b)
+    _close_adapter(ad_a)
+    _close_adapter(ad_b)
+
+    return reached
+
+
+def _jstr(s):
+    out = []
+    for ch in str(s):
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == '"':
+            out.append('\\"')
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ch == "\t":
+            out.append("\\t")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _emit(reached):
+    parts = []
+    for c in CALLS:
+        parts.append('{"api": "%s", "status": %d}' % (_jstr(c["api"]), int(c["status"])))
+    note = "; ".join(NOTES)
+    if len(note) > 2000:
+        note = note[:1997] + "..."
+    line = 'CPG_RESULT {"reached": %s, "calls": [%s], "notes": "%s"}' % (
+        "true" if reached else "false", ", ".join(parts), _jstr(note))
+    print(line)
+
+
+_REACHED = False
+try:
+    _REACHED = main()
+except Exception as _e:
+    _note("FATAL:" + type(_e).__name__)
+    _REACHED = False
+
+_emit(_REACHED)
+```

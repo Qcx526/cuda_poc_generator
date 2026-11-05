@@ -1,0 +1,41 @@
+{
+  "candidate": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\mock_runs\\f6b-B\\round2\\poc.py",
+  "exit_code": 1,
+  "ran": false,
+  "claimed": {},
+  "external": {
+    "triggered": false,
+    "flaws": [],
+    "trigger_count": 0,
+    "dll_sha256": "cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53",
+    "trace_len": 0,
+    "trace_complete": true,
+    "trace_limit": 500,
+    "calls_made": 0,
+    "max_calls": 200,
+    "facts": {
+      "native_api_called": false,
+      "valid_objects_built": false,
+      "escape_called": false,
+      "escape_with_valid_objects": false,
+      "oracle_confirmed": false
+    },
+    "trace": []
+  },
+  "verification_level": "NO_EXECUTION",
+  "executed_on_native": false,
+  "facts": {
+    "native_api_called": false,
+    "valid_objects_built": false,
+    "escape_called": false,
+    "escape_with_valid_objects": false,
+    "oracle_confirmed": false
+  },
+  "oracle_confirmed": false,
+  "self_report_matches_external": true,
+  "false_positive": false,
+  "dll_sha256_matches_facts": true,
+  "observed_calls": [],
+  "stderr_tail": "r\\data\\driver\\mock_runs\\f6b-B\\round2\\poc.py\", line 45, in do_reset\n    record(\"reset\", st)\n  File \"F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\mock_runs\\f6b-B\\round2\\poc.py\", line 5, in record\n    calls.append({\"api\": api, \"status\": int(status)})\n                                        ^^^^^^^^^^^\nTypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'\n",
+  "round": 2
+}

@@ -1,0 +1,11 @@
+{
+ "arm": "D",
+ "facts_enabled": true,
+ "mutation_enabled": true,
+ "rounds": 2,
+ "mutation_seed": 11,
+ "max_calls": 40,
+ "dll_sha256": "cf8c619f9bfeb5433471b0edfc57ec54afd42b1dd38a55b2326a86627d44da53",
+ "model": "unknown",
+ "temperature": 0.1
+}
