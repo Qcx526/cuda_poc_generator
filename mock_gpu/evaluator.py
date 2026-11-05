@@ -35,8 +35,10 @@ def replay(trace: List[dict]) -> dict:
             elif op == "create_context":
                 api.create_context(int(step.get("hDevice", 0)), int(step.get("node", 0)))
             elif op == "escape":
+                # "type" is the only accepted spelling; a missing key is a schema
+                # error, not a silent zero - a zeroed type would still be valid.
                 api.escape(int(step.get("hAdapter", 0)), int(step.get("hDevice", 0)),
-                           int(step.get("hContext", 0)), int(step.get("type_", 0)),
+                           int(step.get("hContext", 0)), int(step["type"]),
                            int(step.get("flags", 0)),
                            bytes.fromhex(step.get("payload", "")))
             elif op == "destroy_context":

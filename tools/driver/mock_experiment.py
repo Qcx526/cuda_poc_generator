@@ -83,10 +83,15 @@ def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_
             json.dumps(verdict, ensure_ascii=False, indent=2), encoding="utf-8")
         history.append(verdict)
 
-        # Only user-visible facts go back to the model; the oracle stays here.
-        feedback = {"exit_code": verdict["exit_code"], "ran": verdict["ran"],
-                    "claimed": verdict.get("claimed", {}),
-                    "stderr": verdict.get("stderr_tail", "")[:300]}
+        # Three sources, kept apart in the record and only two of them shown to
+        # the model: runner-observed call statuses are legitimate feedback, the
+        # candidate's own claim is not evidence, and the oracle never leaves here.
+        feedback = {"runner_observed": {"exit_code": verdict["exit_code"],
+                                        "ran": verdict["ran"],
+                                        "calls": verdict.get("observed_calls", []),
+                                        "stderr": verdict.get("stderr_tail", "")[:300]}}
+        verdict["candidate_claim"] = verdict.get("claimed", {})
+        verdict["oracle"] = verdict.get("external", {})
     return history
 
 

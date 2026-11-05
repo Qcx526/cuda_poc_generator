@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 DLL = Path(__file__).resolve().parent / "mock_gpu.dll"
+MASK = 0xFFFFFFFF
 
 TRIGGER_AUTHZ = 1
 TRIGGER_OOB = 2
@@ -48,22 +49,24 @@ class _Binding:
     def open_adapter(self) -> Tuple[int, int]:
         out = c_int(0)
         status = self.lib.MockOpenAdapter(ctypes.byref(out))
-        return status, out.value
+        return status & MASK, out.value
 
     def create_device(self, adapter: int) -> Tuple[int, int]:
         out = c_int(0)
         status = self.lib.MockCreateDevice(adapter, ctypes.byref(out))
-        return status, out.value
+        return status & MASK, out.value
 
     def create_context(self, device: int, node: int = 0) -> Tuple[int, int]:
         out = c_int(0)
         status = self.lib.MockCreateContext(device, node, ctypes.byref(out))
-        return status, out.value
+        return status & MASK, out.value
 
     def escape(self, adapter: int, device: int, context: int, type_: int,
                flags: int, payload: bytes) -> int:
+        # ctypes hands back a signed c_int; the Python mock uses unsigned NTSTATUS
+        # values, so normalise here instead of in every caller.
         return self.lib.MockEscape(adapter, device, context, type_, flags,
-                                   payload, len(payload))
+                                   payload, len(payload)) & MASK
 
     def triggers(self) -> List[int]:
         count = self.lib.MockTriggerCount()

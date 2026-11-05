@@ -1,59 +1,133 @@
 # -*- coding: utf-8 -*-
-"""Run a generated program against the mock benchmark and judge it objectively.
+"""Run a generated program against the native benchmark, under a trusted recorder.
 
-The verdict comes from two places only: the process exit/CPG_RESULT line, and the
-oracle file the mock wrote. What the program says about itself is recorded but not
-trusted.
+Shape of one run:
+
+    runner  --spawn-->  server (loads the DLL, keeps the authoritative trace)
+    runner  --spawn-->  candidate (gets endpoint + client token only)
+    runner  --query-->  server (judge token) -> verdict
+
+The candidate therefore cannot write the trace, cannot read it, and cannot see the
+verdict. What it can do is call the API - which is the whole point of the exercise.
 """
 
 import argparse
 import json
 import os
+import shutil
+import socket
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from mock_gpu import evaluator  # noqa: E402
+DLL = ROOT / "mock_native" / "mock_gpu.dll"
+FACTS = ROOT / "data" / "driver" / "mock_facts" / "mock_gpu_facts.json"
+
+
+def _wait_port(port_file: Path, timeout: float = 20.0) -> int:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if port_file.is_file():
+            text = port_file.read_text(encoding="utf-8").strip()
+            if text:
+                return int(text)
+        time.sleep(0.05)
+    raise TimeoutError("server 未在 %.0fs 内就绪" % timeout)
+
+
+def _query(port: int, token: str, payload: dict) -> dict:
+    request = dict(payload)
+    request["token"] = token
+    with socket.create_connection(("127.0.0.1", port), timeout=20) as sock:
+        sock.sendall((json.dumps(request) + "\n").encode("utf-8"))
+        data = b""
+        while not data.endswith(b"\n"):
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+    return json.loads(data.decode("utf-8") or "{}")
+
+
+def _declared_sha() -> str:
+    if not FACTS.is_file():
+        return ""
+    try:
+        return json.loads(FACTS.read_text(encoding="utf-8"))["artifact"]["sha256"]
+    except (ValueError, KeyError):
+        return ""
 
 
 def run_candidate(candidate: Path, timeout: int = 60) -> dict:
+    if not DLL.is_file():
+        raise FileNotFoundError("原生 DLL 缺失，正式验收不允许跳过: %s" % DLL)
+
     candidate = Path(candidate).resolve()
-    trace_path = candidate.parent / "trace.json"
-    for stale in (trace_path, candidate.parent / "oracle.jsonl"):
-        if stale.exists():
-            stale.unlink()
-    env = dict(os.environ)
-    # The candidate can only leave a trace. The oracle path is deliberately not
-    # exported to it, so it has nothing to write a verdict into.
-    env.pop("MOCK_GPU_ORACLE", None)
-    env["MOCK_GPU_TRACE"] = str(trace_path)
-    env["PYTHONPATH"] = str(ROOT)
-    done = subprocess.run([sys.executable, "-B", str(candidate)], capture_output=True,
-                          text=True, errors="replace", timeout=timeout, env=env,
-                          cwd=str(ROOT))
-    result_line = ""
-    for line in (done.stdout or "").splitlines():
-        if line.startswith("CPG_RESULT "):
-            result_line = line
-    claimed = {}
-    if result_line:
+    workdir = Path(tempfile.mkdtemp(prefix="bench_"))
+    port_file = workdir / "port"
+    secrets_file = workdir / "secrets.json"
+    server = subprocess.Popen(
+        [sys.executable, "-B", "-m", "mock_native.server", "--dll", str(DLL),
+         "--port-file", str(port_file), "--secrets-file", str(secrets_file)],
+        cwd=str(ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    try:
+        port = _wait_port(port_file)
+        creds = json.loads(secrets_file.read_text(encoding="utf-8"))
+
+        env = dict(os.environ)
+        env.pop("MOCK_GPU_ORACLE", None)
+        env.pop("MOCK_GPU_TRACE", None)          # 轨迹路径根本不交给候选
+        env["PYTHONPATH"] = str(ROOT)
+        env["MOCK_GPU_ENDPOINT"] = "127.0.0.1:%d" % port
+        env["MOCK_GPU_CLIENT_TOKEN"] = creds["client_token"]
+
+        done = subprocess.run([sys.executable, "-B", str(candidate)], capture_output=True,
+                              text=True, errors="replace", timeout=timeout, env=env,
+                              cwd=str(ROOT))
+        claimed = {}
+        for line in (done.stdout or "").splitlines():
+            if line.startswith("CPG_RESULT "):
+                try:
+                    claimed = json.loads(line[len("CPG_RESULT "):])
+                except ValueError:
+                    claimed = {"parse_error": True}
+
+        verdict = _query(port, creds["judge_token"], {"action": "verdict"})
+    finally:
+        server.terminate()
         try:
-            claimed = json.loads(result_line[len("CPG_RESULT "):])
-        except ValueError:
-            claimed = {"parse_error": True}
-    trace = evaluator.load_trace(trace_path)
-    truth = evaluator.replay(trace)
-    truth["trace_steps"] = len(trace)
+            server.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server.kill()
+        shutil.rmtree(workdir, ignore_errors=True)
+
+    executed = int(verdict.get("trace_len", 0)) > 0
+    claimed_reached = bool(claimed.get("reached"))
+    if executed:
+        level = "CANDIDATE_EXECUTION_VERIFIED"
+    elif claimed_reached:
+        level = "SELF_REPORT_ONLY"
+    else:
+        level = "NO_EXECUTION"
+
     return {
         "candidate": str(candidate),
         "exit_code": done.returncode,
-        "ran": done.returncode == 0 and bool(result_line),
+        "ran": done.returncode == 0 and bool(claimed),
         "claimed": claimed,
-        "external": truth,
-        "self_report_matches_external": bool(claimed.get("reached")) == truth["triggered"],
+        "external": verdict,
+        "verification_level": level,
+        "executed_on_native": executed,
+        "self_report_matches_external": claimed_reached == bool(verdict.get("triggered")),
+        "false_positive": claimed_reached and not verdict.get("triggered"),
+        "dll_sha256_matches_facts": bool(verdict.get("dll_sha256")) and
+                                    verdict.get("dll_sha256") == _declared_sha(),
+        "observed_calls": verdict.get("calls", []),
         "stderr_tail": (done.stderr or "")[-400:],
     }
 

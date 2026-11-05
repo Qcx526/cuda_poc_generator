@@ -113,9 +113,13 @@ def create_context(hDevice: int, node: int = 0) -> Tuple[int, int]:
 
 def escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
            payload: bytes) -> int:
-    if not _alive(hAdapter) or not _alive(hDevice):
+    # Existence, not just "not destroyed": a random handle was never created, and
+    # the native DLL rejects it as an invalid parameter rather than as a permissions
+    # problem. Diverging here would make the two implementations disagree on the
+    # very cases the benchmark is meant to discriminate.
+    if hAdapter not in _state.adapters or hDevice not in _state.devices:
         return STATUS_INVALID_PARAMETER
-    if not _alive(hContext):
+    if hContext not in _state.contexts:
         return STATUS_INVALID_PARAMETER
     if type_ < 0 or type_ > 7:
         return STATUS_INVALID_PARAMETER
@@ -143,7 +147,7 @@ def escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
 
     _state.trace.append({"op": "escape", "hAdapter": hAdapter, "hDevice": hDevice,
                          "hContext": hContext, "type": type_, "flags": flags,
-                         "payload": payload.hex()})
+                         "payload": payload.hex(), "status": STATUS_SUCCESS})
     return STATUS_SUCCESS
 
 
