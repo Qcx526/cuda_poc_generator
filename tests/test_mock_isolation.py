@@ -143,3 +143,79 @@ def test_trace_carries_a_payload_digest_for_offline_replay():
     assert verdict["facts"]["oracle_confirmed"] is True
     saved = json.loads(trace_path.read_text(encoding="utf-8"))
     assert saved["trace"][-1]["payload_sha256"] == escape_steps[0]["payload_sha256"]
+
+
+def _run_poc(body: str):
+    directory = Path(tempfile.mkdtemp(prefix="pl_"))
+    candidate = directory / "poc.py"
+    candidate.write_text(body, encoding="utf-8")
+    trace_path = directory / "trace.json"
+    return mock_bench.run_candidate(candidate, trace_path=trace_path), trace_path
+
+
+def _escape_steps(verdict):
+    return [s for s in verdict["external"]["trace"] if s["op"] == "escape"]
+
+
+def test_a_short_payload_is_recorded_in_full():
+    verdict, _ = _run_poc(
+        "import json, mock_gpu\n"
+        "s, a = mock_gpu.open_adapter()\n"
+        "_, d = mock_gpu.create_device(a)\n"
+        "_, c = mock_gpu.create_context(d)\n"
+        "st = mock_gpu.escape(a, d, c, 0, 0, b'\\x7f')\n"
+        "print('CPG_RESULT ' + json.dumps({'reached': st == 0, 'calls': []}))\n")
+    step = _escape_steps(verdict)[0]
+    assert step["payload_hex"] == "7f"
+    assert step["payload_len"] == 1
+    assert step["replayable"] is True
+
+
+def test_a_payload_over_128_bytes_is_recorded_without_truncation():
+    verdict, trace_path = _run_poc(
+        "import json, mock_gpu, hashlib\n"
+        "s, a = mock_gpu.open_adapter()\n"
+        "_, d = mock_gpu.create_device(a)\n"
+        "_, c = mock_gpu.create_context(d)\n"
+        "payload = bytes(range(200))\n"
+        "st = mock_gpu.escape(a, d, c, 0, 0, payload)\n"
+        "print('CPG_RESULT ' + json.dumps({'reached': st == 0, 'calls': [],"
+        " 'notes': hashlib.sha256(payload).hexdigest()}))\n")
+    step = _escape_steps(verdict)[0]
+    assert step["payload_len"] == 200
+    assert len(step["payload_hex"]) == 400        # 完整，不是前缀
+    assert step["payload_sha256"] == verdict["claimed"]["notes"]
+    saved = json.loads(trace_path.read_text(encoding="utf-8"))
+    assert saved["trace"][-1]["payload_hex"] == step["payload_hex"]
+
+
+def test_a_rejected_payload_is_still_recorded_with_its_status():
+    verdict, _ = _run_poc(
+        "import json, mock_gpu\n"
+        "s, a = mock_gpu.open_adapter()\n"
+        "_, d = mock_gpu.create_device(a)\n"
+        "_, c = mock_gpu.create_context(d)\n"
+        "payload = (9999).to_bytes(4, 'little') + b'\\x00' * 4\n"
+        "st = mock_gpu.escape(a, d, c, 3, 0, payload)\n"
+        "print('CPG_RESULT ' + json.dumps({'reached': False, 'calls': [{'api':'escape','status':st}]}))\n")
+    step = _escape_steps(verdict)[0]
+    assert step["status"] == 0xC000000D
+    assert step["payload_len"] == 8
+    assert verdict["facts"]["oracle_confirmed"] is False
+
+
+def test_the_recorded_digest_matches_what_was_executed():
+    verdict, _ = _run_poc(
+        "import json, mock_gpu, hashlib\n"
+        "s, a = mock_gpu.open_adapter()\n"
+        "_, d = mock_gpu.create_device(a)\n"
+        "_, c = mock_gpu.create_context(d)\n"
+        "body = b'\\x11' * 40\n"
+        "payload = len(body).to_bytes(4, 'little') + body\n"
+        "st = mock_gpu.escape(a, d, c, 1, 0, payload)\n"
+        "print('CPG_RESULT ' + json.dumps({'reached': st == 0, 'calls': [],"
+        " 'notes': hashlib.sha256(payload).hexdigest()}))\n")
+    step = _escape_steps(verdict)[0]
+    import hashlib
+    expected = hashlib.sha256(len(b"\x11" * 40).to_bytes(4, "little") + b"\x11" * 40).hexdigest()
+    assert step["payload_sha256"] == expected

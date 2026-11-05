@@ -23,6 +23,7 @@ itself. Strong isolation needs a separate user or a sandboxed container.
 import argparse
 import ctypes
 import hashlib
+import hashlib
 import json
 import os
 import secrets
@@ -99,7 +100,16 @@ class Session:
                                          "type": int(args["type"]),
                                          "flags": int(args["flags"]),
                                          "payload_len": len(payload)},
-                      "status": status, "objects_valid": objects_valid}
+                      "status": status, "objects_valid": objects_valid,
+                      # Full body, not a prefix: the benchmark caps payloads at
+                      # 1024 bytes and carries nothing sensitive, so a complete
+                      # hex string costs little and makes the input replayable.
+                      # If a future limit forces truncation, replayable must be
+                      # set to False and the caller must not claim reproducibility.
+                      "payload_len": len(payload),
+                      "payload_sha256": hashlib.sha256(payload).hexdigest(),
+                      "payload_hex": payload.hex(),
+                      "replayable": True}
         elif op == "destroy_context":
             status = b.lib.MockDestroyContext(int(args["hContext"]))
             self.contexts.pop(int(args["hContext"]), None)
