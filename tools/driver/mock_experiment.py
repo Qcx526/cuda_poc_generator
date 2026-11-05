@@ -56,9 +56,33 @@ def _strip(text: str) -> str:
     return text.strip()
 
 
+PUBLIC_FEEDBACK_KEYS = ("exit_code", "ran", "calls", "stderr", "objects")
+
+
+def public_feedback(verdict: dict) -> dict:
+    """What the next round is allowed to see in a blind run.
+
+    Explicit allow-list rather than a filter: ``oracle_confirmed``, ``flaws`` and
+    ``trigger_count`` must never reach the model, and a deny-list would leak again
+    the moment a new oracle field is added.
+    """
+    trace = verdict.get("external", {}).get("trace", [])
+    created = {item.get("op") for item in trace if item.get("status") == 0}
+    payload = {
+        "exit_code": verdict.get("exit_code"),
+        "ran": verdict.get("ran"),
+        "calls": [{"op": item.get("op"), "status": item.get("status")}
+                  for item in trace[-40:]],
+        "objects": sorted(name for name in ("create_device", "create_context",
+                                            "open_adapter") if name in created),
+        "stderr": (verdict.get("stderr_tail") or "")[:300],
+    }
+    return {key: payload[key] for key in PUBLIC_FEEDBACK_KEYS}
+
+
 def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_runs"),
-        facts_path: Path = None) -> list:
-    client = LLMClient(ConfigLoader())
+        facts_path: Path = None, client=None) -> list:
+    client = client or LLMClient(ConfigLoader())
     facts = ""
     if facts_path and Path(facts_path).is_file():
         facts = Path(facts_path).read_text(encoding="utf-8")
@@ -86,13 +110,7 @@ def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_
         # Three sources, kept apart in the record and only two of them shown to
         # the model: runner-observed call statuses are legitimate feedback, the
         # candidate's own claim is not evidence, and the oracle never leaves here.
-        calls = [{"op": item.get("op"), "status": item.get("status")}
-                 for item in verdict.get("external", {}).get("trace", [])[-40:]]
-        feedback = {"runner_observed": {"exit_code": verdict["exit_code"],
-                                        "ran": verdict["ran"],
-                                        "facts": verdict.get("facts", {}),
-                                        "calls": calls,
-                                        "stderr": verdict.get("stderr_tail", "")[:300]}}
+        feedback = {"runner_observed": public_feedback(verdict)}
         verdict["candidate_claim"] = verdict.get("claimed", {})
         verdict["oracle"] = verdict.get("external", {})
     return history
