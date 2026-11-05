@@ -1,0 +1,48 @@
+{
+ "label": "REPRODUCED_UNDER_F5_R2",
+ "rounds": [
+  {
+   "round": 1,
+   "hashes": {
+    "prompt.txt": "7bab5aa8841f8291485ded275dd0e06b327bb523018a9ddf5e1fc0a9df327754",
+    "response.txt": "ef162224a11788ba95998d632d98e4d6d5d5005916155052e7e42cc08aeebdb9",
+    "poc.py": "5a5d19b07b40f422b586fa1de8b130083828adfa60445e43eab67dc787f41c08"
+   },
+   "level": "TRIGGER_CONFIRMED",
+   "facts": {
+    "native_api_called": true,
+    "valid_objects_built": true,
+    "escape_called": true,
+    "escape_with_valid_objects": true,
+    "oracle_confirmed": true
+   },
+   "flaws": [
+    "AUTHZ_BYPASS",
+    "OOB_READ"
+   ],
+   "trace_len": 15
+  },
+  {
+   "round": 2,
+   "hashes": {
+    "prompt.txt": "67bc723e97ea4a785b77dcd56f65097e6b01747ba506b8835da40a47d8892c17",
+    "response.txt": "54d8ad1b6bac277f28614f6b762f05e23111fd06e2879bb10dfa55e91c76f55e",
+    "poc.py": "ff1fc484fdead4adc8cb2c9319e26d8060bb49435b99dd995214a241c15f1ebc"
+   },
+   "level": "TRIGGER_CONFIRMED",
+   "facts": {
+    "native_api_called": true,
+    "valid_objects_built": true,
+    "escape_called": true,
+    "escape_with_valid_objects": true,
+    "oracle_confirmed": true
+   },
+   "flaws": [
+    "AUTHZ_BYPASS",
+    "OOB_READ"
+   ],
+   "trace_len": 42
+  }
+ ],
+ "dll_sha256": "9cf8b3e55df3705eacd37275f6f3802b6b10910e5169c68822e7cfadb39a6a8a"
+}

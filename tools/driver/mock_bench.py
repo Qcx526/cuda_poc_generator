@@ -29,15 +29,21 @@ DLL = ROOT / "mock_native" / "mock_gpu.dll"
 FACTS = ROOT / "data" / "driver" / "mock_facts" / "mock_gpu_facts.json"
 
 
-def _wait_port(port_file: Path, timeout: float = 20.0) -> int:
+def _read_handshake(server: subprocess.Popen, timeout: float = 20.0) -> dict:
+    """The server prints one JSON line with port and both tokens.
+
+    Reading it from the pipe is the point: no file is created, so a sibling process
+    has nothing to read even though it runs as the same user.
+    """
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if port_file.is_file():
-            text = port_file.read_text(encoding="utf-8").strip()
-            if text:
-                return int(text)
-        time.sleep(0.05)
-    raise TimeoutError("server 未在 %.0fs 内就绪" % timeout)
+        line = server.stdout.readline()
+        if line:
+            return json.loads(line)
+        if server.poll() is not None:
+            break
+        time.sleep(0.02)
+    raise TimeoutError("server 未在 %.0fs 内完成握手" % timeout)
 
 
 def _query(port: int, token: str, payload: dict) -> dict:
@@ -63,21 +69,19 @@ def _declared_sha() -> str:
         return ""
 
 
-def run_candidate(candidate: Path, timeout: int = 60) -> dict:
+def run_candidate(candidate: Path, timeout: int = 60,
+                  trace_path: Path = None) -> dict:
     if not DLL.is_file():
         raise FileNotFoundError("原生 DLL 缺失，正式验收不允许跳过: %s" % DLL)
 
     candidate = Path(candidate).resolve()
     workdir = Path(tempfile.mkdtemp(prefix="bench_"))
-    port_file = workdir / "port"
-    secrets_file = workdir / "secrets.json"
     server = subprocess.Popen(
-        [sys.executable, "-B", "-m", "mock_native.server", "--dll", str(DLL),
-         "--port-file", str(port_file), "--secrets-file", str(secrets_file)],
-        cwd=str(ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        [sys.executable, "-B", "-m", "mock_native.server", "--dll", str(DLL)],
+        cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
-        port = _wait_port(port_file)
-        creds = json.loads(secrets_file.read_text(encoding="utf-8"))
+        creds = _read_handshake(server)
+        port = int(creds["port"])
 
         env = dict(os.environ)
         env.pop("MOCK_GPU_ORACLE", None)
@@ -98,6 +102,12 @@ def run_candidate(candidate: Path, timeout: int = 60) -> dict:
                     claimed = {"parse_error": True}
 
         verdict = _query(port, creds["judge_token"], {"action": "verdict"})
+        if trace_path is not None:
+            Path(trace_path).write_text(
+                json.dumps({"dll_sha256": creds.get("dll_sha256"),
+                            "trace": verdict.get("trace", []),
+                            "facts": verdict.get("facts", {})},
+                           ensure_ascii=False, indent=1), encoding="utf-8")
     finally:
         server.terminate()
         try:
@@ -106,14 +116,23 @@ def run_candidate(candidate: Path, timeout: int = 60) -> dict:
             server.kill()
         shutil.rmtree(workdir, ignore_errors=True)
 
-    executed = int(verdict.get("trace_len", 0)) > 0
+    facts = verdict.get("facts", {})
     claimed_reached = bool(claimed.get("reached"))
-    if executed:
-        level = "CANDIDATE_EXECUTION_VERIFIED"
-    elif claimed_reached:
-        level = "SELF_REPORT_ONLY"
+    # Each stage is reported on its own; trace_len > 0 only proves that *something*
+    # reached the DLL, which is the weakest of the five facts.
+    if not facts.get("native_api_called"):
+        level = "SELF_REPORT_ONLY" if claimed_reached else "NO_EXECUTION"
+    elif not facts.get("valid_objects_built"):
+        level = "NATIVE_CALLS_ONLY"
+    elif not facts.get("escape_called"):
+        level = "OBJECTS_BUILT_ONLY"
+    elif not facts.get("escape_with_valid_objects"):
+        level = "ESCAPE_WITH_INVALID_OBJECTS"
+    elif not facts.get("oracle_confirmed"):
+        level = "ESCAPE_VALID_NO_TRIGGER"
     else:
-        level = "NO_EXECUTION"
+        level = "TRIGGER_CONFIRMED"
+    executed = bool(facts.get("native_api_called"))
 
     return {
         "candidate": str(candidate),
@@ -123,6 +142,8 @@ def run_candidate(candidate: Path, timeout: int = 60) -> dict:
         "external": verdict,
         "verification_level": level,
         "executed_on_native": executed,
+        "facts": facts,
+        "oracle_confirmed": bool(facts.get("oracle_confirmed")),
         "self_report_matches_external": claimed_reached == bool(verdict.get("triggered")),
         "false_positive": claimed_reached and not verdict.get("triggered"),
         "dll_sha256_matches_facts": bool(verdict.get("dll_sha256")) and

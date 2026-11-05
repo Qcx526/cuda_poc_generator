@@ -86,9 +86,12 @@ def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_
         # Three sources, kept apart in the record and only two of them shown to
         # the model: runner-observed call statuses are legitimate feedback, the
         # candidate's own claim is not evidence, and the oracle never leaves here.
+        calls = [{"op": item.get("op"), "status": item.get("status")}
+                 for item in verdict.get("external", {}).get("trace", [])[-40:]]
         feedback = {"runner_observed": {"exit_code": verdict["exit_code"],
                                         "ran": verdict["ran"],
-                                        "calls": verdict.get("observed_calls", []),
+                                        "facts": verdict.get("facts", {}),
+                                        "calls": calls,
                                         "stderr": verdict.get("stderr_tail", "")[:300]}}
         verdict["candidate_claim"] = verdict.get("claimed", {})
         verdict["oracle"] = verdict.get("external", {})
@@ -103,8 +106,8 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     history = run(args.label, args.rounds, facts_path=Path(args.facts) if args.facts else None)
     for item in history:
-        print("round %d  ran=%s  claimed_reached=%s  external_triggered=%s  flaws=%s"
-              % (item["round"], item["ran"],
+        print("round %d  ran=%s  level=%s  claimed=%s  oracle=%s  flaws=%s"
+              % (item["round"], item["ran"], item.get("verification_level"),
                  item.get("claimed", {}).get("reached"),
                  item["external"]["triggered"], item["external"]["flaws"]))
     return 0

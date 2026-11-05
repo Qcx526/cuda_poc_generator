@@ -36,6 +36,9 @@ Repository = "https://github.com/Qcx526/cuda_poc_generator"
 include = ["src", "src.*"]
 
 [tool.pytest.ini_options]
+markers = [
+    "native_required: 需要真实 Native DLL 的验收测试；缺 DLL 必须失败，不允许跳过",
+]
 testpaths = ["tests"]
 
 [tool.ruff]
