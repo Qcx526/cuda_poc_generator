@@ -151,3 +151,17 @@ tools/driver/*.ilk
 # ETW 原始采集与可重建中间产物（归档在 data/driver/etw/archive/）
 data/driver/etw/*.etl
 data/driver/etw/*.csv
+
+# 原生 benchmark 构建产物（由 mock_native/mock_gpu.c 重建）
+mock_native/*.dll
+mock_native/*.lib
+mock_native/*.exp
+mock_native/*.obj
+mock_native/*.pdb
+
+# 原生 benchmark 构建产物（由 mock_native/mock_gpu.c 重建）
+mock_native/*.dll
+mock_native/*.lib
+mock_native/*.exp
+mock_native/*.obj
+mock_native/*.pdb

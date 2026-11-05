@@ -51,10 +51,25 @@ class _State:
     devices: Dict[int, int] = field(default_factory=dict)     # hDevice -> hAdapter
     contexts: Dict[int, Tuple[int, int]] = field(default_factory=dict)  # hContext -> (hDevice, node)
     dead: List[int] = field(default_factory=list)
-    events: List[dict] = field(default_factory=list)
+    trace: List[dict] = field(default_factory=list)
 
 
 _state = _State()
+
+
+def _judge(kind: str, detail: dict) -> None:
+    """Record a trigger only when a judge asked for it.
+
+    The candidate process never gets the judge flag or the oracle path, so it can
+    neither read nor write ground truth. The runner replays the trace with both set.
+    """
+    import os
+
+    if os.environ.get("MOCK_GPU_JUDGE") != "1":
+        return
+    from . import _oracle
+
+    _oracle.record(kind, detail)
 
 
 def reset() -> None:
@@ -74,7 +89,7 @@ def _alive(handle: int) -> bool:
 def open_adapter(hint: str = "") -> Tuple[int, int]:
     handle = _take()
     _state.adapters[handle] = _Adapter(handle)
-    _state.events.append({"api": "open_adapter", "hAdapter": handle, "hint": hint})
+    _state.trace.append({"op": "open_adapter", "hint": hint})
     return STATUS_SUCCESS, handle
 
 
@@ -83,7 +98,7 @@ def create_device(hAdapter: int) -> Tuple[int, int]:
         return STATUS_INVALID_PARAMETER, 0
     handle = _take()
     _state.devices[handle] = hAdapter
-    _state.events.append({"api": "create_device", "hDevice": handle, "hAdapter": hAdapter})
+    _state.trace.append({"op": "create_device", "hAdapter": hAdapter})
     return STATUS_SUCCESS, handle
 
 
@@ -92,15 +107,12 @@ def create_context(hDevice: int, node: int = 0) -> Tuple[int, int]:
         return STATUS_INVALID_PARAMETER, 0
     handle = _take()
     _state.contexts[handle] = (hDevice, node)
-    _state.events.append({"api": "create_context", "hContext": handle, "hDevice": hDevice,
-                          "node": node})
+    _state.trace.append({"op": "create_context", "hDevice": hDevice, "node": node})
     return STATUS_SUCCESS, handle
 
 
 def escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
            payload: bytes) -> int:
-    from . import _oracle
-
     if not _alive(hAdapter) or not _alive(hDevice):
         return STATUS_INVALID_PARAMETER
     if not _alive(hContext):
@@ -123,15 +135,15 @@ def escape(hAdapter: int, hDevice: int, hContext: int, type_: int, flags: int,
         if declared > len(payload) - 4 + 1:
             return STATUS_INVALID_PARAMETER
         if declared == len(payload) - 4 + 1:
-            _oracle.record("OOB_READ", {"type": type_, "declared": declared,
-                                        "payload_len": len(payload)})
-
+            _judge("OOB_READ", {"type": type_, "declared": declared,
+                                "payload_len": len(payload)})
     if owner_device != hDevice and privileged:
-        _oracle.record("AUTHZ_BYPASS", {"type": type_, "flags": flags,
-                                        "hContext": hContext, "hDevice": hDevice})
+        _judge("AUTHZ_BYPASS", {"type": type_, "flags": flags,
+                                "hContext": hContext, "hDevice": hDevice})
 
-    _state.events.append({"api": "escape", "type": type_, "flags": flags,
-                          "len": len(payload), "hContext": hContext, "hDevice": hDevice})
+    _state.trace.append({"op": "escape", "hAdapter": hAdapter, "hDevice": hDevice,
+                         "hContext": hContext, "type": type_, "flags": flags,
+                         "payload": payload.hex()})
     return STATUS_SUCCESS
 
 
@@ -140,6 +152,7 @@ def destroy_context(hContext: int) -> int:
         return STATUS_INVALID_PARAMETER
     _state.contexts.pop(hContext, None)
     _state.dead.append(hContext)
+    _state.trace.append({"op": "destroy_context", "hContext": hContext})
     return STATUS_SUCCESS
 
 
@@ -148,6 +161,7 @@ def destroy_device(hDevice: int) -> int:
         return STATUS_INVALID_PARAMETER
     _state.devices.pop(hDevice, None)
     _state.dead.append(hDevice)
+    _state.trace.append({"op": "destroy_device", "hDevice": hDevice})
     return STATUS_SUCCESS
 
 
@@ -156,9 +170,33 @@ def close_adapter(hAdapter: int) -> int:
         return STATUS_INVALID_PARAMETER
     _state.adapters.pop(hAdapter, None)
     _state.dead.append(hAdapter)
+    _state.trace.append({"op": "close_adapter", "hAdapter": hAdapter})
     return STATUS_SUCCESS
 
 
-def event_log() -> List[dict]:
-    """Exposed for the harness only; the contract does not mention it."""
-    return list(_state.events)
+def call_trace() -> List[dict]:
+    """What the program did, in order. Carries no verdict - the runner replays it."""
+    return list(_state.trace)
+
+
+def _dump_trace_at_exit() -> None:
+    """Write the call trace where the runner asked for it, and nowhere else."""
+    import atexit
+    import json
+    import os
+
+    target = os.environ.get("MOCK_GPU_TRACE")
+    if not target:
+        return
+
+    def _write() -> None:
+        try:
+            with open(target, "w", encoding="utf-8") as handle:
+                json.dump(call_trace(), handle)
+        except OSError:
+            pass
+
+    atexit.register(_write)
+
+
+_dump_trace_at_exit()

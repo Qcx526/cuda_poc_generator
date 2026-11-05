@@ -34,8 +34,13 @@ DESCRIPTION = """漏洞描述（抽象，未给出触发位置）：
 要求：通过公开 API 构造合法调用序列，验证上述行为是否可被实际触发，并记录每步返回状态。"""
 
 
-def _prompt(contract: str, feedback: dict = None) -> str:
+def _prompt(contract: str, feedback: dict = None, facts: str = "") -> str:
     text = "## API 契约\n%s\n\n%s\n" % (contract, DESCRIPTION)
+    if facts:
+        text += ("\n## 目标 DLL 的静态事实（只读，来自对该 DLL 的真实分析）\n%s\n"
+                 % facts[:4000])
+        text += ("说明：这些是函数边界、指令统计与比较常量，不含漏洞位置或标签；"
+                 "未给出的语义一律视为 UNKNOWN。\n")
     if feedback:
         text += ("\n## 上一轮客观结果（仅用户态返回值，不含 oracle）\n%s\n"
                  % json.dumps(feedback, ensure_ascii=False, indent=2)[:2500])
@@ -51,15 +56,19 @@ def _strip(text: str) -> str:
     return text.strip()
 
 
-def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_runs")) -> list:
+def run(cve_label: str, rounds: int = 2, workdir: Path = Path("data/driver/mock_runs"),
+        facts_path: Path = None) -> list:
     client = LLMClient(ConfigLoader())
+    facts = ""
+    if facts_path and Path(facts_path).is_file():
+        facts = Path(facts_path).read_text(encoding="utf-8")
     base = Path(workdir) / cve_label
     feedback = None
     history = []
     for index in range(1, rounds + 1):
         round_dir = base / ("round%d" % index)
         round_dir.mkdir(parents=True, exist_ok=True)
-        prompt = _prompt(mock_gpu.CONTRACT, feedback)
+        prompt = _prompt(mock_gpu.CONTRACT, feedback, facts)
         (round_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
         reply = client.chat([{"role": "system", "content": SYSTEM},
                              {"role": "user", "content": prompt}], temperature=0.1)
@@ -85,8 +94,9 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--label", default="mock-A")
     parser.add_argument("--rounds", type=int, default=2)
+    parser.add_argument("--facts", default="")
     args = parser.parse_args(argv)
-    history = run(args.label, args.rounds)
+    history = run(args.label, args.rounds, facts_path=Path(args.facts) if args.facts else None)
     for item in history:
         print("round %d  ran=%s  claimed_reached=%s  external_triggered=%s  flaws=%s"
               % (item["round"], item["ran"],

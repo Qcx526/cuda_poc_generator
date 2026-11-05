@@ -15,9 +15,11 @@ from mock_gpu import _oracle
 
 
 def _oracle_fd():
+    """Enable the judge explicitly: the driver only records when asked to."""
     handle, path = tempfile.mkstemp(suffix=".jsonl")
     os.close(handle)
     os.environ[_oracle.PATH_ENV] = path
+    os.environ["MOCK_GPU_JUDGE"] = "1"
     return Path(path)
 
 

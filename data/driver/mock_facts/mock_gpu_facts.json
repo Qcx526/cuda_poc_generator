@@ -1,0 +1,164 @@
+{
+ "artifact": {
+  "path": "mock_native\\mock_gpu.dll",
+  "sha256": "9cf8b3e55df3705eacd37275f6f3802b6b10910e5169c68822e7cfadb39a6a8a",
+  "compiler": "MSVC 19.29.30159 x64",
+  "flags": "-O1 -LD"
+ },
+ "functions": [
+  {
+   "name": "MockCloseAdapter",
+   "rva": "0x1008",
+   "size": 40,
+   "instructions": 26,
+   "basic_blocks": 6,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rcx+*1+8] I:1",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockCreateContext",
+   "rva": "0x1030",
+   "size": 61,
+   "instructions": 40,
+   "basic_blocks": 10,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rax+*1+8] I:2",
+    "mov ecx I:3",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockCreateDevice",
+   "rva": "0x1070",
+   "size": 61,
+   "instructions": 40,
+   "basic_blocks": 10,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rax+*1+8] I:1",
+    "mov ecx I:2",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockDestroyContext",
+   "rva": "0x10b0",
+   "size": 40,
+   "instructions": 26,
+   "basic_blocks": 6,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rcx+*1+8] I:3",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockDestroyDevice",
+   "rva": "0x10d8",
+   "size": 40,
+   "instructions": 26,
+   "basic_blocks": 6,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "cmp M[rcx+*1+8] I:2",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockEscape",
+   "rva": "0x1100",
+   "size": 318,
+   "instructions": 162,
+   "basic_blocks": 26,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:32",
+    "cmp M[rax+*1+8] I:3",
+    "cmp M[rbx+*1+8] I:2",
+    "cmp ebp I:7",
+    "cmp edx I:16",
+    "cmp r11d I:1024",
+    "cmp r11d I:4",
+    "mov M[r10+rax*4+0] I:2",
+    "mov r9d I:1",
+    "shl eax I:24",
+    "shl r8d I:8",
+    "sub rsp I:32"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockOpenAdapter",
+   "rva": "0x1240",
+   "size": 43,
+   "instructions": 30,
+   "basic_blocks": 7,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockReset",
+   "rva": "0x126c",
+   "size": 46,
+   "instructions": 18,
+   "basic_blocks": 2,
+   "returns": 1,
+   "cmp_constants": [
+    "add rsp I:40",
+    "and M[rip+*1+ADDR] I:0",
+    "mov M[rip+*1+ADDR] I:8192",
+    "mov r8d I:1024",
+    "sub rsp I:40"
+   ],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockTriggerAt",
+   "rva": "0x129c",
+   "size": 0,
+   "instructions": 0,
+   "basic_blocks": 0,
+   "returns": 0,
+   "cmp_constants": [],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  },
+  {
+   "name": "MockTriggerCount",
+   "rva": "0x12bc",
+   "size": 0,
+   "instructions": 0,
+   "basic_blocks": 0,
+   "returns": 0,
+   "cmp_constants": [],
+   "callers": "exports",
+   "evidence": "PE export table + .pdata + capstone shapes"
+  }
+ ]
+}

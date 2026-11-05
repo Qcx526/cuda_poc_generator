@@ -16,16 +16,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from mock_gpu import _oracle  # noqa: E402
+from mock_gpu import evaluator  # noqa: E402
 
 
 def run_candidate(candidate: Path, timeout: int = 60) -> dict:
     candidate = Path(candidate).resolve()
-    oracle_path = candidate.parent / "oracle.jsonl"
-    if oracle_path.exists():
-        oracle_path.unlink()
+    trace_path = candidate.parent / "trace.json"
+    for stale in (trace_path, candidate.parent / "oracle.jsonl"):
+        if stale.exists():
+            stale.unlink()
     env = dict(os.environ)
-    env["MOCK_GPU_ORACLE"] = str(oracle_path)
+    # The candidate can only leave a trace. The oracle path is deliberately not
+    # exported to it, so it has nothing to write a verdict into.
+    env.pop("MOCK_GPU_ORACLE", None)
+    env["MOCK_GPU_TRACE"] = str(trace_path)
     env["PYTHONPATH"] = str(ROOT)
     done = subprocess.run([sys.executable, "-B", str(candidate)], capture_output=True,
                           text=True, errors="replace", timeout=timeout, env=env,
@@ -40,7 +44,9 @@ def run_candidate(candidate: Path, timeout: int = 60) -> dict:
             claimed = json.loads(result_line[len("CPG_RESULT "):])
         except ValueError:
             claimed = {"parse_error": True}
-    truth = _oracle.verdict(oracle_path)
+    trace = evaluator.load_trace(trace_path)
+    truth = evaluator.replay(trace)
+    truth["trace_steps"] = len(trace)
     return {
         "candidate": str(candidate),
         "exit_code": done.returncode,
