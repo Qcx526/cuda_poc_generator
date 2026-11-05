@@ -208,6 +208,9 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--freeze-history", action="store_true", default=False,
                         help="忽略规格中的 observed 知识（消融用）")
+    parser.add_argument("--blind-contract", action="store_true",
+                        default=False,
+                        help="仅公告级信息：不含 parser/oracle/历史变异")
     parser.add_argument("--repeat", type=int, default=1,
                         help="每个 CVE 独立重复次数（success@k 的 k）")
     parser.add_argument("--tier", default="userland_toolchain",
@@ -225,6 +228,10 @@ def main(argv: Optional[list] = None) -> int:
 
     if args.freeze_history:
         os.environ["CPG_SPEC_FROZEN"] = "1"
+    if getattr(args, "blind_contract", False):
+        # Stronger than freeze: the model sees advisory-level facts only, not the
+        # parser entry, oracle condition or historical mutation seed.
+        os.environ["CPG_BLIND_CONTRACT"] = "1"
     root = Path(resolve_project_root())
     workdir = root / args.workdir
     cves = args.cve or classify(root / "data" / "inputs")

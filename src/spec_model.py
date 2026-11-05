@@ -306,6 +306,36 @@ class VulnSpec(BaseModel):
         return "RECON_FIRST"
 
     # -- rendering ------------------------------------------------------
+    def public_brief(self) -> str:
+        """What a blind run may see: advisory-level facts only.
+
+        Everything the project learned by looking at the binary - parser entry,
+        offsets, the oracle condition, the historical mutation seed - is excluded.
+        Those are answers, and a prompt containing them measures reading, not
+        generation.
+        """
+        lines = ["cve: %s" % self.cve_id, "component: %s" % self.component]
+        if self.cwe:
+            lines.append("cwe: %s" % self.cwe)
+        versions = self.anchor.versions
+        if versions is not None:
+            # min/max are the advisory's version window; to_evidence() returns a
+            # boolean and was printed as "True", which told the model nothing.
+            window = "%s..%s" % (getattr(versions, "min", "?"), getattr(versions, "max", "?"))
+            fixed = getattr(versions, "fixed_in", "")
+            lines.append("affected: %s%s" % (window, (" (fixed in %s)" % fixed) if fixed else ""))
+        lines.append("target: %s/%s medium=%s"
+                     % (self.target.platform, self.target.privilege, self.target.medium))
+        if self.anchor.invocation or self.anchor.invocations:
+            from .grader_matrix import parse_invocations
+            templates = parse_invocations(self.anchor.invocations, self.anchor.invocation)
+            lines.append("invoke: %s" % " | ".join(" ".join(i) for i in templates))
+        if self.anchor.input_kind:
+            lines.append("input: %s (magic=%s)" % (self.anchor.input_kind,
+                                                   self.anchor.input_magic or "unknown"))
+        lines.append("note: 输入内部结构与触发条件未公开，需自行推导")
+        return "\n".join(lines)
+
     def prompt_brief(self, include_observed: Optional[bool] = None) -> str:
         """Compact operational brief for the generation prompt.
 
@@ -319,6 +349,8 @@ class VulnSpec(BaseModel):
             lines.append("target: platform=%s privilege=%s medium=%s device=%s"
                          % (self.target.platform, self.target.privilege,
                             self.target.medium, self.target.device))
+        if os.environ.get("CPG_BLIND_CONTRACT") == "1":
+            return self.public_brief()
         if self.driver.entry_api:
             lines.append("entry_api: %s" % self.driver.entry_api)
         if self.driver.payload_form:

@@ -1,0 +1,17 @@
+[
+ {
+  "cve_id": "CVE-2025-23340",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "UNKNOWN",
+  "diagnosis": "UNCLASSIFIED",
+  "seconds": 1842.7,
+  "reason": "机制对照 1/1 个同样崩溃；所声称的触发条件未得到支持，崩溃不可归因于受控变量",
+  "diagnoses": [
+   "NO_EFFECT",
+   "UNCLASSIFIED"
+  ],
+  "attempts": 1,
+  "successes": 0
+ }
+]
