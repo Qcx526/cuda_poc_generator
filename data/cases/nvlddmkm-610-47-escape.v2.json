@@ -1,0 +1,163 @@
+{
+ "schema_version": "gpu-vulnerability-case/v2",
+ "identity": {
+  "case_id": "case:nvlddmkm-610.47-escape",
+  "cve_id": null,
+  "title": "NVIDIA Windows 显示驱动 D3DKMTEscape 请求合法性",
+  "sources": [
+   "data/driver/f9_evidence.json",
+   "data/driver/f9_offsets.json"
+  ]
+ },
+ "target": {
+  "vendor": "NVIDIA",
+  "component": "nvlddmkm.sys",
+  "platform": "windows",
+  "execution_tier": "kernel_driver",
+  "versions": {
+   "driver": "610.47",
+   "wddm": "2.7"
+  }
+ },
+ "entry_surface": {
+  "medium": "api_call",
+  "interface": "D3DKMTEscape",
+  "trust_boundary": "user_mode -> kernel_mode",
+  "constraints": [
+   "需有效 Adapter/Device 句柄"
+  ]
+ },
+ "description": {
+  "public_summary": "D3DKMTEscape 请求合法性由驱动内部判定，具体条件未公开",
+  "cwe": null,
+  "impact": "unknown",
+  "root_cause_status": "UNKNOWN"
+ },
+ "knowledge": {
+  "evidence": [
+   {
+    "id": "S1",
+    "kind": "STATIC_FACT",
+    "statement": "镜像 SHA256 与 PE 身份",
+    "source": "data/driver/f9_evidence.json",
+    "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "digest": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "notes": null
+   },
+   {
+    "id": "S2",
+    "kind": "STATIC_FACT",
+    "statement": "入口 RVA 0x733a0e0（VA 0x14733a0e0）",
+    "source": "PE 可选头 EntryPoint",
+    "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "notes": null
+   },
+   {
+    "id": "S3",
+    "kind": "STATIC_FACT",
+    "statement": ".pdata 异常记录 79615 条（记录数，不是函数数）",
+    "source": "异常目录大小/12",
+    "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "notes": null
+   },
+   {
+    "id": "S4",
+    "kind": "STATIC_FACT",
+    "statement": "两个 .text 节：index 0 rva=0x1000 size=13820405；index 8 rva=0x14d4000 size=91",
+    "source": "节表",
+    "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "notes": null
+   },
+   {
+    "id": "S5",
+    "kind": "STATIC_FACT",
+    "statement": "WDK 头文件：DRIVER_INITIALIZATION_DATA 的 DxgkDdiEscape 位于 0x00000110",
+    "source": "km_offsetof.c 编译期 FIELD_OFFSET（负控制 C2338）",
+    "target_identity": "WDK 10.0.26100.0",
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "notes": null
+   },
+   {
+    "id": "R1",
+    "kind": "EVIDENCE_REQUEST",
+    "statement": "结构体 +0x110 在运行期是否存放有效函数指针",
+    "source": "F9-R1 结论",
+    "target_identity": null,
+    "digest": null,
+    "status": "UNKNOWN",
+    "visible_in": "PUBLIC",
+    "notes": "需内核读内存；本机不可执行，需第二台主机+KDNET 或 VM 直通"
+   },
+   {
+    "id": "R2",
+    "kind": "EVIDENCE_REQUEST",
+    "statement": "该指针指向的函数是否在 Escape 调用时被执行",
+    "source": "F9-R1 结论",
+    "target_identity": null,
+    "digest": null,
+    "status": "UNKNOWN",
+    "visible_in": "PUBLIC",
+    "notes": "需断点命中+栈回溯；本机不可执行"
+   },
+   {
+    "id": "S6",
+    "kind": "STATIC_FACT",
+    "statement": "Entry 窗口内有 41 条 lea/mov 对在填充同一结构；其中字段偏移 0x110 处写入的地址为 0x733e240（store 位于 0x733a399）",
+    "source": "tools/driver/f9r2_case.py scan_table（Capstone 线性反汇编）",
+    "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "notes": null
+   },
+   {
+    "id": "O1",
+    "kind": "EVALUATION_ONLY",
+    "statement": "[rbp+0x110] 写入被解释为 DxgkDdiEscape 注册：未证实",
+    "source": "f9r2_case 推断",
+    "target_identity": null,
+    "digest": null,
+    "status": "UNKNOWN",
+    "visible_in": "EVAL",
+    "notes": "偏移与 WDK 布局一致只是必要条件；未证明 rbp 即初始化结构基址，也未证明该表用于 Escape 注册"
+   }
+  ],
+  "missing": [
+   "Escape 回调 RVA",
+   "私有请求结构布局",
+   "运行期初始化结构内容"
+  ]
+ },
+ "contract": {
+  "goal": "确定请求合法性的前置条件",
+  "backend": "windows_userland",
+  "allowed_operations": [
+   "query_device_state",
+   "query_adapter_info"
+  ],
+  "risk_level": "low",
+  "requires_independent_verification": true
+ },
+ "extension": {
+  "name": "windows_gpu_driver",
+  "version": "1",
+  "payload": {
+   "driver": "nvlddmkm.sys",
+   "image_sha256": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+   "luid": "00000000:b33b765e"
+  }
+ }
+}

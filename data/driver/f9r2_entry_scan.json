@@ -1,0 +1,16 @@
+{
+ "window_bytes": 1536,
+ "stores_to_0x110": [
+  {
+   "rva": "0x733a399",
+   "text": "mov qword ptr [rbp + 0x110], rax"
+  }
+ ],
+ "calls": [
+  {
+   "rva": "0x733a0f0",
+   "text": "call 0x733de5c"
+  }
+ ],
+ "scanned_instructions": 2
+}

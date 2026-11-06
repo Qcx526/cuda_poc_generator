@@ -1,0 +1,210 @@
+{
+ "entries": [
+  {
+   "field_offset": "8",
+   "target_rva": "0x733e090",
+   "store_rva": "0x733a22b"
+  },
+  {
+   "field_offset": "0x10",
+   "target_rva": "0x136b8a0",
+   "store_rva": "0x733a236"
+  },
+  {
+   "field_offset": "0x20",
+   "target_rva": "0x733e0c0",
+   "store_rva": "0x733a241"
+  },
+  {
+   "field_offset": "0x28",
+   "target_rva": "0x136b8a4",
+   "store_rva": "0x733a24c"
+  },
+  {
+   "field_offset": "0x38",
+   "target_rva": "0x733e0e0",
+   "store_rva": "0x733a257"
+  },
+  {
+   "field_offset": "0x40",
+   "target_rva": "0x136dcd4",
+   "store_rva": "0x733a262"
+  },
+  {
+   "field_offset": "0x50",
+   "target_rva": "0x733e100",
+   "store_rva": "0x733a26d"
+  },
+  {
+   "field_offset": "0x58",
+   "target_rva": "0x136dcd8",
+   "store_rva": "0x733a278"
+  },
+  {
+   "field_offset": "0x68",
+   "target_rva": "0x733e120",
+   "store_rva": "0x733a283"
+  },
+  {
+   "field_offset": "0x70",
+   "target_rva": "0x136b8a8",
+   "store_rva": "0x733a28e"
+  },
+  {
+   "field_offset": "0x80",
+   "target_rva": "0x733e150",
+   "store_rva": "0x733a299"
+  },
+  {
+   "field_offset": "0x88",
+   "target_rva": "0x136b8b4",
+   "store_rva": "0x733a2a7"
+  },
+  {
+   "field_offset": "0x98",
+   "target_rva": "0x733e170",
+   "store_rva": "0x733a2b5"
+  },
+  {
+   "field_offset": "0xa0",
+   "target_rva": "0x136b8ac",
+   "store_rva": "0x733a2c3"
+  },
+  {
+   "field_offset": "0xc0",
+   "target_rva": "0x733e190",
+   "store_rva": "0x733a322"
+  },
+  {
+   "field_offset": "0xb8",
+   "target_rva": "0x136df10",
+   "store_rva": "0x733a337"
+  },
+  {
+   "field_offset": "0xc8",
+   "target_rva": "0x733e1b0",
+   "store_rva": "0x733a345"
+  },
+  {
+   "field_offset": "0xd0",
+   "target_rva": "0x136df14",
+   "store_rva": "0x733a353"
+  },
+  {
+   "field_offset": "0xe0",
+   "target_rva": "0x733e1e0",
+   "store_rva": "0x733a361"
+  },
+  {
+   "field_offset": "0xe8",
+   "target_rva": "0x136df1c",
+   "store_rva": "0x733a36f"
+  },
+  {
+   "field_offset": "0xf8",
+   "target_rva": "0x733e210",
+   "store_rva": "0x733a37d"
+  },
+  {
+   "field_offset": "0x100",
+   "target_rva": "0x136df31",
+   "store_rva": "0x733a38b"
+  },
+  {
+   "field_offset": "0x110",
+   "target_rva": "0x733e240",
+   "store_rva": "0x733a399"
+  },
+  {
+   "field_offset": "0x118",
+   "target_rva": "0x13a5703",
+   "store_rva": "0x733a3a7"
+  },
+  {
+   "field_offset": "0x128",
+   "target_rva": "0x733e270",
+   "store_rva": "0x733a3b5"
+  },
+  {
+   "field_offset": "0x130",
+   "target_rva": "0x13a56e4",
+   "store_rva": "0x733a3c3"
+  },
+  {
+   "field_offset": "0x140",
+   "target_rva": "0x733e2b0",
+   "store_rva": "0x733a3d1"
+  },
+  {
+   "field_offset": "0x148",
+   "target_rva": "0x13a5e1c",
+   "store_rva": "0x733a3df"
+  },
+  {
+   "field_offset": "0x158",
+   "target_rva": "0x733e2d0",
+   "store_rva": "0x733a3ed"
+  },
+  {
+   "field_offset": "0x160",
+   "target_rva": "0x136b898",
+   "store_rva": "0x733a3fb"
+  },
+  {
+   "field_offset": "0x170",
+   "target_rva": "0x733e2f0",
+   "store_rva": "0x733a409"
+  },
+  {
+   "field_offset": "0x178",
+   "target_rva": "0x136b8b6",
+   "store_rva": "0x733a417"
+  },
+  {
+   "field_offset": "0x188",
+   "target_rva": "0x733e310",
+   "store_rva": "0x733a425"
+  },
+  {
+   "field_offset": "0x190",
+   "target_rva": "0x13a56ca",
+   "store_rva": "0x733a433"
+  },
+  {
+   "field_offset": "0x1a0",
+   "target_rva": "0x733e340",
+   "store_rva": "0x733a441"
+  },
+  {
+   "field_offset": "0x1a8",
+   "target_rva": "0x13a56cb",
+   "store_rva": "0x733a44f"
+  },
+  {
+   "field_offset": "0x1b8",
+   "target_rva": "0x733e370",
+   "store_rva": "0x733a45d"
+  },
+  {
+   "field_offset": "0x1d0",
+   "target_rva": "0x733e390",
+   "store_rva": "0x733a479"
+  },
+  {
+   "field_offset": "0x1e8",
+   "target_rva": "0x733e3b0",
+   "store_rva": "0x733a495"
+  },
+  {
+   "field_offset": "0x200",
+   "target_rva": "0x733e3e0",
+   "store_rva": "0x733a4b1"
+  },
+  {
+   "field_offset": "0x218",
+   "target_rva": "0x733e410",
+   "store_rva": "0x733a4cd"
+  }
+ ],
+ "count": 41
+}
