@@ -228,6 +228,7 @@ def main(argv: Optional[list] = None) -> int:
 
     if args.freeze_history:
         os.environ["CPG_SPEC_FROZEN"] = "1"
+    os.environ["CPG_EVIDENCE"] = "1"      # experiment runs always keep prompts/responses
     if getattr(args, "blind_contract", False):
         # Stronger than freeze: the model sees advisory-level facts only, not the
         # parser entry, oracle condition or historical mutation seed.

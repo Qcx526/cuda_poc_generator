@@ -248,6 +248,10 @@ class CudaPipeline:
             A run log is not a prompt, and a candidate log is not source code; without
             these files a blind claim cannot be checked after the fact.
             """
+            if os.environ.get("CPG_EVIDENCE") != "1":
+                # Off by default so the documented single-shot output contract is
+                # unchanged; the loop turns it on for experiment runs.
+                return
             try:
                 evidence_dir = target_dir / "evidence"
                 evidence_dir.mkdir(parents=True, exist_ok=True)

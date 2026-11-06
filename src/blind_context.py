@@ -20,9 +20,19 @@ PUBLIC_KEYS = {
                            "advisory_url", "technical_report"),
     "cuda_environment": ("cuda_toolkit_version", "fix_version", "affected_tools",
                          "gpu_architecture"),
+    # attack_vector / attack_complexity / surface_type are free text extracted from
+    # a technical write-up: for 23340 they spell out "sh_size = 1..11", which is the
+    # answer. Only the generic surface facts survive.
     "attack_surface": ("subsystem", "entry_type", "entry_point",
-                       "required_permissions", "attack_vector", "remote_trigger"),
+                       "required_permissions", "remote_trigger"),
+    # vulnerability_type nests free-text fields (subtype) that restate the bug, so
+    # only the classification values are projected.
     "vulnerability_type": ("vulnerability_type",),
+}
+
+PUBLIC_NESTED = {
+    "vulnerability_type": ("cwe_id", "cwe_name", "vulnerability_category",
+                           "cvss_score", "cvss_severity", "cvss_vector"),
 }
 
 # Anything shaped like a location or an arithmetic derivation is internal analysis.
@@ -57,6 +67,10 @@ def project(dimensions: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(section, dict):
             continue
         kept = {k: section[k] for k in keys if k in section and section[k]}
+        nested_keys = PUBLIC_NESTED.get(name)
+        if nested_keys and isinstance(kept.get("vulnerability_type"), dict):
+            inner = kept["vulnerability_type"]
+            kept["vulnerability_type"] = {k: inner[k] for k in nested_keys if k in inner}
         if kept:
             out[name] = _clean(kept)
     cve_id = dimensions.get("cve_id") or dimensions.get("affected_component", {}).get("cve_id")
@@ -69,7 +83,8 @@ def project(dimensions: Dict[str, Any]) -> Dict[str, Any]:
 def forbidden_terms() -> Iterable[str]:
     """Strings that must never survive projection."""
     return ("root_cause", "0x45", "controllable_fields", "exploitation_difficulty",
-            "vulnerable_function", "tool_path", "trigger_command")
+            "vulnerable_function", "tool_path", "trigger_command",
+            "sh_size", "attack_vector", "attack_complexity")
 
 
 def audit(text: str) -> list:

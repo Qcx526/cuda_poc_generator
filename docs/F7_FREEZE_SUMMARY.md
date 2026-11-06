@@ -32,7 +32,24 @@
 | 4 | 两段 LLM 的 prompt/response 未留档 | `expert.last_prompts` / `code_gen.last_messages` + 落盘到 `evidence/` 并附 SHA256 |
 | 5 | 判据只有单一 verdict | 五级分级器 + 报告附加 `grading` 块（旧 verdict 原样保留） |
 
-## 四、遗留
+## 四、冻结时仍未解决的问题（F8 Step 0 补记）
+
+1. **盲测没有经过真实 LLM 端到端复验。** 投影是代码级修正，`public_brief()` 与
+   `blind_context.project()` 都有测试，但**没有任何一次真实生成**是在纯盲测下跑完的。
+   已有的 0076 与 23340 实验都发生在投影之前或部分投影之下。
+2. **原始响应没有覆盖全部重试。** `code_generator.last_messages` 只保留最后一次
+   messages；静态修正重试（lint 修复）时的中间 messages 与原始响应未落盘。
+3. **五级判据仍是实验性离线分级器。** `cve_grading` 未接入 `ClosedLoopController`
+   的停止条件，`enrich_report()` 是附加字段；闭环仍用旧 `make_grader()`。
+4. **回归曾出现一项未独立排除的失败。**
+   `test_generation_delivery::test_default_python_api_keeps_exactly_six_v1_files`
+   曾在本机报 `safe-delete: exit 1`（沙箱禁止 rmtree），`git stash` 后同样复现；
+   在 F8 收尾的完整回归中该失败不再出现（1856 passed / 0 failed），
+   但**只在同一台机器上观察到**，仍不能算已在独立环境排除。
+5. **投影曾经漏掉 `attack_vector`。** 该字段在 23340 上写着"sh_size 取 1..11"，
+   与 `vulnerability_type.subtype` 一起直到 F8 Step 0 才被移除。
+
+## 五、遗留
 
 - 闭环主流程仍用旧 `make_grader()`；五级结果目前是**附加**信息，未进入自动停止条件。
 - `data/loop/` 默认被 git 忽略，历史实验需 `git add -f` 才能审计。

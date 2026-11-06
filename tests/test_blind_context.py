@@ -62,3 +62,22 @@ def test_internal_fields_are_not_projected():
 def test_audit_flags_an_address_when_one_slips_through():
     assert "address-like" in bc.audit("at 0x45ada0 the parser reads")
     assert bc.audit("nvdisasm SHT_RELA handler") == []
+
+
+def test_free_text_trigger_recipe_is_not_projected():
+    """attack_vector/attack_complexity/subtype restate the exploit; they must go."""
+    dims = _dimensions()
+    vuln_type = json.loads((INPUTS / "5_vulnerability_type.json").read_text(encoding="utf-8"))
+    raw = json.dumps(dims, ensure_ascii=False) + json.dumps(vuln_type, ensure_ascii=False)
+    assert "sh_size" in raw                      # the recipe really is in the inputs
+
+    projected = json.dumps(bc.project(dims), ensure_ascii=False)
+    for marker in ("sh_size", "1..11", "24 的倍数", "malloc", "attack_vector", "subtype"):
+        assert marker not in projected, "投影仍含 %r" % marker
+
+
+def test_the_surface_section_keeps_only_generic_facts():
+    surface = bc.project(_dimensions())["attack_surface"]
+    assert set(surface) <= {"subsystem", "entry_type", "entry_point",
+                            "required_permissions", "remote_trigger"}
+    assert "attack_vector" not in surface
