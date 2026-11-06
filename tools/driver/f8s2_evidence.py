@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src import driver_abi as abi          # noqa: E402
-from tools.driver import handle_validity   # noqa: E402
+from tools.driver.f8s2r1_revalidate import close_adapter, loaded_kernel_module  # noqa: E402
 
 EXE = ROOT / "tools" / "driver" / "d3d11_baseline.exe"
 DRIVER = Path("C:/Windows/System32/DriverStore/FileRepository/"
@@ -58,6 +58,10 @@ def open_by_hdc() -> dict:
             "status": status & 0xFFFFFFFF}
 
 
+def loaded_module() -> dict:
+    return loaded_kernel_module()
+
+
 def _parse(output: str) -> dict:
     facts = {"adapters": [], "raw_lines": output.splitlines()}
     for line in output.splitlines():
@@ -76,20 +80,41 @@ def main() -> int:
     if not EXE.is_file():
         raise SystemExit("d3d11_baseline.exe 未构建")
     run = subprocess.run([str(EXE)], capture_output=True, text=True, errors="replace")
+    if run.returncode != 0:
+        raise SystemExit("d3d11_baseline 退出码 %d: %s" % (run.returncode, run.stderr[-300:]))
     parsed = _parse(run.stdout)
+    parsed["exit_code"] = run.returncode
+    parsed["stderr"] = run.stderr[-400:]
 
     nvidia = [a for a in parsed["adapters"] if a.get("vendor") == "0x10de"]
     first = nvidia[0] if nvidia else {}
     high, _, low = (first.get("luid") or "0:0").partition(":")
     luid = open_by_luid(int(low, 16), int(high, 16)) if first else {}
     hdc = open_by_hdc()
+    # Handles are allocated per open, so comparing them is meaningless; identity is
+    # carried by the LUID, and the HDC path cannot report one.
+    luid["note"] = "句柄值每次 Open 都会变，不能用相等判断是同一个适配器"
+
+    # Leave no adapter handles behind: each open consumed one.
+    lib = _gdi32()
+    if luid.get("hAdapter"):
+        close_adapter(lib, luid["hAdapter"])
+    if hdc.get("hAdapter"):
+        close_adapter(lib, hdc["hAdapter"])
 
     evidence = {
         "host": {"os": platform.platform(), "python": platform.python_version()},
         "driver": {"path": str(DRIVER), "sha256_note": "see docs/F8S1_HANDLE_VALIDITY.md"},
         "d3d11": parsed,
+        "logical_adapters_note": "%d 个 NVIDIA DXGI 条目，属逻辑适配器，不等于物理卡数量"
+                                 % len(nvidia),
         "d3dkmt": {"by_luid": luid, "by_hdc": hdc,
-                   "same_adapter_value": luid.get("hAdapter") == hdc.get("hAdapter")},
+                   "identity_basis": "LUID only; handle values are per-open",
+                   "hdc_identity": "UNKNOWN (HDC 路径不返回 LUID)"},
+        "driver": {"file_sha256": __import__("hashlib").sha256(DRIVER.read_bytes()).hexdigest()
+                   if DRIVER.is_file() else None,
+                   "loaded_module": loaded_module(),
+                   "note": "磁盘文件与内核已加载模块是两条独立线索"},
     }
     target = ROOT / "data" / "driver" / "f8s2_baseline.json"
     target.parent.mkdir(parents=True, exist_ok=True)

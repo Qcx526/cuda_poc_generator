@@ -1,0 +1,88 @@
+{
+ "host": {
+  "platform": "Windows-10-10.0.19045-SP0",
+  "version": "10.0.19045",
+  "build": "10.0.19045"
+ },
+ "target_luid": "00000000:b33b765e",
+ "logical_adapters_note": "4 个 NVIDIA DXGI 条目，属逻辑适配器，不等于 4 张物理卡",
+ "abi_sizes": {
+  "D3DKMT_HANDLE": 4,
+  "D3DKMT_CREATEDEVICE": 64,
+  "D3DKMT_GETDEVICESTATE": 56,
+  "D3DKMT_QUERYADAPTERINFO": 24
+ },
+ "driver": {
+  "file": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_c8bc842500fab35b\\nvlddmkm.sys",
+  "file_sha256": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+  "loaded_module": {
+   "found": true,
+   "base": "0xfffff803c6280000",
+   "name": "nvlddmkm.sys"
+  },
+  "note": "磁盘文件与内核已加载模块是两条身份线索，不能互相替代"
+ },
+ "steps": [
+  {
+   "api": "OpenAdapterFromLuid",
+   "luid": "00000000:b33b765e",
+   "status": 0,
+   "hAdapter": 1073741824
+  },
+  {
+   "api": "QueryAdapterInfo(DRIVERVERSION=13)",
+   "buffer_bytes": 4,
+   "status": 0,
+   "value": 2700
+  },
+  {
+   "api": "CreateDevice",
+   "status": 0,
+   "hAdapter": 1073741824,
+   "hDevice": 1073741888,
+   "same_value": false,
+   "note": "数值相同不代表无效；这里只记录，不做判定"
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 1073741888,
+   "StateType": 1,
+   "status": 0,
+   "ExecutionState": 1
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 57005,
+   "StateType": 1,
+   "status": 3221225485,
+   "ExecutionState": 0
+  },
+  {
+   "api": "DestroyDevice",
+   "hDevice": 1073741888,
+   "status": 0
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 1073741888,
+   "StateType": 1,
+   "status": 3221225485,
+   "ExecutionState": 0
+  },
+  {
+   "api": "CloseAdapter",
+   "hAdapter": 1073741824,
+   "status": 0
+  }
+ ],
+ "result": {
+  "luid": "00000000:b33b765e",
+  "opened": 0,
+  "hDevice": 1073741888,
+  "same_value_as_adapter": false,
+  "valid_status": 0,
+  "bogus_status": 3221225485,
+  "destroy_status": 0,
+  "destroyed_status": 3221225485
+ }
+}

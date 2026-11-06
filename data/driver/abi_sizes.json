@@ -1,0 +1,25 @@
+{
+ "source": "tools/driver/abi_sizes.c (MSVC 14.29 x64, SDK 10.0.26100.0)",
+ "lines": [
+  "D3DKMT_HANDLE 4",
+  "CREATEDEVICE size=64 flags=8 hDevice=12",
+  "GETDEVICESTATE size=56 stateType=4",
+  "  ExecutionState=4 PresentState=40 ResetState=4",
+  "  PresentStateDWM=48 PageFault=32",
+  "QUERYADAPTERINFO size=24 type=4 data=8 size_field=16",
+  "DRIVERVERSION requires a UINT out (4 bytes)"
+ ],
+ "CREATEDEVICE": {
+  "size": 64,
+  "flags": 8,
+  "hDevice": 12
+ },
+ "GETDEVICESTATE": {
+  "size": 56,
+  "stateType": 4
+ },
+ "QUERYADAPTERINFO": {
+  "size": 24
+ },
+ "D3DKMT_HANDLE": 4
+}

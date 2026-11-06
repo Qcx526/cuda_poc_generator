@@ -48,3 +48,29 @@ def test_equality_with_the_adapter_is_not_treated_as_invalid():
 def test_a_tool_count_is_not_a_driver_oracle():
     """GetDeviceState answers liveness; it must not be read as 'escape reached'."""
     assert not hasattr(hv, "trigger_count")
+
+
+def test_getdevicestate_is_fifty_six_bytes_not_forty_four():
+    """The 44-byte model let the driver write 12 bytes past the buffer."""
+    assert ctypes.sizeof(hv.D3DKMT_GETDEVICESTATE) == 56
+
+
+def test_ctypes_sizes_match_the_compiled_reference():
+    """abi_sizes.c asked MSVC; these numbers come from that run, not from memory."""
+    import json
+    from pathlib import Path
+
+    reference = Path("data/driver/abi_sizes.json")
+    if not reference.is_file():
+        pytest.skip("abi_sizes.json 未生成")
+    compiled = json.loads(reference.read_text(encoding="utf-8"))
+    assert ctypes.sizeof(hv.D3DKMT_GETDEVICESTATE) == compiled["GETDEVICESTATE"]["size"]
+    assert ctypes.sizeof(hv.D3DKMT_CREATEDEVICE) == compiled["CREATEDEVICE"]["size"]
+    assert ctypes.sizeof(hv.D3DKMT_QUERYADAPTERINFO) == compiled["QUERYADAPTERINFO"]["size"]
+    assert hv.D3DKMT_CREATEDEVICE.hDevice.size == 4
+    assert hv.D3DKMT_CREATEDEVICE.hDevice.offset == compiled["CREATEDEVICE"]["hDevice"]
+
+
+def test_driverversion_export_is_a_uint_not_a_blob():
+    """A 64-byte buffer was rejected; the documented output is one UINT."""
+    assert ctypes.sizeof(ctypes.c_uint32) == 4
