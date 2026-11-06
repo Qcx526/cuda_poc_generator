@@ -65,6 +65,30 @@ def test_fact_assisted_projection_includes_only_facts():
     assert "未证实" not in text            # EVAL 级解释不进投影
 
 
+def test_evidence_request_is_not_public_by_default():
+    """R1/R2 mention +0x110; they must not ride along in a blind projection."""
+    case = _load(DRIVER)
+    public = proj.render(case, proj.PUBLIC_ONLY)
+    assert "0x110" not in public
+    assert "+0x110" not in public
+
+
+def test_public_projection_is_an_allow_list():
+    """Free-text sections are dropped rather than forwarded."""
+    projected = proj.project(_load(DRIVER), proj.PUBLIC_ONLY)
+    assert "allowed_operations" not in projected["contract"]
+    assert "missing" not in projected
+    assert "payload" not in (projected.get("extension") or {})
+    assert "constraints" not in projected["entry_surface"]
+
+
+def test_public_assertion_requires_review():
+    from src.case_v2 import Evidence, EvidenceKind, Visibility
+    with pytest.raises(ValidationError):
+        Evidence(id="P", kind=EvidenceKind.INPUT_ASSERTION, statement="未审查",
+                 source="某文档", visible_in=Visibility.PUBLIC)
+
+
 def test_eval_only_evidence_never_appears():
     case = _load(DRIVER)
     hidden = [e.id for e in case.knowledge.evidence if e.visible_in is Visibility.EVAL]
@@ -93,8 +117,10 @@ def test_legacy_adapter_preserves_provenance():
     bundle = adapt(Path("data/inputs/CVE-2025-23340"))
     provenance = bundle.provenance
     assert len(provenance["file_sha256"]) == 7
-    assert provenance["missing_files"] == []
-    assert any("EVALUATION_ONLY" in line for line in provenance["diagnostics"])
+    assert provenance["conflicts"] == []
+    assert provenance["structural_validity_only"] is True
+    assert provenance["provenance_entries"] >= 0
+    assert any("EVALUATION_ONLY" in line for line in provenance["adapter_notes"])
     assert bundle.case.description.cwe == "CWE-131"
 
 

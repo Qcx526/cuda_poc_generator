@@ -42,29 +42,67 @@ def scan_entry(image: PEImage, entry_rva: int) -> dict:
 
 
 def scan_table(image: PEImage, entry_rva: int, window: int = 0x400) -> dict:
-    """Collect lea/mov pairs that fill a structure, with the target each one stores."""
+    """Pair lea/mov fills, checking that the registers actually match.
+
+    The first version only looked at adjacent instructions. "lea rax,[rip+X]" followed
+    by "mov [rbp+0x110],rax" is a pair only if the mov really uses rax; otherwise the
+    stored value came from somewhere else and the pairing is fiction.
+    """
     offset = image.offset_of(entry_rva)
+    blob = image.data[offset:offset + window]
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-    ins = list(md.disasm(image.data[offset:offset + window], entry_rva))
-    rows = []
+    md.detail = True
+    ins = list(md.disasm(blob, entry_rva))
+    pairs, rejected = [], []
+
     for i, insn in enumerate(ins):
-        if insn.mnemonic != "lea" or "rip" not in insn.op_str or i + 1 >= len(ins):
+        if insn.mnemonic != "lea" or i + 1 >= len(ins):
+            continue
+        ops = insn.operands
+        if len(ops) < 2 or ops[0].type != capstone.x86.X86_OP_REG:
+            continue
+        src = ops[1]
+        if src.type != capstone.x86.X86_OP_MEM or src.mem.base != capstone.x86.X86_REG_RIP:
             continue
         nxt = ins[i + 1]
-        if nxt.mnemonic != "mov" or "rbp + " not in nxt.op_str:
+        if nxt.mnemonic != "mov" or len(nxt.operands) < 2:
             continue
-        op = insn.op_str
-        try:
-            disp = int(op.split("rip + ")[1].rstrip("]"), 16)
-        except (IndexError, ValueError):
-            try:
-                disp = -int(op.split("rip - ")[1].rstrip("]"), 16)
-            except (IndexError, ValueError):
-                continue
-        rows.append({"field_offset": nxt.op_str.split("rbp + ")[1].split("]")[0],
-                     "target_rva": "0x%x" % (insn.address + insn.size + disp),
-                     "store_rva": "0x%x" % nxt.address})
-    return {"entries": rows, "count": len(rows)}
+        dst, val = nxt.operands[0], nxt.operands[1]
+        if dst.type != capstone.x86.X86_OP_MEM or val.type != capstone.x86.X86_OP_REG:
+            continue
+        lea_reg = insn.reg_name(ops[0].reg)
+        val_reg = nxt.reg_name(val.reg)
+        base_reg = nxt.reg_name(dst.mem.base)
+        entry = {
+            "store_rva": "0x%x" % nxt.address,
+            "lea_rva": "0x%x" % insn.address,
+            "field_offset": "0x%x" % dst.mem.disp if dst.mem.disp >= 0 else str(dst.mem.disp),
+            "base_reg": base_reg,
+            "value_reg": val_reg,
+            "target_rva": "0x%x" % (insn.address + insn.size + src.mem.disp),
+            "bytes": blob[nxt.address - entry_rva: nxt.address - entry_rva + nxt.size].hex(),
+        }
+        if lea_reg == val_reg:
+            pairs.append(entry)
+        else:
+            entry["reason"] = "lea 写入 %s，mov 读取 %s" % (lea_reg, val_reg)
+            rejected.append(entry)
+    return {"window_bytes": window, "pairs": pairs, "rejected": rejected,
+            "count": len(pairs), "rejected_count": len(rejected)}
+
+
+def bound_base_register(image: PEImage, entry_rva: int, reg: str = "rbp",
+                        window: int = 0x200) -> dict:
+    """Where does rbp come from before the table is written?"""
+    offset = image.offset_of(entry_rva)
+    blob = image.data[offset:offset + window]
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    writes = []
+    for insn in md.disasm(blob, entry_rva):
+        text = "%s %s" % (insn.mnemonic, insn.op_str)
+        if insn.mnemonic in ("lea", "mov") and insn.op_str.startswith(reg + ","):
+            writes.append({"rva": "0x%x" % insn.address, "text": text})
+    return {"register": reg, "writes": writes, "found": bool(writes)}
 
 
 def build_case(facts: dict, offsets: dict, flow: dict, table: dict = None) -> GPUCase:
@@ -101,22 +139,33 @@ def build_case(facts: dict, offsets: dict, flow: dict, table: dict = None) -> GP
         Evidence(id="R1", kind=EvidenceKind.EVIDENCE_REQUEST,
                  statement="结构体 +0x110 在运行期是否存放有效函数指针",
                  source="F9-R1 结论", status=VerificationStatus.UNKNOWN,
-                 visible_in=Visibility.PUBLIC,
-                 notes="需内核读内存；本机不可执行，需第二台主机+KDNET 或 VM 直通"),
+                 visible_in=Visibility.EVAL,
+                 notes="含 +0x110 字段名，默认不进盲测；需内核读内存，本机不可执行"),
         Evidence(id="R2", kind=EvidenceKind.EVIDENCE_REQUEST,
                  statement="该指针指向的函数是否在 Escape 调用时被执行",
                  source="F9-R1 结论", status=VerificationStatus.UNKNOWN,
-                 visible_in=Visibility.PUBLIC,
+                 visible_in=Visibility.EVAL,
                  notes="需断点命中+栈回溯；本机不可执行"),
         Evidence(id="S6", kind=EvidenceKind.STATIC_FACT,
                  statement="Entry 窗口内有 %d 条 lea/mov 对在填充同一结构；其中字段偏移 0x110 "
                            "处写入的地址为 %s（store 位于 %s）"
                            % ((table or {}).get("count", 0),
-                              next((r["target_rva"] for r in (table or {}).get("entries", [])
+                              next((r["target_rva"] for r in (table or {}).get("pairs", [])
                                     if r["field_offset"] == "0x110"), "未找到"),
-                              next((r["store_rva"] for r in (table or {}).get("entries", [])
+                              next((r["store_rva"] for r in (table or {}).get("pairs", [])
                                     if r["field_offset"] == "0x110"), "未找到")),
                  source="tools/driver/f9r2_case.py scan_table（Capstone 线性反汇编）",
+                 target_identity=sha, status=VerificationStatus.SUPPORTED,
+                 visible_in=Visibility.FACT),
+        Evidence(id="S7", kind=EvidenceKind.STATIC_FACT,
+                 statement="表基址来自栈帧：%s；操作数级校验后真正成立的 lea/mov 对为 %d 组，"
+                           "被拒绝 %d 组（寄存器不一致）"
+                           % (", ".join("%s @%s" % (w["text"], w["rva"])
+                                        for w in (table or {}).get("base_binding", {})
+                                        .get("writes", [])[:1]) or "未找到",
+                              (table or {}).get("count", 0),
+                              (table or {}).get("rejected_count", 0)),
+                 source="tools/driver/f9r2_case.py（Capstone operand detail）",
                  target_identity=sha, status=VerificationStatus.SUPPORTED,
                  visible_in=Visibility.FACT),
         Evidence(id="O1", kind=EvidenceKind.EVALUATION_ONLY,
@@ -162,6 +211,7 @@ def main() -> int:
     image = PEImage(DRIVER)
     flow = scan_entry(image, int(facts["driver"]["entry_rva"], 16))
     table = scan_table(image, int(facts["driver"]["entry_rva"], 16))
+    table["base_binding"] = bound_base_register(image, int(facts["driver"]["entry_rva"], 16))
     case = build_case(facts, offsets, flow, table)
 
     out = ROOT / "data" / "cases" / "nvlddmkm-610-47-escape.v2.json"
@@ -171,9 +221,11 @@ def main() -> int:
     (ROOT / "data" / "driver" / "f9r2_table.json").write_text(
         json.dumps(table, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps({"stores": len(flow["stores_to_0x110"]),
-                      "table_entries": table["count"],
+                      "table_pairs": table["count"],
+                      "rejected": table["rejected_count"],
+                      "rbp_writes": table["base_binding"]["writes"][:3],
                       "offset_0x110_target": next(
-                          (r["target_rva"] for r in table["entries"]
+                          (r["target_rva"] for r in table["pairs"]
                            if r["field_offset"] == "0x110"), None)},
                      ensure_ascii=False, indent=1))
     return 0

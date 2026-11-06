@@ -44,6 +44,7 @@
     "digest": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
     "status": "SUPPORTED",
     "visible_in": "FACT",
+    "public_reviewed": false,
     "notes": null
    },
    {
@@ -55,6 +56,7 @@
     "digest": null,
     "status": "SUPPORTED",
     "visible_in": "FACT",
+    "public_reviewed": false,
     "notes": null
    },
    {
@@ -66,6 +68,7 @@
     "digest": null,
     "status": "SUPPORTED",
     "visible_in": "FACT",
+    "public_reviewed": false,
     "notes": null
    },
    {
@@ -77,6 +80,7 @@
     "digest": null,
     "status": "SUPPORTED",
     "visible_in": "FACT",
+    "public_reviewed": false,
     "notes": null
    },
    {
@@ -88,6 +92,7 @@
     "digest": null,
     "status": "SUPPORTED",
     "visible_in": "FACT",
+    "public_reviewed": false,
     "notes": null
    },
    {
@@ -98,8 +103,9 @@
     "target_identity": null,
     "digest": null,
     "status": "UNKNOWN",
-    "visible_in": "PUBLIC",
-    "notes": "需内核读内存；本机不可执行，需第二台主机+KDNET 或 VM 直通"
+    "visible_in": "EVAL",
+    "public_reviewed": false,
+    "notes": "含 +0x110 字段名，默认不进盲测；需内核读内存，本机不可执行"
    },
    {
     "id": "R2",
@@ -109,18 +115,32 @@
     "target_identity": null,
     "digest": null,
     "status": "UNKNOWN",
-    "visible_in": "PUBLIC",
+    "visible_in": "EVAL",
+    "public_reviewed": false,
     "notes": "需断点命中+栈回溯；本机不可执行"
    },
    {
     "id": "S6",
     "kind": "STATIC_FACT",
-    "statement": "Entry 窗口内有 41 条 lea/mov 对在填充同一结构；其中字段偏移 0x110 处写入的地址为 0x733e240（store 位于 0x733a399）",
+    "statement": "Entry 窗口内有 57 条 lea/mov 对在填充同一结构；其中字段偏移 0x110 处写入的地址为 0x733e240（store 位于 0x733a399）",
     "source": "tools/driver/f9r2_case.py scan_table（Capstone 线性反汇编）",
     "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
     "digest": null,
     "status": "SUPPORTED",
     "visible_in": "FACT",
+    "public_reviewed": false,
+    "notes": null
+   },
+   {
+    "id": "S7",
+    "kind": "STATIC_FACT",
+    "statement": "表基址来自栈帧：lea rbp, [rsp - 0xe10] @0x733a124；操作数级校验后真正成立的 lea/mov 对为 57 组，被拒绝 2 组（寄存器不一致）",
+    "source": "tools/driver/f9r2_case.py（Capstone operand detail）",
+    "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "FACT",
+    "public_reviewed": false,
     "notes": null
    },
    {
@@ -132,6 +152,7 @@
     "digest": null,
     "status": "UNKNOWN",
     "visible_in": "EVAL",
+    "public_reviewed": false,
     "notes": "偏移与 WDK 布局一致只是必要条件；未证明 rbp 即初始化结构基址，也未证明该表用于 Escape 注册"
    }
   ],

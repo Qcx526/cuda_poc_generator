@@ -42,16 +42,13 @@ class Visibility(str, Enum):
     EVAL = "EVAL"            # evaluation only, never in a prompt
 
 
-# Kinds that can be shown to a model at all; the rest exist for the evaluator.
-KIND_VISIBILITY = {
-    EvidenceKind.INPUT_ASSERTION: Visibility.PUBLIC,
-    EvidenceKind.STATIC_FACT: Visibility.FACT,
-    EvidenceKind.RUNTIME_OBSERVATION: Visibility.EVAL,
-    EvidenceKind.LLM_HYPOTHESIS: Visibility.EVAL,
-    EvidenceKind.EVIDENCE_REQUEST: Visibility.PUBLIC,
-    EvidenceKind.VERIFICATION_RESULT: Visibility.EVAL,
-    EvidenceKind.EVALUATION_ONLY: Visibility.EVAL,
-}
+# Kinds that may *ever* be shown. Everything else is evaluator-only.
+PUBLIC_CAPABLE = {EvidenceKind.INPUT_ASSERTION, EvidenceKind.EVIDENCE_REQUEST,
+                  EvidenceKind.STATIC_FACT}
+
+# STATIC_FACT is measurements, not prose; it may be shown to a fact-assisted run but
+# never to a blind one. The other two need an explicit review flag.
+FACT_ONLY_KINDS = {EvidenceKind.STATIC_FACT}
 
 
 class Evidence(BaseModel):
@@ -65,18 +62,33 @@ class Evidence(BaseModel):
         default=None, description="镜像 SHA256、LUID、容器镜像等")
     digest: Optional[str] = None
     status: VerificationStatus = VerificationStatus.UNKNOWN
-    visible_in: Visibility
+    # Default deny: absence of a decision means the evaluator keeps it.
+    visible_in: Visibility = Visibility.EVAL
+    public_reviewed: bool = Field(
+        default=False,
+        description="是否已针对盲测逐条审查；PUBLIC 需要它为 True")
     notes: Optional[str] = None
 
     @model_validator(mode="after")
-    def _check_visibility_matches_kind(self):
-        expected = KIND_VISIBILITY[self.kind]
-        if self.visible_in != expected:
-            raise ValueError(
-                "证据 %s 的 kind=%s 要求 visible_in=%s，实际 %s"
-                % (self.id, self.kind.value, expected.value, self.visible_in.value))
-        if self.kind == EvidenceKind.STATIC_FACT and not self.target_identity:
-            raise ValueError("STATIC_FACT %s 必须绑定 target_identity" % self.id)
+    def _check_visibility_policy(self):
+        """Visibility is a decision, not a consequence of the kind.
+
+        The old table forced one visibility per kind, which made every assertion and
+        every evidence request public by construction. Now the default is EVAL and a
+        public decision has to be justified for that specific object.
+        """
+        if self.visible_in is Visibility.PUBLIC:
+            if self.kind not in PUBLIC_CAPABLE:
+                raise ValueError("%s: %s 不允许 PUBLIC" % (self.id, self.kind.value))
+            if self.kind in FACT_ONLY_KINDS:
+                raise ValueError("%s: STATIC_FACT 只能进入 FACT_ASSISTED" % self.id)
+            if not self.public_reviewed:
+                raise ValueError("%s: 进入 PUBLIC 需要公开审查标记" % self.id)
+        if self.kind is EvidenceKind.STATIC_FACT:
+            if self.visible_in is not Visibility.FACT:
+                raise ValueError("%s: STATIC_FACT 的可见性只能是 FACT" % self.id)
+            if not self.target_identity:
+                raise ValueError("STATIC_FACT %s 必须绑定 target_identity" % self.id)
         return self
 
 
