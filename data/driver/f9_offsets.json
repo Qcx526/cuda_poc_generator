@@ -1,0 +1,24 @@
+{
+ "compiler": "MSVC 19.29.30159 x64",
+ "sdk": "10.0.26100.0",
+ "defines": {
+  "_AMD64_": "1",
+  "AMD64": "1",
+  "WIN32": "100",
+  "_WIN32_WINNT": "0x0A00",
+  "NTDDI_VERSION": "0x0A00000C",
+  "DBG": "0",
+  "_KERNEL_MODE": "1"
+ },
+ "command": "cl -nologo -c -W3 -D_AMD64_=1 -DAMD64=1 -DWIN32=100 -D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A00000C -DDBG=0 -D_KERNEL_MODE=1 km_offsetof.c -Fo:km_offsetof.obj",
+ "offset_DxgkDdiEscape": "0x00000110",
+ "sizeof_DRIVER_INITIALIZATION_DATA": "0x00000608",
+ "negative_control": {
+  "asserts": "0x111",
+  "compiled": false,
+  "error": "km_offsetof.c(31): error C2338: negative control: this must not compile",
+  "meaning": "断言生效：把期望值改成 0x111 后编译失败，说明 0x110 不是脚本自行填入的"
+ },
+ "note": "偏移取自目标文件符号尺寸；负控制编译失败证明 static_assert 生效",
+ "rerun_note": "首次自动采集因缺少 TEMP 变量报 D8037，已用完整环境重跑并取回 C2338"
+}

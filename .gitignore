@@ -169,3 +169,11 @@ mock_native/*.pdb
 # F8 基线程序的构建产物（由 .c 重建）
 tools/driver/*.exe
 tools/driver/*.obj
+
+# WDK 偏移验证的目标文件
+km_offsetof.obj
+tools/driver/*.obj
+
+# WDK 偏移验证的目标文件
+km_offsetof.obj
+tools/driver/*.obj

@@ -9,8 +9,34 @@
   "sections": 32,
   "entry_rva": "0x733a0e0",
   "entry_va": "0x14733a0e0",
-  "pdata_entries": 79615,
-  "text_size": 91
+  "pdata_records": 79615,
+  "text_sections": [
+   {
+    "index": 0,
+    "name": ".text",
+    "rva": "0x1000",
+    "vsize": 13820405,
+    "raw_size": 13820416
+   },
+   {
+    "index": 8,
+    "name": ".text",
+    "rva": "0x14d4000",
+    "vsize": 91,
+    "raw_size": 512
+   }
+  ],
+  "ddi_name_scan": {
+   "dxgk_ascii": 0,
+   "dxgk_utf16": 0,
+   "dxgkrnl_string": 1,
+   "import_dlls": [
+    "HAL.dll",
+    "ntoskrnl.exe",
+    "NETIO.SYS",
+    "ksecdd.sys"
+   ]
+  }
  },
  "probe": {
   "rva": "0x6912f0",

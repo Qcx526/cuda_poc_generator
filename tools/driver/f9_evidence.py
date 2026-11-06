@@ -43,17 +43,27 @@ def pe_facts(path: Path) -> dict:
     except (IndexError, AttributeError):
         pass
 
-    text_size = 0
-    for section in image.sections:
-        if section.name == ".text":
-            text_size = section.vsize
+    # The image has two sections named ".text" (index 0 and 8); taking the last one
+    # silently replaced a 13.8 MB value with a 91-byte one.
+    text_sections = [{"index": i, "name": s.name, "rva": "0x%x" % s.vaddr,
+                      "vsize": s.vsize, "raw_size": s.raw_size}
+                     for i, s in enumerate(image.sections) if s.name == ".text"]
     return {"path": str(path), "size": len(data),
             "sha256": hashlib.sha256(data).hexdigest(),
             "machine": "0x%04x" % machine, "pe32plus": magic == 0x20B,
             "image_base": "0x%x" % image_base, "sections": sections,
             "entry_rva": "0x%x" % entry_rva,
             "entry_va": "0x%x" % (image_base + entry_rva),
-            "pdata_entries": pdata, "text_size": text_size}
+            # Count of .pdata records, not a count of proven functions: a record
+            # describes a code range with unwind data, which is not the same thing.
+            "pdata_records": pdata,
+            "text_sections": text_sections,
+            # Negative evidence for the callback binding: the image never names the
+            # DDI, so no RVA can be tied to it by symbol search.
+            "ddi_name_scan": {"dxgk_ascii": data.count(b"Dxgk"),
+                              "dxgk_utf16": data.count(b"D\x00x\x00g\x00k\x00"),
+                              "dxgkrnl_string": data.count(b"dxgkrnl"),
+                              "import_dlls": image.imports()}}
 
 
 def disassemble(path: Path, rva: int, count: int) -> list:
