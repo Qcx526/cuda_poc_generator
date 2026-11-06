@@ -54,8 +54,14 @@ class TestEscapeProbeLayout(unittest.TestCase):
         self.assertEqual(probe.D3DKMT_CREATEDEVICE.Flags.offset, 8)
         self.assertEqual(probe.D3DKMT_CREATEDEVICE.hDevice.offset, 12)
 
-    def test_create_device_rejects_a_handle_equal_to_the_adapter(self):
-        """That equality is the signature of reading the wrong field."""
+    def test_create_device_records_equality_without_judging_it(self):
+        """Equality is an observation, not a verdict.
+
+        The earlier version treated hDevice == hAdapter as proof of a misread
+        field. d3dkmthk.h does not say that, and GetDeviceState returns success
+        for such a handle, so the probe now records the coincidence and leaves
+        validity to a documented query.
+        """
 
         class FakeGdi:
             @staticmethod
@@ -72,7 +78,8 @@ class TestEscapeProbeLayout(unittest.TestCase):
             probe.gdi32 = original
 
         self.assertEqual(result["status"], 0)
-        self.assertFalse(result["usable"], "equal-to-adapter must not count as usable")
+        self.assertTrue(result["same_value_as_adapter"])
+        self.assertTrue(result["usable"], "equal value alone does not invalidate a handle")
 
 
 if __name__ == "__main__":

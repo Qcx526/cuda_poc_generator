@@ -100,22 +100,34 @@ class D3DKMT_DESTROYDEVICE(ctypes.Structure):
     _fields_ = [("hDevice", wintypes.UINT)]
 
 
+def usable_device(status: int, device: int) -> bool:
+    """A handle is usable when the call succeeded and returned something non-zero.
+
+    Value equality with the adapter is deliberately not part of the rule.
+    """
+    return status == 0 and device != 0
+
+
 def create_device(handle: int) -> dict:
     """A device on the adapter; the handle comes back at offset 12.
 
-    NVIDIA's escapes are dispatched per device, not per adapter, so this must
-    succeed before any escape means anything. The success flag alone is not
-    enough: ``hDevice`` is checked to be non-zero and different from the adapter,
-    because a handle equal to the adapter is the signature of reading the wrong
-    field.
+    NVIDIA's escapes are dispatched per device, so this must succeed before an
+    escape means anything.
+
+    An earlier version also required ``hDevice != hAdapter``. Nothing in
+    d3dkmthk.h supports that: two handles may coincide numerically and both be
+    valid. Validity is now left to ``GetDeviceState`` (see handle_validity), and
+    equality is only recorded as an observation.
     """
     request = D3DKMT_CREATEDEVICE()
     request.hAdapter = handle
     request.Flags = 0
     status = gdi32.D3DKMTCreateDevice(ctypes.byref(request))
     device = request.hDevice
-    usable = status == 0 and device not in (0, handle)
-    return {"status": status, "hDevice": device, "usable": usable}
+    usable = usable_device(status, device)
+    return {"status": status, "hDevice": device, "usable": usable,
+            "same_value_as_adapter": device == handle,
+            "note": "数值相同不构成无效证据；有效性由 GetDeviceState 判定"}
 
 
 def destroy_device(handle: int) -> int:
