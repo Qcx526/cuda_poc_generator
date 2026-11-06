@@ -159,6 +159,8 @@ class CudaSecurityExpert:
         self.last_raw_response = None
         target_cve = resolve_target_cve(vuln_context, expected_cve_id)
         user_prompt = self._build_user_prompt(vuln_context, rag_context, previous_feedback)
+        # Keep exactly what was sent, so a blind claim can be checked afterwards.
+        self.last_prompts = {"system": _CUDA_EXPERT_SYSTEM_PROMPT, "user": user_prompt}
         logger.info("正在调用 CUDA 安全专家引擎 (7层模型) 进行漏洞分析…")
 
         try:

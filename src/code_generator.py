@@ -390,11 +390,12 @@ class CudaCodeGenerator:
             ).model_dump(exclude_unset=True)
             user_prompt = self._build_prompt(vuln_context, expert_analysis, extra_context)
             logger.info("正在生成 CUDA PoC 代码（迭代 #%d）…", iteration)
+            self.last_messages = [
+                {"role": "system", "content": system_prompt()},
+                {"role": "user", "content": user_prompt},
+            ]
             raw_code = self.llm.chat(
-                messages=[
-                    {"role": "system", "content": system_prompt()},
-                    {"role": "user", "content": user_prompt},
-                ],
+                messages=self.last_messages,
                 temperature=0.0,  # reproducibility: same input must give the same candidate
             )
             self._require_source(raw_code)

@@ -107,3 +107,43 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def enrich_report(report_path: Path, observation: Path, tools: List[str]) -> dict:
+    """Attach the five-level result to an existing loop report.
+
+    The old verdict is left exactly as written: it was produced by the grader that
+    ran at the time, and rewriting history to look stricter is the opposite of an
+    audit trail. The grading block is added beside it.
+    """
+    import json as _json
+
+    report = _json.loads(Path(report_path).read_text(encoding="utf-8"))
+    facts = parse(Path(observation))
+    result = grade(facts, tools)
+    report["grading"] = {"levels": result["levels"], "highest": result["highest"],
+                         "facts": facts.__dict__,
+                         "note": "old verdict preserved; grading is additive"}
+    Path(report_path).write_text(_json.dumps(report, ensure_ascii=False, indent=1),
+                                 encoding="utf-8")
+    return result
+
+
+def enrich_report(report_path: Path, observation: Path, tools: List[str]) -> dict:
+    """Attach the five-level result to an existing loop report.
+
+    The old verdict is left exactly as written: it was produced by the grader that
+    ran at the time, and rewriting history to look stricter is the opposite of an
+    audit trail. The grading block is added beside it.
+    """
+    import json as _json
+
+    report = _json.loads(Path(report_path).read_text(encoding="utf-8"))
+    facts = parse(Path(observation))
+    result = grade(facts, tools)
+    report["grading"] = {"levels": result["levels"], "highest": result["highest"],
+                         "facts": facts.__dict__,
+                         "note": "old verdict preserved; grading is additive"}
+    Path(report_path).write_text(_json.dumps(report, ensure_ascii=False, indent=1),
+                                 encoding="utf-8")
+    return result

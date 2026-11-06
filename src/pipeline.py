@@ -185,6 +185,13 @@ class CudaPipeline:
             finish("INPUT_INVALID", exc)
             raise
         vuln_context = bundle.dimensions
+        blind = os.environ.get("CPG_BLIND_CONTRACT") == "1"
+        if blind:
+            # Project before the expert sees anything: the raw bundle carries the
+            # faulting address and the field formula, which are the answer.
+            from .blind_context import project as project_blind
+            vuln_context = project_blind(bundle.dimensions)
+            print("  BLIND: advisory-level projection applied before expert")
         print(f"  CVE: {bundle.cve_id}; all seven inputs passed structural checks")
 
         try:
@@ -224,12 +231,32 @@ class CudaPipeline:
             finish("PROVIDER_ERROR", exc)
             raise
         try:
-            self.data_loader.build_or_load_knowledge_base()
-            rag_context = self._query_rag(vuln_context)
-            web_context = self._query_web_search(vuln_context)
+            if blind:
+                # Retrieval would reintroduce history through the back door.
+                rag_context, web_context = "", ""
+            else:
+                self.data_loader.build_or_load_knowledge_base()
+                rag_context = self._query_rag(vuln_context)
+                web_context = self._query_web_search(vuln_context)
         except Exception as exc:
             finish("CONTEXT_ERROR", exc)
             raise
+
+        def _dump(name: str, text: str) -> None:
+            """Persist exactly what an LLM stage sent or received.
+
+            A run log is not a prompt, and a candidate log is not source code; without
+            these files a blind claim cannot be checked after the fact.
+            """
+            try:
+                evidence_dir = target_dir / "evidence"
+                evidence_dir.mkdir(parents=True, exist_ok=True)
+                target = evidence_dir / name
+                target.write_text(text, encoding="utf-8")
+                digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+                (evidence_dir / (name + ".sha256")).write_text(digest + "\n", encoding="utf-8")
+            except OSError:
+                pass
 
         print("\n[Phase 2/3] CUDA expert analysis and strict contract validation")
         self.expert.last_raw_response = None
@@ -295,12 +322,46 @@ class CudaPipeline:
                 vuln_context=generation_context, expert_analysis=generation_analysis,
                 iteration=1, extra_context=extra_ctx,
             )
+            prompts = getattr(self.expert, "last_prompts", None)
+            if isinstance(prompts, dict):
+                _dump("expert_prompt_system.txt", prompts.get("system", ""))
+                _dump("expert_prompt_user.txt", prompts.get("user", ""))
+                hits = []
+                try:
+                    from .blind_context import audit
+                    hits = audit(prompts.get("system", "") + prompts.get("user", ""))
+                except Exception:
+                    pass
+                if hits:
+                    _dump("blind_leak_report.txt", "\n".join(hits))
+            messages = getattr(self.code_gen, "last_messages", None)
+            if isinstance(messages, list):
+                import json as _json
+                _dump("generator_messages.json",
+                      _json.dumps(messages, ensure_ascii=False, indent=1))
             candidate = self.code_gen.last_result.model_copy(update={"run_id": run_id})
             self.code_gen.last_result = candidate
             if candidate.generation != "GENERATED":
                 raise RuntimeError("Candidate was not saved by the generator.")
             report["artifacts"]["candidate"] = artifact(candidate.source_file)
         except Exception as exc:
+            prompts = getattr(self.expert, "last_prompts", None)
+            if isinstance(prompts, dict):
+                _dump("expert_prompt_system.txt", prompts.get("system", ""))
+                _dump("expert_prompt_user.txt", prompts.get("user", ""))
+                hits = []
+                try:
+                    from .blind_context import audit
+                    hits = audit(prompts.get("system", "") + prompts.get("user", ""))
+                except Exception:
+                    pass
+                if hits:
+                    _dump("blind_leak_report.txt", "\n".join(hits))
+            messages = getattr(self.code_gen, "last_messages", None)
+            if isinstance(messages, list):
+                import json as _json
+                _dump("generator_messages.json",
+                      _json.dumps(messages, ensure_ascii=False, indent=1))
             candidate = self.code_gen.last_result.model_copy(update={"run_id": run_id})
             if candidate.generation != "GENERATION_FAILED":
                 candidate = CandidateResult(
