@@ -1,0 +1,64 @@
+{
+ "driver": {
+  "path": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_c8bc842500fab35b\\nvlddmkm.sys",
+  "size": 120295144,
+  "sha256": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
+  "machine": "0x8664",
+  "pe32plus": true,
+  "image_base": "0x140000000",
+  "sections": 32,
+  "entry_rva": "0x733a0e0",
+  "entry_va": "0x14733a0e0",
+  "pdata_entries": 79615,
+  "text_size": 91
+ },
+ "probe": {
+  "rva": "0x6912f0",
+  "instructions": [
+   {
+    "va": "0x1406912f0",
+    "rva": "0x6912f0",
+    "text": "mov qword ptr [rsp + 8], rbx"
+   },
+   {
+    "va": "0x1406912f5",
+    "rva": "0x6912f5",
+    "text": "mov qword ptr [rsp + 0x10], rbp"
+   },
+   {
+    "va": "0x1406912fa",
+    "rva": "0x6912fa",
+    "text": "mov qword ptr [rsp + 0x18], rsi"
+   },
+   {
+    "va": "0x1406912ff",
+    "rva": "0x6912ff",
+    "text": "mov qword ptr [rsp + 0x20], rdi"
+   },
+   {
+    "va": "0x140691304",
+    "rva": "0x691304",
+    "text": "push r14"
+   },
+   {
+    "va": "0x140691306",
+    "rva": "0x691306",
+    "text": "sub rsp, 0x20"
+   },
+   {
+    "va": "0x14069130a",
+    "rva": "0x69130a",
+    "text": "mov rsi, qword ptr [rdx + 0x10]"
+   },
+   {
+    "va": "0x14069130e",
+    "rva": "0x69130e",
+    "text": "xor ebp, ebp"
+   }
+  ]
+ },
+ "tools": {
+  "pe": "src.driver_binary.PEImage",
+  "disasm": "capstone 5.x"
+ }
+}

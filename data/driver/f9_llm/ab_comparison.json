@@ -1,0 +1,74 @@
+{
+ "A": {
+  "raw": "[\n  {\n    \"id\": \"C1\",\n    \"statement\": \"请求合法性至少部分由 Flags 的取值决定：在 Type 与缓冲区相同的条件下，改变 Flags 可以改变合法性结果。\",\n    \"status\": \"SUPPORTED\",\n    \"rationale\": \"直接观察：用户态观测显示同一 Type、同一空缓冲区，仅改 Flags 会得到 INVALID_PARAMETER、ACCESS_DENIED、NOT_SUPPORTED、BUFFER_TOO_SMALL 等不同状态。推测：Flags 中含有影响合法性判定的信息，但具体哪些位、如何组合尚不能由现有观测确定。\",\n    \"evidence_request\": \"固定 Type 和空缓冲区，对 Flags 做逐位翻转与组合遍历，记录状态是否稳定复现；若发现相同 Flags 下状态随其他未记录输入变化，则需细化该约束。\",\n    \"cites\": []\n  },\n  {\n    \"id\": \"C2\",\n    \"statement\": \"仅凭 Type 和空缓冲区不足以判定请求合法；Flags 是必要判定输入之一。\",\n    \"status\": \"SUPPORTED\",\n    \"rationale\": \"直接观察：同一 Type、同一空缓冲区仅改变 Flags 就出现不同状态，说明 Type 与空缓冲区相同的请求仍可被判为不同合法性结果。推测：Flags 至少是判定输入之一，但不能据此断定 Flags 是唯一决定因素。\",\n    \"evidence_request\": \"构造 Type × Flags × 缓冲区大小矩阵，检查在 Type 与缓冲区固定时状态是否随 Flags 系统性变化，以及在 Flags 固定时状态是否仍随 Type 或缓冲区变化。\",\n    \"cites\": []\n  },\n  {\n    \"id\": \"C3\",\n    \"statement\": \"请求最终状态由多个约束（如参数合法性、访问控制、支持性、缓冲区大小）按某种固定优先级共同决定，而不是由单一条件决定。\",\n    \"status\": \"UNKNOWN\",\n    \"rationale\": \"直接观察：仅改变 Flags 即出现四种不同状态，说明判定并非只由 Type 与空缓冲区决定。推测：可能存在多个约束及判定优先级，并将不同失败原因映射为不同状态；但现有观测不能证明约束数量、优先级或状态与具体约束的对应关系。\",\n    \"evidence_request\": \"在受控矩阵中同时变化 Flags、Type、缓冲区大小和调用上下文，观察状态迁移与优先级是否稳定；若能找到相同输入下状态不一致，或某约束满足后状态仍被另一约束覆盖，则可证实或推翻该约束。\",\n    \"cites\": []\n  }\n]",
+  "items": [
+   {
+    "id": "C1",
+    "statement": "请求合法性至少部分由 Flags 的取值决定：在 Type 与缓冲区相同的条件下，改变 Flags 可以改变合法性结果。",
+    "status": "SUPPORTED",
+    "rationale": "直接观察：用户态观测显示同一 Type、同一空缓冲区，仅改 Flags 会得到 INVALID_PARAMETER、ACCESS_DENIED、NOT_SUPPORTED、BUFFER_TOO_SMALL 等不同状态。推测：Flags 中含有影响合法性判定的信息，但具体哪些位、如何组合尚不能由现有观测确定。",
+    "evidence_request": "固定 Type 和空缓冲区，对 Flags 做逐位翻转与组合遍历，记录状态是否稳定复现；若发现相同 Flags 下状态随其他未记录输入变化，则需细化该约束。",
+    "cites": []
+   },
+   {
+    "id": "C2",
+    "statement": "仅凭 Type 和空缓冲区不足以判定请求合法；Flags 是必要判定输入之一。",
+    "status": "SUPPORTED",
+    "rationale": "直接观察：同一 Type、同一空缓冲区仅改变 Flags 就出现不同状态，说明 Type 与空缓冲区相同的请求仍可被判为不同合法性结果。推测：Flags 至少是判定输入之一，但不能据此断定 Flags 是唯一决定因素。",
+    "evidence_request": "构造 Type × Flags × 缓冲区大小矩阵，检查在 Type 与缓冲区固定时状态是否随 Flags 系统性变化，以及在 Flags 固定时状态是否仍随 Type 或缓冲区变化。",
+    "cites": []
+   },
+   {
+    "id": "C3",
+    "statement": "请求最终状态由多个约束（如参数合法性、访问控制、支持性、缓冲区大小）按某种固定优先级共同决定，而不是由单一条件决定。",
+    "status": "UNKNOWN",
+    "rationale": "直接观察：仅改变 Flags 即出现四种不同状态，说明判定并非只由 Type 与空缓冲区决定。推测：可能存在多个约束及判定优先级，并将不同失败原因映射为不同状态；但现有观测不能证明约束数量、优先级或状态与具体约束的对应关系。",
+    "evidence_request": "在受控矩阵中同时变化 Flags、Type、缓冲区大小和调用上下文，观察状态迁移与优先级是否稳定；若能找到相同输入下状态不一致，或某约束满足后状态仍被另一约束覆盖，则可证实或推翻该约束。",
+    "cites": []
+   }
+  ],
+  "score": {
+   "count": 3,
+   "valid_citations": 0,
+   "invented_addresses": [],
+   "falsifiable_requests": 1,
+   "unsupported_branch_claims": []
+  }
+ },
+ "B": {
+  "raw": "[\n  {\n    \"id\": \"C1\",\n    \"statement\": \"D3DKMTEscape 请求合法性至少由 Flags 参与决定，仅固定 Type 与空缓冲区不足以确定结果。\",\n    \"status\": \"SUPPORTED\",\n    \"rationale\": \"直接观察：同一 Type、同一空缓冲区、仅改变 Flags 时，返回状态在 INVALID_PARAMETER、ACCESS_DENIED、NOT_SUPPORTED、BUFFER_TOO_SMALL 之间变化，说明 Flags 是影响合法性判定的输入之一。推测：Flags 可能参与参数校验、权限判定或能力检查，但具体机制未由现有事实确定。\",\n    \"evidence_request\": \"固定 Type、空缓冲区、调用方与调用环境，对 Flags 做单比特翻转和全量枚举并记录返回状态；若所有 Flags 下状态完全一致，则推翻 C1。\",\n    \"cites\": []\n  },\n  {\n    \"id\": \"C2\",\n    \"statement\": \"D3DKMTEscape 请求合法性仅由 Type 和缓冲区内容/大小决定，Flags 不参与判定。\",\n    \"status\": \"REFUTED\",\n    \"rationale\": \"直接观察：在 Type 与空缓冲区均不变时，仅改变 Flags 就得到不同返回状态，因此 Flags 不可能完全不参与判定。推测：无需推测内部函数或分支即可推翻该约束；返回状态差异本身只作为行为证据，不解释为命中某内部函数。\",\n    \"evidence_request\": \"重复同一 Type、同一空缓冲区、同一调用方条件下的 Flags 枚举；若观察到任一状态差异即可推翻 C2，现有用户态观测已给出该差异。\",\n    \"cites\": []\n  },\n  {\n    \"id\": \"C3\",\n    \"statement\": \"Flags 中的特定位分别触发访问权限检查与缓冲区大小检查，且 ACCESS_DENIED 或 BUFFER_TOO_SMALL 的优先顺序由这些位决定。\",\n    \"status\": \"UNKNOWN\",\n    \"rationale\": \"直接观察：仅改 Flags 时出现过 ACCESS_DENIED 与 BUFFER_TOO_SMALL，说明至少存在与 Flags 相关的不同结果。推测：将这些结果归因于特定 Flags 位、权限检查或大小检查的优先级，属于未验证假设；现有事实未提供位定义、调用方权限信息或校验顺序证据。\",\n    \"evidence_request\": \"构造 Type×Flags×缓冲区大小矩阵，每次只改变一个变量，记录 INVALID_PARAMETER、ACCESS_DENIED、NOT_SUPPORTED、BUFFER_TOO_SMALL 的分布；若 ACCESS_DENIED 与 BUFFER_TOO_SMALL 只随特定 Flags 位稳定变化并与 Type/大小解耦，则支持 C3，否则削弱或推翻。\",\n    \"cites\": []\n  }\n]",
+  "items": [
+   {
+    "id": "C1",
+    "statement": "D3DKMTEscape 请求合法性至少由 Flags 参与决定，仅固定 Type 与空缓冲区不足以确定结果。",
+    "status": "SUPPORTED",
+    "rationale": "直接观察：同一 Type、同一空缓冲区、仅改变 Flags 时，返回状态在 INVALID_PARAMETER、ACCESS_DENIED、NOT_SUPPORTED、BUFFER_TOO_SMALL 之间变化，说明 Flags 是影响合法性判定的输入之一。推测：Flags 可能参与参数校验、权限判定或能力检查，但具体机制未由现有事实确定。",
+    "evidence_request": "固定 Type、空缓冲区、调用方与调用环境，对 Flags 做单比特翻转和全量枚举并记录返回状态；若所有 Flags 下状态完全一致，则推翻 C1。",
+    "cites": []
+   },
+   {
+    "id": "C2",
+    "statement": "D3DKMTEscape 请求合法性仅由 Type 和缓冲区内容/大小决定，Flags 不参与判定。",
+    "status": "REFUTED",
+    "rationale": "直接观察：在 Type 与空缓冲区均不变时，仅改变 Flags 就得到不同返回状态，因此 Flags 不可能完全不参与判定。推测：无需推测内部函数或分支即可推翻该约束；返回状态差异本身只作为行为证据，不解释为命中某内部函数。",
+    "evidence_request": "重复同一 Type、同一空缓冲区、同一调用方条件下的 Flags 枚举；若观察到任一状态差异即可推翻 C2，现有用户态观测已给出该差异。",
+    "cites": []
+   },
+   {
+    "id": "C3",
+    "statement": "Flags 中的特定位分别触发访问权限检查与缓冲区大小检查，且 ACCESS_DENIED 或 BUFFER_TOO_SMALL 的优先顺序由这些位决定。",
+    "status": "UNKNOWN",
+    "rationale": "直接观察：仅改 Flags 时出现过 ACCESS_DENIED 与 BUFFER_TOO_SMALL，说明至少存在与 Flags 相关的不同结果。推测：将这些结果归因于特定 Flags 位、权限检查或大小检查的优先级，属于未验证假设；现有事实未提供位定义、调用方权限信息或校验顺序证据。",
+    "evidence_request": "构造 Type×Flags×缓冲区大小矩阵，每次只改变一个变量，记录 INVALID_PARAMETER、ACCESS_DENIED、NOT_SUPPORTED、BUFFER_TOO_SMALL 的分布；若 ACCESS_DENIED 与 BUFFER_TOO_SMALL 只随特定 Flags 位稳定变化并与 Type/大小解耦，则支持 C3，否则削弱或推翻。",
+    "cites": []
+   }
+  ],
+  "score": {
+   "count": 3,
+   "valid_citations": 0,
+   "invented_addresses": [],
+   "falsifiable_requests": 3,
+   "unsupported_branch_claims": []
+  }
+ }
+}
