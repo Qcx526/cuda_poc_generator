@@ -1,0 +1,95 @@
+{
+ "host": {
+  "os": "Windows-10-10.0.19045-SP0",
+  "python": "3.12.13"
+ },
+ "driver": {
+  "path": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_c8bc842500fab35b\\nvlddmkm.sys",
+  "sha256_note": "see docs/F8S1_HANDLE_VALIDITY.md"
+ },
+ "d3d11": {
+  "adapters": [
+   {
+    "index": "0",
+    "vendor": "0x10de",
+    "device": "0x2184",
+    "luid": "00000000:b33b765e",
+    "vram": "6255804416",
+    "name": "NVIDIA"
+   },
+   {
+    "index": "1",
+    "vendor": "0x10de",
+    "device": "0x2184",
+    "luid": "00000000:00044326",
+    "vram": "6255804416",
+    "name": "NVIDIA"
+   },
+   {
+    "index": "2",
+    "vendor": "0x10de",
+    "device": "0x2184",
+    "luid": "00000000:0004401d",
+    "vram": "6255804416",
+    "name": "NVIDIA"
+   },
+   {
+    "index": "3",
+    "vendor": "0x10de",
+    "device": "0x2184",
+    "luid": "00000000:00043755",
+    "vram": "6255804416",
+    "name": "NVIDIA"
+   },
+   {
+    "index": "4",
+    "vendor": "0x1414",
+    "device": "0x008c",
+    "luid": "00000000:0003aa00",
+    "vram": "0",
+    "name": "Microsoft"
+   }
+  ],
+  "raw_lines": [
+   "DXGI_FACTORY hr=0x00000000",
+   "ADAPTER index=0 vendor=0x10de device=0x2184 luid=00000000:b33b765e vram=6255804416 name=NVIDIA GeForce GTX 1660",
+   "ADAPTER index=1 vendor=0x10de device=0x2184 luid=00000000:00044326 vram=6255804416 name=NVIDIA GeForce GTX 1660",
+   "ADAPTER index=2 vendor=0x10de device=0x2184 luid=00000000:0004401d vram=6255804416 name=NVIDIA GeForce GTX 1660",
+   "ADAPTER index=3 vendor=0x10de device=0x2184 luid=00000000:00043755 vram=6255804416 name=NVIDIA GeForce GTX 1660",
+   "ADAPTER index=4 vendor=0x1414 device=0x008c luid=00000000:0003aa00 vram=0 name=Microsoft Basic Render Driver",
+   "CHOSEN vendor=nvidia",
+   "WINDOW hwnd=0000000000291262",
+   "D3D11_DEVICE hr=0x00000000 feature_level=0xb000",
+   "DEVICE_ADAPTER luid=00000000:b33b765e matches_chosen=yes",
+   "SWAPCHAIN hr=0x00000000",
+   "RTV hr=0x00000000",
+   "RENDER clear=ok",
+   "PRESENT hr=0x00000000",
+   "DEVICE_REMOVED reason=0x00000000",
+   "RELEASED all"
+  ],
+  "DXGI_FACTORY": "hr=0x00000000",
+  "CHOSEN": "vendor=nvidia",
+  "D3D11_DEVICE": "hr=0x00000000 feature_level=0xb000",
+  "DEVICE_ADAPTER": "luid=00000000:b33b765e matches_chosen=yes",
+  "SWAPCHAIN": "hr=0x00000000",
+  "RTV": "hr=0x00000000",
+  "RENDER": "clear=ok",
+  "PRESENT": "hr=0x00000000",
+  "DEVICE_REMOVED": "reason=0x00000000"
+ },
+ "d3dkmt": {
+  "by_luid": {
+   "api": "OpenAdapterFromLuid",
+   "luid": "00000000:b33b765e",
+   "status": 0,
+   "hAdapter": 1073741824
+  },
+  "by_hdc": {
+   "api": "OpenAdapterFromHdc",
+   "hAdapter": 1073741888,
+   "status": 0
+  },
+  "same_adapter_value": false
+ }
+}

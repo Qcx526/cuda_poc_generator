@@ -165,3 +165,7 @@ mock_native/*.lib
 mock_native/*.exp
 mock_native/*.obj
 mock_native/*.pdb
+
+# F8 基线程序的构建产物（由 .c 重建）
+tools/driver/*.exe
+tools/driver/*.obj

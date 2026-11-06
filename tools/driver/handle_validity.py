@@ -37,11 +37,22 @@ class D3DKMT_CREATEDEVICE(ctypes.Structure):
                 ("PatchLocationListSize", c_uint32)]
 
 
+class _DeviceStateUnion(ctypes.Union):
+    """The header's union is 48 bytes (PresentStateDWM), not 4.
+
+    Compiled fact (tools/driver/abi_sizes.c):
+    sizeof(D3DKMT_GETDEVICESTATE)=56, StateType@4, PresentStateDWM=48.
+    A 44-byte model would let the driver write past the end of the buffer.
+    """
+
+    _fields_ = [("ExecutionState", c_uint32),
+                ("raw", ctypes.c_ubyte * 48)]
+
+
 class D3DKMT_GETDEVICESTATE(ctypes.Structure):
     _fields_ = [("hDevice", D3DKMT_HANDLE),
                 ("StateType", c_uint32),
-                ("ExecutionState", c_uint32),
-                ("_pad", c_uint32 * 8)]
+                ("State", _DeviceStateUnion)]
 
 
 class D3DKMT_QUERYADAPTERINFO(ctypes.Structure):
@@ -96,7 +107,7 @@ def device_state(lib, device: int, state_type: int = D3DKMT_DEVICESTATE_EXECUTIO
     request = D3DKMT_GETDEVICESTATE(hDevice=device, StateType=state_type)
     status = lib.D3DKMTGetDeviceState(byref(request))
     return {"api": "GetDeviceState", "hDevice": device, "StateType": state_type,
-            "status": status & 0xFFFFFFFF, "ExecutionState": request.ExecutionState}
+            "status": status & 0xFFFFFFFF, "ExecutionState": request.State.ExecutionState}
 
 
 def destroy_device(lib, device: int) -> dict:
@@ -117,6 +128,11 @@ def run(adapter: int, bogus: int = 0xDEAD) -> dict:
     steps.append(adapter_version(lib, adapter))
     created = create_device(lib, adapter)
     steps.append(created)
+    if created["status"] != 0:
+        # Nothing downstream can mean anything without a device; still close the
+        # adapter so the run leaves no resource behind.
+        steps.append(close_adapter(lib, adapter))
+        return {"steps": steps, "statuses": {}, "verdict": {"aborted": "CreateDevice failed"}}
     device = created["hDevice"]
 
     steps.append(device_state(lib, device))                    # known-good

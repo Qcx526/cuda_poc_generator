@@ -1,0 +1,84 @@
+{
+ "steps": [
+  {
+   "api": "QueryAdapterInfo(DRIVERVERSION)",
+   "hAdapter": 1073741824,
+   "status": 3221225485
+  },
+  {
+   "api": "CreateDevice",
+   "status": 0,
+   "hAdapter": 1073741824,
+   "hDevice": 1073741888,
+   "same_value": false,
+   "note": "数值相同不代表无效；这里只记录，不做判定"
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 1073741888,
+   "StateType": 1,
+   "status": 0,
+   "ExecutionState": 1
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 57005,
+   "StateType": 1,
+   "status": 3221225485,
+   "ExecutionState": 0
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 1073741888,
+   "StateType": 0,
+   "status": 3221225485,
+   "ExecutionState": 0
+  },
+  {
+   "api": "DestroyDevice",
+   "hDevice": 1073741888,
+   "status": 0
+  },
+  {
+   "api": "GetDeviceState",
+   "hDevice": 1073741888,
+   "StateType": 1,
+   "status": 3221225485,
+   "ExecutionState": 0
+  },
+  {
+   "api": "CloseAdapter",
+   "hAdapter": 1073741824,
+   "status": 0
+  }
+ ],
+ "statuses": {
+  "QueryAdapterInfo(DRIVERVERSION)": [
+   3221225485
+  ],
+  "CreateDevice": [
+   0
+  ],
+  "GetDeviceState": [
+   0,
+   3221225485,
+   3221225485,
+   3221225485
+  ],
+  "DestroyDevice": [
+   0
+  ],
+  "CloseAdapter": [
+   0
+  ]
+ },
+ "verdict": {
+  "valid_device_status": 0,
+  "bogus_handle_status": 3221225485,
+  "destroyed_handle_status": 3221225485,
+  "discriminates": true,
+  "destroyed_differs_from_valid": true,
+  "same_value_as_adapter": false
+ },
+ "adapter": 1073741824
+}
