@@ -164,6 +164,15 @@
  },
  "contract": {
   "goal": "确定请求合法性的前置条件",
+  "authorized_fact_ids": [
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "S6",
+   "S7"
+  ],
   "backend": "windows_userland",
   "allowed_operations": [
    "query_device_state",

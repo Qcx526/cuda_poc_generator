@@ -41,9 +41,13 @@ def _pick(source: dict, keys) -> Dict[str, object]:
 
 def project(case: GPUCase, mode: str) -> Dict[str, object]:
     allowed = _allowed(mode)
+    authorized = set(case.contract.authorized_fact_ids)
     evidence: List[dict] = []
     for item in case.knowledge.evidence:
         if item.visible_in not in allowed:
+            continue
+        # 逐条授权：FACT_ASSISTED 下的静态事实必须在合同里点名，否则不附。
+        if item.visible_in is Visibility.FACT and item.id not in authorized:
             continue
         entry = {"id": item.id, "kind": item.kind.value,
                  "statement": item.statement, "status": item.status.value}

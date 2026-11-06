@@ -41,6 +41,17 @@ PUBLIC_FACTS = (
 
 UNTRUSTED_STATES = {FieldState.MISSING, FieldState.INVALID, FieldState.CONFLICT}
 
+# Reviewed for blind use, one entry at a time. A field being VALID says the file
+# parsed; it says nothing about whether the text is safe to show a model.
+REVIEWED_PUBLIC = {
+    ("affected_component", "vendor"),
+    ("affected_component", "version_range"),
+    ("affected_component", "file_format_input"),
+    ("attack_surface", "entry_point"),
+    ("attack_surface", "required_permissions"),
+    ("vulnerability_type", "cwe_id"),
+}
+
 
 @dataclass
 class LegacyBundle:
@@ -50,8 +61,19 @@ class LegacyBundle:
 
 
 def _state(normalized, dimension: str, key: str) -> str:
+    """Look the field up by its exact JSON Pointer.
+
+    The normalizer keys field_states as "/dimensions/<dim>/<key>"; the earlier
+    version matched on a dotted suffix, which never hit, so every field came back
+    UNKNOWN and no assertion could ever be public. Nested objects are checked one
+    level down, matching how _value resolves them.
+    """
+    pointer = "/dimensions/%s/%s" % (dimension, key)
+    if pointer in normalized.field_states:
+        return normalized.field_states[pointer].value
+    prefix = "/dimensions/%s/" % dimension
     for path, state in normalized.field_states.items():
-        if path.endswith("." + key) and dimension in path:
+        if path.startswith(prefix) and path.endswith("/" + key):
             return state.value
     return FieldState.UNKNOWN.value
 
@@ -81,7 +103,8 @@ def adapt(directory: Path) -> LegacyBundle:
         if not value:
             continue
         state = _state(normalized, dimension, key)
-        reviewed = state == FieldState.VALID.value
+        trusted = state == FieldState.VALID.value
+        reviewed = trusted and (dimension, key) in REVIEWED_PUBLIC
         evidence.append(Evidence(
             id=identifier, kind=EvidenceKind.INPUT_ASSERTION,
             statement="%s: %s" % (label, value),

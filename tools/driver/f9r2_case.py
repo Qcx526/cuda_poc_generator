@@ -91,6 +91,51 @@ def scan_table(image: PEImage, entry_rva: int, window: int = 0x400) -> dict:
             "count": len(pairs), "rejected_count": len(rejected)}
 
 
+def classify_pairs(table: dict) -> dict:
+    """Group the pairs by base register instead of calling them one table."""
+    groups = {}
+    for entry in table["pairs"]:
+        groups.setdefault(entry["base_reg"], []).append(entry["field_offset"])
+    return {reg: {"count": len(offs), "offsets": sorted(set(offs))[:20]}
+            for reg, offs in groups.items()}
+
+
+def trace_consumer(image: PEImage, entry_rva: int, start_rva: int,
+                   window: int = 0x1800) -> dict:
+    """Look for a call that receives rbp (or a copy) as an argument, after the fills."""
+    offset = image.offset_of(entry_rva)
+    blob = image.data[offset:offset + window]
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    ins = list(md.disasm(blob, entry_rva))
+    hits = []
+    for i, insn in enumerate(ins):
+        if insn.address < start_rva or insn.mnemonic != "call":
+            continue
+        # window of 8 instructions before the call
+        for prev in ins[max(0, i - 8):i]:
+            if prev.mnemonic == "mov" and prev.op_str.startswith(("rcx", "rdx", "r8")):
+                reg, _, src = prev.op_str.partition(",")
+                if src.strip().startswith("rbp"):
+                    hits.append({"call_rva": "0x%x" % insn.address,
+                                 "setup_rva": "0x%x" % prev.address,
+                                 "text": "%s %s" % (prev.mnemonic, prev.op_str)})
+    return {"calls_after_fill": sum(1 for x in ins if x.address >= start_rva
+                                    and x.mnemonic == "call"),
+            "argument_from_rbp": hits,
+            "scanned_bytes": window}
+
+
+def function_bounds(image: PEImage, rva: int) -> dict:
+    """Is the candidate inside an executable section and a .pdata function?"""
+    section = next((s for s in image.sections
+                    if s.vaddr <= rva < s.vaddr + s.vsize), None)
+    fn = image.function_at(rva) if hasattr(image, "function_at") else None
+    return {"section": section.name if section else None,
+            "executable": bool(section and section.executable),
+            "function_at_rva": bool(fn),
+            "function_size": getattr(fn, "size", 0)}
+
+
 def bound_base_register(image: PEImage, entry_rva: int, reg: str = "rbp",
                         window: int = 0x200) -> dict:
     """Where does rbp come from before the table is written?"""
@@ -194,6 +239,7 @@ def build_case(facts: dict, offsets: dict, flow: dict, table: dict = None) -> GP
             cwe=None, impact="unknown", root_cause_status=VerificationStatus.UNKNOWN),
         knowledge=knowledge,
         contract=ExperimentContract(goal="确定请求合法性的前置条件",
+                                    authorized_fact_ids=["S1", "S2", "S3", "S4", "S5", "S6", "S7"],
                                     backend="windows_userland",
                                     allowed_operations=["query_device_state",
                                                         "query_adapter_info"],
@@ -211,7 +257,12 @@ def main() -> int:
     image = PEImage(DRIVER)
     flow = scan_entry(image, int(facts["driver"]["entry_rva"], 16))
     table = scan_table(image, int(facts["driver"]["entry_rva"], 16))
-    table["base_binding"] = bound_base_register(image, int(facts["driver"]["entry_rva"], 16))
+    entry = int(facts["driver"]["entry_rva"], 16)
+    table["base_binding"] = bound_base_register(image, entry)
+    table["base_groups"] = classify_pairs(table)
+    last_store = max((int(p["store_rva"], 16) for p in table["pairs"]), default=entry)
+    table["consumer"] = trace_consumer(image, entry, last_store)
+    table["candidate_bounds"] = function_bounds(image, 0x733e240)
     case = build_case(facts, offsets, flow, table)
 
     out = ROOT / "data" / "cases" / "nvlddmkm-610-47-escape.v2.json"

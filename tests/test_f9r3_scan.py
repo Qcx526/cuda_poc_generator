@@ -43,3 +43,23 @@ def test_base_register_is_a_stack_frame(table):
     assert writes and writes[0]["text"].startswith("lea rbp, [rsp")
     # 结构体在栈上，不等于它一定是 DRIVER_INITIALIZATION_DATA
     assert "0x733a124" in writes[0]["rva"]
+
+
+def test_pairs_are_not_one_table(table):
+    """51 rbp-relative and 6 rsp-relative writes are different objects."""
+    groups = table["base_groups"]
+    assert set(groups) == {"rbp", "rsp"}
+    assert groups["rbp"]["count"] + groups["rsp"]["count"] == table["count"]
+
+
+def test_no_consumer_takes_rbp_as_an_argument(table):
+    """Six kilobytes of calls after the fills, none sets an argument from rbp."""
+    assert table["consumer"]["calls_after_fill"] > 0
+    assert table["consumer"]["argument_from_rbp"] == []
+
+
+def test_the_candidate_target_is_not_a_function_start(table):
+    bounds = table["candidate_bounds"]
+    assert bounds["executable"] is True
+    assert bounds["section"] == "INIT"
+    assert bounds["function_at_rva"] is False

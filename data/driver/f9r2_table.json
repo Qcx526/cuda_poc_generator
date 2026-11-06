@@ -548,5 +548,54 @@
    }
   ],
   "found": true
+ },
+ "base_groups": {
+  "rsp": {
+   "count": 6,
+   "offsets": [
+    "0x38",
+    "0x48",
+    "0x50",
+    "0x60",
+    "0x68",
+    "0x78"
+   ]
+  },
+  "rbp": {
+   "count": 51,
+   "offsets": [
+    "-104",
+    "-112",
+    "-128",
+    "-16",
+    "-32",
+    "-40",
+    "-56",
+    "-64",
+    "-8",
+    "-80",
+    "-88",
+    "0x10",
+    "0x100",
+    "0x110",
+    "0x118",
+    "0x128",
+    "0x130",
+    "0x140",
+    "0x148",
+    "0x158"
+   ]
+  }
+ },
+ "consumer": {
+  "calls_after_fill": 10,
+  "argument_from_rbp": [],
+  "scanned_bytes": 6144
+ },
+ "candidate_bounds": {
+  "section": "INIT",
+  "executable": true,
+  "function_at_rva": false,
+  "function_size": 0
  }
 }
