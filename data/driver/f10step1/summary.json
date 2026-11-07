@@ -1,0 +1,54 @@
+{
+ "control": {
+  "benign_exit": 0
+ },
+ "arms": [
+  {
+   "arm": "A",
+   "prompt_sha256": "b66d9b934ff9ea9a090859d9665a62bcceef354868d4d27d7ea1ffc59495c243",
+   "response_sha256": "fe2ac44224188ac2dbe9ea93460379056183aab8759fc1b99519c2cca48c2990",
+   "code_sha256": "d468f033b4a80132d941f9f1cc2abc6a14296a93e34c71a2d698ce6c575cc5a1",
+   "code_bytes": 3105,
+   "generated": true,
+   "levels": [
+    "GENERATED",
+    "EXECUTED"
+   ],
+   "meta": {
+    "projection": "spec_blind_brief",
+    "evidence": []
+   },
+   "exit_codes": [],
+   "anomaly": false
+  },
+  {
+   "arm": "B",
+   "prompt_sha256": "a594255c25ae3b839bb698c67f32cf6d155cee7ce4ce80930975df1f1dec059c",
+   "response_sha256": "169607618305abafd8287ab220786d178251035eede0984dcb30673a3560cedc",
+   "code_sha256": "e781fcb240e5bf80a2279f80abe6565c1073e6300ce351beb7a066cefc2c4de3",
+   "code_bytes": 5290,
+   "generated": true,
+   "levels": [
+    "GENERATED",
+    "EXECUTED",
+    "OBSERVED_ANOMALY"
+   ],
+   "meta": {
+    "projection": "v2_public_only",
+    "evidence": [
+     "A1",
+     "A2",
+     "A3",
+     "A4",
+     "A5",
+     "A6"
+    ],
+    "context_sha256": "0cbec98ce377ab9740acccf4eb56649fdfde127d1db6a26e211305e38d3e2f3c"
+   },
+   "exit_codes": [
+    1
+   ],
+   "anomaly": true
+  }
+ ]
+}

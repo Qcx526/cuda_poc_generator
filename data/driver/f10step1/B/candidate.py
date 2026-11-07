@@ -1,0 +1,179 @@
+import os
+import struct
+import subprocess
+import time
+
+
+def u32(x):
+    return x & 0xFFFFFFFF
+
+
+def u64(x):
+    return x & 0xFFFFFFFFFFFFFFFF
+
+
+def pack_sh(name, typ, flags, addr, offset, size, link, info, align, entsize):
+    return struct.pack(
+        "<IIQQQQIIQQ",
+        u32(name), u32(typ), u64(flags), u64(addr), u64(offset),
+        u64(size), u32(link), u32(info), u64(align), u64(entsize)
+    )
+
+
+def build_elf(rela_size=0x18, rela_entsize=0x18, rela_offset=None,
+              rela_name=".rela.text", e_type=1, link=None, info=None):
+    names = bytearray(b"\x00")
+
+    def add_name(s):
+        off = len(names)
+        names.extend(s.encode() + b"\x00")
+        return off
+
+    n_text = add_name(".text")
+    n_rela = add_name(rela_name)
+    n_symtab = add_name(".symtab")
+    n_strtab = add_name(".strtab")
+    n_shstrtab = add_name(".shstrtab")
+
+    text_data = b"\x00" * 8
+    data_len = rela_size if rela_size <= 0x200000 else 0x100
+    rela_data = b"\x00" * data_len
+    symtab_data = b"\x00" * 24
+    strtab_data = b"\x00"
+
+    def align(x, a):
+        return (x + a - 1) // a * a
+
+    off = 64
+    text_off = align(off, 8)
+    off = text_off + len(text_data)
+    rela_off = align(off, 8)
+    off = rela_off + len(rela_data)
+    symtab_off = align(off, 8)
+    off = symtab_off + len(symtab_data)
+    strtab_off = align(off, 1)
+    off = strtab_off + len(strtab_data)
+    shstrtab_off = align(off, 1)
+    off = shstrtab_off + len(names)
+    shoff = align(off, 8)
+
+    if rela_offset is None:
+        rela_offset = rela_off
+    if link is None:
+        link = 3
+    if info is None:
+        info = 2
+
+    shnum = 6
+    shdrs = []
+    shdrs.append(pack_sh(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+    shdrs.append(pack_sh(n_rela, 4, 0, 0, rela_offset, rela_size,
+                         link, info, 8, rela_entsize))
+    shdrs.append(pack_sh(n_text, 1, 6, 0, text_off, len(text_data),
+                         0, 0, 8, 0))
+    shdrs.append(pack_sh(n_symtab, 2, 0, 0, symtab_off, len(symtab_data),
+                         4, 1, 8, 24))
+    shdrs.append(pack_sh(n_strtab, 3, 0, 0, strtab_off, len(strtab_data),
+                         0, 0, 1, 0))
+    shdrs.append(pack_sh(n_shstrtab, 3, 0, 0, shstrtab_off, len(names),
+                         0, 0, 1, 0))
+
+    size = shoff + 64 * shnum
+    b = bytearray(size)
+    ident = b"\x7fELF" + bytes([2, 1, 1, 0, 0]) + b"\x00" * 7
+    b[:64] = struct.pack(
+        "<16sHHIQQQIHHHHHH",
+        ident, e_type, 190, 1, 0, 0, shoff, 0, 64, 0, 0, 64, shnum, 5
+    )
+    b[text_off:text_off + len(text_data)] = text_data
+    b[rela_off:rela_off + len(rela_data)] = rela_data
+    b[symtab_off:symtab_off + len(symtab_data)] = symtab_data
+    b[strtab_off:strtab_off + len(strtab_data)] = strtab_data
+    b[shstrtab_off:shstrtab_off + len(names)] = names
+
+    for i, sh in enumerate(shdrs):
+        b[shoff + i * 64:shoff + (i + 1) * 64] = sh
+
+    return bytes(b)
+
+
+candidates = []
+
+
+def add(size, ent, off=None, name=".rela.text", e_type=1, link=None, info=None):
+    candidates.append((size, ent, off, name, e_type, link, info))
+
+
+for ent in [0x1000, 0x10000, 0x100, 0x800, 0xFFFFFFFF, 0x100000]:
+    add(0x1000, ent)
+    add(0x10000, ent)
+    add(0x100, ent)
+
+for size, ent in [
+    (0x1000, 0x1000), (0x10000, 0x10000), (0x100000, 0x100000),
+    (0x1000, 0x800), (0x1000, 0x100), (0x100, 0x100),
+    (0x100, 0x1000), (0x1000, 0xFFFFFFFF), (0x18, 0x100),
+    (0x30, 0x100), (0x100, 0x10000),
+    (0x18, 0x1), (0x18, 0x8), (0x30, 0x10), (0x100, 0x18),
+    (0x101, 0x18), (0x20, 0x18),
+    (0x18, 0x0), (0x0, 0x18),
+    (0xFFFFFFFFFFFFFFFF, 0x18), (0xFFFFFFFFFFFFFFFF, 0x0),
+    (0xFFFFFFFFFFFFFFFF, 0x1), (0x8000000000000000, 0x18),
+    (0x1000000000000000, 0x18), (0x100000000, 0x18),
+    (0x100000018, 0x18), (0xAAAAAAAAAAAAAAAB, 0x1),
+    (0xAAAAAAAAAAAAAAAB, 0x18), (0x5555555555555555, 0x1),
+    (0xFFFFFFFF, 0x18),
+]:
+    add(size, ent)
+
+for c in list(candidates):
+    size, ent, off, name, e_type, link, info = c
+    add(size, ent, off, name, 2, link, info)
+
+for name in [".rela", ".rela.text", ".rela.nv.text", ".nv.rela", ".rela.debug_info"]:
+    add(0x1000, 0x1000, name=name)
+    add(0x10000, 0x10000, name=name)
+    add(0x18, 0x100, name=name)
+
+for off in [0x40, 0x80, 0x100, 0x200]:
+    for target in [0x100, 0x18]:
+        size = ((1 << 64) - off + target) & 0xFFFFFFFFFFFFFFFF
+        add(size, 0x18, off=off)
+
+for link, info in [(0xFFFFFFFF, 0xFFFFFFFF), (0, 0), (5, 5), (4, 1)]:
+    add(0x1000, 0x1000, link=link, info=info)
+
+
+os.makedirs("work", exist_ok=True)
+path = os.path.join("work", "malformed.elf")
+last_rc = 1
+deadline = time.time() + 15
+
+for size, ent, off, name, e_type, link, info in candidates:
+    if time.time() > deadline:
+        break
+
+    data = build_elf(size, ent, off, name, e_type, link, info)
+    with open(path, "wb") as f:
+        f.write(data)
+
+    try:
+        r = subprocess.run(
+            ["nvdisasm", path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=1.0
+        )
+        rc = r.returncode
+    except subprocess.TimeoutExpired:
+        rc = 124
+    except FileNotFoundError:
+        print("EXIT=127")
+        raise SystemExit
+
+    last_rc = rc
+    if rc < 0:
+        print(f"EXIT={rc}")
+        raise SystemExit
+
+print(f"EXIT={last_rc}")

@@ -1,0 +1,33 @@
+{
+ "A": {
+  "arm": "A",
+  "levels": [
+   "GENERATED",
+   "EXECUTED"
+  ],
+  "exit_codes": [],
+  "verdict": "HARNESS_ERROR",
+  "understands_tool": true,
+  "builds_elf": true,
+  "mentions_rela": true,
+  "bytes": 3105
+ },
+ "B": {
+  "arm": "B",
+  "levels": [
+   "GENERATED",
+   "EXECUTED"
+  ],
+  "exit_codes": [
+   1
+  ],
+  "verdict": "REJECTED",
+  "understands_tool": true,
+  "builds_elf": true,
+  "mentions_rela": true,
+  "bytes": 5290
+ },
+ "control": {
+  "benign_exit": 0
+ }
+}
