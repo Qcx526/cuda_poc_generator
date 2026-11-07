@@ -1,0 +1,238 @@
+{
+ "A": {
+  "answer": {
+   "entry_surface": {
+    "tool": "nvdisasm",
+    "medium": "file",
+    "component": "NVIDIA CUDA nvdisasm (SHT_RELA section handler)"
+   },
+   "facts": [
+    {
+     "id": "F1",
+     "kind": "INPUT_ASSERTION",
+     "statement": "CVE-2025-23340 的组件为 NVIDIA CUDA nvdisasm 的 SHT_RELA section handler。",
+     "cites": [
+      "cve: CVE-2025-23340",
+      "component: NVIDIA CUDA nvdisasm (SHT_RELA section handler)"
+     ],
+     "quote": "component: NVIDIA CUDA nvdisasm (SHT_RELA section handler)"
+    },
+    {
+     "id": "F2",
+     "kind": "INPUT_ASSERTION",
+     "statement": "该漏洞的 CWE 分类为 CWE-131。",
+     "cites": [
+      "cwe: CWE-131"
+     ],
+     "quote": "cwe: CWE-131"
+    },
+    {
+     "id": "F3",
+     "kind": "INPUT_ASSERTION",
+     "statement": "受影响版本范围为 11.0..12.9，并在 13.0 修复。",
+     "cites": [
+      "affected: 11.0..12.9 (fixed in 13.0)"
+     ],
+     "quote": "affected: 11.0..12.9 (fixed in 13.0)"
+    },
+    {
+     "id": "F4",
+     "kind": "INPUT_ASSERTION",
+     "statement": "目标环境/介质为 linux/user、file，调用方式为 nvdisasm {artifact}，输入为 ELF/cubin（magic=0x7f454c46）。",
+     "cites": [
+      "target: linux/user medium=file",
+      "invoke: nvdisasm {artifact}",
+      "input: ELF/cubin (magic=0x7f454c46)"
+     ],
+     "quote": "input: ELF/cubin (magic=0x7f454c46)"
+    }
+   ],
+   "hypotheses": [
+    {
+     "id": "H1",
+     "statement": "恶意构造的 ELF/cubin 若包含异常的 SHT_RELA section（例如节头元数据与节内容不一致），可能在 nvdisasm 的 SHT_RELA 处理路径触发 CWE-131 所描述的大小计算错误，并导致越界访问或崩溃。",
+     "basis": [
+      "F1",
+      "F2",
+      "F4"
+     ],
+     "evidence_request": {
+      "tool": "nvdisasm",
+      "observable": "进程退出信号（如 SIGSEGV/SIGABRT）、非零退出码、stderr 中的崩溃或 sanitizer 报告，或输出异常截断。",
+      "would_refute_if": "对畸形 SHT_RELA 元数据样本执行 nvdisasm 时仅返回普通解析错误或正常反汇编，退出码为 0 且无崩溃/sanitizer 报告。"
+     }
+    },
+    {
+     "id": "H2",
+     "statement": "触发点可能位于解析 SHT_RELA 条目数量、大小或重定位目标信息时的边界检查缺失处，并通过畸形节头字段驱动。",
+     "basis": [
+      "F1",
+      "F2",
+      "note: 输入内部结构与触发条件未公开，需自行推导"
+     ],
+     "evidence_request": {
+      "tool": "nvdisasm",
+      "observable": "ASan/UBSan 报告、SIGSEGV/SIGABRT、退出码变化，或 stderr 中与 SHT_RELA 解析相关的错误文本。",
+      "would_refute_if": "对 SHT_RELA 节头字段做系统变异后，nvdisasm 始终正常退出且无 sanitizer 报告或崩溃行为。"
+     }
+    },
+    {
+     "id": "H3",
+     "statement": "仅提供 ELF magic 不足以触发；需要保留可解析的 ELF/cubin 外层结构并让 SHT_RELA 节被处理。",
+     "basis": [
+      "F4",
+      "note: 输入内部结构与触发条件未公开，需自行推导"
+     ],
+     "evidence_request": {
+      "tool": "nvdisasm",
+      "observable": "仅含 magic 的输入与含 SHT_RELA 的畸形输入在退出码、stderr 和崩溃信号上的差异。",
+      "would_refute_if": "仅含 ELF magic 的输入也产生与畸形 SHT_RELA 样本相同的崩溃或 sanitizer 报告。"
+     }
+    }
+   ],
+   "unknowns": [
+    "SHT_RELA section 中具体哪个字段或字段组合会触发漏洞。",
+    "漏洞是否依赖 sh_size、sh_entsize、sh_info、sh_link 等节头元数据的不一致。",
+    "触发所需 ELF/cubin 的具体类型、架构、字节序或 ELF class。",
+    "nvdisasm 触发漏洞时需要的具体命令行选项或环境条件。",
+    "漏洞导致的具体内存安全后果（越界读、越界写或其他）及可利用性。",
+    "13.0 修复所修改的具体代码路径与校验逻辑。",
+    "公开输入中未给出的触发样本结构、偏移或参数。"
+   ]
+  },
+  "evaluation": {
+   "facts": 4,
+   "hypotheses": 3,
+   "bad_citations": [],
+   "quotes_supported": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "quotes_unsupported": [
+    "H1",
+    "H2",
+    "H3"
+   ],
+   "numbers_not_in_input": [],
+   "requests_with_observable": 3,
+   "requests_total": 3
+  }
+ },
+ "B": {
+  "answer": {
+   "entry_surface": {
+    "tool": "nvdisasm",
+    "medium": "本地文件输入触发（需受害者运行 nvdisasm）",
+    "component": "NVIDIA CUDA nvdisasm (CUDA Binary Utilities)"
+   },
+   "facts": [
+    {
+     "id": "F1",
+     "kind": "INPUT_ASSERTION",
+     "statement": "入口命令为 nvdisasm <malformed.elf>。",
+     "cites": [
+      "A3"
+     ],
+     "quote": "入口: nvdisasm <malformed.elf>"
+    },
+    {
+     "id": "F2",
+     "kind": "INPUT_ASSERTION",
+     "statement": "输入格式为 ELF / cubin，且包含 SHT_RELA 节。",
+     "cites": [
+      "A6"
+     ],
+     "quote": "输入格式: ELF / cubin（含 SHT_RELA 节）"
+    },
+    {
+     "id": "F3",
+     "kind": "INPUT_ASSERTION",
+     "statement": "受影响版本范围为所有 < CUDA Toolkit 13.0，13.0 修复。",
+     "cites": [
+      "A2"
+     ],
+     "quote": "受影响版本范围: 所有 < CUDA Toolkit 13.0（13.0 修复）"
+    },
+    {
+     "id": "F4",
+     "kind": "INPUT_ASSERTION",
+     "statement": "漏洞分类为 CWE-131。",
+     "cites": [
+      "A5"
+     ],
+     "quote": "CWE: CWE-131"
+    }
+   ],
+   "hypotheses": [
+    {
+     "id": "H1",
+     "statement": "nvdisasm 解析包含 SHT_RELA 节的 malformed ELF / cubin 时，可能触发缓冲区大小计算错误并导致崩溃。",
+     "basis": [
+      "A3",
+      "A5",
+      "A6"
+     ],
+     "evidence_request": {
+      "tool": "nvdisasm",
+      "observable": "退出信号（如 SIGSEGV/SIGABRT）或 stderr 中出现崩溃/越界相关错误",
+      "would_refute_if": "对包含 SHT_RELA 的 malformed.elf 执行 nvdisasm 后正常退出且无崩溃或错误输出"
+     }
+    },
+    {
+     "id": "H2",
+     "statement": "该触发路径可能无需任何特权，由本地非特权用户运行 nvdisasm 即可触发。",
+     "basis": [
+      "A3",
+      "A4"
+     ],
+     "evidence_request": {
+      "tool": "nvdisasm",
+      "observable": "非特权用户运行 nvdisasm <malformed.elf> 时是否产生崩溃信号",
+      "would_refute_if": "需要额外权限才能运行，或非特权运行时不产生崩溃"
+     }
+    },
+    {
+     "id": "H3",
+     "statement": "触发点可能与 SHT_RELA 节的尺寸或偏移计算有关，符合 CWE-131 的缓冲区大小计算错误特征。",
+     "basis": [
+      "A5",
+      "A6"
+     ],
+     "evidence_request": {
+      "tool": "nvdisasm",
+      "observable": "stderr 是否报告与节头/重定位节大小相关的错误，或调试回溯指向缓冲区大小计算路径",
+      "would_refute_if": "崩溃与 SHT_RELA 节无关，或未观察到大小计算相关错误路径"
+     }
+    }
+   ],
+   "unknowns": [
+    "triggering malformed ELF / cubin 的具体结构",
+    "SHT_RELA 节中需要破坏的具体字段及取值范围",
+    "实际崩溃类型与错误输出文本",
+    "cuda_container 中可用的 CUDA Toolkit / nvdisasm 具体版本",
+    "是否可启用调试符号或 sanitizer 辅助定位"
+   ]
+  },
+  "evaluation": {
+   "facts": 4,
+   "hypotheses": 3,
+   "bad_citations": [],
+   "quotes_supported": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "quotes_unsupported": [
+    "H1",
+    "H2",
+    "H3"
+   ],
+   "numbers_not_in_input": [],
+   "requests_with_observable": 3,
+   "requests_total": 3
+  }
+ }
+}

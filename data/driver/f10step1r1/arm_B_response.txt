@@ -1,0 +1,76 @@
+{
+  "entry_surface": {
+    "tool": "nvdisasm",
+    "medium": "本地文件输入触发（需受害者运行 nvdisasm）",
+    "component": "NVIDIA CUDA nvdisasm (CUDA Binary Utilities)"
+  },
+  "facts": [
+    {
+      "id": "F1",
+      "kind": "INPUT_ASSERTION",
+      "statement": "入口命令为 nvdisasm <malformed.elf>。",
+      "cites": ["A3"],
+      "quote": "入口: nvdisasm <malformed.elf>"
+    },
+    {
+      "id": "F2",
+      "kind": "INPUT_ASSERTION",
+      "statement": "输入格式为 ELF / cubin，且包含 SHT_RELA 节。",
+      "cites": ["A6"],
+      "quote": "输入格式: ELF / cubin（含 SHT_RELA 节）"
+    },
+    {
+      "id": "F3",
+      "kind": "INPUT_ASSERTION",
+      "statement": "受影响版本范围为所有 < CUDA Toolkit 13.0，13.0 修复。",
+      "cites": ["A2"],
+      "quote": "受影响版本范围: 所有 < CUDA Toolkit 13.0（13.0 修复）"
+    },
+    {
+      "id": "F4",
+      "kind": "INPUT_ASSERTION",
+      "statement": "漏洞分类为 CWE-131。",
+      "cites": ["A5"],
+      "quote": "CWE: CWE-131"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "statement": "nvdisasm 解析包含 SHT_RELA 节的 malformed ELF / cubin 时，可能触发缓冲区大小计算错误并导致崩溃。",
+      "basis": ["A3", "A5", "A6"],
+      "evidence_request": {
+        "tool": "nvdisasm",
+        "observable": "退出信号（如 SIGSEGV/SIGABRT）或 stderr 中出现崩溃/越界相关错误",
+        "would_refute_if": "对包含 SHT_RELA 的 malformed.elf 执行 nvdisasm 后正常退出且无崩溃或错误输出"
+      }
+    },
+    {
+      "id": "H2",
+      "statement": "该触发路径可能无需任何特权，由本地非特权用户运行 nvdisasm 即可触发。",
+      "basis": ["A3", "A4"],
+      "evidence_request": {
+        "tool": "nvdisasm",
+        "observable": "非特权用户运行 nvdisasm <malformed.elf> 时是否产生崩溃信号",
+        "would_refute_if": "需要额外权限才能运行，或非特权运行时不产生崩溃"
+      }
+    },
+    {
+      "id": "H3",
+      "statement": "触发点可能与 SHT_RELA 节的尺寸或偏移计算有关，符合 CWE-131 的缓冲区大小计算错误特征。",
+      "basis": ["A5", "A6"],
+      "evidence_request": {
+        "tool": "nvdisasm",
+        "observable": "stderr 是否报告与节头/重定位节大小相关的错误，或调试回溯指向缓冲区大小计算路径",
+        "would_refute_if": "崩溃与 SHT_RELA 节无关，或未观察到大小计算相关错误路径"
+      }
+    }
+  ],
+  "unknowns": [
+    "triggering malformed ELF / cubin 的具体结构",
+    "SHT_RELA 节中需要破坏的具体字段及取值范围",
+    "实际崩溃类型与错误输出文本",
+    "cuda_container 中可用的 CUDA Toolkit / nvdisasm 具体版本",
+    "是否可启用调试符号或 sanitizer 辅助定位"
+  ]
+}

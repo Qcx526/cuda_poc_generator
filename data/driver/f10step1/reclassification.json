@@ -1,0 +1,58 @@
+{
+ "source": "data/driver/f10step1/summary.json（原始观测，未修改）",
+ "reason": "summary 把 exit=1 记为 anomaly=true 与 OBSERVED_ANOMALY；按 exec_evidence 的判据，只有信号或超时才算异常终止",
+ "original_anomaly_flags": {
+  "A": false,
+  "B": true
+ },
+ "reinterpreted": [
+  {
+   "arm": "A",
+   "states": [
+    "GENERATION_COMPLETED",
+    "CANDIDATE_STARTED"
+   ],
+   "highest": "CANDIDATE_STARTED",
+   "candidate_bytes": 3105,
+   "observed_exits": [],
+   "tool_invocations_recorded": 0,
+   "evidence_status": "EVIDENCE_MISSING",
+   "notes": [
+    "input_created 无法确认：候选未打印中间文件"
+   ]
+  },
+  {
+   "arm": "B",
+   "states": [
+    "GENERATION_COMPLETED",
+    "CANDIDATE_STARTED",
+    "TARGET_TOOL_INVOKED",
+    "TARGET_TOOL_RETURNED"
+   ],
+   "highest": "TARGET_TOOL_RETURNED",
+   "candidate_bytes": 5290,
+   "observed_exits": [
+    1
+   ],
+   "tool_invocations_recorded": 1,
+   "evidence_status": "EVIDENCE_MISSING",
+   "notes": [
+    "逐次调用未记录：只保留最后一次退出码，输入哈希与 stderr 缺失",
+    "input_created 无法确认：候选未打印中间文件"
+   ]
+  }
+ ],
+ "kept_as_is": [
+  "A/run.log",
+  "B/run.log",
+  "A/candidate.py",
+  "B/candidate.py",
+  "summary.json"
+ ],
+ "missing_evidence": {
+  "per_invocation_records": true,
+  "input_sha256": true,
+  "stderr_of_tool": true,
+  "note": "B 组候选内部可能循环多次调用 nvdisasm，仅保留最后一次退出码；不得据此补造逐次数据"
+ }
+}
