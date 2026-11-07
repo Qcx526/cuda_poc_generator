@@ -63,3 +63,9 @@ def test_the_candidate_target_is_not_a_function_start(table):
     assert bounds["executable"] is True
     assert bounds["section"] == "INIT"
     assert bounds["function_at_rva"] is False
+
+
+def test_no_wholesale_copy_of_the_stack_object(table):
+    """A struct copy would explain how a stack object reaches a consumer."""
+    assert table["block_copy"]["count"] == 0
+    assert table["block_copy"]["window_bytes"] == 6144

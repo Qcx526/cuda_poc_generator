@@ -70,8 +70,13 @@ rsp 相对：6 组      ← 旧结论"一张 41/57 项函数表"不成立
 
 消费者追踪（填表之后 6 KB 范围，共 10 次 call）：
 
-```
+
+
+即：既没有把  传给调用，也没有把它整体拷到别处——**消费者不在本窗口内**。```
 argument_from_rbp = []      ← 没有任何 call 在 8 条指令内用 rbp 设参数
+block_copies      = 0       ← 窗口内没有任何 rep movs / movs / stos
+
+即：既没有把 rbp 传给调用，也没有把它整体拷到别处——消费者不在本窗口内。
 ```
 
 候选目标边界：
@@ -109,10 +114,36 @@ build_context(case_path, mode, authorized_fact_ids=None)
 下一阶段接主链的方式：在 `code_generator` 与 `driver_generator` 取上下文处，
 改为调用 `build_context(case, mode)`，其余生成、执行、判定逻辑不变。
 
+## 四之二、输入合同的反例测试（本轮补）
+
+ 用真实输入的三份变体验证错误值不会进 PUBLIC：
+
+| 破坏方式 | 规范化结果 | 断言 |
+|---|---|---|
+| 两处 cve_id 冲突 |  +  | 不选任何一方，且冲突值不出现在公开投影 |
+| 删除  |  | A3/A4 不出现 |
+|  改成对象 |  + INVALID | A1 不出现 |
+
+已知限制：**重复键**由 Python  模块静默取最后一个，规范化层不报错。
+这一条没有防护，已记录，不在本轮修。
+
+## 四之二、输入合同的反例测试
+
+`tests/test_legacy_conflicts.py` 用真实输入的三份变体验证错误值不会进 PUBLIC：
+
+| 破坏方式 | 规范化结果 | 断言 |
+|---|---|---|
+| 两处 cve_id 冲突 | `cve_id=None` + `CVE_ID_CONFLICT` | 不选任何一方，冲突值不出现在公开投影 |
+| 删除 `4_attack_surface.json` | `INPUT_FILE_MISSING` | A3/A4 不出现 |
+| `vendor` 改成对象 | `FIELD_TYPE_ERROR` + INVALID | A1 不出现 |
+
+已知限制：**重复键**由 Python `json` 模块静默取最后一个，规范化层不报错。
+这一条没有防护，已记录，不在本轮修。
+
 ## 五、回归
 
 ```
-1896 passed / 68 skipped / 0 failed
+1901 passed / 68 skipped / 0 failed
 ```
 
 ## 六、边界

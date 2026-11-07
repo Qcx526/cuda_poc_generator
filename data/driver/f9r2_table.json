@@ -597,5 +597,10 @@
   "executable": true,
   "function_at_rva": false,
   "function_size": 0
+ },
+ "block_copy": {
+  "window_bytes": 6144,
+  "block_copies": [],
+  "count": 0
  }
 }

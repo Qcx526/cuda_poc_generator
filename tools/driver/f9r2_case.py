@@ -125,6 +125,18 @@ def trace_consumer(image: PEImage, entry_rva: int, start_rva: int,
             "scanned_bytes": window}
 
 
+def scan_block_copy(image: PEImage, entry_rva: int, window: int = 0x1800) -> dict:
+    """Any wholesale copy of the stack object (rep movs / movs / stos)?"""
+    blob = image.data[image.offset_of(entry_rva):image.offset_of(entry_rva) + window]
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    hits = []
+    for insn in md.disasm(blob, entry_rva):
+        text = "%s %s" % (insn.mnemonic, insn.op_str)
+        if "movs" in insn.mnemonic or "stos" in insn.mnemonic or insn.mnemonic == "rep":
+            hits.append({"rva": "0x%x" % insn.address, "text": text})
+    return {"window_bytes": window, "block_copies": hits, "count": len(hits)}
+
+
 def function_bounds(image: PEImage, rva: int) -> dict:
     """Is the candidate inside an executable section and a .pdata function?"""
     section = next((s for s in image.sections
@@ -263,6 +275,7 @@ def main() -> int:
     last_store = max((int(p["store_rva"], 16) for p in table["pairs"]), default=entry)
     table["consumer"] = trace_consumer(image, entry, last_store)
     table["candidate_bounds"] = function_bounds(image, 0x733e240)
+    table["block_copy"] = scan_block_copy(image, entry)
     case = build_case(facts, offsets, flow, table)
 
     out = ROOT / "data" / "cases" / "nvlddmkm-610-47-escape.v2.json"
