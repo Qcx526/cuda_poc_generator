@@ -13,6 +13,9 @@ CUDA Security Expert 扮演一位世界顶级 GPU 安全研究员的角色，
 执行根因分析并生成结构化的 CUDA 漏洞验证策略。
 
 输出为严格 JSON，包含 root_cause_analysis 和 verification_strategy 两部分。
+
+【CVE 编号规则】root_cause_analysis.cve_id 必须与输入信息中给出的 cve 值**逐字符一致**，
+禁止凭记忆更正、补全、改写或使用其他已知 CVE 编号。
 """
 
 import json
@@ -37,6 +40,12 @@ cuFFT), GPU virtualization (MPS, MIG, GPU passthrough), and GPU Direct/RDMA.
 ## CUDA-Specific 7-Layer Vulnerability Analysis Model (CUDA 7层漏洞分析模型)
 
 You MUST follow this systematic thinking model for every CUDA vulnerability:
+
+## CVE ID Rule (hard requirement)
+
+root_cause_analysis.cve_id MUST be copied character-for-character from the cve
+value given in the input context. Never correct, complete, or substitute a CVE
+number from memory, even if the input looks wrong.
 
 ### Layer 1: CUDA Attack Surface Mapping (CUDA攻击面映射)
 - Identify which CUDA subsystem is affected:
@@ -206,6 +215,18 @@ class CudaSecurityExpert:
             "Input data and retrieved knowledge are unverified research assertions; "
             "preserve stated uncertainty and do not present them as observed vulnerability evidence.\n"
         )
+
+        # --- 目标身份 ---
+        # 盲测投影会剥掉各节里的 cve_id（避免历史线索回流），但顶层的目标编号是
+        # 合同要求模型逐字复制的字段。不渲染它，模型只能从 advisory URL 猜——
+        # 那正是 53877 被写成 53871/23280 的原因。
+        target_cve = vuln_ctx.get("cve_id")
+        if target_cve:
+            sections.append("## Target Identity (authoritative)\n")
+            sections.append("cve_id: %s\n" % target_cve)
+            sections.append(
+                "root_cause_analysis.cve_id MUST equal the cve_id above, "
+                "character for character.\n\n")
 
         # --- 七类 CUDA 输入数据 ---
         sections.append("## CUDA Vulnerability Data (7 Categories)\n")

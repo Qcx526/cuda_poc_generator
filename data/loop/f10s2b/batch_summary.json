@@ -1,0 +1,81 @@
+[
+ {
+  "cve_id": "CVE-2024-53877",
+  "status": "SUPPORTED",
+  "iterations": 2,
+  "verdict": "SUPPORTED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 1104.3,
+  "reason": "受控样本 3/6 个产生崩溃退出码",
+  "diagnoses": [
+   "NO_EFFECT"
+  ],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2025-23247",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 1344.2,
+  "reason": "受控样本未产生崩溃退出码（所有步骤均报告 OK）",
+  "diagnoses": [
+   "NO_EFFECT",
+   "NO_EFFECT"
+  ],
+  "attempts": 1,
+  "successes": 0
+ },
+ {
+  "cve_id": "CVE-2025-23339",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 777.0,
+  "reason": "受控样本 1/3 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2024-0109",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 471.0,
+  "reason": "受控样本 4/6 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2024-0110",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 476.7,
+  "reason": "受控样本 10/12 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2023-0196",
+  "status": "SUPPORTED",
+  "iterations": 2,
+  "verdict": "SUPPORTED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 1559.5,
+  "reason": "受控样本 2/2 个产生崩溃退出码",
+  "diagnoses": [
+   "NO_EFFECT"
+  ],
+  "attempts": 1,
+  "successes": 1
+ }
+]

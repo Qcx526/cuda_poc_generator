@@ -1,0 +1,8 @@
+{
+ "cuinit": 0,
+ "driver_api_version": 13030,
+ "device_name": "NVIDIA GeForce GTX 1660",
+ "compute_capability": "7.5",
+ "nvcc_version": "Cuda compilation tools, release 11.2, V11.2.152",
+ "note": "cuDriverGetVersion 是 CUDA Driver API 兼容版本号，不是 NVIDIA 驱动发行版本"
+}

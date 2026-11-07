@@ -1,0 +1,14 @@
+[
+ {
+  "cve_id": "CVE-2024-53877",
+  "status": "ERROR",
+  "iterations": 0,
+  "verdict": "",
+  "diagnosis": "",
+  "seconds": 0.0,
+  "reason": "resumed",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 0
+ }
+]

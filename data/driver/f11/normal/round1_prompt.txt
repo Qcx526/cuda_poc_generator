@@ -1,0 +1,67 @@
+任务：写一个 C 程序（Windows x64，用 CUDA Driver API）：
+
+1. 依次调用 cuInit(0)、cuDeviceGet、cuCtxCreate（用 cuDevicePrimaryCtxRetain 也可以）；
+2. cuMemAlloc 分配 256 字节设备内存；
+3. 用 cuMemcpyHtoD 写入一段已知模式，再用 cuMemcpyDtoH 读回；
+4. 校验读回数据与写入一致，打印 "DATA=OK" 或 "DATA=MISMATCH"；
+5. 每次调用后打印一行 "API <函数名> = <返回码>"；
+6. 按相反顺序释放资源（cuMemFree、cuCtxDestroy），程序正常 return 0。
+
+要求：#include <cuda.h> 和 <stdio.h>；不使用 Runtime API；只输出一个 ```c 代码块。
+
+实验上下文（允许你看到的全部信息）：
+{
+ "evidence": [
+  {
+   "id": "E1",
+   "kind": "INPUT_ASSERTION",
+   "statement": "目标设备: NVIDIA GeForce GTX 1660 (计算能力 7.5)",
+   "status": "UNKNOWN"
+  },
+  {
+   "id": "E2",
+   "kind": "INPUT_ASSERTION",
+   "statement": "CUDA Driver API 兼容版本: 13030（cuDriverGetVersion，非驱动发行版本）",
+   "status": "UNKNOWN"
+  },
+  {
+   "id": "E3",
+   "kind": "INPUT_ASSERTION",
+   "statement": "编译工具链: Cuda compilation tools, release 11.2, V11.2.152",
+   "status": "UNKNOWN"
+  }
+ ],
+ "schema_version": "gpu-vulnerability-case/v2",
+ "mode": "PUBLIC_ONLY",
+ "identity": {
+  "case_id": "case:cuda-driver-api-baseline",
+  "title": "CUDA Driver API 受控调用基线"
+ },
+ "target": {
+  "vendor": "NVIDIA",
+  "component": "nvcuda.dll",
+  "platform": "windows",
+  "execution_tier": "userland_api",
+  "versions": {
+   "driver_api": "13030",
+   "toolkit": "11.2.152"
+  }
+ },
+ "entry_surface": {
+  "medium": "api_call",
+  "interface": "CUDA Driver API",
+  "trust_boundary": "user_mode -> driver"
+ },
+ "description": {
+  "public_summary": "受控的 CUDA Driver API 调用序列，用于建立合法操作与预期错误的基线",
+  "impact": "none"
+ },
+ "contract": {
+  "goal": "生成受控 CUDA Driver API 测试程序",
+  "backend": "cuda_api_program",
+  "risk_level": "low"
+ },
+ "extension": {
+  "name": "gpu_runtime"
+ }
+}

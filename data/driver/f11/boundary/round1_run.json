@@ -1,0 +1,32 @@
+{
+ "api": [
+  {
+   "name": "cuInit",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 201,
+   "meaning": "CUDA_ERROR_INVALID_CONTEXT",
+   "is_error": true
+  },
+  {
+   "name": "cuCtxDestroy",
+   "code": 1,
+   "meaning": "CUDA_ERROR_INVALID_VALUE",
+   "is_error": true
+  }
+ ],
+ "states": [
+  "GENERATION_COMPLETED",
+  "CANDIDATE_STARTED",
+  "TARGET_TOOL_INVOKED",
+  "TARGET_TOOL_RETURNED"
+ ],
+ "exit": 0,
+ "stdout": "API cuInit = 0\nAPI cuMemAlloc = 201\nAPI cuCtxDestroy = 1\nBOUNDARY=DONE\n",
+ "stderr": "",
+ "timed_out": false
+}

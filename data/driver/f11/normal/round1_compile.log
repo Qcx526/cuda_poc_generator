@@ -1,0 +1,8 @@
+{
+ "command": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvcc.exe candidate1.c -o candidate1.exe -I C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\include -L C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\lib\\x64 -lcuda",
+ "returncode": 0,
+ "stdout": "candidate1.c\n",
+ "stderr": "",
+ "binary": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f11\\normal\\candidate1.exe",
+ "binary_sha256": "f2dad181be0b33486e1ba4ed74efaec4e023e0f9c5f59e6d724c30c8eeac8f83"
+}

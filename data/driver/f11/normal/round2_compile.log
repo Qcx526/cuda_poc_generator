@@ -1,0 +1,8 @@
+{
+ "command": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvcc.exe candidate2.c -o candidate2.exe -I C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\include -L C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\lib\\x64 -lcuda",
+ "returncode": 1,
+ "stdout": "nvcc fatal   : Cannot find compiler 'cl.exe' in PATH\n",
+ "stderr": "",
+ "binary": null,
+ "binary_sha256": null
+}

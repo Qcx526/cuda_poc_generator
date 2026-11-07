@@ -1,0 +1,35 @@
+```c
+#include <cuda.h>
+#include <stdio.h>
+
+#ifdef _MSC_VER
+#pragma comment(lib, "cuda.lib")
+#endif
+
+int main(void)
+{
+    CUresult res;
+    CUdeviceptr dPtr = 0;
+    CUcontext badCtx = 0;
+
+    res = cuInit(0);
+    printf("API cuInit = %d\n", (int)res);
+
+    dPtr = 0;
+    res = cuMemAlloc(&dPtr, 0);
+    printf("API cuMemAlloc = %d\n", (int)res);
+
+    if (res == CUDA_SUCCESS && dPtr != 0) {
+        CUresult freeRes = cuMemFree(dPtr);
+        printf("API cuMemFree = %d\n", (int)freeRes);
+        dPtr = 0;
+    }
+
+    /* Deliberately pass an uninitialized/NULL context handle. */
+    res = cuCtxDestroy(badCtx);
+    printf("API cuCtxDestroy = %d\n", (int)res);
+
+    printf("BOUNDARY=DONE\n");
+    return 0;
+}
+```

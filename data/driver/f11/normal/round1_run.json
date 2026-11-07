@@ -1,0 +1,62 @@
+{
+ "api": [
+  {
+   "name": "cuInit",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuDeviceGet",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxCreate",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemcpyHtoD",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemcpyDtoH",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemFree",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxDestroy",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  }
+ ],
+ "states": [
+  "GENERATION_COMPLETED",
+  "CANDIDATE_STARTED",
+  "TARGET_TOOL_INVOKED",
+  "TARGET_TOOL_RETURNED"
+ ],
+ "exit": 0,
+ "stdout": "API cuInit = 0\nAPI cuDeviceGet = 0\nAPI cuCtxCreate = 0\nAPI cuMemAlloc = 0\nAPI cuMemcpyHtoD = 0\nAPI cuMemcpyDtoH = 0\nDATA=OK\nAPI cuMemFree = 0\nAPI cuCtxDestroy = 0\n",
+ "stderr": "",
+ "timed_out": false
+}

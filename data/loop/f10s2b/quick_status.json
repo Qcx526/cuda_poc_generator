@@ -1,0 +1,38 @@
+[
+ {
+  "cve": "CVE-2023-0196",
+  "status": "RUNNING",
+  "verdict": "",
+  "diagnosis": ""
+ },
+ {
+  "cve": "CVE-2024-0109",
+  "status": "SUPPORTED",
+  "verdict": "",
+  "diagnosis": ""
+ },
+ {
+  "cve": "CVE-2024-0110",
+  "status": "SUPPORTED",
+  "verdict": "",
+  "diagnosis": ""
+ },
+ {
+  "cve": "CVE-2024-53877",
+  "status": "SUPPORTED",
+  "verdict": "",
+  "diagnosis": ""
+ },
+ {
+  "cve": "CVE-2025-23247",
+  "status": "EXHAUSTED",
+  "verdict": "",
+  "diagnosis": ""
+ },
+ {
+  "cve": "CVE-2025-23339",
+  "status": "SUPPORTED",
+  "verdict": "",
+  "diagnosis": ""
+ }
+]

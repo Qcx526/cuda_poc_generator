@@ -418,7 +418,18 @@ class TestExpertContract(unittest.TestCase):
                             isinstance(target, ast.Name) and target.id == "_CUDA_EXPERT_SYSTEM_PROMPT"
                             for target in node.targets
                         ))
-        self.assertEqual(_CUDA_EXPERT_SYSTEM_PROMPT, original)
+        # The baseline guard allows exactly one documented addition: the CVE-ID rule
+        # added in F10-Step2 after the model rewrote CVE-2024-53877 as CVE-2024-53871
+        # and CVE-2025-23280 from memory (both caught by the identity contract).
+        added = (
+            "## CVE ID Rule (hard requirement)\n\n"
+            "root_cause_analysis.cve_id MUST be copied character-for-character from the cve\n"
+            "value given in the input context. Never correct, complete, or substitute a CVE\n"
+            "number from memory, even if the input looks wrong.\n\n"
+        )
+        self.assertIn(added, _CUDA_EXPERT_SYSTEM_PROMPT)
+        self.assertNotIn(added, original)
+        self.assertEqual(_CUDA_EXPERT_SYSTEM_PROMPT.replace(added, "", 1), original)
 
 
 if __name__ == "__main__":
