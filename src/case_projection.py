@@ -74,10 +74,13 @@ def project(case: GPUCase, mode: str) -> Dict[str, object]:
             # facts, so a blind projection gets the platform name only.
             projected["extension"] = {"name": case.extension.name}
         else:
-            projected["extension"] = _pick(case.extension.model_dump(),
-                                           ("name", "version", "payload"))
+            payload = {key: value for key, value in case.extension.payload.items()
+                       if key in set(case.contract.shared_payload_keys)}
+            projected["extension"] = {"name": case.extension.name,
+                                      "version": case.extension.version,
+                                      "payload": payload}
     # missing 可能在自由文本里点出关键字段名，只有非盲测模式才带。
-    if allowed != {Visibility.PUBLIC}:
+    if case.contract.share_missing:
         projected["missing"] = list(case.knowledge.missing)
     return projected
 

@@ -133,6 +133,9 @@ class ExperimentContract(BaseModel):
     goal: str
     # 逐条授权：FACT_ASSISTED 只附加这里列出的 STATIC_FACT id，空集合表示一个都不给。
     authorized_fact_ids: List[str] = Field(default_factory=list)
+    # 扩展载荷与 missing 同样逐项授权，避免绕过证据列表。
+    shared_payload_keys: List[str] = Field(default_factory=list)
+    share_missing: bool = False
     backend: str                      # cuda_container / windows_userland
     allowed_operations: List[str] = Field(default_factory=list)
     risk_level: str = "low"

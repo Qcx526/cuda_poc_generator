@@ -89,6 +89,18 @@ def _value(normalized, dimension: str, key: str) -> Optional[str]:
     return None
 
 
+def _trusted(normalized, dimension: str, key: str) -> Optional[str]:
+    """A value may be used in a public field only if the field itself is VALID.
+
+    ``_value`` stringifies whatever it finds, so a wrongly typed vendor would still
+    reach TargetProfile.vendor and come back out through the public projection even
+    though no evidence carried it.
+    """
+    if _state(normalized, dimension, key) != FieldState.VALID.value:
+        return None
+    return _value(normalized, dimension, key)
+
+
 def adapt(directory: Path) -> LegacyBundle:
     normalized = normalize_input_files(Path(directory))
     errors = [d for d in normalized.diagnostics if d.severity == "ERROR"]
@@ -131,29 +143,29 @@ def adapt(directory: Path) -> LegacyBundle:
     if cve_id is None:
         notes.append("CVE \u672a\u5f97\u5230\u5355\u4e00\u503c\uff0c\u4fdd\u6301\u672a\u5b9a")
 
-    component = (_value(normalized, "affected_component", "component_name")
-                 or _value(normalized, "affected_component", "name") or "unknown")
+    component = (_trusted(normalized, "affected_component", "component_name")
+                 or _trusted(normalized, "affected_component", "name") or "unknown")
     case = GPUCase(
         schema_version=SCHEMA_VERSION,
         identity=CaseIdentity(case_id=cve_id or ("case:" + Path(directory).name),
                               cve_id=cve_id, title=component,
                               sources=[str(directory)]),
         target=TargetProfile(
-            vendor=_value(normalized, "affected_component", "vendor") or "unknown",
+            vendor=_trusted(normalized, "affected_component", "vendor") or "unknown",
             component=component, platform="linux", execution_tier="userland_toolchain",
-            versions={"affected": _value(normalized, "affected_component",
-                                         "version_range") or "unknown"}),
+            versions={"affected": _trusted(normalized, "affected_component",
+                                          "version_range") or "unknown"}),
         entry_surface=EntrySurface(
-            medium=_value(normalized, "attack_surface", "entry_type") or "file",
-            interface=_value(normalized, "attack_surface", "entry_point") or component,
-            trust_boundary=_value(normalized, "attack_surface",
-                                  "required_permissions") or "unknown"),
+            medium=_trusted(normalized, "attack_surface", "entry_type") or "file",
+            interface=_trusted(normalized, "attack_surface", "entry_point") or component,
+            trust_boundary=_trusted(normalized, "attack_surface",
+                                   "required_permissions") or "unknown"),
         description=VulnerabilityDescription(
             public_summary="%s: %s" % (component,
                                        _value(normalized, "vulnerability_type",
                                               "cwe_name") or "\u89c1\u516c\u544a"),
-            cwe=_value(normalized, "vulnerability_type", "cwe_id"),
-            impact=_value(normalized, "vulnerability_type", "cvss_severity"),
+            cwe=_trusted(normalized, "vulnerability_type", "cwe_id"),
+            impact=_trusted(normalized, "vulnerability_type", "cvss_severity"),
             root_cause_status=VerificationStatus.UNKNOWN),
         knowledge=ConstraintKnowledge(
             evidence=evidence,

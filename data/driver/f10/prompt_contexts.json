@@ -1,0 +1,66 @@
+{
+ "cuda_public": {
+  "case_id": "CVE-2025-23340",
+  "platform": "linux",
+  "backend": "cuda_container",
+  "mode": "PUBLIC_ONLY",
+  "context_sha256": "0cbec98ce377ab9740acccf4eb56649fdfde127d1db6a26e211305e38d3e2f3c",
+  "included_evidence": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5",
+   "A6"
+  ],
+  "excluded_evidence": [
+   "E-attack_surface-attack_vector",
+   "E-attack_surface-attack_complexity",
+   "E-attack_surface-surface_type",
+   "E-vulnerability_type-subtype",
+   "E-impact_controllability-controllable_fields",
+   "E-impact_controllability-exploitation_difficulty"
+  ]
+ },
+ "driver_public": {
+  "case_id": "case:nvlddmkm-610.47-escape",
+  "platform": "windows",
+  "backend": "windows_userland",
+  "mode": "PUBLIC_ONLY",
+  "context_sha256": "133042e6cc63ddcd19eeb6d049058a1ca735964ede03f08922a037451a26b2dd",
+  "included_evidence": [],
+  "excluded_evidence": [
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "R1",
+   "R2",
+   "S6",
+   "S7",
+   "O1"
+  ]
+ },
+ "driver_facts": {
+  "case_id": "case:nvlddmkm-610.47-escape",
+  "platform": "windows",
+  "backend": "windows_userland",
+  "mode": "FACT_ASSISTED",
+  "context_sha256": "1c59b66c7e1e528375c9d35709763eeb59c804f6f11128bde55f799e7f4fa242",
+  "included_evidence": [
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "S6",
+   "S7"
+  ],
+  "excluded_evidence": [
+   "R1",
+   "R2",
+   "O1"
+  ]
+ }
+}

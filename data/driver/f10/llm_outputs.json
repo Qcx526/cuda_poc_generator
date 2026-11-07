@@ -1,0 +1,105 @@
+{
+ "cuda_public": {
+  "raw": "[\n  {\n    \"id\": \"H1\",\n    \"statement\": \"nvdisasm 在处理包含 SHT_RELA 节的畸形 ELF/cubin 时，可能因缓冲区大小计算错误而崩溃。\",\n    \"kind\": \"HYPOTHESIS\",\n    \"cites\": [\"A3\", \"A5\", \"A6\"],\n    \"evidence_request\": \"在受控环境中以无特权用户运行 nvdisasm <malformed.elf>，输入包含 SHT_RELA 节，观察是否出现崩溃或内存错误报告，并与 CUDA Toolkit 13.0 的行为对比。\",\n    \"confidence\": \"medium\"\n  },\n  {\n    \"id\": \"H2\",\n    \"statement\": \"该漏洞入口为运行 nvdisasm <malformed.elf>，且触发无需任何特权。\",\n    \"kind\": \"FACT\",\n    \"cites\": [\"A3\", \"A4\"],\n    \"evidence_request\": \"以无特权用户身份运行 nvdisasm <malformed.elf>，确认是否可复现崩溃或异常行为。\",\n    \"confidence\": \"high\"\n  },\n  {\n    \"id\": \"H3\",\n    \"statement\": \"所有低于 CUDA Toolkit 13.0 的版本受影响，13.0 修复该问题。\",\n    \"kind\": \"FACT\",\n    \"cites\": [\"A2\"],\n    \"evidence_request\": \"分别使用低于 CUDA Toolkit 13.0 和 13.0 的 nvdisasm 处理同一 malformed.elf，比较是否仍出现崩溃。\",\n    \"confidence\": \"high\"\n  }\n]",
+  "items": [
+   {
+    "id": "H1",
+    "statement": "nvdisasm 在处理包含 SHT_RELA 节的畸形 ELF/cubin 时，可能因缓冲区大小计算错误而崩溃。",
+    "kind": "HYPOTHESIS",
+    "cites": [
+     "A3",
+     "A5",
+     "A6"
+    ],
+    "evidence_request": "在受控环境中以无特权用户运行 nvdisasm <malformed.elf>，输入包含 SHT_RELA 节，观察是否出现崩溃或内存错误报告，并与 CUDA Toolkit 13.0 的行为对比。",
+    "confidence": "medium"
+   },
+   {
+    "id": "H2",
+    "statement": "该漏洞入口为运行 nvdisasm <malformed.elf>，且触发无需任何特权。",
+    "kind": "FACT",
+    "cites": [
+     "A3",
+     "A4"
+    ],
+    "evidence_request": "以无特权用户身份运行 nvdisasm <malformed.elf>，确认是否可复现崩溃或异常行为。",
+    "confidence": "high"
+   },
+   {
+    "id": "H3",
+    "statement": "所有低于 CUDA Toolkit 13.0 的版本受影响，13.0 修复该问题。",
+    "kind": "FACT",
+    "cites": [
+     "A2"
+    ],
+    "evidence_request": "分别使用低于 CUDA Toolkit 13.0 和 13.0 的 nvdisasm 处理同一 malformed.elf，比较是否仍出现崩溃。",
+    "confidence": "high"
+   }
+  ],
+  "audit": {
+   "cited_valid": [
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6"
+   ],
+   "invalid_citations": [],
+   "facts_without_cites": [],
+   "unknown_addresses": []
+  },
+  "context_sha256": "0cbec98ce377ab9740acccf4eb56649fdfde127d1db6a26e211305e38d3e2f3c"
+ },
+ "driver_facts": {
+  "raw": "[\n  {\n    \"id\": \"H1\",\n    \"statement\": \"偏移 0x110 处写入的是指向 UTF-16 字符串 'EnableDirectFlip' 的 0x733e240，而 WDK 中同一偏移在 DRIVER_INITIALIZATION_DATA 里对应 DxgkDdiEscape，这提示该栈表可能不是标准 DRIVER_INITIALIZATION_DATA，或该字段存在类型混淆/异常初始化。\",\n    \"kind\": \"HYPOTHESIS\",\n    \"cites\": [\n      \"S5\",\n      \"S6\",\n      \"S7\"\n    ],\n    \"evidence_request\": \"解析该栈表完整布局并与 WDK DRIVER_INITIALIZATION_DATA 各字段逐一比对，同时跟踪 0x110 字段在运行时的读取/调用点以确认其是否被当作 DxgkDdiEscape 回调。\",\n    \"confidence\": \"medium\"\n  },\n  {\n    \"id\": \"H2\",\n    \"statement\": \"0x733e240 不在任何 .pdata 记录内，若偏移 0x110 被当作回调函数指针调用，则调用目标可能缺少对应的异常处理元数据覆盖。\",\n    \"kind\": \"HYPOTHESIS\",\n    \"cites\": [\n      \"S3\",\n      \"S5\",\n      \"S6\"\n    ],\n    \"evidence_request\": \"检查 .pdata 覆盖范围与 0x733e240 处内存属性，并反查是否存在从该字段发起的 call/jmp 或间接调用。\",\n    \"confidence\": \"medium\"\n  },\n  {\n    \"id\": \"H3\",\n    \"statement\": \"Entry 窗口内 57 组写入中 30 组指向 UTF-16 字符串、27 组目标未映射，提示该初始化表可能主要承载名称/配置项而非全部为可执行回调。\",\n    \"kind\": \"HYPOTHESIS\",\n    \"cites\": [\n      \"S6\",\n      \"S7\"\n    ],\n    \"evidence_request\": \"对 57 个写入目标做运行时读取点和类型解析，确认该表消费者是否将字符串/未映射字段作为回调使用。\",\n    \"confidence\": \"low\"\n  }\n]",
+  "items": [
+   {
+    "id": "H1",
+    "statement": "偏移 0x110 处写入的是指向 UTF-16 字符串 'EnableDirectFlip' 的 0x733e240，而 WDK 中同一偏移在 DRIVER_INITIALIZATION_DATA 里对应 DxgkDdiEscape，这提示该栈表可能不是标准 DRIVER_INITIALIZATION_DATA，或该字段存在类型混淆/异常初始化。",
+    "kind": "HYPOTHESIS",
+    "cites": [
+     "S5",
+     "S6",
+     "S7"
+    ],
+    "evidence_request": "解析该栈表完整布局并与 WDK DRIVER_INITIALIZATION_DATA 各字段逐一比对，同时跟踪 0x110 字段在运行时的读取/调用点以确认其是否被当作 DxgkDdiEscape 回调。",
+    "confidence": "medium"
+   },
+   {
+    "id": "H2",
+    "statement": "0x733e240 不在任何 .pdata 记录内，若偏移 0x110 被当作回调函数指针调用，则调用目标可能缺少对应的异常处理元数据覆盖。",
+    "kind": "HYPOTHESIS",
+    "cites": [
+     "S3",
+     "S5",
+     "S6"
+    ],
+    "evidence_request": "检查 .pdata 覆盖范围与 0x733e240 处内存属性，并反查是否存在从该字段发起的 call/jmp 或间接调用。",
+    "confidence": "medium"
+   },
+   {
+    "id": "H3",
+    "statement": "Entry 窗口内 57 组写入中 30 组指向 UTF-16 字符串、27 组目标未映射，提示该初始化表可能主要承载名称/配置项而非全部为可执行回调。",
+    "kind": "HYPOTHESIS",
+    "cites": [
+     "S6",
+     "S7"
+    ],
+    "evidence_request": "对 57 个写入目标做运行时读取点和类型解析，确认该表消费者是否将字符串/未映射字段作为回调使用。",
+    "confidence": "low"
+   }
+  ],
+  "audit": {
+   "cited_valid": [
+    "S3",
+    "S5",
+    "S6",
+    "S7"
+   ],
+   "invalid_citations": [],
+   "facts_without_cites": [],
+   "unknown_addresses": []
+  },
+  "context_sha256": "1c59b66c7e1e528375c9d35709763eeb59c804f6f11128bde55f799e7f4fa242"
+ }
+}

@@ -59,10 +59,23 @@ def test_no_consumer_takes_rbp_as_an_argument(table):
 
 
 def test_the_candidate_target_is_not_a_function_start(table):
+    """.pdata covering check, not the broken function_at() call of the first attempt."""
     bounds = table["candidate_bounds"]
     assert bounds["executable"] is True
     assert bounds["section"] == "INIT"
-    assert bounds["function_at_rva"] is False
+    assert bounds["inside_pdata_record"] is False
+    assert bounds["is_record_start"] is False
+
+
+def test_the_candidate_target_is_a_string_not_code(table):
+    """The bytes read "EnableDirectFlip", which refutes the callback hypothesis."""
+    target = table["candidate_target"]
+    assert target["kind"] == "utf16-string"
+    assert target["first_bytes"].startswith("45006e00")
+
+
+def test_no_lea_target_in_the_window_is_code(table):
+    assert table["target_kinds"].get("code", 0) == 0
 
 
 def test_no_wholesale_copy_of_the_stack_object(table):

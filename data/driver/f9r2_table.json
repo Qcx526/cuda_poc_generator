@@ -593,10 +593,21 @@
   "scanned_bytes": 6144
  },
  "candidate_bounds": {
+  "rva": "0x733e240",
   "section": "INIT",
   "executable": true,
-  "function_at_rva": false,
-  "function_size": 0
+  "inside_pdata_record": false,
+  "record_start": null,
+  "is_record_start": false
+ },
+ "candidate_target": {
+  "rva": "0x733e240",
+  "kind": "utf16-string",
+  "first_bytes": "45006e00610062006c00650044006900"
+ },
+ "target_kinds": {
+  "unmapped": 27,
+  "utf16-string": 30
  },
  "block_copy": {
   "window_bytes": 6144,

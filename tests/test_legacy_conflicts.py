@@ -69,3 +69,79 @@ def test_unknown_fields_are_carried_not_reinterpreted(tmp_path):
     bundle = adapt(case)
     archive_note = bundle.provenance["note"]
     assert "未补全" in archive_note
+
+
+def _rewrite(case: Path, text: str) -> None:
+    (case / "3_affected_component.json").write_text(text, encoding="utf-8")
+
+
+def test_duplicate_key_with_different_values_blocks_the_field(tmp_path):
+    """The normalizer already reports this; the adapter must not publish either value."""
+    case = _copy(tmp_path)
+    _rewrite(case, '{"cve_id":"CVE-2025-23340","vendor":"NVIDIA","vendor":"OtherCorp"}')
+    bundle = adapt(case)
+    public = json.dumps(project(bundle.case, PUBLIC_ONLY), ensure_ascii=False)
+    assert "OtherCorp" not in public
+    assert bundle.case.target.vendor != "OtherCorp"
+    states = bundle.provenance["field_states"]
+    assert states.get("/dimensions/affected_component/vendor") == "CONFLICT"
+
+
+def test_duplicate_key_with_same_value_is_accepted(tmp_path):
+    """Same value twice is not a conflict; the key stays VALID."""
+    case = _copy(tmp_path)
+    _rewrite(case, '{"cve_id":"CVE-2025-23340","vendor":"NVIDIA","vendor":"NVIDIA"}')
+    bundle = adapt(case)
+    states = bundle.provenance["field_states"]
+    assert states.get("/dimensions/affected_component/vendor") == "VALID"
+
+
+def test_untrusted_vendor_cannot_reenter_through_target_profile(tmp_path):
+    """The bypass: a wrongly typed vendor still stringified into TargetProfile."""
+    case = _copy(tmp_path)
+    path = case / "3_affected_component.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["vendor"] = {"nested": "leaked"}
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    bundle = adapt(case)
+    public = json.dumps(project(bundle.case, PUBLIC_ONLY), ensure_ascii=False)
+    assert "leaked" not in public
+    assert bundle.case.target.vendor == "unknown"
+
+
+def _rewrite(case: Path, text: str) -> None:
+    (case / "3_affected_component.json").write_text(text, encoding="utf-8")
+
+
+def test_duplicate_key_with_different_values_blocks_the_field(tmp_path):
+    """The normalizer already reports this; the adapter must not publish either value."""
+    case = _copy(tmp_path)
+    _rewrite(case, '{"cve_id":"CVE-2025-23340","vendor":"NVIDIA","vendor":"OtherCorp"}')
+    bundle = adapt(case)
+    public = json.dumps(project(bundle.case, PUBLIC_ONLY), ensure_ascii=False)
+    assert "OtherCorp" not in public
+    assert bundle.case.target.vendor != "OtherCorp"
+    states = bundle.provenance["field_states"]
+    assert states.get("/dimensions/affected_component/vendor") == "CONFLICT"
+
+
+def test_duplicate_key_with_same_value_is_accepted(tmp_path):
+    """Same value twice is not a conflict; the key stays VALID."""
+    case = _copy(tmp_path)
+    _rewrite(case, '{"cve_id":"CVE-2025-23340","vendor":"NVIDIA","vendor":"NVIDIA"}')
+    bundle = adapt(case)
+    states = bundle.provenance["field_states"]
+    assert states.get("/dimensions/affected_component/vendor") == "VALID"
+
+
+def test_untrusted_vendor_cannot_reenter_through_target_profile(tmp_path):
+    """The bypass: a wrongly typed vendor still stringified into TargetProfile."""
+    case = _copy(tmp_path)
+    path = case / "3_affected_component.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["vendor"] = {"nested": "leaked"}
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    bundle = adapt(case)
+    public = json.dumps(project(bundle.case, PUBLIC_ONLY), ensure_ascii=False)
+    assert "leaked" not in public
+    assert bundle.case.target.vendor == "unknown"

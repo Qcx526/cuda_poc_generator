@@ -122,8 +122,8 @@
    {
     "id": "S6",
     "kind": "STATIC_FACT",
-    "statement": "Entry 窗口内有 57 条 lea/mov 对在填充同一结构；其中字段偏移 0x110 处写入的地址为 0x733e240（store 位于 0x733a399）",
-    "source": "tools/driver/f9r2_case.py scan_table（Capstone 线性反汇编）",
+    "statement": "Entry 窗口内 57 组 lea/mov 写入；目标类型统计：{'unmapped': 27, 'utf16-string': 30}。其中字段偏移 0x110 写入 0x733e240（store @ 0x733a399），该目标字节为 45006e00610062006c00650044006900…（UTF-16 字符串 'EnableDirectFlip'），不在任何 .pdata 记录内",
+    "source": "tools/driver/f9r2_case.py（Capstone + .pdata + 字节读取）",
     "target_identity": "31af1ce957c6065d0b4b01ba2a7ad27df386e32c15b536ce653a162e3425fa9c",
     "digest": null,
     "status": "SUPPORTED",
@@ -146,14 +146,14 @@
    {
     "id": "O1",
     "kind": "EVALUATION_ONLY",
-    "statement": "[rbp+0x110] 写入被解释为 DxgkDdiEscape 注册：未证实",
-    "source": "f9r2_case 推断",
+    "statement": "0x733e240 是 DxgkDdiEscape：已证伪。该地址是 UTF-16 字符串“EnableDirectFlip”的首字节，不在任何 .pdata 函数范围内；57 组写入的目标中代码为 0 个",
+    "source": "f9r2_case：字节读取 + pdata 覆盖 + 目标分类",
     "target_identity": null,
     "digest": null,
-    "status": "UNKNOWN",
+    "status": "REFUTED",
     "visible_in": "EVAL",
     "public_reviewed": false,
-    "notes": "偏移与 WDK 布局一致只是必要条件；未证明 rbp 即初始化结构基址，也未证明该表用于 Escape 注册"
+    "notes": null
    }
   ],
   "missing": [
@@ -173,6 +173,8 @@
    "S6",
    "S7"
   ],
+  "shared_payload_keys": [],
+  "share_missing": false,
   "backend": "windows_userland",
   "allowed_operations": [
    "query_device_state",

@@ -7,6 +7,7 @@ used and whether its base could be tied to the initialization structure - a stor
 [reg+0x110] alone proves nothing.
 """
 
+import bisect
 import json
 import sys
 from pathlib import Path
@@ -91,6 +92,19 @@ def scan_table(image: PEImage, entry_rva: int, window: int = 0x400) -> dict:
             "count": len(pairs), "rejected_count": len(rejected)}
 
 
+def bound_base_register(image: PEImage, entry_rva: int, reg: str = "rbp",
+                        window: int = 0x200) -> dict:
+    """Where does the base register come from before the table is written?"""
+    blob = image.data[image.offset_of(entry_rva):image.offset_of(entry_rva) + window]
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    writes = []
+    for insn in md.disasm(blob, entry_rva):
+        text = "%s %s" % (insn.mnemonic, insn.op_str)
+        if insn.mnemonic in ("lea", "mov") and insn.op_str.startswith(reg + ","):
+            writes.append({"rva": "0x%x" % insn.address, "text": text})
+    return {"register": reg, "writes": writes, "found": bool(writes)}
+
+
 def classify_pairs(table: dict) -> dict:
     """Group the pairs by base register instead of calling them one table."""
     groups = {}
@@ -138,28 +152,43 @@ def scan_block_copy(image: PEImage, entry_rva: int, window: int = 0x1800) -> dic
 
 
 def function_bounds(image: PEImage, rva: int) -> dict:
-    """Is the candidate inside an executable section and a .pdata function?"""
+    """Where does the address actually land? .pdata records are the authority."""
+    functions = image.functions()
+    starts = [f.rva for f in functions]
+    idx = bisect.bisect_right(starts, rva) - 1
+    covering = functions[idx] if idx >= 0 and functions[idx].rva <= rva < functions[idx].end else None
     section = next((s for s in image.sections
                     if s.vaddr <= rva < s.vaddr + s.vsize), None)
-    fn = image.function_at(rva) if hasattr(image, "function_at") else None
-    return {"section": section.name if section else None,
+    return {"rva": "0x%x" % rva,
+            "section": section.name if section else None,
             "executable": bool(section and section.executable),
-            "function_at_rva": bool(fn),
-            "function_size": getattr(fn, "size", 0)}
+            "inside_pdata_record": bool(covering),
+            "record_start": "0x%x" % covering.rva if covering else None,
+            "is_record_start": any(f.rva == rva for f in functions)}
 
 
-def bound_base_register(image: PEImage, entry_rva: int, reg: str = "rbp",
-                        window: int = 0x200) -> dict:
-    """Where does rbp come from before the table is written?"""
-    offset = image.offset_of(entry_rva)
-    blob = image.data[offset:offset + window]
-    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-    writes = []
-    for insn in md.disasm(blob, entry_rva):
-        text = "%s %s" % (insn.mnemonic, insn.op_str)
-        if insn.mnemonic in ("lea", "mov") and insn.op_str.startswith(reg + ","):
-            writes.append({"rva": "0x%x" % insn.address, "text": text})
-    return {"register": reg, "writes": writes, "found": bool(writes)}
+def classify_target(image: PEImage, rva: int) -> dict:
+    """Code, a UTF-16 string, or something else.
+
+    This is the check the earlier rounds skipped: a lea target being stored next to
+    other lea targets says nothing about it being a function. Reading the bytes does.
+    """
+    functions = image.functions()
+    if any(f.rva <= rva < f.end for f in functions):
+        kind = "code"
+    else:
+        offset = image.offset_of(rva)
+        raw = image.data[offset:offset + 32] if offset is not None else b""
+        if len(raw) >= 4 and raw[1] == 0 and raw[3] == 0 and 32 <= raw[0] < 127:
+            text = raw.decode("utf-16-le", errors="replace").split("\x00")[0]
+            kind = "utf16-string"
+        elif raw:
+            kind = "data"
+        else:
+            kind = "unmapped"
+    return {"rva": "0x%x" % rva, "kind": kind,
+            "first_bytes": image.data[image.offset_of(rva):image.offset_of(rva) + 16].hex()
+            if image.offset_of(rva) is not None else ""}
 
 
 def build_case(facts: dict, offsets: dict, flow: dict, table: dict = None) -> GPUCase:
@@ -204,14 +233,17 @@ def build_case(facts: dict, offsets: dict, flow: dict, table: dict = None) -> GP
                  visible_in=Visibility.EVAL,
                  notes="需断点命中+栈回溯；本机不可执行"),
         Evidence(id="S6", kind=EvidenceKind.STATIC_FACT,
-                 statement="Entry 窗口内有 %d 条 lea/mov 对在填充同一结构；其中字段偏移 0x110 "
-                           "处写入的地址为 %s（store 位于 %s）"
+                 statement="Entry 窗口内 %d 组 lea/mov 写入；目标类型统计：%s。"
+                           "其中字段偏移 0x110 写入 %s（store @ %s），该目标字节为 %s…"
+                           "（UTF-16 字符串 %r），不在任何 .pdata 记录内"
                            % ((table or {}).get("count", 0),
-                              next((r["target_rva"] for r in (table or {}).get("pairs", [])
-                                    if r["field_offset"] == "0x110"), "未找到"),
+                              (table or {}).get("target_kinds", {}),
+                              ((table or {}).get("candidate_target") or {}).get("rva"),
                               next((r["store_rva"] for r in (table or {}).get("pairs", [])
-                                    if r["field_offset"] == "0x110"), "未找到")),
-                 source="tools/driver/f9r2_case.py scan_table（Capstone 线性反汇编）",
+                                    if r["field_offset"] == "0x110"), "未找到"),
+                              ((table or {}).get("candidate_target") or {}).get("first_bytes", ""),
+                              "EnableDirectFlip"),
+                 source="tools/driver/f9r2_case.py（Capstone + .pdata + 字节读取）",
                  target_identity=sha, status=VerificationStatus.SUPPORTED,
                  visible_in=Visibility.FACT),
         Evidence(id="S7", kind=EvidenceKind.STATIC_FACT,
@@ -226,11 +258,11 @@ def build_case(facts: dict, offsets: dict, flow: dict, table: dict = None) -> GP
                  target_identity=sha, status=VerificationStatus.SUPPORTED,
                  visible_in=Visibility.FACT),
         Evidence(id="O1", kind=EvidenceKind.EVALUATION_ONLY,
-                 statement="[rbp+0x110] 写入被解释为 DxgkDdiEscape 注册：未证实",
-                 source="f9r2_case 推断", status=VerificationStatus.UNKNOWN,
-                 visible_in=Visibility.EVAL,
-                 notes="偏移与 WDK 布局一致只是必要条件；未证明 rbp 即初始化结构基址，"
-                       "也未证明该表用于 Escape 注册"),
+                 statement="0x733e240 是 DxgkDdiEscape：已证伪。该地址是 UTF-16 字符串"
+                           "“EnableDirectFlip”的首字节，不在任何 .pdata 函数范围内；"
+                           "57 组写入的目标中代码为 0 个",
+                 source="f9r2_case：字节读取 + pdata 覆盖 + 目标分类",
+                 status=VerificationStatus.REFUTED, visible_in=Visibility.EVAL),
     ], missing=["Escape 回调 RVA", "私有请求结构布局", "运行期初始化结构内容"])
 
     return GPUCase(
@@ -275,6 +307,12 @@ def main() -> int:
     last_store = max((int(p["store_rva"], 16) for p in table["pairs"]), default=entry)
     table["consumer"] = trace_consumer(image, entry, last_store)
     table["candidate_bounds"] = function_bounds(image, 0x733e240)
+    table["candidate_target"] = classify_target(image, 0x733e240)
+    kinds = {}
+    for pair in table["pairs"]:
+        kind = classify_target(image, int(pair["target_rva"], 16))["kind"]
+        kinds[kind] = kinds.get(kind, 0) + 1
+    table["target_kinds"] = kinds
     table["block_copy"] = scan_block_copy(image, entry)
     case = build_case(facts, offsets, flow, table)
 
