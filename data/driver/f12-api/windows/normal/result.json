@@ -1,0 +1,74 @@
+{
+ "platform": "windows",
+ "task": "normal",
+ "context_sha256": "82efdc380cc56bc55152f2aa11ffc63bc3c52a044dadbcb69c423f4bb9be136f",
+ "evidence_ids": [
+  "E1",
+  "E2",
+  "E3"
+ ],
+ "generated": true,
+ "build": {
+  "ok": true,
+  "rc": 0,
+  "artifact": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f12-api\\windows\\normal\\candidate.exe",
+  "source_sha256": "b0a022f426dfb251da5a2f1e23edbcb577dd61a6c115bb0656c41e52231adcd0",
+  "artifact_sha256": "828363d9b91c0358d49aac8f9e67b93f824895b54436d041000cca3746e6b26b",
+  "log_tail": "candidate.c\n"
+ },
+ "exit": 0,
+ "timed_out": false,
+ "api": [
+  {
+   "name": "cuInit",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuDeviceGet",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxCreate",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemcpyHtoD",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemcpyDtoH",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemFree",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxDestroy",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  }
+ ],
+ "data_ok": true,
+ "boundary_done": false,
+ "stderr_tail": ""
+}

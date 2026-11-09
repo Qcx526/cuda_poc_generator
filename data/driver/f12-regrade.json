@@ -1,0 +1,244 @@
+[
+ {
+  "batch": "f10s2b",
+  "cve": "CVE-2023-0196",
+  "advisory_tools": [],
+  "iteration": "iteration_2_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 2,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f10s2b",
+  "cve": "CVE-2024-0109",
+  "advisory_tools": [],
+  "iteration": "iteration_1_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 4,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f10s2b",
+  "cve": "CVE-2024-0110",
+  "advisory_tools": [],
+  "iteration": "iteration_1_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 10,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f10s2b",
+  "cve": "CVE-2024-53877",
+  "advisory_tools": [
+   "nvdisasm"
+  ],
+  "iteration": "iteration_2_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 3,
+  "crashing_tools": [
+   "cuobjdump"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f10s2b",
+  "cve": "CVE-2025-23247",
+  "advisory_tools": [
+   "cuobjdump"
+  ],
+  "iteration": "iteration_2_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED"
+  ],
+  "highest": "TOOL_EXECUTED",
+  "crashes": 0,
+  "crashing_tools": [],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f10s2b",
+  "cve": "CVE-2025-23339",
+  "advisory_tools": [
+   "cuobjdump"
+  ],
+  "iteration": "iteration_1_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 1,
+  "crashing_tools": [
+   "cuobjdump"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2024-0111",
+  "advisory_tools": [],
+  "iteration": "iteration_2_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 6,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2024-0124",
+  "advisory_tools": [],
+  "iteration": "iteration_1_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 2,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2024-0125",
+  "advisory_tools": [],
+  "iteration": "iteration_1_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 2,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2025-23308",
+  "advisory_tools": [],
+  "iteration": "iteration_2_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 2,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2025-23338",
+  "advisory_tools": [],
+  "iteration": "iteration_1_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 2,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2025-23346",
+  "advisory_tools": [],
+  "iteration": "iteration_2_observation.txt",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED"
+  ],
+  "highest": "DIFFERENTIAL_SUPPORTED",
+  "crashes": 8,
+  "crashing_tools": [
+   ""
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "single_field": false,
+  "old_verdict": ""
+ }
+]

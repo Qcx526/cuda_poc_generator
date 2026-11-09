@@ -1,0 +1,68 @@
+{
+ "platform": "linux",
+ "task": "boundary",
+ "context_sha256": "1b08ea07ca49d12ad903c3760bf4c8c7d2167d16b952374e9ff537d386a67f15",
+ "evidence_ids": [
+  "L1",
+  "L2",
+  "L3"
+ ],
+ "generated": true,
+ "build": {
+  "ok": true,
+  "rc": 0,
+  "artifact": "~/f12/302923aff054b3b9/candidate",
+  "source_sha256": "302923aff054b3b931c871ee496ec53692cc9acee6342bb9f21ca6107d74ceae",
+  "artifact_sha256": "e4933c41234072d46f62e4d67f34976238831d08552de2f915ad8111b559cc62",
+  "log_tail": ""
+ },
+ "exit": 0,
+ "timed_out": false,
+ "api": [
+  {
+   "name": "cuInit",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuDeviceGet",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxCreate",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 1,
+   "meaning": "CUDA_ERROR_INVALID_VALUE",
+   "is_error": true
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxDestroy",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 201,
+   "meaning": "CUDA_ERROR_INVALID_CONTEXT",
+   "is_error": true
+  }
+ ],
+ "data_ok": false,
+ "boundary_done": true,
+ "stderr_tail": "\n"
+}

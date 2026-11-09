@@ -44,11 +44,16 @@ def parse(observation: Path) -> RunFacts:
     facts = RunFacts()
     facts.samples = len(re.findall(r"^\[CPG_LABEL\]", text, re.M))
     seen_tools = set()
-    for match in re.finditer(r"^\[CPG_RUN\] (\S+?)::(\S+) exit=(-?\d+)", text, re.M):
-        name, tool, code = match.group(1), match.group(2), int(match.group(3))
+    # Two formats exist in the archive: "[CPG_RUN] file::tool exit=N" and the older
+    # "[CPG_RUN] file exit=N". The older one also reports a signal as a negative
+    # return code (-11), so a >=128 test alone silently loses every crash in it.
+    for match in re.finditer(r"^\[CPG_RUN\] (\S+?)(?:::([^\s]+))? exit=(-?\d+)",
+                             text, re.M):
+        name, tool, code = match.group(1), match.group(2) or "", int(match.group(3))
         facts.tool_executions += 1
-        seen_tools.add(tool)
-        if code >= CRASH_EXIT:
+        if tool:
+            seen_tools.add(tool)
+        if code < 0 or code >= CRASH_EXIT:
             facts.crashes += 1
             if tool not in facts.crashing_tools:
                 facts.crashing_tools.append(tool)
@@ -69,9 +74,10 @@ def parse(observation: Path) -> RunFacts:
 
 def _clean(text: str, names: List[str]) -> bool:
     for name in names:
-        for match in re.finditer(r"^\[CPG_RUN\] %s::\S+ exit=(-?\d+)" % re.escape(name),
-                                 text, re.M):
-            if int(match.group(1)) >= CRASH_EXIT:
+        for match in re.finditer(
+                r"^\[CPG_RUN\] %s(?:\S+)? exit=(-?\d+)" % re.escape(name), text, re.M):
+            code = int(match.group(1))
+            if code < 0 or code >= CRASH_EXIT:
                 return False
     return bool(names)
 

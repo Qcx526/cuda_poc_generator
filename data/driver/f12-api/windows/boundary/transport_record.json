@@ -1,0 +1,22 @@
+{
+ "transport": "windows_nvcc",
+ "build": {
+  "ok": true,
+  "returncode": 0,
+  "source_sha256": "cb0d9290e84347540dafa24deb80e8ed9e82de7eeb12c64dfe6377e6bb4162e6",
+  "artifact": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f12-api\\windows\\boundary\\candidate.exe",
+  "artifact_sha256": "f8ba49da43ad2025385d19f7cdef7c1ae1bbdfda2c279620f098b8a571622291",
+  "log_tail": "candidate.c\n"
+ },
+ "run": {
+  "run_id": "windows-boundary",
+  "tool": "cuda_driver_api_program",
+  "tool_version": "nvcc 11.2.152 / nvcuda.dll",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": "API cuInit = 0\nAPI cuDeviceGet = 0\nAPI cuCtxCreate = 0\nAPI cuMemAlloc = 1\nAPI cuMemAlloc = 0\nAPI cuMemFree = 0\nAPI cuCtxDestroy = 0\nAPI cuMemAlloc = 201\nBOUNDARY=DONE\n",
+  "stderr": ""
+ },
+ "note": "编译与运行退出码均由 transport 直接取得，未经过管道"
+}

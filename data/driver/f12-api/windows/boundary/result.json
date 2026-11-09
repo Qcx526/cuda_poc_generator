@@ -1,0 +1,74 @@
+{
+ "platform": "windows",
+ "task": "boundary",
+ "context_sha256": "82efdc380cc56bc55152f2aa11ffc63bc3c52a044dadbcb69c423f4bb9be136f",
+ "evidence_ids": [
+  "E1",
+  "E2",
+  "E3"
+ ],
+ "generated": true,
+ "build": {
+  "ok": true,
+  "rc": 0,
+  "artifact": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f12-api\\windows\\boundary\\candidate.exe",
+  "source_sha256": "cb0d9290e84347540dafa24deb80e8ed9e82de7eeb12c64dfe6377e6bb4162e6",
+  "artifact_sha256": "f8ba49da43ad2025385d19f7cdef7c1ae1bbdfda2c279620f098b8a571622291",
+  "log_tail": "candidate.c\n"
+ },
+ "exit": 0,
+ "timed_out": false,
+ "api": [
+  {
+   "name": "cuInit",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuDeviceGet",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxCreate",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 1,
+   "meaning": "CUDA_ERROR_INVALID_VALUE",
+   "is_error": true
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemFree",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxDestroy",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 201,
+   "meaning": "CUDA_ERROR_INVALID_CONTEXT",
+   "is_error": true
+  }
+ ],
+ "data_ok": false,
+ "boundary_done": true,
+ "stderr_tail": ""
+}

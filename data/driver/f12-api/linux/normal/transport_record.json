@@ -1,0 +1,22 @@
+{
+ "transport": "wsl_gcc",
+ "build": {
+  "ok": true,
+  "returncode": 0,
+  "source_sha256": "73687b756f161eab6447697e33bb32020a7326e55ea95d05f08f417d2544f06a",
+  "artifact": "~/f12/73687b756f161eab/candidate",
+  "artifact_sha256": "21c68ae34307256cd7f4f99b5851edd1e0ce25be0ecdfcb42d67255e73e9d1d4",
+  "log_tail": ""
+ },
+ "run": {
+  "run_id": "linux-normal",
+  "tool": "cuda_driver_api_program",
+  "tool_version": "gcc + libcuda (WSL shim)",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": "API cuInit = 0\nAPI cuDeviceGet = 0\nAPI cuCtxCreate = 0\nAPI cuMemAlloc = 0\nAPI cuMemcpyHtoD = 0\nAPI cuMemcpyDtoH = 0\nDATA=OK\nAPI cuMemFree = 0\nAPI cuCtxDestroy = 0\n",
+  "stderr": "\n"
+ },
+ "note": "编译与运行退出码均由 transport 直接取得，未经过管道"
+}

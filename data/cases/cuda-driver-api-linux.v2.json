@@ -1,0 +1,102 @@
+{
+ "schema_version": "gpu-vulnerability-case/v2",
+ "identity": {
+  "case_id": "case:cuda-driver-api-linux",
+  "cve_id": null,
+  "title": "CUDA Driver API 受控调用基线（Linux）",
+  "sources": [
+   "tools/cuda/f12_api_experiments.py"
+  ]
+ },
+ "target": {
+  "vendor": "NVIDIA",
+  "component": "libcuda.so.1",
+  "platform": "linux",
+  "execution_tier": "userland_api",
+  "versions": {
+   "driver_api": "13030",
+   "toolkit_headers": "12.8",
+   "distro": "Ubuntu 22.04 (WSL2)"
+  }
+ },
+ "entry_surface": {
+  "medium": "api_call",
+  "interface": "CUDA Driver API",
+  "trust_boundary": "user_mode -> /dev/dxg -> Windows driver",
+  "constraints": [
+   "gcc",
+   "CUDA 12.8 头文件"
+  ]
+ },
+ "description": {
+  "public_summary": "WSL2 下经 DXCore 转发到 Windows 驱动执行受控 CUDA Driver API 调用",
+  "cwe": null,
+  "impact": "none",
+  "root_cause_status": "UNKNOWN"
+ },
+ "knowledge": {
+  "evidence": [
+   {
+    "id": "L1",
+    "kind": "INPUT_ASSERTION",
+    "statement": "目标设备: NVIDIA GeForce GTX 1660 (计算能力 7.5)，经 /dev/dxg 访问",
+    "source": "cuDeviceGetName in WSL",
+    "target_identity": null,
+    "digest": null,
+    "status": "UNKNOWN",
+    "visible_in": "PUBLIC",
+    "public_reviewed": true,
+    "notes": null
+   },
+   {
+    "id": "L2",
+    "kind": "INPUT_ASSERTION",
+    "statement": "CUDA Driver API 兼容版本 13030；libcuda 由 DXCore 转发，不是原生 Linux 内核驱动",
+    "source": "cuDriverGetVersion in WSL",
+    "target_identity": null,
+    "digest": null,
+    "status": "UNKNOWN",
+    "visible_in": "PUBLIC",
+    "public_reviewed": true,
+    "notes": null
+   },
+   {
+    "id": "L3",
+    "kind": "INPUT_ASSERTION",
+    "statement": "编译链: gcc + /usr/local/cuda/include (CUDA 12.8 头文件)",
+    "source": "which gcc",
+    "target_identity": null,
+    "digest": null,
+    "status": "UNKNOWN",
+    "visible_in": "PUBLIC",
+    "public_reviewed": true,
+    "notes": null
+   }
+  ],
+  "missing": [
+   "原生 Linux 驱动行为",
+   "私有 API 语义"
+  ]
+ },
+ "contract": {
+  "goal": "在 Linux 用户态生成受控 CUDA Driver API 测试程序",
+  "authorized_fact_ids": [],
+  "shared_payload_keys": [],
+  "share_missing": false,
+  "backend": "cuda_api_program",
+  "allowed_operations": [
+   "compile",
+   "run_host_gpu"
+  ],
+  "risk_level": "low",
+  "requires_independent_verification": true
+ },
+ "extension": {
+  "name": "gpu_runtime",
+  "version": "1",
+  "payload": {
+   "toolkit_headers": "12.8",
+   "arch": "sm_75"
+  }
+ }
+}

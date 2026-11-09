@@ -1,0 +1,292 @@
+{
+ "windows/normal": {
+  "platform": "windows",
+  "task": "normal",
+  "context_sha256": "82efdc380cc56bc55152f2aa11ffc63bc3c52a044dadbcb69c423f4bb9be136f",
+  "evidence_ids": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "generated": true,
+  "build": {
+   "ok": true,
+   "rc": 0,
+   "artifact": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f12-api\\windows\\normal\\candidate.exe",
+   "source_sha256": "b0a022f426dfb251da5a2f1e23edbcb577dd61a6c115bb0656c41e52231adcd0",
+   "artifact_sha256": "828363d9b91c0358d49aac8f9e67b93f824895b54436d041000cca3746e6b26b",
+   "log_tail": "candidate.c\n"
+  },
+  "exit": 0,
+  "timed_out": false,
+  "api": [
+   {
+    "name": "cuInit",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuDeviceGet",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxCreate",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemcpyHtoD",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemcpyDtoH",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemFree",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxDestroy",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   }
+  ],
+  "data_ok": true,
+  "boundary_done": false,
+  "stderr_tail": ""
+ },
+ "windows/boundary": {
+  "platform": "windows",
+  "task": "boundary",
+  "context_sha256": "82efdc380cc56bc55152f2aa11ffc63bc3c52a044dadbcb69c423f4bb9be136f",
+  "evidence_ids": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "generated": true,
+  "build": {
+   "ok": true,
+   "rc": 0,
+   "artifact": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f12-api\\windows\\boundary\\candidate.exe",
+   "source_sha256": "cb0d9290e84347540dafa24deb80e8ed9e82de7eeb12c64dfe6377e6bb4162e6",
+   "artifact_sha256": "f8ba49da43ad2025385d19f7cdef7c1ae1bbdfda2c279620f098b8a571622291",
+   "log_tail": "candidate.c\n"
+  },
+  "exit": 0,
+  "timed_out": false,
+  "api": [
+   {
+    "name": "cuInit",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuDeviceGet",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxCreate",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 1,
+    "meaning": "CUDA_ERROR_INVALID_VALUE",
+    "is_error": true
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemFree",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxDestroy",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 201,
+    "meaning": "CUDA_ERROR_INVALID_CONTEXT",
+    "is_error": true
+   }
+  ],
+  "data_ok": false,
+  "boundary_done": true,
+  "stderr_tail": ""
+ },
+ "linux/normal": {
+  "platform": "linux",
+  "task": "normal",
+  "context_sha256": "1b08ea07ca49d12ad903c3760bf4c8c7d2167d16b952374e9ff537d386a67f15",
+  "evidence_ids": [
+   "L1",
+   "L2",
+   "L3"
+  ],
+  "generated": true,
+  "build": {
+   "ok": true,
+   "rc": 0,
+   "artifact": "~/f12/73687b756f161eab/candidate",
+   "source_sha256": "73687b756f161eab6447697e33bb32020a7326e55ea95d05f08f417d2544f06a",
+   "artifact_sha256": "21c68ae34307256cd7f4f99b5851edd1e0ce25be0ecdfcb42d67255e73e9d1d4",
+   "log_tail": ""
+  },
+  "exit": 0,
+  "timed_out": false,
+  "api": [
+   {
+    "name": "cuInit",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuDeviceGet",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxCreate",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemcpyHtoD",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemcpyDtoH",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemFree",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxDestroy",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   }
+  ],
+  "data_ok": true,
+  "boundary_done": false,
+  "stderr_tail": "\n"
+ },
+ "linux/boundary": {
+  "platform": "linux",
+  "task": "boundary",
+  "context_sha256": "1b08ea07ca49d12ad903c3760bf4c8c7d2167d16b952374e9ff537d386a67f15",
+  "evidence_ids": [
+   "L1",
+   "L2",
+   "L3"
+  ],
+  "generated": true,
+  "build": {
+   "ok": true,
+   "rc": 0,
+   "artifact": "~/f12/302923aff054b3b9/candidate",
+   "source_sha256": "302923aff054b3b931c871ee496ec53692cc9acee6342bb9f21ca6107d74ceae",
+   "artifact_sha256": "e4933c41234072d46f62e4d67f34976238831d08552de2f915ad8111b559cc62",
+   "log_tail": ""
+  },
+  "exit": 0,
+  "timed_out": false,
+  "api": [
+   {
+    "name": "cuInit",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuDeviceGet",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxCreate",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 1,
+    "meaning": "CUDA_ERROR_INVALID_VALUE",
+    "is_error": true
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuCtxDestroy",
+    "code": 0,
+    "meaning": "CUDA_SUCCESS",
+    "is_error": false
+   },
+   {
+    "name": "cuMemAlloc",
+    "code": 201,
+    "meaning": "CUDA_ERROR_INVALID_CONTEXT",
+    "is_error": true
+   }
+  ],
+  "data_ok": false,
+  "boundary_done": true,
+  "stderr_tail": "\n"
+ }
+}

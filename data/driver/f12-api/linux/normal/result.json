@@ -1,0 +1,74 @@
+{
+ "platform": "linux",
+ "task": "normal",
+ "context_sha256": "1b08ea07ca49d12ad903c3760bf4c8c7d2167d16b952374e9ff537d386a67f15",
+ "evidence_ids": [
+  "L1",
+  "L2",
+  "L3"
+ ],
+ "generated": true,
+ "build": {
+  "ok": true,
+  "rc": 0,
+  "artifact": "~/f12/73687b756f161eab/candidate",
+  "source_sha256": "73687b756f161eab6447697e33bb32020a7326e55ea95d05f08f417d2544f06a",
+  "artifact_sha256": "21c68ae34307256cd7f4f99b5851edd1e0ce25be0ecdfcb42d67255e73e9d1d4",
+  "log_tail": ""
+ },
+ "exit": 0,
+ "timed_out": false,
+ "api": [
+  {
+   "name": "cuInit",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuDeviceGet",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxCreate",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemAlloc",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemcpyHtoD",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemcpyDtoH",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuMemFree",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  },
+  {
+   "name": "cuCtxDestroy",
+   "code": 0,
+   "meaning": "CUDA_SUCCESS",
+   "is_error": false
+  }
+ ],
+ "data_ok": true,
+ "boundary_done": false,
+ "stderr_tail": "\n"
+}

@@ -1,0 +1,78 @@
+#include <cuda.h>
+#include <stdio.h>
+#include <string.h>
+
+#pragma comment(lib, "cuda.lib")
+
+static void print_result(const char *api, CUresult res) {
+    printf("API %s = %d\n", api, (int)res);
+}
+
+int main(void) {
+    CUresult res;
+    CUdevice dev = 0;
+    CUcontext ctx = NULL;
+    CUdeviceptr dptr = 0;
+    unsigned char h_in[256];
+    unsigned char h_out[256];
+    size_t i;
+
+    for (i = 0; i < sizeof(h_in); ++i) {
+        h_in[i] = (unsigned char)(i & 0xff);
+    }
+    memset(h_out, 0, sizeof(h_out));
+
+    res = cuInit(0);
+    print_result("cuInit", res);
+    if (res != CUDA_SUCCESS) return 1;
+
+    res = cuDeviceGet(&dev, 0);
+    print_result("cuDeviceGet", res);
+    if (res != CUDA_SUCCESS) return 1;
+
+    res = cuCtxCreate(&ctx, 0, dev);
+    print_result("cuCtxCreate", res);
+    if (res != CUDA_SUCCESS) return 1;
+
+    res = cuMemAlloc(&dptr, sizeof(h_in));
+    print_result("cuMemAlloc", res);
+    if (res != CUDA_SUCCESS) {
+        res = cuCtxDestroy(ctx);
+        print_result("cuCtxDestroy", res);
+        return 1;
+    }
+
+    res = cuMemcpyHtoD(dptr, h_in, sizeof(h_in));
+    print_result("cuMemcpyHtoD", res);
+    if (res != CUDA_SUCCESS) {
+        res = cuMemFree(dptr);
+        print_result("cuMemFree", res);
+        res = cuCtxDestroy(ctx);
+        print_result("cuCtxDestroy", res);
+        return 1;
+    }
+
+    res = cuMemcpyDtoH(h_out, dptr, sizeof(h_out));
+    print_result("cuMemcpyDtoH", res);
+    if (res != CUDA_SUCCESS) {
+        res = cuMemFree(dptr);
+        print_result("cuMemFree", res);
+        res = cuCtxDestroy(ctx);
+        print_result("cuCtxDestroy", res);
+        return 1;
+    }
+
+    if (memcmp(h_in, h_out, sizeof(h_in)) == 0) {
+        printf("DATA=OK\n");
+    } else {
+        printf("DATA=MISMATCH\n");
+    }
+
+    res = cuMemFree(dptr);
+    print_result("cuMemFree", res);
+
+    res = cuCtxDestroy(ctx);
+    print_result("cuCtxDestroy", res);
+
+    return 0;
+}

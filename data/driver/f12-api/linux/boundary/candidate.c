@@ -1,0 +1,53 @@
+#include <cuda.h>
+#include <stdio.h>
+
+int main(void) {
+    CUresult res;
+    CUdevice dev = 0;
+    CUcontext ctx = NULL;
+    CUdeviceptr p0 = 0;
+    CUdeviceptr p256 = 0;
+    CUdeviceptr p_invalid = 0;
+
+    res = cuInit(0);
+    printf("API cuInit = %d\n", (int)res);
+    if (res != CUDA_SUCCESS) {
+        printf("BOUNDARY=DONE\n");
+        return 0;
+    }
+
+    res = cuDeviceGet(&dev, 0);
+    printf("API cuDeviceGet = %d\n", (int)res);
+    if (res != CUDA_SUCCESS) {
+        printf("BOUNDARY=DONE\n");
+        return 0;
+    }
+
+    res = cuCtxCreate(&ctx, 0, dev);
+    printf("API cuCtxCreate = %d\n", (int)res);
+    if (res != CUDA_SUCCESS || ctx == NULL) {
+        if (ctx != NULL) {
+            CUresult destroy_res = cuCtxDestroy(ctx);
+            printf("API cuCtxDestroy = %d\n", (int)destroy_res);
+            ctx = NULL;
+        }
+        printf("BOUNDARY=DONE\n");
+        return 0;
+    }
+
+    res = cuMemAlloc(&p0, 0);
+    printf("API cuMemAlloc = %d\n", (int)res);
+
+    res = cuMemAlloc(&p256, 256);
+    printf("API cuMemAlloc = %d\n", (int)res);
+
+    res = cuCtxDestroy(ctx);
+    printf("API cuCtxDestroy = %d\n", (int)res);
+    ctx = NULL;
+
+    res = cuMemAlloc(&p_invalid, 256);
+    printf("API cuMemAlloc = %d\n", (int)res);
+
+    printf("BOUNDARY=DONE\n");
+    return 0;
+}

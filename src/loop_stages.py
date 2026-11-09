@@ -9,6 +9,7 @@ Docker or a model to be unit-testable.
 
 import json
 import re
+import json
 import subprocess
 import time
 from dataclasses import dataclass
@@ -531,6 +532,33 @@ def make_execute_stage(context: StageContext,
             # twice, once by the script under test and once by the framework,
             # lets the grader count one run as two and compare a claim against
             # itself. The candidate's log is kept beside it for diagnosis.
+            # Structured per-invocation evidence beside the text matrix: run_id,
+            # artifact hash, exit, signal. Text alone cannot prove which binary was
+            # executed, and the candidate's own prints are kept as claims only.
+            # workdir is created later in this stage; evidence capture must not be
+            # the thing that creates a missing-directory failure of its own.
+            context.workdir.mkdir(parents=True, exist_ok=True)
+            try:
+                from .trusted_exec import compare_with_claims, run_trusted, to_report
+                trusted = run_trusted(candidate.resolve().parent, context.container_image)
+                compare_with_claims(trusted, output)
+                (context.workdir / ("iteration_%d_trusted.json" % state.iteration)).write_text(
+                    json.dumps(to_report(trusted, candidate.resolve().parent),
+                               ensure_ascii=False, indent=1), encoding="utf-8")
+            except Exception as exc:  # noqa: BLE001 - capture, never silently ignore
+                (context.workdir / ("iteration_%d_trusted_error.txt"
+                                    % state.iteration)).write_text(
+                    "%s: %s" % (type(exc).__name__, exc), encoding="utf-8")
+            # Keep the candidate source: F10 archived only its stdout, which made
+            # every historical run impossible to replay.
+            try:
+                (context.workdir / ("iteration_%d_script.py" % state.iteration)).write_bytes(
+                    candidate.read_bytes())
+            except OSError as exc:
+                (context.workdir / ("iteration_%d_script_error.txt"
+                                    % state.iteration)).write_text(
+                    "%s: %s" % (type(exc).__name__, exc), encoding="utf-8")
+
             if "CPG_RUN]" in matrix and "::" in matrix:
                 candidate_log = output
                 output = matrix
