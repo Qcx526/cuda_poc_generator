@@ -1,0 +1,13 @@
+BUILD_RC=0
+API cuInit = 0
+API cuDeviceGet = 0
+API cuCtxCreate = 0
+API cuMemAlloc = 0
+API cuMemcpyHtoD = 0
+API cuMemcpyDtoH = 0
+DATA=OK
+API cuMemFree = 0
+API cuCtxDestroy = 0
+RUN_RC=0
+
+[stderr]

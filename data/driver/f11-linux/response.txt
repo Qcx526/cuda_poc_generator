@@ -1,0 +1,84 @@
+```c
+#include <cuda.h>
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    CUresult r;
+    CUdevice device;
+    CUcontext ctx = NULL;
+    CUdeviceptr dptr = 0;
+    unsigned char host[256];
+    unsigned char back[256];
+    size_t i;
+    int have_ctx = 0;
+    int have_mem = 0;
+    int failed = 0;
+
+    for (i = 0; i < sizeof(host); ++i)
+        host[i] = (unsigned char)((i * 37u + 11u) & 0xFFu);
+    memset(back, 0, sizeof(back));
+
+    r = cuInit(0);
+    printf("API cuInit = %d\n", (int)r);
+    if (r != CUDA_SUCCESS)
+        return 1;
+
+    r = cuDeviceGet(&device, 0);
+    printf("API cuDeviceGet = %d\n", (int)r);
+    if (r != CUDA_SUCCESS)
+        return 1;
+
+    r = cuCtxCreate(&ctx, 0, device);
+    printf("API cuCtxCreate = %d\n", (int)r);
+    if (r != CUDA_SUCCESS)
+        return 1;
+    have_ctx = 1;
+
+    r = cuMemAlloc(&dptr, sizeof(host));
+    printf("API cuMemAlloc = %d\n", (int)r);
+    if (r != CUDA_SUCCESS) {
+        failed = 1;
+        goto cleanup;
+    }
+    have_mem = 1;
+
+    r = cuMemcpyHtoD(dptr, host, sizeof(host));
+    printf("API cuMemcpyHtoD = %d\n", (int)r);
+    if (r != CUDA_SUCCESS) {
+        failed = 1;
+        goto cleanup;
+    }
+
+    r = cuMemcpyDtoH(back, dptr, sizeof(back));
+    printf("API cuMemcpyDtoH = %d\n", (int)r);
+    if (r != CUDA_SUCCESS) {
+        failed = 1;
+        goto cleanup;
+    }
+
+    if (memcmp(host, back, sizeof(host)) == 0) {
+        printf("DATA=OK\n");
+    } else {
+        printf("DATA=MISMATCH\n");
+        failed = 1;
+    }
+
+cleanup:
+    if (have_mem) {
+        r = cuMemFree(dptr);
+        printf("API cuMemFree = %d\n", (int)r);
+        if (r != CUDA_SUCCESS)
+            failed = 1;
+    }
+    if (have_ctx) {
+        r = cuCtxDestroy(ctx);
+        printf("API cuCtxDestroy = %d\n", (int)r);
+        if (r != CUDA_SUCCESS)
+            failed = 1;
+    }
+
+    return failed ? 1 : 0;
+}
+```
