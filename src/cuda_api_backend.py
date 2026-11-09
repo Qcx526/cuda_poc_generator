@@ -18,16 +18,54 @@ from .exec_evidence import RunRecord, ToolInvocation
 
 TOOLKIT = Path("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2")
 NVCC = TOOLKIT / "bin" / "nvcc.exe"
-MSVC = Path("D:/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.29.30133")
+VC_ROOT = Path("D:/Microsoft Visual Studio/18/Community/VC")
+VCVARS = VC_ROOT / "Auxiliary" / "Build" / "vcvars64.bat"
+# Fallback only: the vcvars environment is the authority, this covers its absence.
+MSVC = VC_ROOT / "Tools" / "MSVC" / "14.29.30133"
 WINSDK = Path("D:/Windows Kits/10")
+
+_VCVARS_CACHE: Optional[dict] = None
+
+
+def _env_from_vcvars() -> Optional[dict]:
+    """Ask vcvars64.bat for the real environment instead of hardcoding versions.
+
+    The compiler lives under VC\\Tools, but the CRT and Windows SDK headers it needs
+    live under Windows Kits - two trees, which is why a bare PATH prepend cannot work.
+    """
+    global _VCVARS_CACHE
+    if _VCVARS_CACHE is not None:
+        return _VCVARS_CACHE or None
+    if not VCVARS.is_file():
+        _VCVARS_CACHE = {}
+        return None
+    proc = subprocess.run(
+        ["cmd.exe", "/c", '"%s" && set' % VCVARS],
+        capture_output=True, text=True, errors="replace", timeout=300)
+    env = {}
+    for line in proc.stdout.splitlines():
+        if "=" in line:
+            key, _, value = line.partition("=")
+            if key.upper() in ("PATH", "INCLUDE", "LIB", "LIBPATH"):
+                env[key.upper()] = value
+    _VCVARS_CACHE = env if {"PATH", "INCLUDE", "LIB"} <= set(env) else {}
+    return _VCVARS_CACHE or None
 
 
 def _msvc_env() -> dict:
-    """nvcc shells out to cl.exe; without these paths it dies with 'Cannot find
-    compiler cl.exe', which the first run hit three times because the harness
-    never set them."""
+    """nvcc shells out to cl.exe; without the vcvars environment it dies with
+    'Cannot find compiler cl.exe', which the first run hit three times."""
     import os
     env = dict(os.environ)
+    vcvars = _env_from_vcvars()
+    if vcvars:
+        env["PATH"] = vcvars["PATH"] + os.pathsep + env.get("PATH", "")
+        env["INCLUDE"] = vcvars["INCLUDE"]
+        env["LIB"] = vcvars["LIB"]
+        if "LIBPATH" in vcvars:
+            env["LIBPATH"] = vcvars["LIBPATH"]
+        return env
+    # No vcvars: fall back to the known-good pinned layout.
     cl_dir = str(MSVC / "bin" / "HostX64" / "x64")
     env["PATH"] = cl_dir + os.pathsep + env.get("PATH", "")
     env["INCLUDE"] = ";".join([
@@ -45,17 +83,6 @@ def _msvc_env() -> dict:
     ])
     return env
 
-CUDA_ERROR_STRINGS = {
-    0: "CUDA_SUCCESS",
-    1: "CUDA_ERROR_INVALID_VALUE",
-    2: "CUDA_ERROR_OUT_OF_MEMORY",
-    3: "CUDA_ERROR_NOT_INITIALIZED",
-    100: "CUDA_ERROR_NO_DEVICE",
-    101: "CUDA_ERROR_INVALID_DEVICE",
-    201: "CUDA_ERROR_INVALID_CONTEXT",
-    400: "CUDA_ERROR_INVALID_HANDLE",
-}
-
 
 @dataclass
 class Environment:
@@ -66,6 +93,18 @@ class Environment:
     nvcc_version: str
     note: str = ("cuDriverGetVersion 是 CUDA Driver API 兼容版本号，"
                  "不是 NVIDIA 驱动发行版本")
+
+
+CUDA_ERROR_STRINGS = {
+    0: "CUDA_SUCCESS",
+    1: "CUDA_ERROR_INVALID_VALUE",
+    2: "CUDA_ERROR_OUT_OF_MEMORY",
+    3: "CUDA_ERROR_NOT_INITIALIZED",
+    100: "CUDA_ERROR_NO_DEVICE",
+    101: "CUDA_ERROR_INVALID_DEVICE",
+    201: "CUDA_ERROR_INVALID_CONTEXT",
+    400: "CUDA_ERROR_INVALID_HANDLE",
+}
 
 
 def probe() -> Environment:
