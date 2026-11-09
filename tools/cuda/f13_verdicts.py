@@ -51,8 +51,22 @@ def mechanism_note(cve: str):
     return data if data.get("mechanism_evidence") else None
 
 
-def evaluate(case_dir: Path, tool: str) -> dict:
-    cve = case_dir.name
+REPLAY_DIR = ROOT / "data" / "driver" / "f14-replay"
+# 137 is SIGKILL: the container or the kernel killed it, which says nothing about the
+# parser. Only these are parser-level terminations.
+PARSER_SIGNALS = {-11, -6, 11, 134, 139}
+
+
+def is_parser_crash(code) -> bool:
+    return code is not None and code in PARSER_SIGNALS
+
+
+def evaluate(cve_dir: Path, tool: str) -> dict:
+    cve = cve_dir.name
+    replay = REPLAY_DIR / ("%s.json" % cve)
+    if replay.is_file():
+        return evaluate_replay(cve, tool, replay)
+    case_dir = cve_dir
     trusted_files = sorted(case_dir.glob("iteration_*_trusted.json"))
     scripts = sorted(case_dir.glob("iteration_*_script.py"))
     if not trusted_files:
@@ -184,6 +198,82 @@ def evaluate(case_dir: Path, tool: str) -> dict:
             "note": ("目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
                      if target_tool_differential and not mechanism
                      else "崩溃工具与 advisory 工具不同则不给目标工具差分")}
+
+
+def evaluate_replay(cve: str, tool: str, replay: Path) -> dict:
+    """Verdict from a mode-aware replay: labels come from filenames, exits from the run."""
+    data = json.loads(replay.read_text(encoding="utf-8"))
+    items = data.get("invocations", [])
+    by_name = {}
+    for item in items:
+        name = item["run_id"].rsplit(":", 1)[-1]
+        by_name.setdefault(name, []).append(item)
+
+    def role(name: str) -> str:
+        if name.startswith("poc_"):
+            return "MALICIOUS"
+        if name.startswith(("ctrl_", "control_")):
+            return "CONTROL"
+        if name.startswith("benign"):
+            return "BENIGN"
+        return "UNLABELED"
+
+    def base(name: str) -> str:
+        stem = name
+        for prefix in ("poc_", "ctrl_", "control_", "sweep_"):
+            if stem.startswith(prefix):
+                stem = stem[len(prefix):]
+                break
+        return "_".join(stem.rsplit(".", 1)[0].split("_")[:2])
+
+    crashes = [i for i in items if is_parser_crash(i.get("exit_code"))]
+    killed = [i for i in items if i.get("exit_code") == 137]
+    crashing_tools = sorted({i["tool"] for i in crashes})
+
+    def clean_for(family: str, exclude: str) -> bool:
+        names = [n for n in by_name if n != exclude and role(n) in ("CONTROL", "BENIGN")
+                 and (role(n) == "BENIGN" or base(n) == family)]
+        if not names:
+            return False
+        return not any(is_parser_crash(i.get("exit_code"))
+                       for n in names for i in by_name[n])
+
+    paired = []
+    for name in {i["run_id"].rsplit(":", 1)[-1] for i in crashes}:
+        if role(name) != "MALICIOUS":
+            continue
+        if clean_for(base(name), name):
+            paired.append({"crashed": name, "controls": sorted(
+                n for n in by_name if base(n) == base(name) and role(n) != "MALICIOUS")})
+
+    target_tool_differential = bool(paired) and tool is not None and tool in crashing_tools
+    mechanism = bool(mechanism_note(cve)) and target_tool_differential
+    levels = []
+    if items:
+        levels.append("TOOL_EXECUTED")
+    if crashes:
+        levels.append("CRASH_OBSERVED")
+    if paired:
+        levels.append("DIFFERENTIAL_SUPPORTED")
+    if target_tool_differential:
+        levels.append("TARGET_TOOL_DIFFERENTIAL_SUPPORTED")
+    if mechanism:
+        levels.append("CVE_MECHANISM_SUPPORTED")
+    return {"status": levels[-1] if levels else "TOOL_EXECUTED", "levels": levels,
+            "candidates": 1, "inputs": len(by_name), "invocations": len(items),
+            "crashes": len(crashes), "killed_137": len(killed),
+            "crashing_tools": crashing_tools,
+            "benign_clean": clean_for("", ""), "control_clean": bool(paired),
+            "differential": bool(paired),
+            "paired_differential": paired,
+            "unclassified_findings": [],
+            "target_tool_differential": target_tool_differential,
+            "mechanism": mechanism,
+            "mechanism_status": "SUPPORTED" if mechanism else "UNKNOWN",
+            "attribution": "UNATTRIBUTED",
+            "tool_versions": data.get("tool_versions", {}),
+            "source": "f14_replay_modes",
+            "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"}
 
 
 def main() -> int:
