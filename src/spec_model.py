@@ -339,10 +339,6 @@ class VulnSpec(BaseModel):
             # Advisory-only specs state the window directly; printing ".." from an
             # empty anchor told the model nothing.
             lines.append("affected: %s" % self.affected)
-        elif self.affected:
-            # Advisory-only specs state the window directly; printing ".." from an
-            # empty anchor told the model nothing.
-            lines.append("affected: %s" % self.affected)
         lines.append("target: %s/%s medium=%s"
                      % (self.target.platform, self.target.privilege, self.target.medium))
         if self.anchor.invocation or self.anchor.invocations:

@@ -22,6 +22,33 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shentsize.cubin",
+    "controls": [
+     "ctrl_e_shentsize_restored_0x40.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shnum.cubin",
+    "controls": [
+     "ctrl_e_shnum_restored_0x9.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shoff.cubin",
+    "controls": [
+     "ctrl_e_shoff_restored_0x540.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shstrndx.cubin",
+    "controls": [
+     "ctrl_e_shstrndx_restored_0x1.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
   "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -56,6 +83,25 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_symtab_sh_link.cubin",
+    "controls": [
+     "ctrl_symtab_sh_link_restored_0x2.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [
+   "poc_debug_frame_sh_size.cubin",
+   "poc_e_shentsize_max.cubin",
+   "poc_e_shentsize_zero.cubin",
+   "poc_e_shnum_max.cubin",
+   "poc_e_shoff_tail.cubin",
+   "poc_e_shstrndx_oob.cubin",
+   "poc_nv_info_sh_size.cubin",
+   "poc_symtab_st_name.cubin",
+   "poc_text_Z1kPii_sh_size.cubin"
+  ],
   "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -88,6 +134,22 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shnum_0xffff.cubin",
+    "controls": [
+     "ctrl_e_shnum_0xffff_restored_0c00.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [
+   "probe_e_shentsize_0x0001.cubin",
+   "probe_e_shentsize_0x1000.cubin",
+   "probe_e_shnum_0x0400.cubin",
+   "probe_e_shnum_0xffff.cubin",
+   "probe_e_shoff_0x7fffffff.cubin",
+   "probe_e_shoff_eof.cubin"
+  ],
   "target_tool_differential": false,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -116,6 +178,8 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": false,
+  "paired_differential": [],
+  "unclassified_findings": [],
   "target_tool_differential": false,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -132,12 +196,10 @@
   "advisory_tool": "nvdisasm",
   "vulnerability_type": "out-of-bounds write",
   "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
+  "status": "CRASH_OBSERVED",
   "levels": [
    "TOOL_EXECUTED",
-   "CRASH_OBSERVED",
-   "DIFFERENTIAL_SUPPORTED",
-   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
+   "CRASH_OBSERVED"
   ],
   "candidates": 2,
   "inputs": 17,
@@ -148,8 +210,13 @@
   ],
   "benign_clean": true,
   "control_clean": true,
-  "differential": true,
-  "target_tool_differential": true,
+  "differential": false,
+  "paired_differential": [],
+  "unclassified_findings": [
+   "sweep_link_invalid.cubin",
+   "sweep_stname_ffffffff.cubin"
+  ],
+  "target_tool_differential": false,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
@@ -157,7 +224,7 @@
    "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler",
    "cuobjdump": "cuobjdump: NVIDIA (R) fat binary listing tool"
   },
-  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
+  "note": "崩溃工具与 advisory 工具不同则不给目标工具差分"
  },
  {
   "batch": "f13",
@@ -177,6 +244,8 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": false,
+  "paired_differential": [],
+  "unclassified_findings": [],
   "target_tool_differential": false,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -210,6 +279,18 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_st_name_oob.cubin",
+    "controls": [
+     "ctrl_st_name_restored_0x00000046.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [
+   "sweep_st_name_0x7fffffff.cubin",
+   "sweep_st_name_0xffffffff.cubin"
+  ],
   "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -226,12 +307,10 @@
   "advisory_tool": "nvdisasm",
   "vulnerability_type": "out-of-bounds write",
   "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
+  "status": "CRASH_OBSERVED",
   "levels": [
    "TOOL_EXECUTED",
-   "CRASH_OBSERVED",
-   "DIFFERENTIAL_SUPPORTED",
-   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
+   "CRASH_OBSERVED"
   ],
   "candidates": 1,
   "inputs": 13,
@@ -242,13 +321,15 @@
   ],
   "benign_clean": true,
   "control_clean": true,
-  "differential": true,
-  "target_tool_differential": true,
+  "differential": false,
+  "paired_differential": [],
+  "unclassified_findings": [],
+  "target_tool_differential": false,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
   "tool_versions": {},
-  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
+  "note": "崩溃工具与 advisory 工具不同则不给目标工具差分"
  },
  {
   "batch": "f12b",
@@ -274,6 +355,21 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shstrndx_ffff.cubin",
+    "controls": [
+     "ctrl_e_shstrndx_restored_1.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_sh_name_oob.cubin",
+    "controls": [
+     "ctrl_sh_name_restored_50.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
   "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -340,6 +436,15 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_r_info_sym_oob.cubin",
+    "controls": [
+     "ctrl_r_info_sym_oob_restored_0x7fffffff00000039.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
   "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
@@ -389,6 +494,33 @@
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shnum_overrun.cubin",
+    "controls": [
+     "ctrl_e_shnum_restored_9.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shoff_overrun.cubin",
+    "controls": [
+     "ctrl_e_shoff_restored_1280.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shstrndx_overrun.cubin",
+    "controls": [
+     "ctrl_e_shstrndx_restored_1.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_sh_name_overrun.cubin",
+    "controls": [
+     "ctrl_sh_name_restored_1.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
   "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",

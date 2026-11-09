@@ -97,8 +97,53 @@ def evaluate(case_dir: Path, tool: str) -> dict:
                         return False
         return True
 
+    # A crash only counts when it can be paired: the crashing artifact must be the
+    # one the run declared as the crafted input, and a control of that same artifact
+    # must stay clean. An unlabelled probe crashing next to unrelated clean samples is
+    # a finding candidate, not a differential.
+    def base_of(name: str) -> str:
+        """Which field family an artifact belongs to.
+
+        Run names look like "poc_e_shstrndx.cubin" and
+        "ctrl_e_shstrndx_restored_0x1.cubin"; the suffix differs, the family does not.
+        Two leading tokens are enough to tie a control to the input it restores.
+        """
+        stem = name
+        for prefix in ("poc_", "ctrl_", "sweep_"):
+            if stem.startswith(prefix):
+                stem = stem[len(prefix):]
+                break
+        stem = stem.rsplit(".", 1)[0]
+        return "_".join(stem.split("_")[:2])
+
+    by_name = {}
+    for path in trusted_files:
+        for item in json.loads(path.read_text(encoding="utf-8")).get("invocations", []):
+            by_name.setdefault(item["run_id"].rsplit(":", 1)[-1], []).append(item)
+
+    labelled_crash, unlabelled_crash = [], []
+    for name, items in by_name.items():
+        role = labels.get(name)
+        crashed = any((i.get("exit_code") or 0) < 0 or (i.get("exit_code") or 0) >= CRASH
+                      for i in items)
+        if not crashed:
+            continue
+        (labelled_crash if role == "MALICIOUS" else unlabelled_crash).append(name)
+
+    paired = []
+    for name in labelled_crash:
+        stem = base_of(name)
+        partners = [n for n in by_name
+                    if n != name and labels.get(n) == "CONTROL" and base_of(n) == stem]
+        partners_clean = [n for n in partners
+                          if all(((i.get("exit_code") or 0) < 0 or
+                                  (i.get("exit_code") or 0) >= CRASH) is False
+                                 for i in by_name[n])]
+        if partners_clean:
+            paired.append({"crashed": name, "controls": partners_clean})
+
     benign, control = clean("BENIGN"), clean("CONTROL")
-    differential = bool(crashes) and benign and control
+    differential = bool(paired) and benign and control
     # The advisory's own tool crashing on a differential input is the strongest thing
     # a black-box run can show, and it is still not a mechanism: a segfault in
     # nvdisasm says nothing about whether the bug is a UAF, an OOB write or a NULL
@@ -129,6 +174,8 @@ def evaluate(case_dir: Path, tool: str) -> dict:
             "crashing_tools": sorted(crashing_tools),
             "benign_clean": benign, "control_clean": control,
             "differential": differential,
+            "paired_differential": paired,
+            "unclassified_findings": sorted(unlabelled_crash),
             "target_tool_differential": target_tool_differential,
             "mechanism": mechanism,
             "mechanism_status": "SUPPORTED" if mechanism else "UNKNOWN",
