@@ -1,0 +1,62 @@
+[
+ {
+  "platform": "windows",
+  "task": "normal",
+  "status": "RAN",
+  "exit": 0,
+  "signal": null,
+  "api_calls": 8,
+  "api_matches_previous": true,
+  "data_ok": true,
+  "boundary_done": false,
+  "trust": {
+   "exit_and_signal": "HARNESS_OBSERVED",
+   "api_lines_and_data": "CANDIDATE_REPORTED"
+  }
+ },
+ {
+  "platform": "windows",
+  "task": "boundary",
+  "status": "RAN",
+  "exit": 0,
+  "signal": null,
+  "api_calls": 8,
+  "api_matches_previous": true,
+  "data_ok": false,
+  "boundary_done": true,
+  "trust": {
+   "exit_and_signal": "HARNESS_OBSERVED",
+   "api_lines_and_data": "CANDIDATE_REPORTED"
+  }
+ },
+ {
+  "platform": "linux",
+  "task": "normal",
+  "status": "RAN",
+  "exit": 0,
+  "signal": null,
+  "api_calls": 8,
+  "api_matches_previous": true,
+  "data_ok": true,
+  "boundary_done": false,
+  "trust": {
+   "exit_and_signal": "HARNESS_OBSERVED",
+   "api_lines_and_data": "CANDIDATE_REPORTED"
+  }
+ },
+ {
+  "platform": "linux",
+  "task": "boundary",
+  "status": "RAN",
+  "exit": 0,
+  "signal": null,
+  "api_calls": 7,
+  "api_matches_previous": true,
+  "data_ok": false,
+  "boundary_done": true,
+  "trust": {
+   "exit_and_signal": "HARNESS_OBSERVED",
+   "api_lines_and_data": "CANDIDATE_REPORTED"
+  }
+ }
+]

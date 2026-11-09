@@ -1,0 +1,22 @@
+{
+ "transport": "windows_nvcc",
+ "build": {
+  "ok": true,
+  "returncode": 0,
+  "source_sha256": "b0a022f426dfb251da5a2f1e23edbcb577dd61a6c115bb0656c41e52231adcd0",
+  "artifact": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f13-api-recheck\\windows\\normal\\candidate.exe",
+  "artifact_sha256": "c8cd8605fbda8a33bd425d81ae733104da5bb5c4289a572f0e44d4eabb6880bc",
+  "log_tail": "candidate.c\n"
+ },
+ "run": {
+  "run_id": "windows-normal-recheck",
+  "tool": "cuda_driver_api_program",
+  "tool_version": "nvcc 11.2.152 / nvcuda.dll",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": "API cuInit = 0\nAPI cuDeviceGet = 0\nAPI cuCtxCreate = 0\nAPI cuMemAlloc = 0\nAPI cuMemcpyHtoD = 0\nAPI cuMemcpyDtoH = 0\nDATA=OK\nAPI cuMemFree = 0\nAPI cuCtxDestroy = 0\n",
+  "stderr": ""
+ },
+ "note": "编译与运行退出码均由 transport 直接取得，未经过管道"
+}

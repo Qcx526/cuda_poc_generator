@@ -1,0 +1,83 @@
+[
+ {
+  "cve_id": "CVE-2025-23338",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 739.3,
+  "reason": "受控样本未产生崩溃退出码（所有步骤均报告 OK）",
+  "diagnoses": [
+   "NO_EFFECT",
+   "NO_EFFECT"
+  ],
+  "attempts": 1,
+  "successes": 0
+ },
+ {
+  "cve_id": "CVE-2024-0111",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 583.9,
+  "reason": "受控样本 4/12 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2024-0124",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 575.5,
+  "reason": "受控样本 10/34 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2024-0125",
+  "status": "SUPPORTED",
+  "iterations": 1,
+  "verdict": "SUPPORTED",
+  "diagnosis": "",
+  "seconds": 680.9,
+  "reason": "受控样本 1/4 个产生崩溃退出码",
+  "diagnoses": [],
+  "attempts": 1,
+  "successes": 1
+ },
+ {
+  "cve_id": "CVE-2025-23308",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "NO_EFFECT",
+  "seconds": 847.5,
+  "reason": "受控样本未产生崩溃退出码（所有步骤均报告 OK）",
+  "diagnoses": [
+   "NO_OBSERVATION",
+   "NO_EFFECT"
+  ],
+  "attempts": 1,
+  "successes": 0
+ },
+ {
+  "cve_id": "CVE-2025-23346",
+  "status": "EXHAUSTED",
+  "iterations": 2,
+  "verdict": "NOT_VERIFIED",
+  "diagnosis": "UNCLASSIFIED",
+  "seconds": 1315.8,
+  "reason": "EVIDENCE_MISSING：trusted 记录里没有任何工具调用",
+  "diagnoses": [
+   "NO_EFFECT",
+   "UNCLASSIFIED"
+  ],
+  "attempts": 1,
+  "successes": 0
+ }
+]

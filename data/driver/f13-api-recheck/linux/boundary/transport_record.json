@@ -1,0 +1,22 @@
+{
+ "transport": "wsl_gcc",
+ "build": {
+  "ok": true,
+  "returncode": 0,
+  "source_sha256": "302923aff054b3b931c871ee496ec53692cc9acee6342bb9f21ca6107d74ceae",
+  "artifact": "~/f12/302923aff054b3b9/candidate",
+  "artifact_sha256": "e4933c41234072d46f62e4d67f34976238831d08552de2f915ad8111b559cc62",
+  "log_tail": ""
+ },
+ "run": {
+  "run_id": "linux-boundary-recheck",
+  "tool": "cuda_driver_api_program",
+  "tool_version": "gcc + libcuda (WSL shim)",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": "API cuInit = 0\nAPI cuDeviceGet = 0\nAPI cuCtxCreate = 0\nAPI cuMemAlloc = 1\nAPI cuMemAlloc = 0\nAPI cuCtxDestroy = 0\nAPI cuMemAlloc = 201\nBOUNDARY=DONE\n",
+  "stderr": "\n"
+ },
+ "note": "编译与运行退出码均由 transport 直接取得，未经过管道"
+}

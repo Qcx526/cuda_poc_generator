@@ -1,0 +1,61 @@
+#include <cuda.h>
+#include <stdio.h>
+#include <string.h>
+
+static void report_api(const char *name, CUresult r) {
+    printf("API %s = %d\n", name, (int)r);
+}
+
+int main(void) {
+    CUresult r;
+    CUdevice device = 0;
+    CUcontext context = NULL;
+    CUdeviceptr dptr = 0;
+    const size_t bytes = 256;
+    unsigned char host[256];
+    unsigned char back[256];
+    int all_ok = 1;
+
+    for (size_t i = 0; i < bytes; ++i) {
+        host[i] = (unsigned char)(i & 0xffu);
+    }
+    memset(back, 0, sizeof(back));
+
+    r = cuInit(0);
+    report_api("cuInit", r);
+    if (r != CUDA_SUCCESS) all_ok = 0;
+
+    r = cuDeviceGet(&device, 0);
+    report_api("cuDeviceGet", r);
+    if (r != CUDA_SUCCESS) all_ok = 0;
+
+    r = cuCtxCreate(&context, 0, device);
+    report_api("cuCtxCreate", r);
+    if (r != CUDA_SUCCESS) all_ok = 0;
+
+    r = cuMemAlloc(&dptr, bytes);
+    report_api("cuMemAlloc", r);
+    if (r != CUDA_SUCCESS) all_ok = 0;
+
+    r = cuMemcpyHtoD(dptr, host, bytes);
+    report_api("cuMemcpyHtoD", r);
+    if (r != CUDA_SUCCESS) all_ok = 0;
+
+    r = cuMemcpyDtoH(back, dptr, bytes);
+    report_api("cuMemcpyDtoH", r);
+    if (r != CUDA_SUCCESS) all_ok = 0;
+
+    if (all_ok && memcmp(host, back, bytes) == 0) {
+        printf("DATA=OK\n");
+    } else {
+        printf("DATA=MISMATCH\n");
+    }
+
+    r = cuMemFree(dptr);
+    report_api("cuMemFree", r);
+
+    r = cuCtxDestroy(context);
+    report_api("cuCtxDestroy", r);
+
+    return 0;
+}

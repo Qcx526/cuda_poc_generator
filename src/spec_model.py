@@ -28,7 +28,7 @@ import os
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 Verification = Literal["advisory", "reverse_engineering", "execution", "unverified"]
 BoundCheck = Literal["none", "range", "alignment", "length", "unknown"]
@@ -255,8 +255,19 @@ class VulnSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    cve_id: str
+    cve_id: str = Field(default="", validation_alias=AliasChoices("cve_id", "cve"))
     component: str = ""
+    # Advisory identity: which tool the CVE is about, and which toolkit the run used.
+    # Attribution depends on these, so they must be in the schema rather than carried
+    # as tolerated extras.
+    tool: str = ""
+    vulnerability_type: str = ""
+    affected: str = ""
+    invoke: str = ""
+    identity_source: str = ""
+    experiment_toolkit: str = ""
+    version_relation: str = ""
+    note: str = ""
     cwe: str = ""
     target: TargetProfileSpec = Field(default_factory=TargetProfileSpec)
     driver: DriverEntry = Field(default_factory=DriverEntry)
@@ -324,12 +335,24 @@ class VulnSpec(BaseModel):
             window = "%s..%s" % (getattr(versions, "min", "?"), getattr(versions, "max", "?"))
             fixed = getattr(versions, "fixed_in", "")
             lines.append("affected: %s%s" % (window, (" (fixed in %s)" % fixed) if fixed else ""))
+        elif self.affected:
+            # Advisory-only specs state the window directly; printing ".." from an
+            # empty anchor told the model nothing.
+            lines.append("affected: %s" % self.affected)
+        elif self.affected:
+            # Advisory-only specs state the window directly; printing ".." from an
+            # empty anchor told the model nothing.
+            lines.append("affected: %s" % self.affected)
         lines.append("target: %s/%s medium=%s"
                      % (self.target.platform, self.target.privilege, self.target.medium))
         if self.anchor.invocation or self.anchor.invocations:
             from .grader_matrix import parse_invocations
             templates = parse_invocations(self.anchor.invocations, self.anchor.invocation)
             lines.append("invoke: %s" % " | ".join(" ".join(i) for i in templates))
+        elif self.invoke:
+            lines.append("invoke: %s" % self.invoke)
+        elif self.invoke:
+            lines.append("invoke: %s" % self.invoke)
         if self.anchor.input_kind:
             lines.append("input: %s (magic=%s)" % (self.anchor.input_kind,
                                                    self.anchor.input_magic or "unknown"))
