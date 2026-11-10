@@ -59,6 +59,7 @@ class TrustedRun:
     tool_versions: dict = field(default_factory=dict)
     tool_version: str = ""
     raw: str = ""
+    format_ok: dict = field(default_factory=dict)
 
 
 def sha256_of(path: Path) -> str:
@@ -104,6 +105,12 @@ def run_trusted(directory: Path, image: str, timeout: int = 420) -> TrustedRun:
     result = TrustedRun(raw=(proc.stdout or "")[-20000:])
 
     digests = {p.name: sha256_of(p) for p in artifacts}
+    # Format pre-check: a file that is not an ELF never reached the parser, so a tool
+    # rejection on it says nothing about the tool. Recorded per artifact, not inferred.
+    result.format_ok = {}
+    for path in artifacts:
+        head = path.read_bytes()[:4]
+        result.format_ok[path.name] = head == b"ELF"
     for line in (proc.stdout or "").splitlines():
         if line.startswith("VERSION|"):
             # One version line for the toolchain, not per tool: the payload is the
@@ -174,6 +181,7 @@ def to_report(run: TrustedRun, directory: Path) -> dict:
         "invocations": [vars(item) for item in run.invocations],
         "claims": run.claims,
         "mismatches": run.mismatches,
+        "format_ok": run.format_ok,
         "note": "invocations 来自 harness 重放；claims 来自候选自述，两者不合并",
     }
 

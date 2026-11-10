@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.trusted_grading import LABEL_LINE, trust_status   # noqa: E402
 
-BATCHES = ("f13", "f13smoke", "f12c", "f12b", "f10s2b")
+BATCHES = ("f14b", "f13", "f13smoke", "f12c", "f12b", "f10s2b")
 CRASH = 128
 
 
@@ -61,10 +61,10 @@ def is_parser_crash(code) -> bool:
     return code is not None and code in PARSER_SIGNALS
 
 
-def evaluate(cve_dir: Path, tool: str) -> dict:
+def evaluate(cve_dir: Path, tool: str, use_replay: bool = False) -> dict:
     cve = cve_dir.name
     replay = REPLAY_DIR / ("%s.json" % cve)
-    if replay.is_file():
+    if use_replay and replay.is_file():
         return evaluate_replay(cve, tool, replay)
     case_dir = cve_dir
     trusted_files = sorted(case_dir.glob("iteration_*_trusted.json"))
@@ -91,8 +91,7 @@ def evaluate(cve_dir: Path, tool: str) -> dict:
             name = item["run_id"].rsplit(":", 1)[-1]
             if item.get("input_sha256"):
                 inputs.add(item["input_sha256"])
-            code = item.get("exit_code")
-            if code is not None and (code < 0 or code >= CRASH):
+            if is_parser_crash(item.get("exit_code")):
                 crashes += 1
                 crashing_tools.add(item["tool"])
 
@@ -106,8 +105,7 @@ def evaluate(cve_dir: Path, tool: str) -> dict:
             for item in data.get("invocations", []):
                 name = item["run_id"].rsplit(":", 1)[-1]
                 if name in names:
-                    code = item.get("exit_code") or 0
-                    if code < 0 or code >= CRASH:
+                    if is_parser_crash(item.get("exit_code")):
                         return False
         return True
 
@@ -287,7 +285,9 @@ def main() -> int:
                 continue
             cve = case_dir.name
             meta = identity(cve)
-            result = evaluate(case_dir, meta["tool"])
+            # The mode-aware replay belongs to this round's cases; applying it to
+            # older batches would silently restate their numbers.
+            result = evaluate(case_dir, meta["tool"], use_replay=(batch == "f13"))
             row = {"batch": batch, "cve": cve, "advisory_tool": meta["tool"],
                    "vulnerability_type": meta["type"],
                    "toolkit": meta["toolkit"], **result}

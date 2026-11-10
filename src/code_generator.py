@@ -274,8 +274,13 @@ Print one line per execution, on its own line, no prefixes:
    rendezvous the loop can only observe crashes, never reachability.
 
 21. **Per-artifact Observation Line (CRITICAL)**: after each artifact is run,
-   print exactly `[CPG_RUN] <artifact-name> exit=<code>` on its own line
-   (flush it), and for each artifact print `[CPG_LABEL] <artifact-name>
+   print exactly `[CPG_RUN] <artifact-name>::<tool> exit=<code>` on its own line
+   (flush it), where `<tool>` is the exact executable **and mode** you invoked:
+   `nvdisasm`, `cuobjdump`, `cuobjdump-elf`, `cuobjdump-all` or `cuobjdump-sass`.
+   A bare `[CPG_RUN] <name> exit=<code>` without the tool cannot be attributed:
+   the harness replays every tool mode, and an unnamed tool means the run cannot
+   be matched to any of them.
+   For each artifact also print `[CPG_LABEL] <artifact-name>
    MALICIOUS|BENIGN|CONTROL` exactly once, before running it. Names are not
    enough: the harness needs the declared role to build the differential
    verdict, and a run without a label cannot count as evidence.

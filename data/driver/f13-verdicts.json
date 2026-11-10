@@ -1,5 +1,255 @@
 [
  {
+  "batch": "f14b",
+  "cve": "CVE-2024-0111",
+  "advisory_tool": "cuobjdump",
+  "vulnerability_type": "input validation",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED",
+   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
+  ],
+  "candidates": 1,
+  "inputs": 3,
+  "invocations": 30,
+  "crashes": 3,
+  "crashing_tools": [
+   "cuobjdump"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_symtab_sh_size.cubin",
+    "controls": [
+     "ctrl_symtab_sh_size_restored.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_text_sh_size.cubin",
+    "controls": [
+     "ctrl_text_sh_size_restored.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
+  "target_tool_differential": true,
+  "mechanism": false,
+  "mechanism_status": "UNKNOWN",
+  "attribution": "UNATTRIBUTED",
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler"
+  },
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
+ },
+ {
+  "batch": "f14b",
+  "cve": "CVE-2024-0124",
+  "advisory_tool": "nvdisasm",
+  "vulnerability_type": "use-after-free",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED",
+   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
+  ],
+  "candidates": 2,
+  "inputs": 3,
+  "invocations": 20,
+  "crashes": 1,
+  "crashing_tools": [
+   "nvdisasm"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_sec2_ize_0.cubin",
+    "controls": [
+     "ctrl_sec2_ize_0_restored_0xe3.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
+  "target_tool_differential": true,
+  "mechanism": false,
+  "mechanism_status": "UNKNOWN",
+  "attribution": "UNATTRIBUTED",
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler"
+  },
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
+ },
+ {
+  "batch": "f14b",
+  "cve": "CVE-2024-0125",
+  "advisory_tool": "nvdisasm",
+  "vulnerability_type": "NULL pointer dereference",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED",
+   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
+  ],
+  "candidates": 1,
+  "inputs": 5,
+  "invocations": 45,
+  "crashes": 9,
+  "crashing_tools": [
+   "cuobjdump",
+   "nvdisasm"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shentsize_zero.cubin",
+    "controls": [
+     "ctrl_e_shentsize_restored_0x40.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shoff_past_eof.cubin",
+    "controls": [
+     "ctrl_e_shoff_restored_0x5e0.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_sh_size_ull_max.cubin",
+    "controls": [
+     "ctrl_sh_size_restored_0x100.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
+  "target_tool_differential": true,
+  "mechanism": false,
+  "mechanism_status": "UNKNOWN",
+  "attribution": "UNATTRIBUTED",
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler"
+  },
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
+ },
+ {
+  "batch": "f14b",
+  "cve": "CVE-2025-23308",
+  "advisory_tool": "nvdisasm",
+  "vulnerability_type": "heap buffer overflow",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "CRASH_OBSERVED",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED"
+  ],
+  "candidates": 1,
+  "inputs": 6,
+  "invocations": 35,
+  "crashes": 3,
+  "crashing_tools": [
+   "cuobjdump"
+  ],
+  "benign_clean": true,
+  "control_clean": false,
+  "differential": false,
+  "paired_differential": [],
+  "unclassified_findings": [
+   "ctrl_sh_entsize_restored_0x10.cubin"
+  ],
+  "target_tool_differential": false,
+  "mechanism": false,
+  "mechanism_status": "UNKNOWN",
+  "attribution": "UNATTRIBUTED",
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler"
+  },
+  "note": "崩溃工具与 advisory 工具不同则不给目标工具差分"
+ },
+ {
+  "batch": "f14b",
+  "cve": "CVE-2025-23338",
+  "advisory_tool": "nvdisasm",
+  "vulnerability_type": "out-of-bounds write",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "CRASH_OBSERVED",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED"
+  ],
+  "candidates": 1,
+  "inputs": 15,
+  "invocations": 85,
+  "crashes": 12,
+  "crashing_tools": [
+   "cuobjdump",
+   "nvdisasm"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": false,
+  "paired_differential": [],
+  "unclassified_findings": [],
+  "target_tool_differential": false,
+  "mechanism": false,
+  "mechanism_status": "UNKNOWN",
+  "attribution": "UNATTRIBUTED",
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler"
+  },
+  "note": "崩溃工具与 advisory 工具不同则不给目标工具差分"
+ },
+ {
+  "batch": "f14b",
+  "cve": "CVE-2025-23346",
+  "advisory_tool": "cuobjdump",
+  "vulnerability_type": "NULL pointer dereference",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
+  "levels": [
+   "TOOL_EXECUTED",
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED",
+   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
+  ],
+  "candidates": 1,
+  "inputs": 2,
+  "invocations": 15,
+  "crashes": 4,
+  "crashing_tools": [
+   "cuobjdump"
+  ],
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shnum_0xffff.cubin",
+    "controls": [
+     "ctrl_e_shnum_restored_0x9.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [],
+  "target_tool_differential": true,
+  "mechanism": false,
+  "mechanism_status": "UNKNOWN",
+  "attribution": "UNATTRIBUTED",
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler"
+  },
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
+ },
+ {
   "batch": "f13",
   "cve": "CVE-2024-0111",
   "advisory_tool": "cuobjdump",
@@ -25,15 +275,21 @@
   "differential": true,
   "paired_differential": [
    {
+    "crashed": "poc_e_shnum.cubin",
+    "controls": [
+     "ctrl_e_shnum_restored_0x9.cubin"
+    ]
+   },
+   {
     "crashed": "poc_e_shoff.cubin",
     "controls": [
      "ctrl_e_shoff_restored_0x540.cubin"
     ]
    },
    {
-    "crashed": "poc_e_shnum.cubin",
+    "crashed": "poc_e_shstrndx.cubin",
     "controls": [
-     "ctrl_e_shnum_restored_0x9.cubin"
+     "ctrl_e_shstrndx_restored_0x1.cubin"
     ]
    },
    {
@@ -46,12 +302,6 @@
     "crashed": "poc_e_shentsize.cubin",
     "controls": [
      "ctrl_e_shentsize_restored_0x40.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_e_shstrndx.cubin",
-    "controls": [
-     "ctrl_e_shstrndx_restored_0x1.cubin"
     ]
    }
   ],
@@ -91,25 +341,7 @@
   "differential": true,
   "paired_differential": [
    {
-    "crashed": "poc_nv_info_sh_size.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_e_shoff_tail.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_e_shentsize_max.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_symtab_sh_link.cubin",
-    "controls": [
-     "ctrl_symtab_sh_link_restored_0x2.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_text_Z1kPii_sh_size.cubin",
+    "crashed": "poc_e_shstrndx_oob.cubin",
     "controls": []
    },
    {
@@ -117,7 +349,7 @@
     "controls": []
    },
    {
-    "crashed": "poc_symtab_st_name.cubin",
+    "crashed": "poc_e_shoff_tail.cubin",
     "controls": []
    },
    {
@@ -127,7 +359,25 @@
     ]
    },
    {
-    "crashed": "poc_e_shstrndx_oob.cubin",
+    "crashed": "poc_nv_info_sh_size.cubin",
+    "controls": []
+   },
+   {
+    "crashed": "poc_symtab_sh_link.cubin",
+    "controls": [
+     "ctrl_symtab_sh_link_restored_0x2.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shentsize_max.cubin",
+    "controls": []
+   },
+   {
+    "crashed": "poc_symtab_st_name.cubin",
+    "controls": []
+   },
+   {
+    "crashed": "poc_text_Z1kPii_sh_size.cubin",
     "controls": []
    },
    {
@@ -169,15 +419,15 @@
   "differential": true,
   "paired_differential": [
    {
-    "crashed": "poc_text_sh_size_0x7fffffff.cubin",
-    "controls": [
-     "ctrl_text_sh_size_0x7fffffff_restored_8000000000000000.cubin"
-    ]
-   },
-   {
     "crashed": "poc_e_shnum_0xffff.cubin",
     "controls": [
      "ctrl_e_shnum_0xffff_restored_0c00.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_text_sh_size_0x7fffffff.cubin",
+    "controls": [
+     "ctrl_text_sh_size_0x7fffffff_restored_8000000000000000.cubin"
     ]
    }
   ],
@@ -293,31 +543,44 @@
   "advisory_tool": "nvdisasm",
   "vulnerability_type": "out-of-bounds write",
   "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "CRASH_OBSERVED",
+  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
   "levels": [
    "TOOL_EXECUTED",
-   "CRASH_OBSERVED"
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED",
+   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
   ],
   "candidates": 1,
-  "inputs": 546,
-  "invocations": 2730,
-  "crashes": 164,
-  "killed_137": 0,
+  "inputs": 11,
+  "invocations": 30,
+  "crashes": 3,
   "crashing_tools": [
    "nvdisasm"
   ],
-  "benign_clean": false,
-  "control_clean": false,
-  "differential": false,
-  "paired_differential": [],
-  "unclassified_findings": [],
-  "target_tool_differential": false,
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_st_name_oob.cubin",
+    "controls": [
+     "ctrl_st_name_restored_0x00000046.cubin"
+    ]
+   }
+  ],
+  "unclassified_findings": [
+   "sweep_st_name_0x7fffffff.cubin",
+   "sweep_st_name_0xffffffff.cubin"
+  ],
+  "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
-  "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
+  "tool_versions": {
+   "nvdisasm": "nvdisasm: NVIDIA (R) CUDA disassembler",
+   "cuobjdump": "cuobjdump: NVIDIA (R) fat binary listing tool"
+  },
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
  },
  {
   "batch": "f12c",
@@ -331,15 +594,14 @@
    "CRASH_OBSERVED"
   ],
   "candidates": 1,
-  "inputs": 546,
-  "invocations": 2730,
-  "crashes": 164,
-  "killed_137": 0,
+  "inputs": 13,
+  "invocations": 36,
+  "crashes": 3,
   "crashing_tools": [
    "nvdisasm"
   ],
-  "benign_clean": false,
-  "control_clean": false,
+  "benign_clean": true,
+  "control_clean": true,
   "differential": false,
   "paired_differential": [],
   "unclassified_findings": [],
@@ -348,8 +610,7 @@
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
   "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
+  "note": "崩溃工具与 advisory 工具不同则不给目标工具差分"
  },
  {
   "batch": "f12b",
@@ -365,45 +626,27 @@
    "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
   ],
   "candidates": 1,
-  "inputs": 12,
-  "invocations": 60,
-  "crashes": 17,
-  "killed_137": 0,
+  "inputs": 4,
+  "invocations": 14,
+  "crashes": 3,
   "crashing_tools": [
-   "cuobjdump"
+   "cuobjdump",
+   "nvdisasm"
   ],
   "benign_clean": true,
   "control_clean": true,
   "differential": true,
   "paired_differential": [
    {
-    "crashed": "poc_e_shoff.cubin",
+    "crashed": "poc_e_shstrndx_ffff.cubin",
     "controls": [
-     "ctrl_e_shoff_restored_0x540.cubin"
+     "ctrl_e_shstrndx_restored_1.cubin"
     ]
    },
    {
-    "crashed": "poc_e_shnum.cubin",
+    "crashed": "poc_sh_name_oob.cubin",
     "controls": [
-     "ctrl_e_shnum_restored_0x9.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_shstrtab_sh_offset.cubin",
-    "controls": [
-     "ctrl_shstrtab_sh_offset_restored_0x40.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_e_shentsize.cubin",
-    "controls": [
-     "ctrl_e_shentsize_restored_0x40.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_e_shstrndx.cubin",
-    "controls": [
-     "ctrl_e_shstrndx_restored_0x1.cubin"
+     "ctrl_sh_name_restored_50.cubin"
     ]
    }
   ],
@@ -413,14 +656,49 @@
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
   "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
  },
  {
   "batch": "f12b",
   "cve": "CVE-2024-0124",
   "advisory_tool": "nvdisasm",
   "vulnerability_type": "use-after-free",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "EVIDENCE_MISSING",
+  "reason": "无 trusted 记录；候选自述不足以判定",
+  "candidates": 0,
+  "inputs": 0,
+  "invocations": 0,
+  "crashes": 0,
+  "crashing_tools": [],
+  "benign_clean": null,
+  "control_clean": null,
+  "differential": false,
+  "mechanism": false
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2024-0125",
+  "advisory_tool": "nvdisasm",
+  "vulnerability_type": "NULL pointer dereference",
+  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
+  "status": "EVIDENCE_MISSING",
+  "reason": "无 trusted 记录；候选自述不足以判定",
+  "candidates": 0,
+  "inputs": 0,
+  "invocations": 0,
+  "crashes": 0,
+  "crashing_tools": [],
+  "benign_clean": null,
+  "control_clean": null,
+  "differential": false,
+  "mechanism": false
+ },
+ {
+  "batch": "f12b",
+  "cve": "CVE-2025-23308",
+  "advisory_tool": "nvdisasm",
+  "vulnerability_type": "heap buffer overflow",
   "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
   "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
   "levels": [
@@ -430,12 +708,10 @@
    "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
   ],
   "candidates": 1,
-  "inputs": 19,
-  "invocations": 95,
-  "crashes": 26,
-  "killed_137": 2,
+  "inputs": 2,
+  "invocations": 6,
+  "crashes": 1,
   "crashing_tools": [
-   "cuobjdump",
    "nvdisasm"
   ],
   "benign_clean": true,
@@ -443,48 +719,10 @@
   "differential": true,
   "paired_differential": [
    {
-    "crashed": "poc_nv_info_sh_size.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_e_shoff_tail.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_e_shentsize_max.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_symtab_sh_link.cubin",
+    "crashed": "poc_r_info_sym_oob.cubin",
     "controls": [
-     "ctrl_symtab_sh_link_restored_0x2.cubin"
+     "ctrl_r_info_sym_oob_restored_0x7fffffff00000039.cubin"
     ]
-   },
-   {
-    "crashed": "poc_text_Z1kPii_sh_size.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_e_shentsize_zero.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_symtab_st_name.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_symtab_sh_size.cubin",
-    "controls": [
-     "ctrl_symtab_sh_link_restored_0x2.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_e_shstrndx_oob.cubin",
-    "controls": []
-   },
-   {
-    "crashed": "poc_e_shnum_max.cubin",
-    "controls": []
    }
   ],
   "unclassified_findings": [],
@@ -493,86 +731,7 @@
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
   "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
- },
- {
-  "batch": "f12b",
-  "cve": "CVE-2024-0125",
-  "advisory_tool": "nvdisasm",
-  "vulnerability_type": "NULL pointer dereference",
-  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "DIFFERENTIAL_SUPPORTED",
-  "levels": [
-   "TOOL_EXECUTED",
-   "CRASH_OBSERVED",
-   "DIFFERENTIAL_SUPPORTED"
-  ],
-  "candidates": 1,
-  "inputs": 21,
-  "invocations": 105,
-  "crashes": 34,
-  "killed_137": 0,
-  "crashing_tools": [
-   "cuobjdump"
-  ],
-  "benign_clean": true,
-  "control_clean": true,
-  "differential": true,
-  "paired_differential": [
-   {
-    "crashed": "poc_text_sh_size_0x7fffffff.cubin",
-    "controls": [
-     "ctrl_text_sh_size_0x7fffffff_restored_8000000000000000.cubin"
-    ]
-   },
-   {
-    "crashed": "poc_e_shnum_0xffff.cubin",
-    "controls": [
-     "ctrl_e_shnum_0xffff_restored_0c00.cubin"
-    ]
-   }
-  ],
-  "unclassified_findings": [],
-  "target_tool_differential": false,
-  "mechanism": false,
-  "mechanism_status": "UNKNOWN",
-  "attribution": "UNATTRIBUTED",
-  "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
- },
- {
-  "batch": "f12b",
-  "cve": "CVE-2025-23308",
-  "advisory_tool": "nvdisasm",
-  "vulnerability_type": "heap buffer overflow",
-  "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "CRASH_OBSERVED",
-  "levels": [
-   "TOOL_EXECUTED",
-   "CRASH_OBSERVED"
-  ],
-  "candidates": 1,
-  "inputs": 28,
-  "invocations": 140,
-  "crashes": 7,
-  "killed_137": 0,
-  "crashing_tools": [
-   "cuobjdump"
-  ],
-  "benign_clean": false,
-  "control_clean": false,
-  "differential": false,
-  "paired_differential": [],
-  "unclassified_findings": [],
-  "target_tool_differential": false,
-  "mechanism": false,
-  "mechanism_status": "UNKNOWN",
-  "attribution": "UNATTRIBUTED",
-  "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
  },
  {
   "batch": "f12b",
@@ -580,31 +739,17 @@
   "advisory_tool": "nvdisasm",
   "vulnerability_type": "out-of-bounds write",
   "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "CRASH_OBSERVED",
-  "levels": [
-   "TOOL_EXECUTED",
-   "CRASH_OBSERVED"
-  ],
-  "candidates": 1,
-  "inputs": 546,
-  "invocations": 2730,
-  "crashes": 164,
-  "killed_137": 0,
-  "crashing_tools": [
-   "nvdisasm"
-  ],
-  "benign_clean": false,
-  "control_clean": false,
+  "status": "EVIDENCE_MISSING",
+  "reason": "无 trusted 记录；候选自述不足以判定",
+  "candidates": 0,
+  "inputs": 0,
+  "invocations": 0,
+  "crashes": 0,
+  "crashing_tools": [],
+  "benign_clean": null,
+  "control_clean": null,
   "differential": false,
-  "paired_differential": [],
-  "unclassified_findings": [],
-  "target_tool_differential": false,
-  "mechanism": false,
-  "mechanism_status": "UNKNOWN",
-  "attribution": "UNATTRIBUTED",
-  "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
+  "mechanism": false
  },
  {
   "batch": "f12b",
@@ -612,32 +757,57 @@
   "advisory_tool": "cuobjdump",
   "vulnerability_type": "NULL pointer dereference",
   "toolkit": "CUDA 11.2.2 (cpg/cuda112-py3:1.0)",
-  "status": "CRASH_OBSERVED",
+  "status": "TARGET_TOOL_DIFFERENTIAL_SUPPORTED",
   "levels": [
    "TOOL_EXECUTED",
-   "CRASH_OBSERVED"
+   "CRASH_OBSERVED",
+   "DIFFERENTIAL_SUPPORTED",
+   "TARGET_TOOL_DIFFERENTIAL_SUPPORTED"
   ],
   "candidates": 1,
-  "inputs": 22,
-  "invocations": 110,
-  "crashes": 39,
-  "killed_137": 0,
+  "inputs": 6,
+  "invocations": 22,
+  "crashes": 5,
   "crashing_tools": [
    "cuobjdump",
    "nvdisasm"
   ],
-  "benign_clean": false,
-  "control_clean": false,
-  "differential": false,
-  "paired_differential": [],
+  "benign_clean": true,
+  "control_clean": true,
+  "differential": true,
+  "paired_differential": [
+   {
+    "crashed": "poc_e_shnum_overrun.cubin",
+    "controls": [
+     "ctrl_e_shnum_restored_9.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shoff_overrun.cubin",
+    "controls": [
+     "ctrl_e_shoff_restored_1280.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_e_shstrndx_overrun.cubin",
+    "controls": [
+     "ctrl_e_shstrndx_restored_1.cubin"
+    ]
+   },
+   {
+    "crashed": "poc_sh_name_overrun.cubin",
+    "controls": [
+     "ctrl_sh_name_restored_1.cubin"
+    ]
+   }
+  ],
   "unclassified_findings": [],
-  "target_tool_differential": false,
+  "target_tool_differential": true,
   "mechanism": false,
   "mechanism_status": "UNKNOWN",
   "attribution": "UNATTRIBUTED",
   "tool_versions": {},
-  "source": "f14_replay_modes",
-  "note": "按候选 argv 重放；137 记为资源/外部终止，不计解析器崩溃"
+  "note": "目标工具差分成立；机制需根因级证据，缺失则保持 UNKNOWN"
  },
  {
   "batch": "f10s2b",
