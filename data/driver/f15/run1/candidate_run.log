@@ -1,0 +1,6 @@
+[F15_PLAN] divide-by-zero is assumed when SOF0 component sampling factor is 0x00 (H=0,V=0), making max_h/max_v_samp_factor zero and causing a division by max_samp_factor*8 in MCU/block dimension computation; restoring 0x11 should fix it.
+[F15_FILE] benign benign_nvjpeg_sampling_11.jpg 374 3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a
+[F15_FILE] poc poc_nvjpeg_hsamp_zero.jpg 374 9893ba784d0108a31e9b25620c7ab45bec0e7c23845fad9ad51be6461321175d
+[F15_FILE] ctrl ctrl_nvjpeg_sampling_11_restored.jpg 374 3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a
+
+[stderr]

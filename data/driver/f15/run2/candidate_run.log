@@ -1,0 +1,6 @@
+[F15_PLAN] 假设 SOF0 组件水平采样因子 H=0 使 MCU/组件宽度计算除以 hmax=0；恢复为 H=1 (0x11) 应正常。
+[F15_FILE] benign benign_sampling11_8x8_rgb.jpg 343 fb9d3b43685d35ee3f6e9c745fb67c3c131008707fb0fa0c83bb44bb336e61ef
+[F15_FILE] poc poc_h0_sampling_8x8_rgb.jpg 343 ab9919e3df637f60498a7f87c6d14745a4f23316880d07c23e2f13bfc7aeaa06
+[F15_FILE] ctrl ctrl_restored_sampling11_8x8_rgb.jpg 343 fb9d3b43685d35ee3f6e9c745fb67c3c131008707fb0fa0c83bb44bb336e61ef
+
+[stderr]

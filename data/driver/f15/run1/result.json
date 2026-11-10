@@ -1,0 +1,78 @@
+{
+ "cve": "CVE-2026-65160",
+ "decoder": {
+  "path": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f15\\baseline_nvjpeg.exe",
+  "sha256": "30a4b9e0816d57a879bae132654a3bf64264f513b6836bbaeb42ecefafff1e6c"
+ },
+ "library": {
+  "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll",
+  "sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+  "version": "11.4.0"
+ },
+ "candidate_sha256": "bc74425de44715a014a776fed6106189b7fade7e68119061a8fc1797bf83b1aa",
+ "candidate_returncode": 0,
+ "inputs": [
+  {
+   "file": "benign_nvjpeg_sampling_11.jpg",
+   "sha256": "3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a",
+   "bytes": 374
+  },
+  {
+   "file": "ctrl_nvjpeg_sampling_11_restored.jpg",
+   "sha256": "3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a",
+   "bytes": 374
+  },
+  {
+   "file": "poc_nvjpeg_hsamp_zero.jpg",
+   "sha256": "9893ba784d0108a31e9b25620c7ab45bec0e7c23845fad9ad51be6461321175d",
+   "bytes": 374
+  }
+ ],
+ "runs": [
+  {
+   "file": "benign_nvjpeg_sampling_11.jpg",
+   "sha256": "3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a",
+   "exit": 0,
+   "stdout": "nvjpegCreateSimple=SUCCESS\nnvjpegJpegStateCreate=SUCCESS\nnvjpegGetImageInfo=SUCCESS components=1 64x64\ncudaMalloc=no error\nnvjpegDecode=SUCCESS\ncudaMemcpy=no error\nPIXELS=4096 CHECKSUM=97517568\nBASELINE=DONE\n",
+   "stderr": ""
+  },
+  {
+   "file": "ctrl_nvjpeg_sampling_11_restored.jpg",
+   "sha256": "3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a",
+   "exit": 0,
+   "stdout": "nvjpegCreateSimple=SUCCESS\nnvjpegJpegStateCreate=SUCCESS\nnvjpegGetImageInfo=SUCCESS components=1 64x64\ncudaMalloc=no error\nnvjpegDecode=SUCCESS\ncudaMemcpy=no error\nPIXELS=4096 CHECKSUM=97517568\nBASELINE=DONE\n",
+   "stderr": ""
+  },
+  {
+   "file": "poc_nvjpeg_hsamp_zero.jpg",
+   "sha256": "9893ba784d0108a31e9b25620c7ab45bec0e7c23845fad9ad51be6461321175d",
+   "exit": 1,
+   "stdout": "nvjpegCreateSimple=SUCCESS\nnvjpegJpegStateCreate=SUCCESS\nnvjpegGetImageInfo=BAD_JPEG components=1 0x0\n",
+   "stderr": ""
+  }
+ ],
+ "verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_nvjpeg_sampling_11.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_nvjpeg_sampling_11_restored.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_nvjpeg_hsamp_zero.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": true,
+  "differential": true,
+  "crashed": [
+   {
+    "file": "poc_nvjpeg_hsamp_zero.jpg",
+    "exit": 1
+   }
+  ]
+ },
+ "policy": "解码由固定二进制执行；候选只能构造输入，不能伪造崩溃"
+}

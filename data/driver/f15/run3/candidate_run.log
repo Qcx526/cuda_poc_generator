@@ -1,0 +1,6 @@
+[F15_PLAN] Hypothesis: SOF0 H/V sampling factors = 0 make max sampling factor zero; nvJPEG divides by max_samp*8 when computing MCU/block dimensions; restoring sampling bytes to 0x11 avoids the zero denominator.
+[F15_FILE] benign benign_color_64x64_samp_11.jpg 212 315e03f44523c3189526a71dc8a1195e341b59a1981daabcd6fb2a05fa4e9a43
+[F15_FILE] poc poc_sof_sampling_zero.jpg 212 b87eb9005a48cec6bfc55fb71bf749a8ec75af809088582c5513a58b8c372afc
+[F15_FILE] ctrl ctrl_sof_sampling_11.jpg 212 315e03f44523c3189526a71dc8a1195e341b59a1981daabcd6fb2a05fa4e9a43
+
+[stderr]
