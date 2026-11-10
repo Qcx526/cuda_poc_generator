@@ -1,0 +1,6 @@
+[F15_PLAN] Derived MCU-grid/chroma-plane size zero via integer division: floor(1/(8*2))=0 and floor(1*1/2)=0 from legal 1x1 SOF with 4:2:0 legal sampling; ctrl 16x16 restores nonzero.
+[F15_FILE] benign benign_64x64_420.jpg 673 75e84338c34aef459214984304b3657a32c2a7a0b0f5925d50ffa74ed6a394fd
+[F15_FILE] poc poc_1x1_420.jpg 613 ef9a770390cba9fca115ea8dd9613d50931d564938fb4598e1826be5049a8561
+[F15_FILE] ctrl ctrl_16x16_420.jpg 613 24a8ee793ad3f990e2a58a7dbed3281506f81bb27cb57912dfb40dc381e29bb3
+
+[stderr]

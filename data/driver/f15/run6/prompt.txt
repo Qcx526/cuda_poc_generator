@@ -1,0 +1,140 @@
+任务：为 NVIDIA nvJPEG 的 CWE-369（除零）构造受控输入样本。
+
+官方公开信息（仅此而已）：
+- CVE-2026-65160，2026-11-03，组件 nvJPEG，CWE-369，影响拒绝服务，CVSS 5.5。
+- 受影响 nvJPEG 0–26.06，修复 26.07。
+- 本机可用：11.4.0 / 12.3.1 / 13.2.2，均含 Windows DLL，真实解码可用。
+
+已被实验否证的假设（不要再重复）：
+1. SOF 的采样因子 H=0      → nvjpegGetImageInfo=BAD_JPEG，未进算术
+2. 帧高度 height=0          → nvjpegGetImageInfo=BAD_JPEG，未进算术
+3. 采样因子整体置 0         → nvjpegGetImageInfo=BAD_JPEG，未进算术
+共同点：零值字段在头解析阶段就被合法性校验拦下。
+
+Harness 会回报每个阶段的真实状态：
+STAGE2 文件读取 / STAGE4 GetImageInfo / STAGE5 显存分配 / STAGE6 解码 / STAGE7 回传。
+
+你的产出：**一个只依赖标准库的 Python 脚本**，运行后在当前目录写出三个 JPEG：
+  benign_<描述>.jpg  合法、可正常解码（基线）
+  poc_<描述>.jpg     按你的新假设构造
+  ctrl_<描述>.jpg    与 poc 同构造，但把假设涉及的那一处恢复为合法值
+
+要求：
+1. 脚本开头注释写明：假设除零发生在哪个**派生量**（不是原始零字段），
+   该派生量由哪些合法字段算出，为什么合法字段组合会让它变成零或极小。
+2. 三个文件必须是完整 JPEG（FFD8 开头、FFD9 结尾），必须能通过基本格式校验。
+3. 只用标准库，不联网，不读其他 CVE 样本。
+4. 打印 `[F15_PLAN] <一行假设摘要>` 与 `[F15_FILE] <角色> <文件名> <字节> <sha256>`。
+
+只输出一个 ```python 代码块。
+
+
+上一轮的真实阶段反馈（固定探针产生）：
+1) 上一轮你的脚本自身崩溃：ValueError: too many values to unpack (expected 4)，位置 make_sof() 里 for cid,h,v,qid in comps。请修正数据结构后再生成。2) 更早一轮 poc_1x1_420.jpg（1x1、4:2:0）在两个版本上解码**成功**（exit 0，STAGE7）。3) 目前最有价值的线索是色度平面尺寸 floor(w*Hi/Hmax) 可能为 0 而亮度不为 0。请在脚本内自检：每条 SOF 记录必须是 4 元组，采样因子 1..4，宽高 1..65535，生成后立即用你自己的解析函数回读校验，再写文件。
+
+请据此提出**不同类型**的假设；如果上一轮仍停在 STAGE4，说明还没进入解码，需要换约束而不是换零值。
+
+实验上下文（允许你看到的全部信息）：
+{
+ "schema_version": "gpu-vulnerability-case/v2",
+ "identity": {
+  "case_id": "case:cve-2026-65160",
+  "cve_id": "CVE-2026-65160",
+  "title": "NVIDIA nvJPEG 除零 (CWE-369)",
+  "sources": [
+   "https://github.com/NVIDIA/product-security/blob/main/2026/5910/5910.md"
+  ]
+ },
+ "target": {
+  "vendor": "NVIDIA",
+  "component": "nvjpeg64_11.dll",
+  "platform": "windows",
+  "execution_tier": "userland_api",
+  "versions": {
+   "nvjpeg": "11.4.0",
+   "toolkit": "11.2",
+   "driver_release": "610.47"
+  }
+ },
+ "entry_surface": {
+  "medium": "api_call",
+  "interface": "nvJPEG C API",
+  "trust_boundary": "user_mode library call",
+  "constraints": [
+   "nvcc",
+   "cudart",
+   "sm_75"
+  ]
+ },
+ "description": {
+  "public_summary": "NVIDIA nvJPEG contains a vulnerability where an attacker could cause a divide-by-zero. A successful exploit might lead to denial of service.",
+  "cwe": "CWE-369",
+  "impact": "denial of service",
+  "root_cause_status": "UNKNOWN"
+ },
+ "knowledge": {
+  "evidence": [
+   {
+    "id": "E1",
+    "kind": "INPUT_ASSERTION",
+    "statement": "公告 2026-11-03：nvJPEG 受影响 0 到 26.06，修复 26.07；CUDA Toolkit 受影响 0 到 13.4.1，修复 13.4 U1",
+    "source": "NVIDIA product-security 5910.md",
+    "target_identity": null,
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "PUBLIC",
+    "public_reviewed": true,
+    "notes": null
+   },
+   {
+    "id": "E2",
+    "kind": "INPUT_ASSERTION",
+    "statement": "本机 nvjpeg64_11.dll 版本 11.4.0（nvjpegGetProperty），驱动发行版本 610.47，GPU GTX 1660 sm_75",
+    "source": "nvjpegGetProperty + nvidia-smi",
+    "target_identity": null,
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "PUBLIC",
+    "public_reviewed": true,
+    "notes": null
+   },
+   {
+    "id": "E3",
+    "kind": "INPUT_ASSERTION",
+    "statement": "已实测可用的调用序列：nvjpegCreateSimple→JpegStateCreate→GetImageInfo→cuMemAlloc→nvjpegDecode(RGBI)→cuMemcpyDtoH，64x64 合法 JPEG 解码成功",
+    "source": "data/driver/f15/baseline_nvjpeg.cu",
+    "target_identity": null,
+    "digest": null,
+    "status": "SUPPORTED",
+    "visible_in": "PUBLIC",
+    "public_reviewed": true,
+    "notes": null
+   }
+  ],
+  "missing": [
+   "触发除零的具体字段",
+   "触发所需输入尺寸",
+   "修复版本对照样本"
+  ]
+ },
+ "contract": {
+  "goal": "对 nvJPEG 生成受控 JPEG 输入并观测除零",
+  "authorized_fact_ids": [],
+  "shared_payload_keys": [],
+  "share_missing": false,
+  "backend": "cuda_api_program",
+  "allowed_operations": [
+   "compile",
+   "run_host_gpu"
+  ],
+  "risk_level": "low",
+  "requires_independent_verification": true
+ },
+ "extension": {
+  "name": "gpu_runtime",
+  "version": "1",
+  "payload": {
+   "arch": "sm_75"
+  }
+ }
+}

@@ -61,7 +61,8 @@ int main(int argc, char **argv) {
 
     nvjpegImage_t out;
     memset(&out, 0, sizeof(out));
-    size_t pitch = (size_t)widths[0] * components;
+    // RGBI is 3 bytes per pixel regardless of the source component count.
+    size_t pitch = (size_t)widths[0] * 3;
     CUdeviceptr dev = 0;
     CUresult al = cuMemAlloc(&dev, pitch * heights[0]);
     printf("cuMemAlloc=%d\n", (int)al);

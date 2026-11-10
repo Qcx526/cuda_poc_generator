@@ -1,0 +1,16 @@
+[F15_PLAN] 1x1 SOF0 Y=H4/V1, Cb=Cr=H1/V1; derived chroma_plane_width=(width*H_chroma)//H_max=0; ctrl restores Y H=1 so H_max=1 and derived width=1.
+
+[stderr]
+Traceback (most recent call last):
+  File "F:\qcx\code\test\cuda_poc_generator\data\driver\f15\run5\candidate.py", line 269, in <module>
+    main()
+  File "F:\qcx\code\test\cuda_poc_generator\data\driver\f15\run5\candidate.py", line 245, in main
+    benign = build_jpeg(16, 16, benign_comps, restart_interval=None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\qcx\code\test\cuda_poc_generator\data\driver\f15\run5\candidate.py", line 211, in build_jpeg
+    out.extend(make_sof(width, height, comps))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\qcx\code\test\cuda_poc_generator\data\driver\f15\run5\candidate.py", line 126, in make_sof
+    for cid, h, v, qid in comps:
+        ^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 4)

@@ -1,0 +1,29 @@
+{
+ "cve": "CVE-2026-65160",
+ "round": 5,
+ "candidate_sha256": "b1de4c45ffabdeb5a2cf21059ff1d6fc96055c27ec4aab2372afd6d9ca62985e",
+ "candidate_returncode": 1,
+ "inputs": [],
+ "runs": [],
+ "verdicts": {
+  "13.2.2": {
+   "roles": {},
+   "benign_ok": false,
+   "control_ok": false,
+   "crafted_crashed": false,
+   "differential": false,
+   "rejected": [],
+   "crashes": []
+  },
+  "11.4.0": {
+   "roles": {},
+   "benign_ok": false,
+   "control_ok": false,
+   "crafted_crashed": false,
+   "differential": false,
+   "rejected": [],
+   "crashes": []
+  }
+ },
+ "policy": "解码由固定探针执行并逐阶段记录；候选不参与判定"
+}

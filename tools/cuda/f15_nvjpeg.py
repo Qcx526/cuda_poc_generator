@@ -86,7 +86,9 @@ def is_crash(exit_code) -> bool:
     status; that is the library rejecting the input, and counting it as a crash is
     how a clean rejection turns into a fake finding.
     """
-    return exit_code is not None and (exit_code < 0 or exit_code > 2)
+    # Windows surfaces a structured exception at or above 0xC0000000; any other
+    # non-zero code is the program's own exit, not a fault.
+    return exit_code is not None and (exit_code < 0 or exit_code >= 0xC0000000)
 
 
 def classify(runs: list) -> dict:

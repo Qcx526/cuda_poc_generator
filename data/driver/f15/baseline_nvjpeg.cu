@@ -52,7 +52,9 @@ int main(int argc, char **argv) {
 
     nvjpegImage_t out;
     memset(&out, 0, sizeof(out));
-    size_t pitch = (size_t)widths[0] * components;
+    // RGBI is 3 bytes per pixel even when the source has 1 component: sizing
+    // the buffer at width*components under-allocated grayscale by 3x.
+    size_t pitch = (size_t)widths[0] * 3;
     unsigned char *dev = nullptr;
     cudaError_t ce = cudaMalloc((void **)&dev, pitch * heights[0]);
     printf("cudaMalloc=%s\n", cudaGetErrorString(ce));

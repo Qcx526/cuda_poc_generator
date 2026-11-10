@@ -1,0 +1,6 @@
+[F15_PLAN] derived chroma width cw=(width*Hs_i)//Hs_max; width=1, Y Hs=4, Cb/Cr Hs=1 gives cw=0 while raw fields are legal; ctrl restores width=4 so cw=1
+[F15_FILE] benign benign_8x8_444.jpg 343 fb9d3b43685d35ee3f6e9c745fb67c3c131008707fb0fa0c83bb44bb336e61ef
+[F15_FILE] poc poc_1x1_411_H4.jpg 345 25a86cba68f97ad9d2a85f8ce99e20ddef6bfad66ba90927bb12dc4b47b68c04
+[F15_FILE] ctrl ctrl_4x1_411_H4.jpg 345 9965042664db2b755df20b824b989e5e1aa93d14fb818cf9368d2ba5035e4fc3
+
+[stderr]
