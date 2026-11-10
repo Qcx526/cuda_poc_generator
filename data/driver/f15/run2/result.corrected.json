@@ -1,0 +1,52 @@
+{
+ "run": "run2",
+ "original_verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_sampling11_8x8_rgb.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_restored_sampling11_8x8_rgb.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_h0_sampling_8x8_rgb.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": false,
+  "differential": false,
+  "crashed": [],
+  "rejected": [
+   "poc_h0_sampling_8x8_rgb.jpg"
+  ]
+ },
+ "corrected_verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_sampling11_8x8_rgb.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_restored_sampling11_8x8_rgb.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_h0_sampling_8x8_rgb.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": false,
+  "differential": false,
+  "crashed": [],
+  "rejected": [
+   "poc_h0_sampling_8x8_rgb.jpg"
+  ]
+ },
+ "reached_stage": {
+  "benign_sampling11_8x8_rgb.jpg": "nvjpegDecode",
+  "ctrl_restored_sampling11_8x8_rgb.jpg": "nvjpegDecode",
+  "poc_h0_sampling_8x8_rgb.jpg": "nvjpegGetImageInfo"
+ },
+ "rule": "崩溃只认异常终止（负退出码或 Windows 结构化异常）；exit=1 是库返回错误状态，记为正常拒绝",
+ "original_sha256": "033e0baf57157ebd56b0067dd8fb32cac6631035ed5218103836b5062c2f8dc0"
+}

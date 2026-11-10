@@ -1,0 +1,182 @@
+[
+ {
+  "run": "run1",
+  "file": "benign_nvjpeg_sampling_11.jpg",
+  "sha256": "3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a",
+  "11.4.0": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=1 64x64",
+   "last": "PIXELS=4096 CHECKSUM=97517568"
+  },
+  "12.3.1": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=1 64x64",
+   "last": "PIXELS=4096 CHECKSUM=97517568"
+  },
+  "13.2.2": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=1 64x64",
+   "last": "PIXELS=4096 CHECKSUM=97517568"
+  }
+ },
+ {
+  "run": "run1",
+  "file": "ctrl_nvjpeg_sampling_11_restored.jpg",
+  "sha256": "3e7bf1fae4e32d45d0b04800584f1377ac579a334b86de5604e29f72ea92cc9a",
+  "11.4.0": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=1 64x64",
+   "last": "PIXELS=4096 CHECKSUM=97517568"
+  },
+  "12.3.1": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=1 64x64",
+   "last": "PIXELS=4096 CHECKSUM=97517568"
+  },
+  "13.2.2": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=1 64x64",
+   "last": "PIXELS=4096 CHECKSUM=97517568"
+  }
+ },
+ {
+  "run": "run1",
+  "file": "poc_nvjpeg_hsamp_zero.jpg",
+  "sha256": "9893ba784d0108a31e9b25620c7ab45bec0e7c23845fad9ad51be6461321175d",
+  "11.4.0": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=1 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  },
+  "12.3.1": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=1 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  },
+  "13.2.2": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=0 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  }
+ },
+ {
+  "run": "run2",
+  "file": "benign_sampling11_8x8_rgb.jpg",
+  "sha256": "fb9d3b43685d35ee3f6e9c745fb67c3c131008707fb0fa0c83bb44bb336e61ef",
+  "11.4.0": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 8x8",
+   "last": "PIXELS=192 CHECKSUM=1315291136"
+  },
+  "12.3.1": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 8x8",
+   "last": "PIXELS=192 CHECKSUM=1315291136"
+  },
+  "13.2.2": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 8x8",
+   "last": "PIXELS=192 CHECKSUM=1315291136"
+  }
+ },
+ {
+  "run": "run2",
+  "file": "ctrl_restored_sampling11_8x8_rgb.jpg",
+  "sha256": "fb9d3b43685d35ee3f6e9c745fb67c3c131008707fb0fa0c83bb44bb336e61ef",
+  "11.4.0": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 8x8",
+   "last": "PIXELS=192 CHECKSUM=1315291136"
+  },
+  "12.3.1": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 8x8",
+   "last": "PIXELS=192 CHECKSUM=1315291136"
+  },
+  "13.2.2": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 8x8",
+   "last": "PIXELS=192 CHECKSUM=1315291136"
+  }
+ },
+ {
+  "run": "run2",
+  "file": "poc_h0_sampling_8x8_rgb.jpg",
+  "sha256": "ab9919e3df637f60498a7f87c6d14745a4f23316880d07c23e2f13bfc7aeaa06",
+  "11.4.0": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=3 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  },
+  "12.3.1": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=3 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  },
+  "13.2.2": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=0 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  }
+ },
+ {
+  "run": "run3",
+  "file": "benign_color_64x64_samp_11.jpg",
+  "sha256": "315e03f44523c3189526a71dc8a1195e341b59a1981daabcd6fb2a05fa4e9a43",
+  "11.4.0": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 64x64",
+   "last": "PIXELS=12288 CHECKSUM=292552704"
+  },
+  "12.3.1": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 64x64",
+   "last": "PIXELS=12288 CHECKSUM=292552704"
+  },
+  "13.2.2": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 64x64",
+   "last": "PIXELS=12288 CHECKSUM=292552704"
+  }
+ },
+ {
+  "run": "run3",
+  "file": "ctrl_sof_sampling_11.jpg",
+  "sha256": "315e03f44523c3189526a71dc8a1195e341b59a1981daabcd6fb2a05fa4e9a43",
+  "11.4.0": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 64x64",
+   "last": "PIXELS=12288 CHECKSUM=292552704"
+  },
+  "12.3.1": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 64x64",
+   "last": "PIXELS=12288 CHECKSUM=292552704"
+  },
+  "13.2.2": {
+   "exit": 0,
+   "stage": "nvjpegGetImageInfo=SUCCESS components=3 64x64",
+   "last": "PIXELS=12288 CHECKSUM=292552704"
+  }
+ },
+ {
+  "run": "run3",
+  "file": "poc_sof_sampling_zero.jpg",
+  "sha256": "b87eb9005a48cec6bfc55fb71bf749a8ec75af809088582c5513a58b8c372afc",
+  "11.4.0": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=3 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  },
+  "12.3.1": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=3 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  },
+  "13.2.2": {
+   "exit": 1,
+   "stage": "nvjpegGetImageInfo=BAD_JPEG components=0 0x0",
+   "last": "nvjpegJpegStateCreate=SUCCESS"
+  }
+ }
+]

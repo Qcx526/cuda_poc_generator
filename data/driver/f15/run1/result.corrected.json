@@ -1,0 +1,54 @@
+{
+ "run": "run1",
+ "original_verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_nvjpeg_sampling_11.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_nvjpeg_sampling_11_restored.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_nvjpeg_hsamp_zero.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": true,
+  "differential": true,
+  "crashed": [
+   {
+    "file": "poc_nvjpeg_hsamp_zero.jpg",
+    "exit": 1
+   }
+  ]
+ },
+ "corrected_verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_nvjpeg_sampling_11.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_nvjpeg_sampling_11_restored.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_nvjpeg_hsamp_zero.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": false,
+  "differential": false,
+  "crashed": [],
+  "rejected": [
+   "poc_nvjpeg_hsamp_zero.jpg"
+  ]
+ },
+ "reached_stage": {
+  "benign_nvjpeg_sampling_11.jpg": "nvjpegDecode",
+  "ctrl_nvjpeg_sampling_11_restored.jpg": "nvjpegDecode",
+  "poc_nvjpeg_hsamp_zero.jpg": "nvjpegGetImageInfo"
+ },
+ "rule": "崩溃只认异常终止（负退出码或 Windows 结构化异常）；exit=1 是库返回错误状态，记为正常拒绝",
+ "original_sha256": "5b48e861d0e464d8e67bea474f0c9adda064645094ecc06bb9a57b8120f0d3c9"
+}

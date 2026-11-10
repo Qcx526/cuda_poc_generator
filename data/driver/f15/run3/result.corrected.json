@@ -1,0 +1,52 @@
+{
+ "run": "run3",
+ "original_verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_color_64x64_samp_11.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_sof_sampling_11.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_sof_sampling_zero.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": false,
+  "differential": false,
+  "crashed": [],
+  "rejected": [
+   "poc_sof_sampling_zero.jpg"
+  ]
+ },
+ "corrected_verdict": {
+  "roles": {
+   "BENIGN": [
+    "benign_color_64x64_samp_11.jpg"
+   ],
+   "CONTROL": [
+    "ctrl_sof_sampling_11.jpg"
+   ],
+   "MALICIOUS": [
+    "poc_sof_sampling_zero.jpg"
+   ]
+  },
+  "benign_clean": true,
+  "control_clean": true,
+  "crafted_crashed": false,
+  "differential": false,
+  "crashed": [],
+  "rejected": [
+   "poc_sof_sampling_zero.jpg"
+  ]
+ },
+ "reached_stage": {
+  "benign_color_64x64_samp_11.jpg": "nvjpegDecode",
+  "ctrl_sof_sampling_11.jpg": "nvjpegDecode",
+  "poc_sof_sampling_zero.jpg": "nvjpegGetImageInfo"
+ },
+ "rule": "崩溃只认异常终止（负退出码或 Windows 结构化异常）；exit=1 是库返回错误状态，记为正常拒绝",
+ "original_sha256": "6fbc0d8581c6a6899a001a3a8b5da5d02c143817f903f901cb3e2b54f1348645"
+}
