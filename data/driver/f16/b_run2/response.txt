@@ -1,0 +1,8 @@
+```json
+{
+  "hypothesis": "设置 DRI 重启间隔为 0，可能使 nvJPEG 在按重启间隔计算 MCU 分组时发生除零，而参考解码器仍可能接受该边界 JPEG。",
+  "operations": [
+    {"op": "set_dri", "interval": 0}
+  ]
+}
+```

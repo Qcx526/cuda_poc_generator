@@ -1,0 +1,13 @@
+{
+ "plan": {
+  "operations": [
+   {
+    "op": "set_dri",
+    "interval": 0
+   }
+  ]
+ },
+ "notes": [
+  "insert_dri=0"
+ ]
+}

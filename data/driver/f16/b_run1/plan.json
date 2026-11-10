@@ -1,0 +1,14 @@
+{
+ "plan": {
+  "hypothesis": "将 DRI 间隔设为 0，使解码器在按 restart interval 计算 MCU 分组或取模时以零为除数，触发 CWE-369 除零。",
+  "operations": [
+   {
+    "op": "set_dri",
+    "interval": 0
+   }
+  ]
+ },
+ "notes": [
+  "insert_dri=0"
+ ]
+}

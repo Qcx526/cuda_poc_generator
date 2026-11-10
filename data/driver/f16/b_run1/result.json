@@ -1,0 +1,169 @@
+{
+ "round": 1,
+ "work": "F:\\qcx\\code\\test\\cuda_poc_generator\\data\\driver\\f16\\b_run1",
+ "plan": {
+  "hypothesis": "将 DRI 间隔设为 0，使解码器在按 restart interval 计算 MCU 分组或取模时以零为除数，触发 CWE-369 除零。",
+  "operations": [
+   {
+    "op": "set_dri",
+    "interval": 0
+   }
+  ]
+ },
+ "bundle": {
+  "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+  "notes": [
+   "insert_dri=0"
+  ],
+  "artifacts": [
+   {
+    "role": "BENIGN",
+    "name": "benign_baseline.jpg",
+    "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+    "reference_ok": true,
+    "reference_error": "",
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0(64x64,comp=3)",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS(len=12)"
+    ],
+    "size": [
+     64,
+     64
+    ],
+    "mode": "RGB"
+   },
+   {
+    "role": "MALICIOUS",
+    "name": "poc_plan.jpg",
+    "sha256": "b873ac688abe8b88f914036244728643b31020ae38040426bd169f587a659e7c",
+    "reference_ok": true,
+    "reference_error": "",
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0(64x64,comp=3)",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DRI",
+     "SOS(len=12)"
+    ],
+    "size": [
+     64,
+     64
+    ],
+    "mode": "RGB"
+   },
+   {
+    "role": "CONTROL",
+    "name": "ctrl_restored.jpg",
+    "sha256": "6879e77d1ce4500f51006fd8e57a2200dd71e6eb924c346b345a086a2997da43",
+    "reference_ok": true,
+    "reference_error": "",
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0(64x64,comp=3)",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DRI",
+     "SOS(len=12)"
+    ],
+    "size": [
+     64,
+     64
+    ],
+    "mode": "RGB"
+   }
+  ]
+ },
+ "runs": [
+  {
+   "version": "13.2.2",
+   "exit": 0,
+   "crash": false,
+   "stage4": "SUCCESS",
+   "last_stage": "7_output",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1512\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=4176155097\nVERDICT last_success_stage=7_output\n",
+   "file": "benign_baseline.jpg",
+   "role": "BENIGN",
+   "reference_ok": true
+  },
+  {
+   "version": "11.4.0",
+   "exit": 0,
+   "crash": false,
+   "stage4": "SUCCESS",
+   "last_stage": "7_output",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1512\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=3878076862\nVERDICT last_success_stage=7_output\n",
+   "file": "benign_baseline.jpg",
+   "role": "BENIGN",
+   "reference_ok": true
+  },
+  {
+   "version": "13.2.2",
+   "exit": 0,
+   "crash": false,
+   "stage4": "SUCCESS",
+   "last_stage": "7_output",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1518\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=4176155097\nVERDICT last_success_stage=7_output\n",
+   "file": "poc_plan.jpg",
+   "role": "MALICIOUS",
+   "reference_ok": true
+  },
+  {
+   "version": "11.4.0",
+   "exit": 0,
+   "crash": false,
+   "stage4": "SUCCESS",
+   "last_stage": "7_output",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1518\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=3878076862\nVERDICT last_success_stage=7_output\n",
+   "file": "poc_plan.jpg",
+   "role": "MALICIOUS",
+   "reference_ok": true
+  },
+  {
+   "version": "13.2.2",
+   "exit": 0,
+   "crash": false,
+   "stage4": "SUCCESS",
+   "last_stage": "7_output",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1518\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=4176155097\nVERDICT last_success_stage=7_output\n",
+   "file": "ctrl_restored.jpg",
+   "role": "CONTROL",
+   "reference_ok": true
+  },
+  {
+   "version": "11.4.0",
+   "exit": 0,
+   "crash": false,
+   "stage4": "SUCCESS",
+   "last_stage": "7_output",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1518\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=3878076862\nVERDICT last_success_stage=7_output\n",
+   "file": "ctrl_restored.jpg",
+   "role": "CONTROL",
+   "reference_ok": true
+  }
+ ],
+ "metrics": {
+  "files_built": 3,
+  "reference_ok": 3,
+  "stage4_pass": 6,
+  "stage7_pass": 6,
+  "crashes": 0,
+  "poc_rejected_with_clean_control": false,
+  "benign_ok": true
+ }
+}

@@ -66,11 +66,15 @@ run4 poc_1x1_420.jpg      1x1  hmax=2  平面同为 1x1
 | ctrl_dri64_64x64.jpg | 拒绝 | 拒绝 |
 | poc_dri0_64x64.jpg | 拒绝（STAGE6） | 拒绝（STAGE6） |
 
-**连它自己的 benign 都无法解码。** 原因是可解释的：模型能拼出合法的 marker 结构，
-但**无法手写合法的熵编码数据**（Huffman 编码的 scan 数据）。第 4、6 轮能解码，是因为
-1×1 极小图的 scan 数据恰好退化成可接受的形式。
+**连它自己的 benign 都无法解码。**
 
-这就把天花板说清楚了：**当前生成能力 = "结构合法但不可解码"，除极小退化图外。**
+**归因更正（F16 审计）**：此前的说法"模型没有生成 Huffman 数据"是错的。段结构显示
+三个文件都含 `APP0 DQT SOF0 DHT(len=210) SOS`——DHT 与 SOS 都在，模型确实写了
+Huffman 表和 scan 构造逻辑。用独立解码器（Pillow/libjpeg）复核，报 `OSError: broken data
+stream when reading image file`，即**熵编码比特流非法**，而不是缺失。
+
+准确表述：模型能产出结构完整的 JPEG（含 DHT/SOS），但其熵编码比特流不被独立解码器接受，
+nvJPEG 在 STAGE6 同样返回 BAD_JPEG。第 4、6 轮之所以成功，是 1×1 退化图的比特流恰好可解。
 
 ## 四、结果汇总（本轮所有真实执行）
 

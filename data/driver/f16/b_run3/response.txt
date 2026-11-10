@@ -1,0 +1,9 @@
+```json
+{
+  "hypothesis": "把 DRI 重启间隔置为 0（并额外显式插入一个 payload=0000 的 0xDD 段，以防适配器把 interval=0 当成删除 DRI 处理），使解码器在按重启间隔对 MCU/块计数取模、或计算每段剩余 MCU 数时除以零；上一轮 poc 的段结构与基线完全一致且 13.2.2 一路跑到 7_output，说明此前的变异根本没有落到除法用到的字段上。",
+  "operations": [
+    {"op": "set_dri", "interval": 0},
+    {"op": "insert_segment", "marker": 221, "hex": "0000"}
+  ]
+}
+```

@@ -1,0 +1,92 @@
+[
+ {
+  "version": "11.4.0",
+  "repeat": 0,
+  "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/bin/nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1356454264\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "11.4.0",
+  "repeat": 1,
+  "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/bin/nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1356454264\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "11.4.0",
+  "repeat": 2,
+  "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/bin/nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1356454264\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "12.3.1",
+  "repeat": 0,
+  "dll_sha256": "07876623d1f6d992bd0c31428dee93c489968b24870d536657e6d50a615acc3f",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=12.3.1\nLIB dll_path=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.4/bin/nvjpeg64_12.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1356454264\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "12.3.1",
+  "repeat": 1,
+  "dll_sha256": "07876623d1f6d992bd0c31428dee93c489968b24870d536657e6d50a615acc3f",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=12.3.1\nLIB dll_path=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.4/bin/nvjpeg64_12.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1356454264\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "12.3.1",
+  "repeat": 2,
+  "dll_sha256": "07876623d1f6d992bd0c31428dee93c489968b24870d536657e6d50a615acc3f",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=12.3.1\nLIB dll_path=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.4/bin/nvjpeg64_12.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1356454264\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "13.2.2",
+  "repeat": 0,
+  "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:/cuda1341_extract/libnvjpeg/nvjpeg/bin/x64/nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1160047537\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "13.2.2",
+  "repeat": 1,
+  "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:/cuda1341_extract/libnvjpeg/nvjpeg/bin/x64/nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1160047537\nVERDICT last_success_stage=7_output\n"
+ },
+ {
+  "version": "13.2.2",
+  "repeat": 2,
+  "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+  "input": "benign_64x64.jpg",
+  "input_sha256": "bc7b35044512b1a943d5ba825092c34c03d4f1607c0de4865809d41d7f819c3f",
+  "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771",
+  "exit": 0,
+  "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:/cuda1341_extract/libnvjpeg/nvjpeg/bin/x64/nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=4289\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=1160047537\nVERDICT last_success_stage=7_output\n"
+ }
+]
