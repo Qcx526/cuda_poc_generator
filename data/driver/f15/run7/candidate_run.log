@@ -1,0 +1,6 @@
+[F15_PLAN] 假设除零发生在派生量 num_restart_segments = total_mcus / restart_interval；restart_interval 取自 DRI 段 Ri=0（T.81 合法的“无重启”标志），total_mcus 由 SOF 合法尺寸算出，商为除以 0。
+[F15_FILE] benign benign_64x64_baseline.jpg 375 d5f20afe2e0d5108773d57cfe185ebc15c2ff38db244953672be42d7d03cbc5e
+[F15_FILE] poc poc_dri0_64x64.jpg 381 c9295dffbac0ba015c1a83e4e12791e6e3ee664f955bb87b13502e3739b33c9d
+[F15_FILE] ctrl ctrl_dri64_64x64.jpg 381 fdab2ba91fc1522f335e7679cea99413286d7ec2e350a18cf1f56eb3a37331d3
+
+[stderr]

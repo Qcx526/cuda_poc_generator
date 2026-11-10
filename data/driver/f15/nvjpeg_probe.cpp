@@ -1,14 +1,15 @@
-// nvJPEG probe: loads one specific nvJPEG DLL, decodes one file, reports every stage.
+// nvJPEG probe: decode one file with one named DLL, reporting every stage.
 //
-// Two things the earlier harness got wrong:
-//   1. pitch was width * components. With NVJPEG_OUTPUT_RGBI the output is always 3
-//      bytes per pixel, so a grayscale input (components=1) sized the buffer at a
-//      third of what the library writes. Pitch is width * 3 now, whatever the source.
-//   2. the DLL was whatever the loader picked up. Here the path is an argument, so the
-//      identity in the record is the identity that ran.
-//
-// Driver API is used directly so one binary can drive 11.x, 12.x and 13.x without
-// binding to any single cudart.
+// Contract notes that earlier versions of this file got wrong:
+//   * NVJPEG_OUTPUT_RGBI is three bytes per pixel regardless of source component count,
+//     so the buffer is width*3*height. Sizing it at width*components under-allocates a
+//     grayscale image by 3x and the library writes past the end without any error.
+//   * The single-image nvjpegDecodePhaseOne/Two/Three entry points were removed in
+//     CUDA 11.0. Only the batched forms exist, and they are a different contract, so
+//     this probe uses the one supported single-image call.
+//   * A decode that returns SUCCESS but cannot be synchronised or copied back has not
+//     produced pixels. Stage 7 therefore participates in the verdict.
+//   * The DLL is an argument, so the identity in the record is the identity that ran.
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -27,15 +28,8 @@ typedef nvjpegStatus_t (NVJPEGAPI *fn_image_info)(nvjpegHandle_t, const unsigned
                                                  int *, int *);
 typedef nvjpegStatus_t (NVJPEGAPI *fn_decode)(nvjpegHandle_t, nvjpegJpegState_t,
                                               const unsigned char *, size_t,
-                                              nvjpegOutputFormat_t, nvjpegImage_t *, cudaStream_t);
-typedef nvjpegStatus_t (NVJPEGAPI *fn_phase_one)(nvjpegHandle_t, nvjpegJpegState_t,
-                                                 const unsigned char *, size_t,
-                                                 nvjpegOutputFormat_t, nvjpegImage_t *,
-                                                 cudaStream_t);
-typedef nvjpegStatus_t (NVJPEGAPI *fn_phase_two)(nvjpegHandle_t, nvjpegJpegState_t,
-                                                 cudaStream_t);
-typedef nvjpegStatus_t (NVJPEGAPI *fn_phase_three)(nvjpegHandle_t, nvjpegJpegState_t,
-                                                   nvjpegImage_t *, cudaStream_t);
+                                              nvjpegOutputFormat_t, nvjpegImage_t *,
+                                              cudaStream_t);
 
 static const char *st(nvjpegStatus_t s) {
     switch (s) {
@@ -75,10 +69,7 @@ int main(int argc, char **argv) {
     fn_destroy destroy = (fn_destroy)GetProcAddress(mod, "nvjpegDestroy");
     fn_image_info image_info = (fn_image_info)GetProcAddress(mod, "nvjpegGetImageInfo");
     fn_decode decode = (fn_decode)GetProcAddress(mod, "nvjpegDecode");
-    fn_phase_one phase_one = (fn_phase_one)GetProcAddress(mod, "nvjpegDecodePhaseOne");
-    fn_phase_two phase_two = (fn_phase_two)GetProcAddress(mod, "nvjpegDecodePhaseTwo");
-    fn_phase_three phase_three = (fn_phase_three)GetProcAddress(mod, "nvjpegDecodePhaseThree");
-    if (!get_property || !create || !state_create || !image_info) {
+    if (!get_property || !create || !state_create || !image_info || !decode) {
         printf("STAGE1 symbols=MISSING\n");
         return 2;
     }
@@ -87,8 +78,7 @@ int main(int argc, char **argv) {
     get_property(MINOR_VERSION, &minor);
     get_property(PATCH_LEVEL, &patch);
     printf("LIB version=%d.%d.%d\n", major, minor, patch);
-    printf("LIB symbol_phases=%s\n",
-           (phase_one && phase_two && phase_three) ? "available" : "absent");
+    printf("LIB dll_path=%s\n", dll.c_str());
 
     FILE *f = fopen(path.c_str(), "rb");
     printf("STAGE2 file_open=%s\n", f ? "OK" : "FAILED");
@@ -96,8 +86,8 @@ int main(int argc, char **argv) {
     fseek(f, 0, SEEK_END);
     long size = ftell(f);
     fseek(f, 0, SEEK_SET);
-    std::vector<unsigned char> data((size_t)size);
-    bool read_ok = fread(data.data(), 1, (size_t)size, f) == (size_t)size;
+    std::vector<unsigned char> data((size_t)(size > 0 ? size : 0));
+    bool read_ok = size > 0 && fread(data.data(), 1, (size_t)size, f) == (size_t)size;
     fclose(f);
     printf("STAGE2 file_read=%s bytes=%ld\n", read_ok ? "OK" : "FAILED", size);
     if (!read_ok) return 2;
@@ -105,12 +95,13 @@ int main(int argc, char **argv) {
     CUresult cu = cuInit(0);
     CUcontext ctx = nullptr;
     if (cu == CUDA_SUCCESS) {
-        CUdevice dev;
-        cuDeviceGet(&dev, 0);
+        CUdevice dev = 0;
+        CUdeviceGet(&dev, 0);
         cuDevicePrimaryCtxRetain(&ctx, dev);
         cuCtxSetCurrent(ctx);
     }
     printf("STAGE3 cuInit=%d\n", (int)cu);
+    if (cu != CUDA_SUCCESS) return 2;
 
     nvjpegHandle_t handle = nullptr;
     nvjpegStatus_t rc = create(&handle);
@@ -120,6 +111,7 @@ int main(int argc, char **argv) {
     nvjpegJpegState_t state = nullptr;
     rc = state_create(handle, &state);
     printf("STAGE3 nvjpegJpegStateCreate=%s\n", st(rc));
+    if (rc != NVJPEG_STATUS_SUCCESS) { destroy(handle); return 1; }
 
     int components = 0, widths[NVJPEG_MAX_COMPONENT] = {0}, heights[NVJPEG_MAX_COMPONENT] = {0};
     nvjpegChromaSubsampling_t subsampling;
@@ -132,7 +124,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // RGBI is three bytes per pixel regardless of how many components the source has.
+    // RGBI is three bytes per pixel whatever the source component count.
     size_t pitch = (size_t)widths[0] * 3;
     size_t bytes = pitch * (size_t)heights[0];
     nvjpegImage_t out;
@@ -140,41 +132,41 @@ int main(int argc, char **argv) {
     CUdeviceptr dev = 0;
     CUresult al = cuMemAlloc(&dev, bytes);
     printf("STAGE5 cuMemAlloc=%d pitch=%zu bytes=%zu\n", (int)al, pitch, bytes);
-    if (al != CUDA_SUCCESS) return 1;
+    if (al != CUDA_SUCCESS) {
+        state_destroy(state);
+        destroy(handle);
+        return 1;
+    }
     out.channel[0] = (unsigned char *)dev;
     out.pitch[0] = pitch;
 
-    if (phase_one && phase_two && phase_three) {
-        rc = phase_one(handle, state, data.data(), (size_t)size, NVJPEG_OUTPUT_RGBI, &out, nullptr);
-        printf("STAGE6 nvjpegDecodePhaseOne=%s\n", st(rc));
-        if (rc == NVJPEG_STATUS_SUCCESS) {
-            rc = phase_two(handle, state, nullptr);
-            printf("STAGE6 nvjpegDecodePhaseTwo=%s\n", st(rc));
-        }
-        if (rc == NVJPEG_STATUS_SUCCESS) {
-            rc = phase_three(handle, state, &out, nullptr);
-            printf("STAGE6 nvjpegDecodePhaseThree=%s\n", st(rc));
-        }
-    } else {
-        rc = decode(handle, state, data.data(), (size_t)size, NVJPEG_OUTPUT_RGBI, &out, nullptr);
-        printf("STAGE6 nvjpegDecode=%s\n", st(rc));
-    }
+    rc = decode(handle, state, data.data(), (size_t)size, NVJPEG_OUTPUT_RGBI, &out, nullptr);
+    printf("STAGE6 nvjpegDecode=%s\n", st(rc));
 
+    bool stage7_ok = false;
     if (rc == NVJPEG_STATUS_SUCCESS) {
         CUresult sync = cuCtxSynchronize();
         printf("STAGE7 cuCtxSynchronize=%d\n", (int)sync);
         std::vector<unsigned char> host(bytes);
-        CUresult cp = cuMemcpyDtoH(host.data(), dev, bytes);
+        CUresult cp = (sync == CUDA_SUCCESS)
+                          ? cuMemcpyDtoH(host.data(), dev, bytes)
+                          : CUDA_ERROR_UNKNOWN;
         printf("STAGE7 cuMemcpyDtoH=%d\n", (int)cp);
-        unsigned long sum = 0;
-        for (size_t i = 0; i < bytes; ++i) sum = (sum * 131 + host[i]) & 0xffffffffUL;
-        printf("PIXELS=%zu CHECKSUM=%lu\n", bytes, sum);
+        stage7_ok = (sync == CUDA_SUCCESS && cp == CUDA_SUCCESS);
+        if (stage7_ok) {
+            unsigned long sum = 0;
+            for (size_t i = 0; i < bytes; ++i) sum = (sum * 131 + host[i]) & 0xffffffffUL;
+            printf("PIXELS=%zu CHECKSUM=%lu\n", bytes, sum);
+        }
     }
 
     cuMemFree(dev);
     state_destroy(state);
     destroy(handle);
-    printf("VERDICT last_success_stage=%s\n",
-           rc == NVJPEG_STATUS_SUCCESS ? "7_output" : "6_decode");
-    return rc == NVJPEG_STATUS_SUCCESS ? 0 : 1;
+
+    const char *stage = (rc != NVJPEG_STATUS_SUCCESS) ? "6_decode"
+                        : stage7_ok ? "7_output" : "7_failed";
+    printf("VERDICT last_success_stage=%s\n", stage);
+    if (rc != NVJPEG_STATUS_SUCCESS) return 1;
+    return stage7_ok ? 0 : 3;
 }

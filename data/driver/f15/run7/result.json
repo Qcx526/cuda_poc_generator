@@ -1,0 +1,152 @@
+{
+ "cve": "CVE-2026-65160",
+ "round": 7,
+ "candidate_sha256": "dd1e59551e1160d3b1aaf8e88cb7f8314c53b73d8684dea5e74ace5af15e6570",
+ "candidate_returncode": 0,
+ "inputs": [
+  {
+   "file": "benign_64x64_baseline.jpg",
+   "sha256": "d5f20afe2e0d5108773d57cfe185ebc15c2ff38db244953672be42d7d03cbc5e",
+   "bytes": 375
+  },
+  {
+   "file": "ctrl_dri64_64x64.jpg",
+   "sha256": "fdab2ba91fc1522f335e7679cea99413286d7ec2e350a18cf1f56eb3a37331d3",
+   "bytes": 381
+  },
+  {
+   "file": "poc_dri0_64x64.jpg",
+   "sha256": "c9295dffbac0ba015c1a83e4e12791e6e3ee664f955bb87b13502e3739b33c9d",
+   "bytes": 381
+  }
+ ],
+ "runs": [
+  {
+   "version": "13.2.2",
+   "exit": 1,
+   "kind": "rejected",
+   "last_stage": "6_decode",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=375\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+   "stderr": "",
+   "input_sha256": "d5f20afe2e0d5108773d57cfe185ebc15c2ff38db244953672be42d7d03cbc5e",
+   "dll": "D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll",
+   "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+   "rejection_marker": "STAGE1 load_dll=OK",
+   "file": "benign_64x64_baseline.jpg"
+  },
+  {
+   "version": "11.4.0",
+   "exit": 1,
+   "kind": "rejected",
+   "last_stage": "6_decode",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=375\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+   "stderr": "",
+   "input_sha256": "d5f20afe2e0d5108773d57cfe185ebc15c2ff38db244953672be42d7d03cbc5e",
+   "dll": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll",
+   "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+   "rejection_marker": "STAGE1 load_dll=OK",
+   "file": "benign_64x64_baseline.jpg"
+  },
+  {
+   "version": "13.2.2",
+   "exit": 1,
+   "kind": "rejected",
+   "last_stage": "6_decode",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=381\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+   "stderr": "",
+   "input_sha256": "fdab2ba91fc1522f335e7679cea99413286d7ec2e350a18cf1f56eb3a37331d3",
+   "dll": "D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll",
+   "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+   "rejection_marker": "STAGE1 load_dll=OK",
+   "file": "ctrl_dri64_64x64.jpg"
+  },
+  {
+   "version": "11.4.0",
+   "exit": 1,
+   "kind": "rejected",
+   "last_stage": "6_decode",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=381\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+   "stderr": "",
+   "input_sha256": "fdab2ba91fc1522f335e7679cea99413286d7ec2e350a18cf1f56eb3a37331d3",
+   "dll": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll",
+   "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+   "rejection_marker": "STAGE1 load_dll=OK",
+   "file": "ctrl_dri64_64x64.jpg"
+  },
+  {
+   "version": "13.2.2",
+   "exit": 1,
+   "kind": "rejected",
+   "last_stage": "6_decode",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=381\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+   "stderr": "",
+   "input_sha256": "c9295dffbac0ba015c1a83e4e12791e6e3ee664f955bb87b13502e3739b33c9d",
+   "dll": "D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll",
+   "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+   "rejection_marker": "STAGE1 load_dll=OK",
+   "file": "poc_dri0_64x64.jpg"
+  },
+  {
+   "version": "11.4.0",
+   "exit": 1,
+   "kind": "rejected",
+   "last_stage": "6_decode",
+   "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=381\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+   "stderr": "",
+   "input_sha256": "c9295dffbac0ba015c1a83e4e12791e6e3ee664f955bb87b13502e3739b33c9d",
+   "dll": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll",
+   "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+   "rejection_marker": "STAGE1 load_dll=OK",
+   "file": "poc_dri0_64x64.jpg"
+  }
+ ],
+ "verdicts": {
+  "13.2.2": {
+   "roles": {
+    "BENIGN": [
+     "benign_64x64_baseline.jpg"
+    ],
+    "CONTROL": [
+     "ctrl_dri64_64x64.jpg"
+    ],
+    "MALICIOUS": [
+     "poc_dri0_64x64.jpg"
+    ]
+   },
+   "benign_ok": false,
+   "control_ok": false,
+   "crafted_crashed": false,
+   "differential": false,
+   "rejected": [
+    "benign_64x64_baseline.jpg",
+    "ctrl_dri64_64x64.jpg",
+    "poc_dri0_64x64.jpg"
+   ],
+   "crashes": []
+  },
+  "11.4.0": {
+   "roles": {
+    "BENIGN": [
+     "benign_64x64_baseline.jpg"
+    ],
+    "CONTROL": [
+     "ctrl_dri64_64x64.jpg"
+    ],
+    "MALICIOUS": [
+     "poc_dri0_64x64.jpg"
+    ]
+   },
+   "benign_ok": false,
+   "control_ok": false,
+   "crafted_crashed": false,
+   "differential": false,
+   "rejected": [
+    "benign_64x64_baseline.jpg",
+    "ctrl_dri64_64x64.jpg",
+    "poc_dri0_64x64.jpg"
+   ],
+   "crashes": []
+  }
+ },
+ "policy": "解码由固定探针执行并逐阶段记录；候选不参与判定"
+}
