@@ -53,7 +53,8 @@ def build_controller(*, cve_id: str, tier: str, iterations: int, image: str,
         generate = make_generate_stage(context, use_rag=rag, **kwargs)
     stages = {"generate": generate,
               "execute": make_execute_stage(context, **kwargs)}
-    return ClosedLoopController(config, stages, make_grader(config, version_in_range))
+    return ClosedLoopController(config, stages, make_grader(config, version_in_range,
+                                      require_trusted=(config.tier == "userland_toolchain")))
 
 
 def write_outputs(result: LoopResult, workdir: Path,

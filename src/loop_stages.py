@@ -650,8 +650,18 @@ def _mechanism_gap(config: LoopConfig, runs: List[dict],
 
 
 def make_grader(project_config: LoopConfig,
-                version_in_range: Optional[bool] = None) -> Callable[[LoopState], ReproductionResult]:
-    """Turn an observation log into the differential verdict."""
+                version_in_range: Optional[bool] = None,
+                require_trusted: bool = False) -> Callable[[LoopState], ReproductionResult]:
+    """Turn a run into the differential verdict.
+
+    With ``require_trusted`` the harness record is the only acceptable source: the
+    candidate's own [CPG_RUN] lines are bookkeeping, and their absence of a trusted
+    counterpart is EVIDENCE_MISSING, never a fallback.
+    """
+
+    def _trusted_path(state: LoopState) -> Path:
+        obs = Path(state.observation_file or "")
+        return obs.with_name(obs.name.replace("_observation.txt", "_trusted.json"))
 
     def grade(state: LoopState) -> ReproductionResult:
         if state.stage_error and not state.observation_file:
@@ -661,7 +671,18 @@ def make_grader(project_config: LoopConfig,
                 benign_runs=0, benign_crashes=0)
         log_path = Path(state.observation_file or "")
         text = log_path.read_text(encoding="utf-8") if log_path.is_file() else ""
-        runs = parse_runs(text)
+        if require_trusted:
+            from .trusted_grading import runs_from_trusted, trust_status
+            status = trust_status(_trusted_path(state), text)
+            if status["level"] != "TRUSTED":
+                return ReproductionResult(
+                    verdict="NOT_VERIFIED",
+                    reasons=["EVIDENCE_MISSING：%s" % status["reason"]],
+                    failed_steps=[], malicious_runs=0, malicious_crashes=0,
+                    benign_runs=0, benign_crashes=0)
+            runs = runs_from_trusted(_trusted_path(state), text)
+        else:
+            runs = parse_runs(text)
         if not runs:
             step = _first_failed_step(text)
             reason = ("步骤失败：%s" % step) if step else \
