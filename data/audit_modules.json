@@ -1,0 +1,1532 @@
+[
+ {
+  "module": "lifecycle_artifacts",
+  "loc": 822,
+  "imports": [
+   "cuda_registry",
+   "cuda_smoke_worker",
+   "lifecycle_bridge",
+   "models.execution",
+   "models.lifecycle",
+   "models.platform",
+   "models.tool_result",
+   "native_evidence",
+   "probe_artifacts"
+  ],
+  "classes": [
+   "EvidenceWriteError"
+  ]
+ },
+ {
+  "module": "lifecycle_process",
+  "loc": 757,
+  "imports": [
+   "cuda_process",
+   "models.execution",
+   "models.lifecycle",
+   "models.tool_result",
+   "registered_actions",
+   "staged_fixture_process",
+   "tools.process"
+  ],
+  "classes": [
+   "RegisteredProcessOutcome"
+  ]
+ },
+ {
+  "module": "loop_stages",
+  "loc": 732,
+  "imports": [
+   "closed_loop",
+   "config_loader",
+   "grader_matrix",
+   "llm_client",
+   "probe_reached",
+   "reproduction",
+   "spec_model",
+   "trusted_exec",
+   "trusted_grading"
+  ],
+  "classes": [
+   "StageContext"
+  ]
+ },
+ {
+  "module": "code_generator",
+  "loc": 664,
+  "imports": [
+   "cuda_library",
+   "llm_client",
+   "models.analysis",
+   "models.generation",
+   "quality_lints",
+   "tools",
+   "utils"
+  ],
+  "classes": [
+   "CudaCodeGenerator"
+  ]
+ },
+ {
+  "module": "artifact_packaging",
+  "loc": 652,
+  "imports": [
+   "models.analysis",
+   "models.artifact_package",
+   "models.generation",
+   "models.lifecycle",
+   "models.normalized_input",
+   "models.oracle",
+   "oracle_catalog",
+   "oracle_evidence",
+   "report_locale"
+  ],
+  "classes": []
+ },
+ {
+  "module": "llm_mutation",
+  "loc": 628,
+  "imports": [
+   "config_loader",
+   "llm_client"
+  ],
+  "classes": [
+   "Proposal",
+   "Accepted",
+   "Operator"
+  ]
+ },
+ {
+  "module": "mutation_campaign",
+  "loc": 592,
+  "imports": [
+   "grader_matrix"
+  ],
+  "classes": [
+   "Variant"
+  ]
+ },
+ {
+  "module": "memcheck_evidence",
+  "loc": 529,
+  "imports": [
+   "artifact_packaging",
+   "host_diagnostic_tasks",
+   "host_parser_evidence",
+   "models.artifact_package",
+   "models.host_parser",
+   "models.lifecycle",
+   "models.memcheck",
+   "models.tool_result",
+   "probe_artifacts"
+  ],
+  "classes": [
+   "MemcheckEvidence"
+  ]
+ },
+ {
+  "module": "llm_client",
+  "loc": 525,
+  "imports": [
+   "config_loader"
+  ],
+  "classes": [
+   "StructuredOutputError",
+   "StructuredResponse",
+   "LLMClient"
+  ]
+ },
+ {
+  "module": "spec_model",
+  "loc": 510,
+  "imports": [
+   "backends",
+   "grader_matrix",
+   "trigger_model"
+  ],
+  "classes": [
+   "Claim",
+   "VersionRange",
+   "FieldLayout",
+   "ParserModel",
+   "TargetProfileSpec",
+   "SearchBlock"
+  ]
+ },
+ {
+  "module": "pipeline",
+  "loc": 504,
+  "imports": [
+   "artifact_packaging",
+   "blind_context",
+   "code_generator",
+   "config_loader",
+   "core_expert",
+   "cuda_library",
+   "data_loader",
+   "env_probe",
+   "generation_delivery",
+   "llm_client",
+   "models.analysis",
+   "models.generation",
+   "platform_probe",
+   "report_locale",
+   "spec_model",
+   "tools.search",
+   "utils"
+  ],
+  "classes": [
+   "CudaPipeline"
+  ]
+ },
+ {
+  "module": "env_probe",
+  "loc": 478,
+  "imports": [
+   "models.platform",
+   "platform_probe",
+   "probe_process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "cuda_library",
+  "loc": 473,
+  "imports": [],
+  "classes": [
+   "CudaLibrary"
+  ]
+ },
+ {
+  "module": "staged_fixture",
+  "loc": 469,
+  "imports": [
+   "artifact_packaging",
+   "candidate_adapter",
+   "execution_bridge",
+   "lifecycle_bridge",
+   "models.execution",
+   "models.lifecycle",
+   "models.staged_fixture",
+   "models.tool_result",
+   "probe_artifacts",
+   "registered_actions",
+   "tool_artifacts",
+   "tools.process",
+   "wsl_bridge"
+  ],
+  "classes": [
+   "StagedFixturePacket"
+  ]
+ },
+ {
+  "module": "reproduction",
+  "loc": 452,
+  "imports": [],
+  "classes": [
+   "StepEvent",
+   "ArtifactRun",
+   "ReproductionEvidence",
+   "ReproductionResult"
+  ]
+ },
+ {
+  "module": "host_diagnostic_tasks",
+  "loc": 432,
+  "imports": [
+   "artifact_packaging",
+   "fixed_memcheck",
+   "host_diagnostics_probe",
+   "host_parser_evidence",
+   "memcheck_evidence",
+   "memcheck_registry",
+   "models.artifact_package",
+   "models.harmless_diagnostic",
+   "models.host_parser",
+   "models.lifecycle",
+   "models.tool_result",
+   "report_locale"
+  ],
+  "classes": [
+   "DiagnosticTask"
+  ]
+ },
+ {
+  "module": "lifecycle_worker",
+  "loc": 410,
+  "imports": [
+   "cuda_registry",
+   "cuda_smoke_worker",
+   "execution_preflight",
+   "execution_worker",
+   "lifecycle_process",
+   "models.execution",
+   "models.lifecycle",
+   "models.platform",
+   "models.tool_result",
+   "native_evidence",
+   "probe_artifacts",
+   "registered_actions",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "data_loader",
+  "loc": 405,
+  "imports": [
+   "config_loader",
+   "models.normalized_input",
+   "utils"
+  ],
+  "classes": [
+   "CudaDataLoader"
+  ]
+ },
+ {
+  "module": "mutate",
+  "loc": 405,
+  "imports": [
+   "replay"
+  ],
+  "classes": []
+ },
+ {
+  "module": "quality_lints",
+  "loc": 384,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "report_locale",
+  "loc": 372,
+  "imports": [
+   "execution_artifacts",
+   "host_parser_report",
+   "lifecycle_artifacts",
+   "models.generation",
+   "models.lifecycle",
+   "models.oracle",
+   "models.platform",
+   "oracle_evidence",
+   "oracle_report"
+  ],
+  "classes": [
+   "ReportFile",
+   "ReportViewManifest"
+  ]
+ },
+ {
+  "module": "oracle_evidence",
+  "loc": 359,
+  "imports": [
+   "lifecycle_artifacts",
+   "native_evidence"
+  ],
+  "classes": [
+   "EvidenceCorpus"
+  ]
+ },
+ {
+  "module": "platform_worker",
+  "loc": 359,
+  "imports": [
+   "platform_identity",
+   "probe_process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "lifecycle_bridge",
+  "loc": 355,
+  "imports": [
+   "cuda_registry",
+   "cuda_smoke_worker",
+   "execution_bridge",
+   "execution_worker",
+   "models.execution",
+   "models.lifecycle",
+   "models.platform",
+   "models.tool_result",
+   "native_evidence",
+   "tool_artifacts",
+   "tools.process",
+   "wsl_bridge"
+  ],
+  "classes": [
+   "WorkerIdentity",
+   "LifecyclePacket",
+   "TaskHandle",
+   "LifecycleDispatchError"
+  ]
+ },
+ {
+  "module": "jpeg_adapter",
+  "loc": 354,
+  "imports": [
+   "jpeg_bundle",
+   "jpeg_parser"
+  ],
+  "classes": [
+   "AdapterError",
+   "Artifact"
+  ]
+ },
+ {
+  "module": "candidate_adapter",
+  "loc": 352,
+  "imports": [
+   "artifact_packaging",
+   "cuda_smoke_worker",
+   "execution_bridge",
+   "lifecycle_cli",
+   "models.generation",
+   "models.lifecycle",
+   "registered_actions",
+   "tools.process",
+   "wsl_bridge"
+  ],
+  "classes": [
+   "CandidateArtifact",
+   "CandidateAdmission",
+   "CandidateTransferReceipt",
+   "CandidateExecutionAdapter"
+  ]
+ },
+ {
+  "module": "cuda_process",
+  "loc": 350,
+  "imports": [
+   "cuda_guard",
+   "cuda_registry",
+   "lifecycle_process",
+   "models.execution",
+   "models.tool_result",
+   "registered_actions",
+   "tools.process"
+  ],
+  "classes": [
+   "CudaTraceError",
+   "_NativePlan",
+   "NativeCudaTracer"
+  ]
+ },
+ {
+  "module": "driver_analyst",
+  "loc": 343,
+  "imports": [],
+  "classes": [
+   "EntryPoint",
+   "TriggerConstraint",
+   "InputHypothesis",
+   "DriverAnalysis"
+  ]
+ },
+ {
+  "module": "host_diagnostics_probe",
+  "loc": 338,
+  "imports": [
+   "models.host_diagnostics",
+   "models.lifecycle",
+   "probe_artifacts",
+   "report_locale",
+   "tools.process",
+   "wsl_bridge"
+  ],
+  "classes": []
+ },
+ {
+  "module": "staged_fixture_worker",
+  "loc": 336,
+  "imports": [
+   "candidate_adapter",
+   "execution_preflight",
+   "execution_worker",
+   "lifecycle_process",
+   "memcheck_process",
+   "models.execution",
+   "models.lifecycle",
+   "models.staged_fixture",
+   "staged_fixture_process",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "cuda_smoke_worker",
+  "loc": 335,
+  "imports": [
+   "cuda_process",
+   "cuda_registry",
+   "execution_preflight",
+   "execution_worker",
+   "models.execution",
+   "models.lifecycle",
+   "models.platform",
+   "tools.process"
+  ],
+  "classes": [
+   "CudaSmokeDescription",
+   "CudaWorkflowOutcome"
+  ]
+ },
+ {
+  "module": "closed_loop",
+  "loc": 333,
+  "imports": [
+   "backends",
+   "failure_taxonomy",
+   "reproduction",
+   "spec_model"
+  ],
+  "classes": [
+   "TargetTier",
+   "LoopConfig",
+   "LoopState",
+   "IterationRecord",
+   "LoopResult",
+   "ClosedLoopController"
+  ]
+ },
+ {
+  "module": "memcheck_process",
+  "loc": 332,
+  "imports": [
+   "cuda_process",
+   "lifecycle_process",
+   "memcheck_registry",
+   "memcheck_sandbox",
+   "models.lifecycle",
+   "models.memcheck",
+   "models.tool_result",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "oracle_report",
+  "loc": 323,
+  "imports": [
+   "models.lifecycle",
+   "models.oracle"
+  ],
+  "classes": [
+   "OracleReportArtifact",
+   "OracleReportManifest"
+  ]
+ },
+ {
+  "module": "execution_preflight",
+  "loc": 318,
+  "imports": [
+   "memcheck_registry",
+   "models.execution",
+   "models.execution_binding",
+   "models.lifecycle",
+   "models.memcheck",
+   "models.platform",
+   "models.tool_result",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "fixed_memcheck",
+  "loc": 317,
+  "imports": [
+   "artifact_packaging",
+   "execution_bridge",
+   "lifecycle_bridge",
+   "memcheck_evidence",
+   "memcheck_registry",
+   "models.lifecycle",
+   "models.memcheck",
+   "models.tool_result",
+   "probe_artifacts",
+   "tool_artifacts",
+   "tools.process",
+   "wsl_bridge"
+  ],
+  "classes": [
+   "MemcheckPacket"
+  ]
+ },
+ {
+  "module": "driver_binary",
+  "loc": 307,
+  "imports": [],
+  "classes": [
+   "Section",
+   "Function",
+   "ImageFacts",
+   "PEImage"
+  ]
+ },
+ {
+  "module": "driver_abi",
+  "loc": 306,
+  "imports": [],
+  "classes": [
+   "LUID_T",
+   "D3DDDI_ESCAPEFLAGS",
+   "D3DKMT_ESCAPE",
+   "D3DKMT_OPENADAPTERFROMHDC",
+   "D3DKMT_OPENADAPTERFROMLUID",
+   "D3DKMT_CREATEDEVICEFLAGS"
+  ]
+ },
+ {
+  "module": "native_evidence",
+  "loc": 296,
+  "imports": [
+   "cuda_registry",
+   "models.execution",
+   "models.lifecycle",
+   "models.platform",
+   "models.tool_result"
+  ],
+  "classes": [
+   "NativeArtifact",
+   "NativeEvidenceIndex",
+   "NativeEvidenceBundle"
+  ]
+ },
+ {
+  "module": "novel_findings",
+  "loc": 285,
+  "imports": [],
+  "classes": [
+   "Crash",
+   "Finding"
+  ]
+ },
+ {
+  "module": "driver_seeds",
+  "loc": 284,
+  "imports": [],
+  "classes": [
+   "Handle",
+   "Seed"
+  ]
+ },
+ {
+  "module": "driver_exec",
+  "loc": 283,
+  "imports": [
+   "backends"
+  ],
+  "classes": [
+   "GateReport",
+   "KernelOneShotGate",
+   "DriverRun"
+  ]
+ },
+ {
+  "module": "mutation_ops",
+  "loc": 283,
+  "imports": [
+   "mutation_campaign"
+  ],
+  "classes": [
+   "Stages"
+  ]
+ },
+ {
+  "module": "config_loader",
+  "loc": 278,
+  "imports": [
+   "utils"
+  ],
+  "classes": [
+   "ConfigLoader"
+  ]
+ },
+ {
+  "module": "history_index",
+  "loc": 277,
+  "imports": [
+   "driver_exec"
+  ],
+  "classes": [
+   "HistoricalExperiment"
+  ]
+ },
+ {
+  "module": "memcheck_sandbox",
+  "loc": 273,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "attribute",
+  "loc": 272,
+  "imports": [
+   "replay"
+  ],
+  "classes": []
+ },
+ {
+  "module": "core_expert",
+  "loc": 271,
+  "imports": [
+   "llm_client",
+   "models.analysis"
+  ],
+  "classes": [
+   "CudaSecurityExpert"
+  ]
+ },
+ {
+  "module": "memcheck_worker",
+  "loc": 269,
+  "imports": [
+   "execution_preflight",
+   "execution_worker",
+   "lifecycle_process",
+   "memcheck_process",
+   "memcheck_registry",
+   "models.execution",
+   "models.lifecycle",
+   "models.memcheck",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "execution_bridge",
+  "loc": 268,
+  "imports": [
+   "cuda_registry",
+   "execution_worker",
+   "memcheck_registry",
+   "models.execution",
+   "models.platform",
+   "models.tool_result",
+   "registered_actions",
+   "tools.process",
+   "wsl_bridge"
+  ],
+  "classes": [
+   "ResourceProof",
+   "ExecutionPacket"
+  ]
+ },
+ {
+  "module": "driver_loop",
+  "loc": 266,
+  "imports": [
+   "closed_loop",
+   "config_loader",
+   "llm_client",
+   "reproduction"
+  ],
+  "classes": []
+ },
+ {
+  "module": "batch_loop",
+  "loc": 265,
+  "imports": [
+   "closed_loop",
+   "config_loader",
+   "loop_runner"
+  ],
+  "classes": [
+   "BatchRow"
+  ]
+ },
+ {
+  "module": "driver_structdiff",
+  "loc": 257,
+  "imports": [],
+  "classes": [
+   "Shape",
+   "Structure"
+  ]
+ },
+ {
+  "module": "execution_worker",
+  "loc": 253,
+  "imports": [
+   "execution_preflight",
+   "models.execution",
+   "models.platform",
+   "platform_probe",
+   "platform_worker",
+   "probe_artifacts",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "staged_fixture_process",
+  "loc": 246,
+  "imports": [
+   "candidate_adapter",
+   "lifecycle_process",
+   "registered_actions",
+   "tools.process"
+  ],
+  "classes": [
+   "_StagedHarmlessPlan"
+  ]
+ },
+ {
+  "module": "driver_generator",
+  "loc": 243,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "driver_match",
+  "loc": 240,
+  "imports": [
+   "driver_binary"
+  ],
+  "classes": [
+   "FunctionFeature",
+   "Match",
+   "MatchResult",
+   "DecodedFeature"
+  ]
+ },
+ {
+  "module": "host_parser_evidence",
+  "loc": 237,
+  "imports": [
+   "models.host_parser",
+   "models.lifecycle"
+  ],
+  "classes": [
+   "_InvalidXML"
+  ]
+ },
+ {
+  "module": "execution_artifacts",
+  "loc": 232,
+  "imports": [
+   "execution_bridge",
+   "execution_worker",
+   "models.execution",
+   "models.tool_result",
+   "probe_artifacts"
+  ],
+  "classes": []
+ },
+ {
+  "module": "target_profile",
+  "loc": 213,
+  "imports": [
+   "models.normalized_input"
+  ],
+  "classes": [
+   "TargetEnvironmentProfile"
+  ]
+ },
+ {
+  "module": "trusted_exec",
+  "loc": 212,
+  "imports": [
+   "exec_evidence"
+  ],
+  "classes": [
+   "TrustedRun"
+  ]
+ },
+ {
+  "module": "cuda_registry",
+  "loc": 207,
+  "imports": [
+   "models.platform",
+   "models.tool_result",
+   "tools.compile",
+   "tools.elf_ops"
+  ],
+  "classes": [
+   "RegisteredCudaSmoke"
+  ]
+ },
+ {
+  "module": "host_diagnostics_worker",
+  "loc": 205,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "case_legacy",
+  "loc": 204,
+  "imports": [
+   "case_v2",
+   "models.normalized_input"
+  ],
+  "classes": [
+   "LegacyBundle"
+  ]
+ },
+ {
+  "module": "oracle",
+  "loc": 202,
+  "imports": [
+   "models.lifecycle",
+   "models.oracle",
+   "oracle_evidence"
+  ],
+  "classes": []
+ },
+ {
+  "module": "driver_outcome",
+  "loc": 199,
+  "imports": [],
+  "classes": [
+   "Outcome"
+  ]
+ },
+ {
+  "module": "jpeg_parser",
+  "loc": 199,
+  "imports": [],
+  "classes": [
+   "ParserError",
+   "Segment",
+   "Structure"
+  ]
+ },
+ {
+  "module": "corpus_lab",
+  "loc": 198,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "cuda_api_backend",
+  "loc": 186,
+  "imports": [
+   "exec_evidence"
+  ],
+  "classes": [
+   "Environment"
+  ]
+ },
+ {
+  "module": "input_sufficiency",
+  "loc": 183,
+  "imports": [],
+  "classes": [
+   "Sufficiency"
+  ]
+ },
+ {
+  "module": "backends",
+  "loc": 178,
+  "imports": [
+   "reproduction"
+  ],
+  "classes": [
+   "TargetProfile",
+   "ExecutionObservation",
+   "ExecutionBackend",
+   "ContainerBackend",
+   "WindowsNativeBackend",
+   "BackendRegistry"
+  ]
+ },
+ {
+  "module": "case_v2",
+  "loc": 176,
+  "imports": [],
+  "classes": [
+   "EvidenceKind",
+   "VerificationStatus",
+   "Visibility",
+   "Evidence",
+   "CaseIdentity",
+   "TargetProfile"
+  ]
+ },
+ {
+  "module": "driver_batch",
+  "loc": 174,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "jpeg_bundle",
+  "loc": 170,
+  "imports": [
+   "jpeg_adapter",
+   "jpeg_parser"
+  ],
+  "classes": [
+   "BundleError"
+  ]
+ },
+ {
+  "module": "failure_taxonomy",
+  "loc": 169,
+  "imports": [],
+  "classes": [
+   "Diagnosis"
+  ]
+ },
+ {
+  "module": "driver_mutation",
+  "loc": 168,
+  "imports": [],
+  "classes": [
+   "EscapeInput",
+   "Mutation",
+   "Corpus"
+  ]
+ },
+ {
+  "module": "loop_runner",
+  "loc": 166,
+  "imports": [
+   "closed_loop",
+   "loop_report",
+   "loop_stages",
+   "reproduction",
+   "spec_model"
+  ],
+  "classes": []
+ },
+ {
+  "module": "status_report",
+  "loc": 162,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "driver_crash",
+  "loc": 159,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "lifecycle_cli",
+  "loc": 159,
+  "imports": [
+   "execution_artifacts",
+   "execution_bridge",
+   "lifecycle_artifacts",
+   "lifecycle_bridge",
+   "models.execution",
+   "models.execution_binding",
+   "models.platform",
+   "models.tool_result",
+   "probe_artifacts",
+   "registered_actions",
+   "report_locale"
+  ],
+  "classes": []
+ },
+ {
+  "module": "probe_reached",
+  "loc": 159,
+  "imports": [],
+  "classes": [
+   "ReachedObservation"
+  ]
+ },
+ {
+  "module": "cuda_transport",
+  "loc": 157,
+  "imports": [
+   "cuda_api_backend",
+   "exec_evidence"
+  ],
+  "classes": [
+   "BuildResult",
+   "Transport",
+   "WindowsTransport",
+   "WslTransport"
+  ]
+ },
+ {
+  "module": "driver_feedback",
+  "loc": 157,
+  "imports": [],
+  "classes": [
+   "FeedbackContext"
+  ]
+ },
+ {
+  "module": "driver_probe",
+  "loc": 156,
+  "imports": [
+   "driver_crash"
+  ],
+  "classes": []
+ },
+ {
+  "module": "cve_grading",
+  "loc": 155,
+  "imports": [],
+  "classes": [
+   "RunFacts"
+  ]
+ },
+ {
+  "module": "cuda_smoke",
+  "loc": 152,
+  "imports": [
+   "cuda_registry",
+   "cuda_smoke_worker",
+   "execution_worker",
+   "lifecycle_artifacts",
+   "lifecycle_bridge",
+   "lifecycle_cli",
+   "models.execution",
+   "models.execution_binding",
+   "report_locale"
+  ],
+  "classes": []
+ },
+ {
+  "module": "baseline_control",
+  "loc": 150,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "oracle_catalog",
+  "loc": 149,
+  "imports": [
+   "models.lifecycle",
+   "models.normalized_input",
+   "models.oracle",
+   "oracle_evidence"
+  ],
+  "classes": []
+ },
+ {
+  "module": "generation_delivery",
+  "loc": 148,
+  "imports": [
+   "artifact_packaging",
+   "models.artifact_package",
+   "models.generation",
+   "models.lifecycle"
+  ],
+  "classes": [
+   "GenerationDelivery"
+  ]
+ },
+ {
+  "module": "mock_mutation",
+  "loc": 148,
+  "imports": [],
+  "classes": [
+   "Candidate",
+   "Tracker"
+  ]
+ },
+ {
+  "module": "wsl_bridge",
+  "loc": 146,
+  "imports": [
+   "models.platform",
+   "platform_worker",
+   "probe_process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "host_parser_report",
+  "loc": 144,
+  "imports": [
+   "host_parser_evidence",
+   "host_parser_oracle",
+   "models.host_parser"
+  ],
+  "classes": []
+ },
+ {
+  "module": "tool_artifacts",
+  "loc": 140,
+  "imports": [
+   "models.tool_result",
+   "probe_artifacts"
+  ],
+  "classes": [
+   "ToolEvidenceError"
+  ]
+ },
+ {
+  "module": "input_contract",
+  "loc": 139,
+  "imports": [
+   "input_sufficiency"
+  ],
+  "classes": [
+   "ExecutableContract"
+  ]
+ },
+ {
+  "module": "platform_probe",
+  "loc": 139,
+  "imports": [
+   "models.platform",
+   "platform_worker",
+   "probe_artifacts",
+   "probe_process",
+   "report_locale",
+   "wsl_bridge"
+  ],
+  "classes": []
+ },
+ {
+  "module": "fuzz_core",
+  "loc": 133,
+  "imports": [],
+  "classes": [
+   "Candidate",
+   "Outcome",
+   "Grammar",
+   "Summary"
+  ]
+ },
+ {
+  "module": "grader_matrix",
+  "loc": 133,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "driver_call_audit",
+  "loc": 132,
+  "imports": [],
+  "classes": [
+   "EscapeVerdict"
+  ]
+ },
+ {
+  "module": "probe_artifacts",
+  "loc": 132,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "trace_core",
+  "loc": 128,
+  "imports": [],
+  "classes": [
+   "Probe",
+   "TraceResult",
+   "TraceProvider"
+  ]
+ },
+ {
+  "module": "trigger_model",
+  "loc": 128,
+  "imports": [],
+  "classes": [
+   "TriggerError"
+  ]
+ },
+ {
+  "module": "driver_observation",
+  "loc": 127,
+  "imports": [],
+  "classes": [
+   "Observation"
+  ]
+ },
+ {
+  "module": "probe_process",
+  "loc": 123,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "cve_lab",
+  "loc": 119,
+  "imports": [
+   "candidate_adapter",
+   "lifecycle_bridge",
+   "report_locale",
+   "staged_fixture"
+  ],
+  "classes": []
+ },
+ {
+  "module": "registered_actions",
+  "loc": 118,
+  "imports": [
+   "memcheck_registry"
+  ],
+  "classes": [
+   "RegisteredAction"
+  ]
+ },
+ {
+  "module": "host_parser_oracle",
+  "loc": 110,
+  "imports": [
+   "host_parser_evidence",
+   "models.host_parser",
+   "models.lifecycle",
+   "models.oracle",
+   "oracle_evidence"
+  ],
+  "classes": []
+ },
+ {
+  "module": "finding_analysis",
+  "loc": 109,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "fixture_smoke",
+  "loc": 109,
+  "imports": [
+   "execution_artifacts",
+   "execution_bridge",
+   "execution_worker",
+   "models.execution",
+   "models.execution_binding",
+   "models.platform",
+   "models.tool_result"
+  ],
+  "classes": []
+ },
+ {
+  "module": "site_ledger",
+  "loc": 109,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "utils",
+  "loc": 106,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "trusted_grading",
+  "loc": 104,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "fault_site",
+  "loc": 103,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "run_artifacts",
+  "loc": 101,
+  "imports": [
+   "grader_matrix"
+  ],
+  "classes": []
+ },
+ {
+  "module": "version_check",
+  "loc": 101,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "cuda_guard",
+  "loc": 100,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "oracle_cli",
+  "loc": 99,
+  "imports": [
+   "models.lifecycle",
+   "models.oracle",
+   "oracle",
+   "oracle_catalog",
+   "oracle_evidence",
+   "oracle_report",
+   "report_locale"
+  ],
+  "classes": []
+ },
+ {
+  "module": "replay",
+  "loc": 99,
+  "imports": [
+   "mutation_ops"
+  ],
+  "classes": []
+ },
+ {
+  "module": "blind_context",
+  "loc": 98,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "iterative_generator",
+  "loc": 94,
+  "imports": [],
+  "classes": [
+   "GenerationOutcome",
+   "IterativeCandidateGenerator"
+  ]
+ },
+ {
+  "module": "trusted_pipeline",
+  "loc": 94,
+  "imports": [
+   "exec_evidence",
+   "trusted_exec"
+  ],
+  "classes": []
+ },
+ {
+  "module": "driver_context",
+  "loc": 90,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "case_projection",
+  "loc": 89,
+  "imports": [
+   "case_v2"
+  ],
+  "classes": []
+ },
+ {
+  "module": "candidate_transfer_worker",
+  "loc": 87,
+  "imports": [
+   "registered_actions",
+   "tools.process"
+  ],
+  "classes": []
+ },
+ {
+  "module": "loop_compare",
+  "loc": 87,
+  "imports": [],
+  "classes": [
+   "Arm"
+  ]
+ },
+ {
+  "module": "artifacts_manifest",
+  "loc": 85,
+  "imports": [],
+  "classes": [
+   "ManifestError"
+  ]
+ },
+ {
+  "module": "exec_evidence",
+  "loc": 78,
+  "imports": [],
+  "classes": [
+   "ToolInvocation",
+   "RunRecord"
+  ]
+ },
+ {
+  "module": "mock_facts",
+  "loc": 74,
+  "imports": [],
+  "classes": [
+   "FactsError"
+  ]
+ },
+ {
+  "module": "control_axes",
+  "loc": 67,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "samples",
+  "loc": 67,
+  "imports": [
+   "reproduction"
+  ],
+  "classes": [
+   "Sample"
+  ]
+ },
+ {
+  "module": "pe_exports",
+  "loc": 64,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "platform_identity",
+  "loc": 61,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "report_cli",
+  "loc": 60,
+  "imports": [
+   "lifecycle_artifacts",
+   "oracle_report",
+   "report_locale"
+  ],
+  "classes": []
+ },
+ {
+  "module": "elf_fields",
+  "loc": 59,
+  "imports": [],
+  "classes": []
+ },
+ {
+  "module": "artifact_cli",
+  "loc": 53,
+  "imports": [
+   "artifact_packaging",
+   "report_locale"
+  ],
+  "classes": []
+ },
+ {
+  "module": "case_context",
+  "loc": 52,
+  "imports": [
+   "case_projection",
+   "case_v2"
+  ],
+  "classes": []
+ },
+ {
+  "module": "memcheck_registry",
+  "loc": 49,
+  "imports": [],
+  "classes": [
+   "MemcheckTask"
+  ]
+ },
+ {
+  "module": "loop_report",
+  "loc": 48,
+  "imports": [
+   "closed_loop"
+  ],
+  "classes": []
+ },
+ {
+  "module": "regrade",
+  "loc": 48,
+  "imports": [
+   "closed_loop",
+   "loop_stages"
+  ],
+  "classes": []
+ },
+ {
+  "module": "__init__",
+  "loc": 11,
+  "imports": [],
+  "classes": []
+ }
+]
