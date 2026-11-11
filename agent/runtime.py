@@ -1,43 +1,93 @@
 # -*- coding: utf-8 -*-
-"""Single-agent runtime: the model decides, the runtime records.
+"""Single-agent runtime: the model decides, the runtime records and can resume.
 
-There is no stage list here. Each turn the model sees the goal, the tool menu, a digest
-of its own memory and the tail of its transcript, and answers with either a tool call or
-a final answer. The runtime executes, records evidence, and hands back what happened.
-Nothing about JPEG, ELF or CUDA appears in this file - that knowledge is the model's job
-or a tool's, not the loop's.
+There is no stage list. Each turn the model sees the goal, the tool menu, memory that
+matches the goal, and the tail of the transcript; it answers with a tool call or a final
+answer. The runtime validates the answer against a schema, executes, records evidence,
+and keeps enough state on disk to continue the same investigation tomorrow.
+
+Resume is deliberately conservative. If the process died while a tool was running, the
+runtime cannot know whether that tool finished, so it marks the run
+``INTERRUPTED / EXECUTION_STATE_UNKNOWN`` and says so instead of re-running it.
 """
 
+import hashlib
 import json
-import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from .evidence import EvidenceLog, Runner
+from .evidence import ArtifactStore, EvidenceLog, Runner, sha256_bytes, verify_chain
 from .memory import ResearchMemory
-from .registry import ToolRegistry
-from .tools_builtin import build_tools
+from .registry import ToolRegistry, build_registry
 from .workspace import Workspace
 
 SYSTEM = """你是一个自主的 NVIDIA GPU 漏洞研究 Agent。
 
-你只做一件事：用现有工具把研究目标推进到有证据的结论。你可以任意组合工具、
-写自己的脚本、下载资料、修改方案。没有规定的步骤，也不要求你必须复现某个漏洞。
+你只做一件事：用现有工具把研究目标推进到有证据的结论。没有规定步骤，也不要求复现某个漏洞。
 
-每一轮只输出一个 JSON 对象，二选一：
-1) 调用工具：
-   {"thought": "<这一步想验证什么>", "tool": "<工具名>", "args": {<参数>}}
-2) 结束并给出结论：
-   {"thought": "<为什么可以停了>", "final": "<结论：做了什么、看到什么、证据是什么、还差什么>"}
+每轮只输出一个 JSON 对象，二选一：
+1) 调用工具：{"thought": "...", "tool": "<工具名>", "args": {...}}
+2) 结束：  {"thought": "...", "final": "..."}
 
 规则：
-- 结论必须区分「我推测」「工具输出显示」「已复现」；
-- 不确定就说不确定，不要为了让报告好看而夸大；
-- 工具报错时先读错误信息，再决定换工具还是改方法；
-- 每轮开始前先看记忆摘要，避免重复已经失败的尝试。
+- 结论区分「推测」「工具输出显示」「已复现」；
+- 工具报错先读错误，再决定换工具还是改方法；
+- 看记忆摘要，避免重复已失败的尝试；
+- 只输出 JSON，不要输出其它文字。
 """
+
+ALLOWED_KEYS = {"thought", "tool", "args", "final"}
+
+
+def log_tail(path: Path):
+    if not Path(path).is_file():
+        return None
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    return json.loads(lines[-1]) if lines else None
+
+
+class RuntimeError_(RuntimeError):
+    """Run-level misuse: wrong goal, corrupt evidence, unsafe resume."""
+
+
+def parse_action(raw: str, known_tools: List[str]) -> tuple:
+    """Strict action schema. Returns (action, error); never guesses intent."""
+    import re
+    match = re.search(r"```(?:json)?\s*(.*?)```", raw, re.S)
+    candidate = (match.group(1) if match else raw).strip()
+    start, end = candidate.find("{"), candidate.rfind("}")
+    if start < 0 or end <= start:
+        return {}, "no JSON object in response"
+    try:
+        action = json.loads(candidate[start:end + 1])
+    except ValueError as exc:
+        return {}, "invalid JSON: %s" % exc
+    if not isinstance(action, dict):
+        return {}, "action must be a JSON object"
+
+    unknown = set(action) - ALLOWED_KEYS
+    if unknown:
+        return {}, "unknown fields: %s" % ", ".join(sorted(unknown))
+    if "thought" in action and not isinstance(action["thought"], str):
+        return {}, "thought must be a string"
+    has_tool, has_final = "tool" in action, "final" in action
+    if has_tool == has_final:
+        return {}, "exactly one of 'tool' or 'final' is required"
+    if has_final:
+        if not isinstance(action["final"], str) or not action["final"].strip():
+            return {}, "final must be a non-empty string"
+        return action, ""
+    if not isinstance(action["tool"], str):
+        return {}, "tool must be a string"
+    if action["tool"] not in known_tools:
+        return {}, "unknown tool %r; known: %s" % (action["tool"], ", ".join(known_tools))
+    args = action.get("args", {})
+    if not isinstance(args, dict):
+        return {}, "args must be a JSON object"
+    action["args"] = args
+    return action, ""
 
 
 @dataclass
@@ -47,6 +97,7 @@ class Turn:
     tool: Optional[str]
     args: dict
     observation: dict
+    status: str = "success"
     at: str = ""
 
 
@@ -57,136 +108,220 @@ class RunResult:
     turns: List[Turn] = field(default_factory=list)
     stopped: str = "final"
     workspace: str = ""
+    run_id: str = ""
+    resume_state: str = "NEW"
 
     def to_dict(self) -> dict:
-        return {"goal": self.goal, "final": self.final, "stopped": self.stopped,
+        return {"run_id": self.run_id, "goal": self.goal, "final": self.final,
+                "stopped": self.stopped, "resume_state": self.resume_state,
                 "workspace": self.workspace,
                 "turns": [{"index": t.index, "thought": t.thought, "tool": t.tool,
-                           "args": t.args, "at": t.at,
-                           "observation": _shrink(t.observation)} for t in self.turns]}
+                           "args": t.args, "status": t.status, "at": t.at,
+                           "observation": shrink(t.observation)} for t in self.turns]}
 
 
-def _shrink(observation: dict, limit: int = 1200) -> dict:
-    text = json.dumps(observation, ensure_ascii=False)
+def shrink(value, limit: int = 1200) -> dict:
+    text = json.dumps(value, ensure_ascii=False)
     if len(text) <= limit:
-        return observation
+        return value if isinstance(value, dict) else {"value": value}
     return {"truncated": True, "preview": text[:limit]}
 
 
 class AgentRuntime:
     def __init__(self, *, goal: str, root: Path, client, max_turns: int = 12,
-                 registry: Optional[ToolRegistry] = None, timeout: int = 300):
-        self.goal = goal
+                 registry: Optional[ToolRegistry] = None, legacy: bool = False,
+                 timeout: int = 300, resume: bool = False):
+        self.goal = goal.strip()
         self.root = Path(root)
+        self.root.mkdir(parents=True, exist_ok=True)
         self.client = client
         self.max_turns = max_turns
+        self.resume_state = "NEW"
+
         self.workspace = Workspace(self.root / "workspace")
-        self.log = EvidenceLog(self.root / "evidence.jsonl")
-        self.memory = ResearchMemory(self.root / "memory.jsonl")
+        self.artifacts = ArtifactStore(self.root / "artifacts")
+        self.run_state = self._prepare_run(resume)
+        self.run_id = self.run_state["run_id"]
+
+        self.log = EvidenceLog(self.root / "evidence.jsonl", self.artifacts, self.run_id)
+        self.memory = ResearchMemory(self.root / "memory.jsonl", self.run_id)
         self.runner = Runner(self.workspace.root, self.log, timeout=timeout)
-        self.registry = registry or ToolRegistry()
-        if not self.registry.names():
-            for spec in build_tools(self.workspace, self.runner, self.log):
-                from .registry import Tool
-                self.registry.register(Tool(**spec))
+        if registry is None:
+            registry, conflicts = build_registry(self.workspace, self.runner, self.log,
+                                                 self.memory, legacy=legacy)
+            self.tool_conflicts = conflicts
+        else:
+            self.tool_conflicts = []
+        self.registry = registry
         self.transcript_path = self.root / "transcript.jsonl"
-        self.transcript_path.write_text("", encoding="utf-8")
-        self.log.record("start", {"goal": goal, "tools": self.registry.names(),
-                                  "max_turns": max_turns})
+        # First record in every log: what this run is and what it could call.
+        self.log.append("start", {"goal_sha256": self.run_state["goal_sha256"],
+                                  "tools": self.registry.names(),
+                                  "legacy_conflicts": self.tool_conflicts,
+                                  "mode": "resume" if resume else "new"})
+
+    # -- run state ------------------------------------------------------
+    def _prepare_run(self, resume: bool) -> dict:
+        path = self.root / "run.json"
+        goal_sha = sha256_bytes(self.goal.encode("utf-8"))
+        if resume:
+            if not path.is_file():
+                raise RuntimeError_("resume requested but run.json is missing")
+            state = json.loads(path.read_text(encoding="utf-8"))
+            if state.get("goal_sha256") != goal_sha:
+                raise RuntimeError_("goal differs from the recorded run; refusing to resume")
+            check = verify_chain(self.root / "evidence.jsonl")
+            if not check["ok"]:
+                raise RuntimeError_("evidence chain is broken: %s"
+                                    % "; ".join(check["errors"][:3]))
+            anchored = state.get("evidence_head")
+            if anchored and check["last_record_sha256"] != anchored:
+                raise RuntimeError_("evidence tail does not match the recorded head "
+                                    "(records were removed after the run)")
+            # A run that stopped between a tool record and its finish may have died mid
+            # action. The runtime says so rather than silently repeating that action.
+            last = log_tail(self.root / "evidence.jsonl")
+            if last and last.get("kind") in ("tool", "exec"):
+                state["interrupted"] = True
+                state["interrupt_reason"] = "EXECUTION_STATE_UNKNOWN"
+            state["status"] = "running"
+            state["resumed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+            path.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
+            self.resume_state = ("INTERRUPTED" if state.get("interrupted")
+                                 else "RESUMED")
+            return state
+
+        if path.is_file():
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            raise RuntimeError_("run already exists (%s); use --resume instead of overwriting"
+                                % existing.get("run_id"))
+        state = {
+            "run_id": "run-" + hashlib.sha256(
+                (self.goal + str(time.time())).encode("utf-8")).hexdigest()[:12],
+            "goal": self.goal,
+            "goal_sha256": goal_sha,
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "status": "running",
+            "turns": 0,
+            "tools": [],
+        }
+        path.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
+        return state
+
+    def _save_state(self, **updates) -> None:
+        state = dict(self.run_state)
+        state.update(updates)
+        # Anchor the head of the evidence log. Without it a truncated tail looks like a
+        # shorter but perfectly valid chain, because each remaining record still links.
+        tail = log_tail(self.log.path)
+        if tail:
+            state["evidence_head"] = tail.get("record_sha256")
+            state["evidence_sequence"] = tail.get("sequence")
+        (self.root / "run.json").write_text(
+            json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
 
     # -- prompt ---------------------------------------------------------
     def _tool_menu(self) -> str:
         lines = []
         for item in self.registry.describe():
-            status = "可用" if item["available"] else "缺失依赖:%s" % item["missing"]
+            status = "ok" if item["available"] else "missing:%s" % item["missing"]
             params = ", ".join("%s:%s" % (k, v) for k, v in item["parameters"].items())
-            lines.append("- %s(%s) [%s] %s" % (item["name"], params, status, item["description"]))
+            lines.append("- %s(%s) [%s] %s" % (item["name"], params, status,
+                                               item["description"]))
         return "\n".join(lines)
 
-    def _prompt(self, turns: List[Turn]) -> str:
+    def _prompt(self, turns: List[Turn], remaining: int) -> str:
         recent = ""
         for turn in turns[-4:]:
             recent += "\n[第%d轮] 想法: %s\n工具: %s %s\n观测: %s\n" % (
-                turn.index, turn.thought[:200], turn.tool,
-                json.dumps(turn.args, ensure_ascii=False)[:200],
-                json.dumps(_shrink(turn.observation), ensure_ascii=False)[:700])
-        digest = self.memory.digest()
-        return ("研究目标：\n%s\n\n可用工具：\n%s\n\n已有记忆：\n%s\n\n最近过程：%s\n"
-                "工作区：%s\n\n请给出下一轮 JSON。"
+                turn.index, turn.thought[:160], turn.tool,
+                json.dumps(turn.args, ensure_ascii=False)[:160],
+                json.dumps(shrink(turn.observation), ensure_ascii=False)[:600])
+        digest = self.memory.digest(self.goal)
+        return ("研究目标：\n%s\n\n可用工具：\n%s\n\n相关记忆：\n%s\n\n最近过程：%s\n"
+                "剩余轮次：%d\n工作区：%s\n\n下一轮 JSON："
                 % (self.goal, self._tool_menu(), digest or "(空)", recent or "(无)",
-                   self.workspace.root))
+                   remaining, self.workspace.root))
 
     # -- loop -----------------------------------------------------------
     def run(self) -> RunResult:
-        turns: List[Turn] = []
-        final_text = ""
-        stopped = "max_turns"
-        for index in range(1, self.max_turns + 1):
+        turns: List[Turn] = self._load_turns()
+        final_text, stopped = "", "max_turns"
+        start_index = len(turns)
+
+        for offset in range(1, self.max_turns + 1):
+            index = start_index + offset
+            remaining = self.max_turns - offset + 1
             raw = self.client.chat([{"role": "system", "content": SYSTEM},
-                                    {"role": "user", "content": self._prompt(turns)}],
+                                    {"role": "user", "content": self._prompt(turns, remaining)}],
                                    temperature=0.2)
-            action = _parse_action(raw)
-            self._append_transcript({"turn": index, "raw": raw, "parsed": action})
+            action, error = parse_action(raw, self.registry.names())
+            self._append_transcript({"turn": index, "raw": raw, "error": error})
 
-            if action.get("final"):
-                final_text = action["final"]
-                stopped = "final"
-                break
-            tool_name = action.get("tool")
-            if not tool_name:
-                turns.append(Turn(index, action.get("thought", ""), None, {},
-                                  {"error": "no tool and no final in response"}))
+            if error:
+                turns.append(Turn(index, "", None, {}, {"error": error}, status="invalid"))
+                self.log.append("action_rejected", {"error": error}, status="rejected")
                 continue
+            if "final" in action:
+                final_text, stopped = action["final"], "final"
+                break
 
-            outcome = self.registry.call(tool_name, action.get("args") or {})
-            self.log.record("tool", {"tool": tool_name, "args": action.get("args") or {},
-                                     "ok": outcome.get("ok")})
+            tool_name = action["tool"]
+            args = action["args"]
+            outcome = self.registry.call(tool_name, args)
             observation = outcome.get("result") if outcome.get("ok") else outcome
-            turn = Turn(index, action.get("thought", ""), tool_name,
-                        action.get("args") or {}, observation,
-                        time.strftime("%H:%M:%S"))
+            status = ("success" if outcome.get("ok")
+                      else "failed" if "error" in (outcome or {}) else "rejected")
+            record = self.log.append("tool", {
+                "tool_name": tool_name,
+                "arguments": args,
+                "result_summary": shrink(observation, 600),
+                "artifacts": (observation or {}).get("artifacts", [])
+                if isinstance(observation, dict) else [],
+            }, status=status)
+            turn = Turn(index, action.get("thought", ""), tool_name, args, observation,
+                        status=status, at=time.strftime("%H:%M:%S"))
             turns.append(turn)
-            self._append_transcript({"turn": index, "tool": tool_name, "observation":
-                                     _shrink(observation)})
+            self._append_transcript({"turn": index, "tool": tool_name,
+                                     "sequence": record["sequence"],
+                                     "observation": shrink(observation, 800)})
             self.memory.add("attempt", "%s %s -> %s" % (
-                tool_name, json.dumps(action.get("args") or {}, ensure_ascii=False)[:200],
-                json.dumps(_shrink(observation, 400), ensure_ascii=False)[:300]))
+                tool_name, json.dumps(args, ensure_ascii=False)[:160],
+                json.dumps(shrink(observation, 300), ensure_ascii=False)[:240]))
+            self._save_state(turns=len(turns))
 
         if not final_text:
             final_text = ("未在 %d 轮内得出结论。最后一轮观测：%s"
                           % (self.max_turns,
-                             json.dumps(_shrink(turns[-1].observation), ensure_ascii=False)[:600])
+                             json.dumps(shrink(turns[-1].observation), ensure_ascii=False)[:500])
                           if turns else "没有任何工具调用。")
-        result = RunResult(goal=self.goal, final=final_text, turns=turns,
-                           stopped=stopped, workspace=str(self.workspace.root))
-        self.log.record("finish", {"stopped": stopped, "turns": len(turns),
-                                   "final_sha256": _hash(final_text)})
+        check = self.log.verify()
+        self.log.append("finish", {"stopped": stopped, "turns": len(turns),
+                                   "final_sha256": sha256_bytes(final_text.encode("utf-8")),
+                                   "evidence_ok": check["ok"]})
+        self._save_state(status="finished", turns=len(turns), finished_at=time.strftime(
+            "%Y-%m-%dT%H:%M:%S"))
+        result = RunResult(goal=self.goal, final=final_text, turns=turns, stopped=stopped,
+                           workspace=str(self.workspace.root), run_id=self.run_id,
+                           resume_state=self.resume_state)
         (self.root / "result.json").write_text(
             json.dumps(result.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
         return result
 
+    # -- persistence ----------------------------------------------------
     def _append_transcript(self, entry: dict) -> None:
         with self.transcript_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-
-def _hash(text: str) -> str:
-    import hashlib
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def _parse_action(raw: str) -> dict:
-    """Extract the JSON action; tolerate a code fence and nothing else."""
-    match = re.search(r"```(?:json)?\s*(.*?)```", raw, re.S)
-    candidate = match.group(1) if match else raw
-    try:
-        return json.loads(candidate)
-    except ValueError:
-        pass
-    brace = re.search(r"\{.*\}", candidate, re.S)
-    if brace:
-        try:
-            return json.loads(brace.group(0))
-        except ValueError:
-            return {}
-    return {}
+    def _load_turns(self) -> List[Turn]:
+        if not self.transcript_path.is_file():
+            return []
+        turns = []
+        for line in self.transcript_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            entry = json.loads(line)
+            if "tool" in entry and "observation" in entry:
+                turns.append(Turn(entry["turn"], "", entry["tool"], {},
+                                  entry["observation"], at=""))
+        return turns

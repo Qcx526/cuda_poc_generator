@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Runtime contract tests.
+"""Runtime contract tests: schema, dispatch, evidence, memory, resume.
 
-The model is scripted here on purpose: this tests the loop, the tool dispatch, the
-evidence trail and the workspace guard. It does not test any decode verdict - those
-still come from real decoders in the JPEG suites.
+The model is scripted here on purpose - this tests the loop and the records, not any
+decode verdict. Decode verdicts still come from real decoders in the JPEG suites.
 """
 
 import json
@@ -11,13 +10,10 @@ import json
 import pytest
 
 from agent import AgentRuntime
-from agent.registry import Tool, ToolRegistry
-from agent.workspace import Workspace
+from agent.runtime import RuntimeError_, parse_action
 
 
 class ScriptedClient:
-    """Returns canned answers in order, and records the prompts it was given."""
-
     def __init__(self, answers):
         self.answers = list(answers)
         self.prompts = []
@@ -34,35 +30,34 @@ def test_agent_calls_tool_then_finishes(tmp_path):
         json.dumps({"thought": "看看环境", "tool": "env_probe", "args": {}}),
         json.dumps({"thought": "够了", "final": "环境已确认，未做进一步实验。"}),
     ])
-    runtime = AgentRuntime(goal="探测环境", root=tmp_path, client=client, max_turns=4)
-    result = runtime.run()
+    result = AgentRuntime(goal="探测环境", root=tmp_path, client=client, max_turns=4).run()
 
     assert result.stopped == "final"
     assert len(result.turns) == 1
     assert result.turns[0].tool == "env_probe"
-    assert "os" in result.turns[0].observation
-    evidence = (tmp_path / "evidence.jsonl").read_text(encoding="utf-8").splitlines()
-    kinds = [json.loads(line)["kind"] for line in evidence]
-    assert "start" in kinds and "tool" in kinds and "finish" in kinds
+    assert "os" in result.turns[0].observation["summary"]
+
+    kinds = [json.loads(line)["kind"]
+             for line in (tmp_path / "evidence.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert kinds[0] == "start" and "tool" in kinds and kinds[-1] == "finish"
 
 
 def test_agent_stops_at_turn_budget(tmp_path):
     answers = [json.dumps({"thought": "loop", "tool": "fs_list", "args": {"path": "."}})] * 3
-    runtime = AgentRuntime(goal="不会结束", root=tmp_path, client=ScriptedClient(answers),
-                           max_turns=3)
-    result = runtime.run()
+    result = AgentRuntime(goal="不会结束", root=tmp_path, client=ScriptedClient(answers),
+                          max_turns=3).run()
     assert result.stopped == "max_turns"
     assert len(result.turns) == 3
     assert "未在 3 轮内得出结论" in result.final
 
 
-def test_unknown_tool_is_reported_not_crashing(tmp_path):
+def test_unknown_tool_is_rejected_by_schema(tmp_path):
     client = ScriptedClient([
         json.dumps({"thought": "乱试", "tool": "no_such_tool", "args": {}}),
         json.dumps({"thought": "结束", "final": "工具不存在"}),
     ])
     result = AgentRuntime(goal="x", root=tmp_path, client=client, max_turns=3).run()
-    assert result.turns[0].observation["ok"] is False
+    assert result.turns[0].status == "invalid"
     assert "unknown tool" in result.turns[0].observation["error"]
 
 
@@ -70,7 +65,8 @@ def test_malformed_response_does_not_abort(tmp_path):
     client = ScriptedClient(["这不是 JSON", json.dumps({"thought": "t", "final": "ok"})])
     result = AgentRuntime(goal="x", root=tmp_path, client=client, max_turns=3).run()
     assert result.stopped == "final"
-    assert "no tool and no final" in result.turns[0].observation["error"]
+    assert result.turns[0].status == "invalid"
+    assert "no JSON object" in result.turns[0].observation["error"]
 
 
 def test_memory_is_visible_in_later_prompt(tmp_path):
@@ -82,21 +78,41 @@ def test_memory_is_visible_in_later_prompt(tmp_path):
     runtime = AgentRuntime(goal="x", root=tmp_path, client=client, max_turns=3)
     runtime.run()
     assert "nvJPEG 版本未知" in runtime.memory.digest()
-    assert "已有记忆" in client.prompts[-1]
+    assert "相关记忆" in client.prompts[-1]
+    assert "nvJPEG 版本未知" in client.prompts[-1]
 
 
 def test_workspace_refuses_escape(tmp_path):
-    space = Workspace(tmp_path / "ws")
-    space.write("ok.txt", "hi")
-    assert space.read("ok.txt")["content"] == "hi"
+    runtime = AgentRuntime(goal="x", root=tmp_path, client=ScriptedClient([]), max_turns=1)
+    runtime.workspace.write("ok.txt", "hi")
+    assert runtime.workspace.read("ok.txt")["content"] == "hi"
     with pytest.raises(PermissionError):
-        space.write("../outside.txt", "nope")
+        runtime.workspace.write("../outside.txt", "nope")
 
 
-def test_registry_reports_missing_binary():
-    registry = ToolRegistry()
-    registry.register(Tool(name="ghost", description="needs a binary that is not here",
-                           parameters={}, fn=lambda: None, requires=["definitely-not-here"]))
-    assert registry.describe()[0]["available"] is False
-    outcome = registry.call("ghost", {})
-    assert outcome["ok"] is False and "needs" in outcome["error"]
+def test_parse_action_requires_exactly_one_of_tool_and_final():
+    _, error = parse_action('{"thought":"a","tool":"shell","final":"b"}', ["shell"])
+    assert "exactly one" in error
+    _, error = parse_action('{"thought":"a"}', ["shell"])
+    assert "exactly one" in error
+
+
+def test_parse_action_rejects_unknown_fields_and_bad_args():
+    _, error = parse_action('{"thought":"a","tool":"shell","args":{},"extra":1}', ["shell"])
+    assert "unknown fields" in error
+    _, error = parse_action('{"thought":"a","tool":"shell","args":"not an object"}', ["shell"])
+    assert "args must be" in error
+    _, error = parse_action('{"thought":5,"tool":"shell","args":{}}', ["shell"])
+    assert "thought must be" in error
+
+
+def test_parse_action_accepts_fenced_json():
+    action, error = parse_action('```json\n{"thought":"t","tool":"shell","args":{"command":"echo hi"}}\n```',
+                                 ["shell"])
+    assert error == "" and action["tool"] == "shell"
+
+
+def test_new_run_refuses_to_overwrite_existing(tmp_path):
+    AgentRuntime(goal="第一个目标", root=tmp_path, client=ScriptedClient([]), max_turns=1)
+    with pytest.raises(RuntimeError_):
+        AgentRuntime(goal="另一个目标", root=tmp_path, client=ScriptedClient([]), max_turns=1)

@@ -42,8 +42,18 @@ class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Tool] = {}
 
-    def register(self, tool: Tool) -> None:
+    def register(self, tool: Tool, allow_override: bool = False) -> None:
+        if tool.name in self._tools and not allow_override:
+            raise ValueError("tool %r is already registered (source=%s); refusing to "
+                             "silently replace it" % (tool.name, self._tools[tool.name].source))
         self._tools[tool.name] = tool
+
+    def register_many(self, specs: List[dict], allow_override: bool = False) -> List[str]:
+        added = []
+        for spec in specs:
+            self.register(Tool(**spec), allow_override=allow_override)
+            added.append(spec["name"])
+        return added
 
     def get(self, name: str) -> Optional[Tool]:
         return self._tools.get(name)
@@ -96,6 +106,45 @@ class ToolRegistry:
                 self.register(Tool(**entry))
                 added.append(entry["name"])
         return added
+
+
+def build_registry(workspace, runner, log, memory, legacy: bool = False) -> tuple:
+    """Builtins first and always; legacy adapters only add, never replace.
+
+    The earlier CLI could end up with a registry that had only legacy tools, because the
+    builtin set was installed only when no legacy tool was found. This function makes the
+    order irrelevant: builtins are unconditional, legacy is additive, and a name clash is
+    reported instead of resolved by import order.
+    """
+    from .tools_builtin import build_tools
+
+    registry = ToolRegistry()
+    registry.register_many(build_tools(workspace, runner, log, memory))
+    conflicts = []
+    if legacy:
+        for spec in _legacy_specs():
+            if registry.get(spec["name"]) is not None:
+                conflicts.append(spec["name"])
+                continue
+            registry.register(Tool(**spec))
+    return registry, conflicts
+
+
+def _legacy_specs() -> List[dict]:
+    specs: List[dict] = []
+    module_path = Path("src")
+    if not module_path.is_dir():
+        return specs
+    for path in sorted(module_path.glob("*.py")):
+        if path.stem.startswith("_"):
+            continue
+        try:
+            module = importlib.import_module("src.%s" % path.stem)
+        except Exception:  # noqa: BLE001 - an optional module must not break startup
+            continue
+        for entry in getattr(module, "AGENT_TOOLS", []):
+            specs.append(entry)
+    return specs
 
 
 def fn_signature(fn: Callable) -> Dict[str, str]:
