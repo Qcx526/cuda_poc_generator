@@ -68,20 +68,38 @@ class ToolRegistry:
         return sorted(items, key=lambda i: i["name"])
 
     def call(self, name: str, arguments: dict) -> dict:
+        """Dispatch a tool and normalise the outcome.
+
+        Two different facts were being merged into one "ok": whether the call could be
+        dispatched at all, and whether the operation the tool performed succeeded. A
+        shell command exiting 1, an HTTP 500 and a 401 were all reported as success
+        because the call itself returned without raising.
+
+        The envelope keeps them apart:
+
+            dispatched  the tool exists, its dependencies are present and the arguments
+                        were accepted - i.e. the function actually ran
+            ok          the operation succeeded, according to the tool's own report
+
+        Builtin tools already answer with {"ok", "summary", "artifacts"}; a legacy tool
+        returning a plain object is treated as a successful operation with that object as
+        its result, because it has no way to say otherwise.
+        """
         tool = self._tools.get(name)
         if tool is None:
-            return {"ok": False, "error": "unknown tool %r; known: %s"
-                                         % (name, ", ".join(self.names()))}
-        ok, missing = tool.available()
-        if not ok:
-            return {"ok": False, "error": "tool %r needs %s on PATH" % (name, missing)}
+            return envelope(False, False, None,
+                            "unknown tool %r; known: %s" % (name, ", ".join(self.names())))
+        available, missing = tool.available()
+        if not available:
+            return envelope(False, False, None,
+                            "tool %r needs %s on PATH" % (name, missing))
         try:
-            result = tool.fn(**(arguments or {}))
+            payload = tool.fn(**(arguments or {}))
         except TypeError as exc:
-            return {"ok": False, "error": "bad arguments for %s: %s" % (name, exc)}
+            return envelope(False, False, None, "bad arguments for %s: %s" % (name, exc))
         except Exception as exc:  # noqa: BLE001 - a tool failure is data, not a crash
-            return {"ok": False, "error": "%s: %s" % (type(exc).__name__, exc)}
-        return {"ok": True, "result": result}
+            return envelope(True, False, None, "%s: %s" % (type(exc).__name__, exc))
+        return envelope(True, True, payload, None)
 
     def discover_legacy(self, package: str = "src", prefix: str = "") -> List[str]:
         """Register optional adapters that wrap existing project modules.
@@ -106,6 +124,28 @@ class ToolRegistry:
                 self.register(Tool(**entry))
                 added.append(entry["name"])
         return added
+
+
+def envelope(dispatched: bool, operation_ok: bool, payload, error) -> dict:
+    """Normalise a tool payload into the call envelope used by runtime and evidence."""
+    result = payload if isinstance(payload, dict) else {"value": payload}
+    reported = result.get("ok") if isinstance(payload, dict) and "ok" in result else None
+    ok = bool(reported) if reported is not None else bool(operation_ok)
+    if error:
+        status = "dispatch_error" if not dispatched else "failed"
+    elif ok:
+        status = result.get("status", "success") if isinstance(payload, dict) else "success"
+    else:
+        status = "failed"
+    return {
+        "dispatched": dispatched,
+        "ok": ok,
+        "status": status,
+        "result": payload,
+        "summary": result.get("summary") if isinstance(payload, dict) else None,
+        "artifacts": result.get("artifacts", []) if isinstance(payload, dict) else [],
+        "error": error or (result.get("error") if isinstance(payload, dict) else None),
+    }
 
 
 def build_registry(workspace, runner, log, memory, legacy: bool = False,

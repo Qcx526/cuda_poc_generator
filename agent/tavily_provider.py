@@ -18,6 +18,7 @@ from typing import List
 from .evidence import redact
 
 PROVIDER = "tavily"
+SEARCH_SNIPPET_CHARS = 600
 ENV_KEY = "TAVILY_API_KEY"
 
 
@@ -58,26 +59,55 @@ def build_tools(log) -> List[dict]:
 
     def web_search(query: str, max_results: int = 5, search_depth: str = "basic") -> dict:
         try:
-            payload = _client().search(query=query, max_results=int(max_results),
-                                       search_depth=search_depth)
+            wanted = int(max_results)
+            depth = str(search_depth)
+        except (TypeError, ValueError):
+            return {"ok": False, "status": "failed",
+                    "summary": {"error": "max_results must be an integer"},
+                    "artifacts": []}
+        if not 1 <= wanted <= 20:
+            log.append("search", {"query": query, "error": "max_results out of range"},
+                       status="rejected")
+            return {"ok": False, "status": "failed",
+                    "summary": {"error": "max_results out of range (1..20): %r" % max_results},
+                    "artifacts": []}
+        if depth not in ("basic", "advanced"):
+            log.append("search", {"query": query, "error": "bad search_depth"},
+                       status="rejected")
+            return {"ok": False, "status": "failed",
+                    "summary": {"error": "search_depth must be basic or advanced: %r" % depth},
+                    "artifacts": []}
+
+        try:
+            payload = _client().search(query=query, max_results=wanted, search_depth=depth)
         except Exception as exc:  # noqa: BLE001 - a failed call is an observation
             message, _ = redact("%s: %s" % (type(exc).__name__, exc))
             entry = {"query": query, "error": message}
             log.append("search", entry, status="failed")
-            return {"ok": False, "summary": entry, "artifacts": []}
+            return {"ok": False, "status": "failed", "summary": entry, "artifacts": []}
 
         results = payload.get("results", []) if isinstance(payload, dict) else []
         ref = artifacts.save("http", "tavily-search.json",
                              json.dumps(payload, ensure_ascii=False)) if artifacts else None
         digest = (ref or {}).get("sha256")
+        items = []
+        for item in results[:10]:
+            body = item.get("content") or ""
+            items.append({"title": item.get("title", "")[:120],
+                          "url": item.get("url", ""),
+                          "score": item.get("score"),
+                          "content": body[:SEARCH_SNIPPET_CHARS],
+                          "content_truncated": len(body) > SEARCH_SNIPPET_CHARS})
+        # Zero hits is a successful request with no data, not a failure and not a hit.
+        status = "empty" if not items else "success"
         summary = {"query": query, "results": len(results), "payload_sha256": digest,
-                   "items": [{"title": item.get("title", "")[:120],
-                              "url": item.get("url", ""),
-                              "score": item.get("score")}
-                             for item in results[:10]]}
+                   "search_depth": depth, "items": items,
+                   "note": "content is the search engine's snippet, not the page body"}
         log.append("search", {"query": query, "results": len(results),
-                              "payload_sha256": digest, "artifacts": [ref] if ref else []})
-        return {"ok": True, "summary": summary, "artifacts": [ref] if ref else []}
+                              "payload_sha256": digest, "search_depth": depth,
+                              "artifacts": [ref] if ref else []}, status=status)
+        return {"ok": True, "status": status, "summary": summary,
+                "artifacts": [ref] if ref else []}
 
     def web_extract(url: str) -> dict:
         try:
@@ -86,19 +116,39 @@ def build_tools(log) -> List[dict]:
             message, _ = redact("%s: %s" % (type(exc).__name__, exc))
             entry = {"url": url, "error": message}
             log.append("extract", entry, status="failed")
-            return {"ok": False, "summary": entry, "artifacts": []}
+            return {"ok": False, "status": "failed", "summary": entry, "artifacts": []}
 
         items = payload.get("results", []) if isinstance(payload, dict) else []
-        content = items[0].get("raw_content") if items else ""
+        failed = payload.get("failed_results", []) if isinstance(payload, dict) else []
+        content = (items[0].get("raw_content") or "") if items else ""
         ref = artifacts.save("http", "tavily-extract.json",
                              json.dumps(payload, ensure_ascii=False)) if artifacts else None
         digest = (ref or {}).get("sha256")
-        summary = {"url": url, "chars": len(content or ""), "payload_sha256": digest,
-                   "truncated": len(content or "") > 4000,
-                   "content_preview": (content or "")[:4000]}
-        log.append("extract", {"url": url, "chars": len(content or ""),
-                               "payload_sha256": digest, "artifacts": [ref] if ref else []})
-        return {"ok": True, "summary": summary, "artifacts": [ref] if ref else []}
+        refs = [ref] if ref else []
+
+        # API success is not extraction success: an empty result set or an empty body
+        # means the page was not read, and must not be reported as a hit.
+        if not items:
+            entry = {"url": url, "error": "extraction returned no results",
+                     "failed_results": len(failed), "payload_sha256": digest,
+                     "artifacts": refs}
+            log.append("extract", entry, status="failed")
+            return {"ok": False, "status": "failed", "summary": entry, "artifacts": refs}
+        if not content.strip():
+            entry = {"url": url, "error": "extracted body is empty",
+                     "failed_results": len(failed), "payload_sha256": digest,
+                     "artifacts": refs}
+            log.append("extract", entry, status="failed")
+            return {"ok": False, "status": "failed", "summary": entry, "artifacts": refs}
+
+        status = "partial" if failed else "success"
+        summary = {"url": url, "chars": len(content), "payload_sha256": digest,
+                   "failed_results": failed[:5], "truncated": len(content) > 4000,
+                   "content_preview": content[:4000]}
+        log.append("extract", {"url": url, "chars": len(content),
+                               "payload_sha256": digest, "failed_results": len(failed),
+                               "artifacts": refs}, status=status)
+        return {"ok": True, "status": status, "summary": summary, "artifacts": refs}
 
     return [
         {"name": "web_search", "fn": web_search, "category": "research", "source": PROVIDER,

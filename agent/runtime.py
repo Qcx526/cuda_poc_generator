@@ -98,6 +98,10 @@ class Turn:
     args: dict
     observation: dict
     status: str = "success"
+    dispatched: bool = True
+    operation_ok: bool = True
+    dispatched: bool = True
+    operation_ok: bool = True
     at: str = ""
 
 
@@ -116,7 +120,9 @@ class RunResult:
                 "stopped": self.stopped, "resume_state": self.resume_state,
                 "workspace": self.workspace,
                 "turns": [{"index": t.index, "thought": t.thought, "tool": t.tool,
-                           "args": t.args, "status": t.status, "at": t.at,
+                           "args": t.args, "status": t.status,
+                           "dispatched": t.dispatched, "operation_ok": t.operation_ok,
+                           "at": t.at,
                            "observation": shrink(t.observation)} for t in self.turns]}
 
 
@@ -273,18 +279,24 @@ class AgentRuntime:
             tool_name = action["tool"]
             args = action["args"]
             outcome = self.registry.call(tool_name, args)
-            observation = outcome.get("result") if outcome.get("ok") else outcome
-            status = ("success" if outcome.get("ok")
-                      else "failed" if "error" in (outcome or {}) else "rejected")
+            dispatched, ok = outcome["dispatched"], outcome["ok"]
+            # A dispatched-but-failed tool still produced evidence (stdout, HTTP error).
+            # Only a dispatch failure has nothing to show, so it is reported as rejected.
+            observation = (outcome["result"] if dispatched
+                           else {"error": outcome["error"], "status": "dispatch_error"})
+            status = "success" if ok else ("rejected" if not dispatched else "failed")
             record = self.log.append("tool", {
                 "tool_name": tool_name,
                 "arguments": args,
-                "result_summary": shrink(observation, 600),
-                "artifacts": (observation or {}).get("artifacts", [])
-                if isinstance(observation, dict) else [],
+                "dispatched": dispatched,
+                "operation_ok": ok,
+                "summary": shrink(outcome.get("summary"), 600),
+                "error": outcome.get("error"),
+                "artifacts": outcome.get("artifacts", []),
             }, status=status)
             turn = Turn(index, action.get("thought", ""), tool_name, args, observation,
-                        status=status, at=time.strftime("%H:%M:%S"))
+                        status=status, dispatched=dispatched, operation_ok=ok,
+                        at=time.strftime("%H:%M:%S"))
             turns.append(turn)
             self._append_transcript({"turn": index, "tool": tool_name,
                                      "sequence": record["sequence"],

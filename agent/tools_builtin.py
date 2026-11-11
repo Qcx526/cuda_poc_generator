@@ -110,6 +110,38 @@ def build_tools(workspace, runner, log, memory):
             refs.extend(record["artifacts"])
         return {"ok": True, "summary": found, "artifacts": refs}
 
+    def artifact_read(artifact: str, offset: int = 0, limit: int = 4000) -> dict:
+        """Read part of a stored artifact. Never writes, never leaves the artifact root."""
+        root = artifacts.root.resolve() if artifacts else None
+        if root is None:
+            return {"ok": False, "summary": {"error": "no artifact store"},
+                    "artifacts": [], "status": "failed"}
+        candidate = (root / artifact).resolve()
+        if root not in candidate.parents and candidate != root:
+            return {"ok": False, "summary": {"error": "artifact path escapes the run",
+                                             "artifact": artifact},
+                    "artifacts": [], "status": "failed"}
+        if not candidate.is_file():
+            return {"ok": False, "summary": {"error": "artifact not found",
+                                             "artifact": artifact},
+                    "artifacts": [], "status": "failed"}
+        try:
+            start = max(0, int(offset))
+            span = max(1, min(int(limit), 64000))
+        except (TypeError, ValueError):
+            return {"ok": False, "summary": {"error": "offset/limit must be integers"},
+                    "artifacts": [], "status": "failed"}
+        data = candidate.read_bytes()
+        chunk = data[start:start + span]
+        text = chunk.decode("utf-8", errors="replace")
+        end = start + len(chunk)
+        summary = {"artifact": artifact, "total_bytes": len(data), "offset": start,
+                   "read_bytes": len(chunk), "next_offset": end,
+                   "has_more": end < len(data),
+                   "truncated": len(text) < len(chunk), "content": text}
+        return {"ok": True, "summary": summary, "artifacts": [],
+                "status": "success" if not summary["has_more"] else "partial"}
+
     def memory_note(kind: str, text: str, tags: list = None, evidence: list = None) -> dict:
         try:
             entry = memory.add(kind, text, tags=tags, evidence=evidence, source="agent")
@@ -138,6 +170,12 @@ def build_tools(workspace, runner, log, memory):
                         "length, sha256 and whether the preview was truncated.",
          "parameters": {"url": "str", "mode": "text|json|raw", "limit": "int",
                         "timeout": "int"}},
+        {"name": "artifact_read", "fn": artifact_read, "category": "files",
+         "source": "builtin",
+         "description": "Read a stored artifact in chunks by its reference (e.g. "
+                        "'http/ab12cd34ef56-page.body'). Returns total size, bytes read "
+                        "and whether more remains.",
+         "parameters": {"artifact": "str", "offset": "int", "limit": "int"}},
         {"name": "env_probe", "fn": env_probe, "category": "research", "source": "builtin",
          "description": "Report OS, python, GPU/driver and docker as they really are.",
          "parameters": {}},
