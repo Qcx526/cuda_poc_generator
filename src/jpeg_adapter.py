@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
-"""JPEG input adapter: build a legal baseline, then mutate named fields.
+"""JPEG input adapter: a plan says what to change, this module decides how.
 
-The point of the adapter is that a plan describes *what* to change and the tool decides
-*how* to lay it out, so a candidate never has to hand-assemble entropy-coded data. That
-was the actual failure in F15 round 7: the files carried DHT and SOS but the bit stream
-did not decode.
+Design contract
+---------------
+* A plan is data, not code. The candidate never assembles bytes.
+* Every mutation records what it replaced, so the control is produced by undoing the
+  plan in reverse rather than by guessing "original" values.
+* Anything ambiguous is refused: progressive, arithmetic coding, multi-scan, unknown
+  markers and out-of-range values raise instead of being masked or truncated.
+* Validation runs two independent readers: the segment walker here and Pillow's decoder.
+  "Markers parse" and "the image decodes" are different facts and both are recorded.
 
-Every mutation is recorded with the original bytes, the mutated bytes and both hashes, so
-a result can always be traced back to what changed. Validation runs two independent
-readers - the segment walker here and Pillow's own decoder - because "markers parse" and
-"image decodes" are different facts.
+SOF layout (ITU-T T.81 B.2.2), offsets from the 0xFF byte:
+    0 FF | 1 marker | 2-3 length | 4 precision | 5-6 height | 7-8 width | 9 Nf | ...
+The earlier version used 6 and 8, which wrote one byte past each field and corrupted the
+neighbouring value - that is the defect this module now guards with a test.
 """
 
 import hashlib
@@ -22,9 +27,17 @@ from typing import List, Optional
 
 from PIL import Image
 
-SOF_MARKERS = {0xC0, 0xC1, 0xC2}
+SOF_BASELINE = 0xC0          # only baseline/extended sequential is editable here
+SOF_EXTENDED = 0xC1
+SOF_ALL = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
+
 SEGMENT_NAMES = {0xD8: "SOI", 0xD9: "EOI", 0xDB: "DQT", 0xC4: "DHT", 0xDA: "SOS",
                  0xDD: "DRI", 0xE0: "APP0", 0xE1: "APP1", 0xFE: "COM"}
+APP_MARKERS = set(range(0xE0, 0xF0))
+
+
+class AdapterError(ValueError):
+    """Fail-closed: the plan or the file is outside what this adapter supports."""
 
 
 @dataclass
@@ -44,9 +57,17 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _require(condition, message):
+    if not condition:
+        raise AdapterError(message)
+
+
 def walk(data: bytes) -> dict:
-    """Segment list plus SOF fields, without decoding entropy data."""
-    info = {"segments": [], "entropy_bytes": 0, "valid": data[:2] == b"\xff\xd8"}
+    """Segment list and SOF fields, without touching entropy data."""
+    info = {"segments": [], "entropy_bytes": 0, "valid": data[:2] == b"\xff\xd8",
+            "sof_marker": None, "sos_count": 0, "dri_count": 0}
+    if not info["valid"]:
+        return info
     i = 2
     while i + 3 < len(data):
         if data[i] != 0xFF:
@@ -59,22 +80,31 @@ def walk(data: bytes) -> dict:
         if marker == 0xDA:
             length = struct.unpack_from(">H", data, i + 2)[0]
             info["segments"].append("SOS(len=%d)" % length)
+            info["sos_count"] += 1
             info["entropy_bytes"] = max(0, len(data) - (i + 2 + length) - 2)
             break
         length = struct.unpack_from(">H", data, i + 2)[0]
         name = SEGMENT_NAMES.get(marker, "%02X(len=%d)" % (marker, length))
-        if marker in SOF_MARKERS:
-            name = "SOF%d(%dx%d,comp=%d)" % (marker - 0xC0,
-                                             struct.unpack_from(">H", data, i + 7)[0],
-                                             struct.unpack_from(">H", data, i + 5)[0],
-                                             data[i + 9])
-        info["segments"].append(name)
+        if marker in SOF_ALL:
+            precision = data[i + 4]
+            height = struct.unpack_from(">H", data, i + 5)[0]
+            width = struct.unpack_from(">H", data, i + 7)[0]
+            components = data[i + 9]
+            info["sof_marker"] = marker
+            info["segments"].append(
+                "SOF%d(%dx%d,comp=%d,prec=%d)" % (marker - 0xC0, width, height,
+                                                  components, precision))
+        elif marker == 0xDD:
+            info["dri_count"] += 1
+            info["segments"].append("DRI(%d)" % struct.unpack_from(">H", data, i + 4)[0])
+        else:
+            info["segments"].append(name)
         i += 2 + length
     return info
 
 
 def reference_decode(data: bytes) -> tuple:
-    """Independent verdict: does a normal JPEG decoder accept these bytes?"""
+    """Independent verdict from a normal JPEG decoder."""
     try:
         image = Image.open(io.BytesIO(data))
         image.load()
@@ -83,9 +113,23 @@ def reference_decode(data: bytes) -> tuple:
         return False, "%s: %s" % (type(exc).__name__, exc), (0, 0), ""
 
 
+def require_editable(data: bytes) -> dict:
+    """Refuse formats whose structure this adapter does not model."""
+    info = walk(data)
+    _require(info["valid"], "not a JPEG: missing SOI")
+    _require(info["sof_marker"] is not None, "no SOF marker found")
+    _require(info["sof_marker"] in (SOF_BASELINE, SOF_EXTENDED),
+             "unsupported SOF type 0x%02X (only baseline/extended sequential)"
+             % info["sof_marker"])
+    _require(info["sos_count"] == 1, "multi-scan or missing scan is not supported")
+    return info
+
+
 def build_baseline(width: int = 64, height: int = 64, mode: str = "RGB",
                    quality: int = 90, seed: int = 7) -> bytes:
-    """A real encoder produces the baseline; nothing here is hand-assembled."""
+    """A real encoder produces the baseline; nothing is hand-assembled."""
+    _require(1 <= width <= 65535 and 1 <= height <= 65535, "size out of range")
+    _require(mode in ("RGB", "L"), "unsupported mode %r" % mode)
     if mode == "L":
         pixels = [(x * 3 + y * 5 + seed) % 256 for y in range(height) for x in range(width)]
         image = Image.new("L", (width, height))
@@ -99,7 +143,8 @@ def build_baseline(width: int = 64, height: int = 64, mode: str = "RGB",
     return buffer.getvalue()
 
 
-def _find_segment(data: bytes, marker: int) -> Optional[tuple]:
+def _segment_at(data: bytes, marker: int) -> Optional[tuple]:
+    """(start, end) of the first segment with this marker, start pointing at 0xFF."""
     i = 2
     while i + 3 < len(data):
         if data[i] != 0xFF:
@@ -115,111 +160,186 @@ def _find_segment(data: bytes, marker: int) -> Optional[tuple]:
     return None
 
 
-def apply_plan(baseline: bytes, plan: dict) -> tuple:
-    """Apply a named mutation; returns (bytes, notes). Unknown ops are refused."""
-    data = bytearray(baseline)
-    notes = []
-    for op in plan.get("operations", []):
-        kind = op.get("op")
-        if kind == "set_sof_size":
-            found = _find_segment(data, 0xC0)
-            if not found:
-                return bytes(data), ["no SOF0 to edit"]
-            start = found[0]
-            struct.pack_into(">H", data, start + 6, int(op["height"]) & 0xFFFF)
-            struct.pack_into(">H", data, start + 8, int(op["width"]) & 0xFFFF)
-            notes.append("set_sof_size %dx%d" % (op["width"], op["height"]))
-        elif kind == "set_component_sampling":
-            found = _find_segment(data, 0xC0)
-            if not found:
-                return bytes(data), ["no SOF0 to edit"]
-            start = found[0]
-            count = data[start + 9]
-            index = int(op["component"])
-            if index >= count:
-                return bytes(data), ["component index out of range"]
-            offset = start + 10 + index * 3 + 1
-            data[offset] = ((int(op["h"]) & 0x0F) << 4) | (int(op["v"]) & 0x0F)
-            notes.append("set_component_sampling[%d]=%dx%d" % (index, op["h"], op["v"]))
-        elif kind == "set_dri":
-            interval = int(op["interval"]) & 0xFFFF
-            payload = b"\xff\xdd\x00\x04" + struct.pack(">H", interval)
-            found = _find_segment(data, 0xDD)
-            if found:
-                data[found[0]:found[1]] = payload
-                notes.append("replace_dri=%d" % interval)
-            else:
-                sos = _find_segment(data, 0xDA)
-                position = sos[0] if sos else len(data) - 2
-                data[position:position] = payload
-                notes.append("insert_dri=%d" % interval)
-        elif kind == "insert_segment":
-            marker = int(op["marker"])
-            payload = bytes.fromhex(op.get("hex", ""))
-            block = b"\xff" + bytes([marker]) + struct.pack(">H", len(payload) + 2) + payload
-            sos = _find_segment(data, 0xDA)
-            position = sos[0] if sos else len(data) - 2
-            data[position:position] = block
-            notes.append("insert_segment %02X len=%d" % (marker, len(payload)))
-        elif kind == "strip_segment":
-            marker = int(op["marker"])
-            found = _find_segment(data, marker)
-            if not found:
-                notes.append("strip_segment %02X: absent" % marker)
-            else:
-                del data[found[0]:found[1]]
-                notes.append("strip_segment %02X" % marker)
+def _sof_start(data: bytes) -> int:
+    for marker in (SOF_BASELINE, SOF_EXTENDED):
+        found = _segment_at(data, marker)
+        if found:
+            return found[0]
+    raise AdapterError("no editable SOF segment")
+
+
+def _apply_one(data: bytearray, op: dict) -> dict:
+    """Apply one operation; return the journal entry needed to undo it."""
+    kind = op.get("op")
+
+    if kind == "set_sof_size":
+        width, height = op.get("width"), op.get("height")
+        _require(isinstance(width, int) and isinstance(height, int), "size must be int")
+        _require(1 <= width <= 65535, "width out of range: %r" % (width,))
+        _require(1 <= height <= 65535, "height out of range: %r" % (height,))
+        start = _sof_start(data)
+        prev_height = struct.unpack_from(">H", data, start + 5)[0]
+        prev_width = struct.unpack_from(">H", data, start + 7)[0]
+        struct.pack_into(">H", data, start + 5, height)
+        struct.pack_into(">H", data, start + 7, width)
+        return {"op": kind, "prev": {"width": prev_width, "height": prev_height}}
+
+    if kind == "set_component_sampling":
+        index, h, v = op.get("component"), op.get("h"), op.get("v")
+        _require(isinstance(index, int), "component index must be int")
+        _require(isinstance(h, int) and isinstance(v, int), "sampling must be int")
+        _require(0 <= index, "negative component index: %r" % (index,))
+        _require(1 <= h <= 4 and 1 <= v <= 4, "sampling out of range: %dx%d" % (h, v))
+        start = _sof_start(data)
+        count = data[start + 9]
+        _require(index < count, "component index %d out of range (Nf=%d)" % (index, count))
+        offset = start + 10 + index * 3 + 1
+        prev = data[offset]
+        data[offset] = ((h & 0x0F) << 4) | (v & 0x0F)
+        return {"op": kind, "index": index, "offset": offset,
+                "prev": {"h": prev >> 4, "v": prev & 0x0F}}
+
+    if kind == "set_dri":
+        interval = op.get("interval")
+        _require(isinstance(interval, int), "interval must be int")
+        _require(0 <= interval <= 65535, "interval out of range: %r" % (interval,))
+        payload = b"\xff\xdd\x00\x04" + struct.pack(">H", interval)
+        found = _segment_at(data, 0xDD)
+        if found:
+            prev = struct.unpack_from(">H", data, found[0] + 4)[0]
+            data[found[0]:found[1]] = payload
+            return {"op": kind, "mode": "replace", "prev_interval": prev,
+                    "offset": found[0]}
+        sos = _segment_at(data, 0xDA)
+        position = sos[0] if sos else len(data) - 2
+        data[position:position] = payload
+        return {"op": kind, "mode": "insert", "prev_interval": None, "offset": position}
+
+    if kind == "insert_segment":
+        marker = op.get("marker")
+        _require(isinstance(marker, int), "marker must be int")
+        _require(marker in APP_MARKERS or marker == 0xFE,
+                 "marker 0x%02X is not an insertable APP/COM marker" % marker)
+        payload = bytes.fromhex(op.get("hex", ""))
+        _require(len(payload) <= 65533, "payload too long: %d bytes" % len(payload))
+        block = b"\xff" + bytes([marker]) + struct.pack(">H", len(payload) + 2) + payload
+        sos = _segment_at(data, 0xDA)
+        position = sos[0] if sos else len(data) - 2
+        data[position:position] = block
+        return {"op": kind, "offset": position, "length": len(block)}
+
+    if kind == "strip_segment":
+        marker = op.get("marker")
+        _require(isinstance(marker, int), "marker must be int")
+        _require(marker not in (0xD8, 0xD9, 0xDA), "cannot strip SOI/EOI/SOS")
+        found = _segment_at(data, marker)
+        _require(found is not None, "segment 0x%02X not present" % marker)
+        removed = bytes(data[found[0]:found[1]])
+        del data[found[0]:found[1]]
+        return {"op": kind, "marker": marker, "offset": found[0], "removed": removed.hex()}
+
+    raise AdapterError("unsupported op: %r" % (kind,))
+
+
+def _undo_one(data: bytearray, entry: dict) -> None:
+    """Reverse one journal entry on ``data`` in place."""
+    kind = entry["op"]
+    if kind == "set_sof_size":
+        start = _sof_start(data)
+        struct.pack_into(">H", data, start + 5, entry["prev"]["height"])
+        struct.pack_into(">H", data, start + 7, entry["prev"]["width"])
+    elif kind == "set_component_sampling":
+        offset = entry["offset"]
+        data[offset] = ((entry["prev"]["h"] & 0x0F) << 4) | (entry["prev"]["v"] & 0x0F)
+    elif kind == "set_dri":
+        if entry["mode"] == "replace":
+            struct.pack_into(">H", data, entry["offset"] + 4, entry["prev_interval"])
         else:
-            return bytes(data), ["unsupported op: %s" % kind]
-    return bytes(data), notes
+            start = entry["offset"]
+            _require(bytes(data[start:start + 2]) == b"\xff\xdd",
+                     "DRI undo: expected injected segment at %d" % start)
+            del data[start:start + 6]
+    elif kind == "insert_segment":
+        start, length = entry["offset"], entry["length"]
+        _require(data[start] == 0xFF, "insert undo: no marker at %d" % start)
+        del data[start:start + length]
+    elif kind == "strip_segment":
+        data[entry["offset"]:entry["offset"]] = bytes.fromhex(entry["removed"])
+    else:
+        raise AdapterError("cannot undo %r" % (kind,))
+
+
+def apply_plan(baseline: bytes, plan: dict) -> tuple:
+    """Apply a plan, returning (bytes, journal). Raises on anything unsupported."""
+    require_editable(baseline)
+    data = bytearray(baseline)
+    journal = []
+    for op in plan.get("operations", []):
+        journal.append(_apply_one(data, op))
+    return bytes(data), journal
+
+
+def build_control(baseline: bytes, plan: dict) -> tuple:
+    """Undo the plan in reverse on the crafted bytes.
+
+    The control must reproduce the baseline bit for bit; if it does not, the plan or an
+    operation is ambiguous, and this raises instead of shipping a control that differs
+    from the baseline in an unexplained way.
+    """
+    crafted, journal = apply_plan(baseline, plan)
+    control = bytearray(crafted)
+    for entry in reversed(journal):
+        _undo_one(control, entry)
+    control = bytes(control)
+    _require(control == baseline,
+             "control does not reproduce the baseline: %d bytes differ"
+             % sum(1 for a, b in zip(control, baseline) if a != b))
+    return control, journal
+
+
+def diff_range(left: bytes, right: bytes) -> dict:
+    """Where two artifacts differ, for the record."""
+    if len(left) != len(right):
+        return {"same_length": False, "left": len(left), "right": len(right)}
+    positions = [i for i, (a, b) in enumerate(zip(left, right)) if a != b]
+    return {"same_length": True, "differences": len(positions),
+            "first": positions[0] if positions else None,
+            "last": positions[-1] if positions else None}
 
 
 def make_artifact(role: str, name: str, data: bytes) -> Artifact:
     ok, error, size, mode = reference_decode(data)
     info = walk(data)
     return Artifact(role=role, name=name, data=data, sha256=sha256(data),
-                    segments=info["segments"], reference_ok=ok, reference_error=error,
-                    size=size, mode=mode)
-
-
-def build_control(baseline: bytes, plan: dict) -> bytes:
-    """Same envelope as the crafted file, with the mutated field put back."""
-    restored = {"operations": [dict(op) for op in plan.get("operations", [])]}
-    for op in restored["operations"]:
-        if op.get("op") == "set_sof_size":
-            image = Image.open(io.BytesIO(baseline))
-            op["width"], op["height"] = image.size
-        elif op.get("op") == "set_component_sampling":
-            op["h"], op["v"] = 1, 1
-        elif op.get("op") == "set_dri":
-            op["interval"] = 64
-    return apply_plan(baseline, restored)[0]
+                    segments=info["segments"], reference_ok=ok,
+                    reference_error=error, size=size, mode=mode)
 
 
 def write_bundle(directory: Path, baseline: bytes, plan: dict) -> dict:
-    """Materialise baseline, crafted and control; report every hash."""
+    """Materialise baseline, crafted and control with full provenance."""
     directory.mkdir(parents=True, exist_ok=True)
-    crafted, notes = apply_plan(baseline, plan)
-    control = build_control(baseline, plan)
-    items = [
-        ("BENIGN", "benign_baseline.jpg", baseline),
-        ("MALICIOUS", "poc_plan.jpg", crafted),
-        ("CONTROL", "ctrl_restored.jpg", control),
-    ]
+    crafted, journal = apply_plan(baseline, plan)
+    control, _ = build_control(baseline, plan)
+    items = [("BENIGN", "benign_baseline.jpg", baseline),
+             ("MALICIOUS", "poc_plan.jpg", crafted),
+             ("CONTROL", "ctrl_restored.jpg", control)]
     artifacts = []
     for role, name, data in items:
         artifact = make_artifact(role, name, data)
         (directory / name).write_bytes(data)
         artifacts.append(artifact)
-    (directory / "plan.json").write_text(
-        json.dumps({"plan": plan, "notes": notes}, ensure_ascii=False, indent=1),
-        encoding="utf-8")
-    return {
-        "baseline_sha256": sha256(baseline),
-        "notes": notes,
-        "artifacts": [{"role": a.role, "name": a.name, "sha256": a.sha256,
-                       "reference_ok": a.reference_ok,
-                       "reference_error": a.reference_error,
-                       "segments": a.segments, "size": list(a.size), "mode": a.mode}
-                      for a in artifacts],
-    }
+    (directory / "plan.json").write_text(json.dumps(
+        {"plan": plan, "journal": journal,
+         "control_equals_baseline": control == baseline,
+         "poc_vs_control": diff_range(crafted, control),
+         "poc_vs_baseline": diff_range(crafted, baseline)},
+        ensure_ascii=False, indent=1), encoding="utf-8")
+    return {"baseline_sha256": sha256(baseline),
+            "journal": journal,
+            "control_equals_baseline": control == baseline,
+            "poc_vs_control": diff_range(crafted, control),
+            "artifacts": [{"role": a.role, "name": a.name, "sha256": a.sha256,
+                           "reference_ok": a.reference_ok,
+                           "reference_error": a.reference_error,
+                           "segments": a.segments, "size": list(a.size), "mode": a.mode}
+                          for a in artifacts]}

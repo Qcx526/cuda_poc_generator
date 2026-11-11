@@ -1,0 +1,3 @@
+# The JPEG adapter (src/jpeg_adapter.py) and its tests need a real encoder and a
+# reference decoder. Verified with Pillow 13.0.0 on Python 3.13/Windows.
+Pillow>=10,<14

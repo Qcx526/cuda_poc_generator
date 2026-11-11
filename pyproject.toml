@@ -27,6 +27,9 @@ rag = [
     "sentence-transformers>=3,<4",
 ]
 search = ["tavily-python>=0.5,<0.9"]
+# The JPEG input adapter needs a real encoder/decoder for baselines and reference
+# validation. It is optional because the ELF/cubin backends never touch it.
+jpeg = ["Pillow>=10,<14"]
 dev = ["pytest>=8.4,<9", "ruff>=0.14,<0.15"]
 
 [project.urls]
