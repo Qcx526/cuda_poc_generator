@@ -1,0 +1,722 @@
+{
+ "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+ "versions": {
+  "13.2.2": {
+   "dll": "D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll",
+   "sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2"
+  },
+  "11.4.0": {
+   "dll": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll",
+   "sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00"
+  }
+ },
+ "pairs": 5,
+ "unique_mutation_families_B": [
+  "app-metadata",
+  "restart-interval",
+  "sampling-geometry",
+  "scan-structure",
+  "sof-geometry"
+ ],
+ "rows": [
+  {
+   "pair": "H1",
+   "family": "restart-interval",
+   "hypothesis": "让重启间隔参与的分组计数为 0 或越界，例如 DRI 设为 0。",
+   "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "arms": {
+    "A": {
+     "arm": "A",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=182\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=292552704\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=182\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=1 64x64 subsampling=6\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=292552704\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "de09ea34c28c0b004656303c7065b86c8c1b62e044d5e5abdcf38bccfc36fd17",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "DRI",
+       "SOS",
+       "EOI"
+      ],
+      "sos_count": 1,
+      "dri_count": 1,
+      "dri_values": [
+       0
+      ],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 64,
+       "width": 64,
+       "components": 1,
+       "comps": [
+        {
+         "id": 1,
+         "h": 1,
+         "v": 1,
+         "quant": 0
+        }
+       ]
+      },
+      "entropy_bytes": 16
+     },
+     "reference": {
+      "ok": false,
+      "error": "OSError: broken data stream when reading image file",
+      "size": [
+       0,
+       0
+      ]
+     },
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 2
+    },
+    "B": {
+     "arm": "B",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1518\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=4176155097\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1518\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=3878076862\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "b873ac688abe8b88f914036244728643b31020ae38040426bd169f587a659e7c",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "DHT",
+       "DHT",
+       "DRI",
+       "SOS",
+       "EOI"
+      ],
+      "sos_count": 1,
+      "dri_count": 1,
+      "dri_values": [
+       0
+      ],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 64,
+       "width": 64,
+       "components": 3,
+       "comps": [
+        {
+         "id": 1,
+         "h": 2,
+         "v": 2,
+         "quant": 0
+        },
+        {
+         "id": 2,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        },
+        {
+         "id": 3,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        }
+       ]
+      },
+      "entropy_bytes": 887
+     },
+     "reference": {
+      "ok": true,
+      "error": "",
+      "size": [
+       64,
+       64
+      ]
+     },
+     "bundle_verified": true,
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 2
+    }
+   }
+  },
+  {
+   "pair": "H2",
+   "family": "scan-structure",
+   "hypothesis": "改变扫描结构：在 SOS 前后插入额外的段，观察解码器对非预期段序的处理。",
+   "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "arms": {
+    "A": {
+     "arm": "A",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 1,
+       "crash": false,
+       "stage4": true,
+       "stage7": false,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=524\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 1x1 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=3 bytes=3\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 1,
+       "crash": false,
+       "stage4": true,
+       "stage7": false,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=524\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 1x1 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=3 bytes=3\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "8035141d4bb5f4c1b68f3d53e58b0b6b87c48d2af111b55b13f317624ee877a0",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "SOS",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "DHT",
+       "SOS",
+       "COM",
+       "EOI"
+      ],
+      "sos_count": 10,
+      "dri_count": 0,
+      "dri_values": [],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 1,
+       "width": 1,
+       "components": 3,
+       "comps": [
+        {
+         "id": 1,
+         "h": 2,
+         "v": 2,
+         "quant": 0
+        },
+        {
+         "id": 2,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        },
+        {
+         "id": 3,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        }
+       ]
+      },
+      "entropy_bytes": 9
+     },
+     "reference": {
+      "ok": false,
+      "error": "OSError: broken data stream when reading image file",
+      "size": [
+       0,
+       0
+      ]
+     },
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 0
+    },
+    "B": {
+     "arm": "B",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1539\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=4176155097\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1539\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=3878076862\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "c9c185c94f6e68e56fe9e621a2ceaa0ee6a3879bd48bf548616c93603a94c32d",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "DHT",
+       "DHT",
+       "COM",
+       "APP15",
+       "SOS",
+       "EOI"
+      ],
+      "sos_count": 1,
+      "dri_count": 0,
+      "dri_values": [],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 64,
+       "width": 64,
+       "components": 3,
+       "comps": [
+        {
+         "id": 1,
+         "h": 2,
+         "v": 2,
+         "quant": 0
+        },
+        {
+         "id": 2,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        },
+        {
+         "id": 3,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        }
+       ]
+      },
+      "entropy_bytes": 887
+     },
+     "reference": {
+      "ok": true,
+      "error": "",
+      "size": [
+       64,
+       64
+      ]
+     },
+     "bundle_verified": true,
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 2
+    }
+   }
+  },
+  {
+   "pair": "H3",
+   "family": "app-metadata",
+   "hypothesis": "在 APP 段中加入异常长度或重复段，观察元数据处理路径。",
+   "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "arms": {
+    "A": {
+     "arm": "A",
+     "output_ok": false,
+     "runs": [],
+     "control_equals_baseline": false,
+     "candidate_differs": false,
+     "strict_pair": false,
+     "crashes": 0,
+     "stage4": 0,
+     "stage7": 0
+    },
+    "B": {
+     "arm": "B",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1546\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=4176155097\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1546\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 64x64 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=192 bytes=12288\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=12288 CHECKSUM=3878076862\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "9d729826e7619741e363e4ecb3e202ff56f264072fba6ca74f34a523399e03c7",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "DHT",
+       "DHT",
+       "APP1",
+       "APP1",
+       "APP1",
+       "SOS",
+       "EOI"
+      ],
+      "sos_count": 1,
+      "dri_count": 0,
+      "dri_values": [],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 64,
+       "width": 64,
+       "components": 3,
+       "comps": [
+        {
+         "id": 1,
+         "h": 2,
+         "v": 2,
+         "quant": 0
+        },
+        {
+         "id": 2,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        },
+        {
+         "id": 3,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        }
+       ]
+      },
+      "entropy_bytes": 887
+     },
+     "reference": {
+      "ok": true,
+      "error": "",
+      "size": [
+       64,
+       64
+      ]
+     },
+     "bundle_verified": true,
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 2
+    }
+   }
+  },
+  {
+   "pair": "H4",
+   "family": "sampling-geometry",
+   "hypothesis": "修改某分量的采样因子，使色度与亮度平面尺寸关系退化。",
+   "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "arms": {
+    "A": {
+     "arm": "A",
+     "output_ok": false,
+     "runs": [],
+     "control_equals_baseline": false,
+     "candidate_differs": false,
+     "strict_pair": false,
+     "crashes": 0,
+     "stage4": 0,
+     "stage7": 0
+    },
+    "B": {
+     "arm": "B",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 1,
+       "crash": false,
+       "stage4": true,
+       "stage7": false,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1512\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 32x32 subsampling=-1\nSTAGE5 cuMemAlloc=0 pitch=96 bytes=3072\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 1,
+       "crash": false,
+       "stage4": true,
+       "stage7": false,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1512\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 32x32 subsampling=-1\nSTAGE5 cuMemAlloc=0 pitch=96 bytes=3072\nSTAGE6 nvjpegDecode=BAD_JPEG\nVERDICT last_success_stage=6_decode\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "d87419080c0379b33bd6d1f5e14b5a74e9bfe2dc55a6bbd241ffa8372c627b8f",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "DHT",
+       "DHT",
+       "SOS",
+       "EOI"
+      ],
+      "sos_count": 1,
+      "dri_count": 0,
+      "dri_values": [],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 64,
+       "width": 64,
+       "components": 3,
+       "comps": [
+        {
+         "id": 1,
+         "h": 2,
+         "v": 2,
+         "quant": 0
+        },
+        {
+         "id": 2,
+         "h": 4,
+         "v": 4,
+         "quant": 1
+        },
+        {
+         "id": 3,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        }
+       ]
+      },
+      "entropy_bytes": 887
+     },
+     "reference": {
+      "ok": false,
+      "error": "OSError: broken data stream when reading image file",
+      "size": [
+       0,
+       0
+      ]
+     },
+     "bundle_verified": true,
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 0
+    }
+   }
+  },
+  {
+   "pair": "H5",
+   "family": "sof-geometry",
+   "hypothesis": "修改帧宽高为极小或极不均匀值，观察 MCU 网格计算。",
+   "baseline_sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "arms": {
+    "A": {
+     "arm": "A",
+     "output_ok": false,
+     "runs": [],
+     "control_equals_baseline": false,
+     "candidate_differs": false,
+     "strict_pair": false,
+     "crashes": 0,
+     "stage4": 0,
+     "stage7": 0
+    },
+    "B": {
+     "arm": "B",
+     "output_ok": true,
+     "runs": [
+      {
+       "version": "13.2.2",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=13.2.2\nLIB dll_path=D:\\cuda1341_extract\\libnvjpeg\\nvjpeg\\bin\\x64\\nvjpeg64_13.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1512\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 1x65535 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=3 bytes=196605\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=196605 CHECKSUM=3677987358\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "957bb73818e62883ac4bfc0aa15204bba5e341a8f7964a11b0289742df4e0da2",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      },
+      {
+       "version": "11.4.0",
+       "exit": 0,
+       "crash": false,
+       "stage4": true,
+       "stage7": true,
+       "stdout": "STAGE1 load_dll=OK\nLIB version=11.4.0\nLIB dll_path=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2\\bin\\nvjpeg64_11.dll\nSTAGE2 file_open=OK\nSTAGE2 file_read=OK bytes=1512\nSTAGE3 cuInit=0\nSTAGE3 nvjpegCreateSimple=SUCCESS\nSTAGE3 nvjpegJpegStateCreate=SUCCESS\nSTAGE4 nvjpegGetImageInfo=SUCCESS components=3 1x65535 subsampling=2\nSTAGE5 cuMemAlloc=0 pitch=3 bytes=196605\nSTAGE6 nvjpegDecode=SUCCESS\nSTAGE7 cuCtxSynchronize=0\nSTAGE7 cuMemcpyDtoH=0\nPIXELS=196605 CHECKSUM=1439670184\nVERDICT last_success_stage=7_output\n",
+       "dll_sha256": "f53e8d5d1940e6caf9dbdc617afb05b60d30556671eb2cec50dd9b0575902e00",
+       "probe_sha256": "dbd52b276ee71e7688820db07be1d341999f2c497dd44d1ab3fe9d4d8c821771"
+      }
+     ],
+     "control_equals_baseline": true,
+     "candidate_differs": true,
+     "sha256": "cd283a4c0158a3468eb0237e67cbcf882686685f343fed7ed47f0c18a9c30840",
+     "structure": {
+      "valid": true,
+      "segments": [
+       "APP0",
+       "DQT",
+       "DQT",
+       "SOF0",
+       "DHT",
+       "DHT",
+       "DHT",
+       "DHT",
+       "SOS",
+       "EOI"
+      ],
+      "sos_count": 1,
+      "dri_count": 0,
+      "dri_values": [],
+      "sof": {
+       "marker": 192,
+       "precision": 8,
+       "height": 65535,
+       "width": 1,
+       "components": 3,
+       "comps": [
+        {
+         "id": 1,
+         "h": 2,
+         "v": 2,
+         "quant": 0
+        },
+        {
+         "id": 2,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        },
+        {
+         "id": 3,
+         "h": 1,
+         "v": 1,
+         "quant": 1
+        }
+       ]
+      },
+      "entropy_bytes": 887
+     },
+     "reference": {
+      "ok": false,
+      "error": "OSError: broken data stream when reading image file",
+      "size": [
+       0,
+       0
+      ]
+     },
+     "bundle_verified": true,
+     "strict_pair": true,
+     "crashes": 0,
+     "stage4": 2,
+     "stage7": 2
+    }
+   }
+  }
+ ]
+}

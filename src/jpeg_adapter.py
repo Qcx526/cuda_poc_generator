@@ -27,6 +27,10 @@ from typing import List, Optional
 
 from PIL import Image
 
+from .jpeg_parser import SOF_BASELINE, SOF_EXTENDED, ParserError, parse
+
+from .jpeg_parser import SOF_BASELINE, SOF_EXTENDED, ParserError, parse
+
 SOF_BASELINE = 0xC0          # only baseline/extended sequential is editable here
 SOF_EXTENDED = 0xC1
 SOF_ALL = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
@@ -63,44 +67,38 @@ def _require(condition, message):
 
 
 def walk(data: bytes) -> dict:
-    """Segment list and SOF fields, without touching entropy data."""
-    info = {"segments": [], "entropy_bytes": 0, "valid": data[:2] == b"\xff\xd8",
-            "sof_marker": None, "sos_count": 0, "dri_count": 0}
-    if not info["valid"]:
-        return info
-    i = 2
-    while i + 3 < len(data):
-        if data[i] != 0xFF:
-            i += 1
-            continue
-        marker = data[i + 1]
-        if marker == 0xD9:
-            info["segments"].append("EOI")
-            break
-        if marker == 0xDA:
-            length = struct.unpack_from(">H", data, i + 2)[0]
-            info["segments"].append("SOS(len=%d)" % length)
-            info["sos_count"] += 1
-            info["entropy_bytes"] = max(0, len(data) - (i + 2 + length) - 2)
-            break
-        length = struct.unpack_from(">H", data, i + 2)[0]
-        name = SEGMENT_NAMES.get(marker, "%02X(len=%d)" % (marker, length))
-        if marker in SOF_ALL:
-            precision = data[i + 4]
-            height = struct.unpack_from(">H", data, i + 5)[0]
-            width = struct.unpack_from(">H", data, i + 7)[0]
-            components = data[i + 9]
-            info["sof_marker"] = marker
-            info["segments"].append(
-                "SOF%d(%dx%d,comp=%d,prec=%d)" % (marker - 0xC0, width, height,
-                                                  components, precision))
-        elif marker == 0xDD:
-            info["dri_count"] += 1
-            info["segments"].append("DRI(%d)" % struct.unpack_from(">H", data, i + 4)[0])
+    """Segment names and SOF fields, from the full-file parser.
+
+    Kept as a thin wrapper because callers already depend on this shape; the parsing
+    itself lives in jpeg_parser, which walks past entropy data instead of stopping at
+    the first SOS.
+    """
+    try:
+        structure = parse(data, strict=False)
+    except ParserError as exc:
+        return {"segments": [], "entropy_bytes": 0, "valid": False,
+                "sof_marker": None, "sos_count": 0, "dri_count": 0,
+                "error": str(exc)}
+    segments = []
+    for item in structure.segments:
+        if item.name in ("SOF0", "SOF1") and structure.sof:
+            sof = structure.sof
+            segments.append("%s(%dx%d,comp=%d,prec=%d)"
+                            % (item.name, sof["width"], sof["height"],
+                               sof["components"], sof["precision"]))
+        elif item.marker == 0xDD:
+            segments.append("DRI(%d)" % structure.dri_values[structure.dri_count - 1]
+                            if structure.dri_values else "DRI")
+        elif item.marker == 0xDA:
+            segments.append("SOS")
         else:
-            info["segments"].append(name)
-        i += 2 + length
-    return info
+            segments.append(item.name)
+    return {"segments": segments, "entropy_bytes": structure.entropy_bytes,
+            "valid": True,
+            "sof_marker": structure.sof["marker"] if structure.sof else None,
+            "sos_count": len(structure.sos_positions),
+            "dri_count": structure.dri_count,
+            "dri_values": structure.dri_values}
 
 
 def reference_decode(data: bytes) -> tuple:
@@ -114,15 +112,22 @@ def reference_decode(data: bytes) -> tuple:
 
 
 def require_editable(data: bytes) -> dict:
-    """Refuse formats whose structure this adapter does not model."""
-    info = walk(data)
-    _require(info["valid"], "not a JPEG: missing SOI")
-    _require(info["sof_marker"] is not None, "no SOF marker found")
-    _require(info["sof_marker"] in (SOF_BASELINE, SOF_EXTENDED),
-             "unsupported SOF type 0x%02X (only baseline/extended sequential)"
-             % info["sof_marker"])
-    _require(info["sos_count"] == 1, "multi-scan or missing scan is not supported")
-    return info
+    """Refuse anything whose structure this adapter does not fully account for."""
+    try:
+        structure = parse(data, strict=True)
+    except ParserError as exc:
+        raise AdapterError(str(exc)) from exc
+    _require(structure.sof is not None, "no SOF marker found")
+    _require(structure.sof["marker"] in (SOF_BASELINE, SOF_EXTENDED),
+             "unsupported SOF type 0x%02X" % structure.sof["marker"])
+    _require(len(structure.sos_positions) == 1,
+             "multi-scan input (%d scans) is not supported"
+             % len(structure.sos_positions))
+    # A baseline with two DRI segments has no single value to restore, so editing it
+    # could not produce a control that is byte-identical to it.
+    _require(structure.dri_count <= 1,
+             "baseline already has %d DRI segments" % structure.dri_count)
+    return walk(data)
 
 
 def build_baseline(width: int = 64, height: int = 64, mode: str = "RGB",
@@ -334,7 +339,11 @@ def write_bundle(directory: Path, baseline: bytes, plan: dict) -> dict:
          "poc_vs_control": diff_range(crafted, control),
          "poc_vs_baseline": diff_range(crafted, baseline)},
         ensure_ascii=False, indent=1), encoding="utf-8")
+    # The manifest is the verifiable record; plan.json stays for human reading.
+    from .jpeg_bundle import write_manifest
+    manifest = write_manifest(directory)
     return {"baseline_sha256": sha256(baseline),
+            "manifest_sha256": manifest["manifest_sha256"],
             "journal": journal,
             "control_equals_baseline": control == baseline,
             "poc_vs_control": diff_range(crafted, control),

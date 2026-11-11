@@ -1,0 +1,256 @@
+{
+ "adapter": {
+  "adapter_source_sha256": "73428e8b44c33245d2ef21da10405bf7160d10f5803efc560d62379a3997bea9",
+  "adapter_version": "1.1.0",
+  "python": "3.12",
+  "reference_decoder": "Pillow",
+  "reference_decoder_version": "13.0.0",
+  "schema": "jpeg-bundle-manifest/v1"
+ },
+ "artifacts": {
+  "baseline": {
+   "bytes": 1512,
+   "file": "benign_baseline.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "baseline",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "candidate": {
+   "bytes": 1546,
+   "file": "poc_plan.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "candidate",
+   "sha256": "9d729826e7619741e363e4ecb3e202ff56f264072fba6ca74f34a523399e03c7",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "APP1",
+     "APP1",
+     "APP1",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "control": {
+   "bytes": 1512,
+   "file": "ctrl_restored.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "control",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  }
+ },
+ "manifest_sha256": "760780a6926ef6bb74d99a7c7db5d61e5a6b943cf88097289c19945d6d5a96dd",
+ "pairing": {
+  "candidate_differs_from_baseline": true,
+  "control_equals_baseline_bytes": true,
+  "control_sha256_equals_baseline": true,
+  "diff_candidate_baseline": {
+   "left": 1546,
+   "right": 1512,
+   "same_length": false
+  },
+  "diff_candidate_control": {
+   "left": 1546,
+   "right": 1512,
+   "same_length": false
+  }
+ },
+ "provenance": {
+  "journal": [
+   {
+    "length": 15,
+    "offset": 609,
+    "op": "insert_segment"
+   },
+   {
+    "length": 15,
+    "offset": 624,
+    "op": "insert_segment"
+   },
+   {
+    "length": 4,
+    "offset": 639,
+    "op": "insert_segment"
+   }
+  ],
+  "journal_sha256": "7b4619ddc19b8f2a6feded5ae4800500e9dc89876089b2ffce05c7a6d7436df4",
+  "plan": {
+   "hypothesis": "在 APP1 中插入重复段和零长度 APP 段，观察元数据处理路径对重复与异常长度段的解析行为。",
+   "operations": [
+    {
+     "hex": "49492a0008000000010000",
+     "marker": 225,
+     "op": "insert_segment"
+    },
+    {
+     "hex": "49492a0008000000010000",
+     "marker": 225,
+     "op": "insert_segment"
+    },
+    {
+     "hex": "",
+     "marker": 225,
+     "op": "insert_segment"
+    }
+   ]
+  },
+  "plan_sha256": "b427fcaee8da60052ff95bf3e0ca6cbaca67bc7de116df982d4f91dcaec512d1"
+ },
+ "schema": "jpeg-bundle-manifest/v1"
+}

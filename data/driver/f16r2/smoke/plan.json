@@ -1,0 +1,41 @@
+{
+ "plan": {
+  "operations": [
+   {
+    "op": "set_sof_size",
+    "width": 48,
+    "height": 32
+   },
+   {
+    "op": "set_dri",
+    "interval": 0
+   }
+  ]
+ },
+ "journal": [
+  {
+   "op": "set_sof_size",
+   "prev": {
+    "width": 64,
+    "height": 64
+   }
+  },
+  {
+   "op": "set_dri",
+   "mode": "insert",
+   "prev_interval": null,
+   "offset": 609
+  }
+ ],
+ "control_equals_baseline": true,
+ "poc_vs_control": {
+  "same_length": false,
+  "left": 1518,
+  "right": 1512
+ },
+ "poc_vs_baseline": {
+  "same_length": false,
+  "left": 1518,
+  "right": 1512
+ }
+}

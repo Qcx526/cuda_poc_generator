@@ -1,0 +1,50 @@
+{
+ "plan": {
+  "hypothesis": "在 APP1 中插入重复段和零长度 APP 段，观察元数据处理路径对重复与异常长度段的解析行为。",
+  "operations": [
+   {
+    "op": "insert_segment",
+    "marker": 225,
+    "hex": "49492a0008000000010000"
+   },
+   {
+    "op": "insert_segment",
+    "marker": 225,
+    "hex": "49492a0008000000010000"
+   },
+   {
+    "op": "insert_segment",
+    "marker": 225,
+    "hex": ""
+   }
+  ]
+ },
+ "journal": [
+  {
+   "op": "insert_segment",
+   "offset": 609,
+   "length": 15
+  },
+  {
+   "op": "insert_segment",
+   "offset": 624,
+   "length": 15
+  },
+  {
+   "op": "insert_segment",
+   "offset": 639,
+   "length": 4
+  }
+ ],
+ "control_equals_baseline": true,
+ "poc_vs_control": {
+  "same_length": false,
+  "left": 1546,
+  "right": 1512
+ },
+ "poc_vs_baseline": {
+  "same_length": false,
+  "left": 1546,
+  "right": 1512
+ }
+}

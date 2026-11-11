@@ -1,0 +1,236 @@
+{
+ "adapter": {
+  "adapter_source_sha256": "73428e8b44c33245d2ef21da10405bf7160d10f5803efc560d62379a3997bea9",
+  "adapter_version": "1.1.0",
+  "python": "3.12",
+  "reference_decoder": "Pillow",
+  "reference_decoder_version": "13.0.0",
+  "schema": "jpeg-bundle-manifest/v1"
+ },
+ "artifacts": {
+  "baseline": {
+   "bytes": 1512,
+   "file": "benign_baseline.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "baseline",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "candidate": {
+   "bytes": 1518,
+   "file": "poc_plan.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "candidate",
+   "sha256": "b873ac688abe8b88f914036244728643b31020ae38040426bd169f587a659e7c",
+   "structure": {
+    "dri_count": 1,
+    "dri_values": [
+     0
+    ],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DRI",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "control": {
+   "bytes": 1512,
+   "file": "ctrl_restored.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "control",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  }
+ },
+ "manifest_sha256": "aaf329b7364c653a40c7d16deb81fc46eafe125fe4e447a8e78b7df7961b9431",
+ "pairing": {
+  "candidate_differs_from_baseline": true,
+  "control_equals_baseline_bytes": true,
+  "control_sha256_equals_baseline": true,
+  "diff_candidate_baseline": {
+   "left": 1518,
+   "right": 1512,
+   "same_length": false
+  },
+  "diff_candidate_control": {
+   "left": 1518,
+   "right": 1512,
+   "same_length": false
+  }
+ },
+ "provenance": {
+  "journal": [
+   {
+    "mode": "insert",
+    "offset": 609,
+    "op": "set_dri",
+    "prev_interval": null
+   }
+  ],
+  "journal_sha256": "fdc5f8e588c81048e596e113946e437ac8df35a4abdc90f730a3f05f3898faf2",
+  "plan": {
+   "hypothesis": "将 DRI 设为 0，使重启间隔参与的分组计数为 0 或失效。",
+   "operations": [
+    {
+     "interval": 0,
+     "op": "set_dri"
+    }
+   ]
+  },
+  "plan_sha256": "6d790a57e0ea5be952d17c1346cb72a5bc811f156bdc800d45b98d7f2b36b837"
+ },
+ "schema": "jpeg-bundle-manifest/v1"
+}

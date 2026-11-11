@@ -1,0 +1,3 @@
+```json
+{"hypothesis":"在 APP1 中插入重复段和零长度 APP 段，观察元数据处理路径对重复与异常长度段的解析行为。","operations":[{"op":"insert_segment","marker":225,"hex":"49492a0008000000010000"},{"op":"insert_segment","marker":225,"hex":"49492a0008000000010000"},{"op":"insert_segment","marker":225,"hex":""}]}
+```

@@ -1,0 +1,14 @@
+你在做 JPEG 输入构造实验。基线由真实编码器生成（SHA256 见下），适配器会在基线上
+按你的计划改字段，不改动熵数据。目标假设：在 APP 段中加入异常长度或重复段，观察元数据处理路径。
+
+只输出一个 JSON 变异计划：
+{"hypothesis": "<一句话>", "operations": [
+  {"op":"set_sof_size","width":<int>,"height":<int>},
+  {"op":"set_component_sampling","component":<0..2>,"h":<1..4>,"v":<1..4>},
+  {"op":"set_dri","interval":<int>},
+  {"op":"insert_segment","marker":<224..239 或 254>,"hex":"<payload>"},
+  {"op":"strip_segment","marker":<int>}
+]}
+只输出 ```json 代码块。
+
+基线 SHA256: 36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c

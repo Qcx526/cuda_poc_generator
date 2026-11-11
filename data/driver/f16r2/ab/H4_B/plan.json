@@ -1,0 +1,37 @@
+{
+ "plan": {
+  "hypothesis": "将 Cb 分量的采样因子改为 4x4，使色度平面尺寸相对亮度平面异常放大并破坏原有下采样比例。",
+  "operations": [
+   {
+    "op": "set_component_sampling",
+    "component": 1,
+    "h": 4,
+    "v": 4
+   }
+  ]
+ },
+ "journal": [
+  {
+   "op": "set_component_sampling",
+   "index": 1,
+   "offset": 172,
+   "prev": {
+    "h": 1,
+    "v": 1
+   }
+  }
+ ],
+ "control_equals_baseline": true,
+ "poc_vs_control": {
+  "same_length": true,
+  "differences": 1,
+  "first": 172,
+  "last": 172
+ },
+ "poc_vs_baseline": {
+  "same_length": true,
+  "differences": 1,
+  "first": 172,
+  "last": 172
+ }
+}

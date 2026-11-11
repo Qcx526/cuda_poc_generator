@@ -1,0 +1,3 @@
+```json
+{"hypothesis":"将 DRI 设为 0，使重启间隔参与的分组计数为 0 或失效。","operations":[{"op":"set_dri","interval":0}]}
+```

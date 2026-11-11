@@ -1,0 +1,245 @@
+{
+ "adapter": {
+  "adapter_source_sha256": "73428e8b44c33245d2ef21da10405bf7160d10f5803efc560d62379a3997bea9",
+  "adapter_version": "1.1.0",
+  "python": "3.12",
+  "reference_decoder": "Pillow",
+  "reference_decoder_version": "13.0.0",
+  "schema": "jpeg-bundle-manifest/v1"
+ },
+ "artifacts": {
+  "baseline": {
+   "bytes": 1512,
+   "file": "benign_baseline.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "baseline",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "candidate": {
+   "bytes": 1539,
+   "file": "poc_plan.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "candidate",
+   "sha256": "c9c185c94f6e68e56fe9e621a2ceaa0ee6a3879bd48bf548616c93603a94c32d",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "COM",
+     "APP15",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "control": {
+   "bytes": 1512,
+   "file": "ctrl_restored.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "control",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  }
+ },
+ "manifest_sha256": "1bb193a6d5a161f1739dfef9719719bb515c82b8faabd7305c1ded184993d32f",
+ "pairing": {
+  "candidate_differs_from_baseline": true,
+  "control_equals_baseline_bytes": true,
+  "control_sha256_equals_baseline": true,
+  "diff_candidate_baseline": {
+   "left": 1539,
+   "right": 1512,
+   "same_length": false
+  },
+  "diff_candidate_control": {
+   "left": 1539,
+   "right": 1512,
+   "same_length": false
+  }
+ },
+ "provenance": {
+  "journal": [
+   {
+    "length": 14,
+    "offset": 609,
+    "op": "insert_segment"
+   },
+   {
+    "length": 13,
+    "offset": 623,
+    "op": "insert_segment"
+   }
+  ],
+  "journal_sha256": "076ab9b71237bb9188e866bf582466b1d323c1106010c7996ffad6fcfa4b0066",
+  "plan": {
+   "hypothesis": "在 SOS 前后插入 APP15 与 COM 段可观察解码器对非预期段序的处理差异。",
+   "operations": [
+    {
+     "hex": "534f535f4245464f5245",
+     "marker": 254,
+     "op": "insert_segment"
+    },
+    {
+     "hex": "534f535f4146544552",
+     "marker": 239,
+     "op": "insert_segment"
+    }
+   ]
+  },
+  "plan_sha256": "52f2b7e179c767da865cc863bcd816155c7442e86523d502f916ec9b9f84270f"
+ },
+ "schema": "jpeg-bundle-manifest/v1"
+}

@@ -1,0 +1,8 @@
+```json
+{
+  "hypothesis": "将 Cb 分量的采样因子改为 4x4，使色度平面尺寸相对亮度平面异常放大并破坏原有下采样比例。",
+  "operations": [
+    {"op": "set_component_sampling", "component": 1, "h": 4, "v": 4}
+  ]
+}
+```

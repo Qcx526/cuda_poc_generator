@@ -1,0 +1,9 @@
+```json
+{
+  "hypothesis": "在 SOS 前后插入 APP15 与 COM 段可观察解码器对非预期段序的处理差异。",
+  "operations": [
+    {"op": "insert_segment", "marker": 254, "hex": "534f535f4245464f5245"},
+    {"op": "insert_segment", "marker": 239, "hex": "534f535f4146544552"}
+  ]
+}
+```

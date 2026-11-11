@@ -1,0 +1,40 @@
+{
+ "plan": {
+  "hypothesis": "在 SOS 前后插入 APP15 与 COM 段可观察解码器对非预期段序的处理差异。",
+  "operations": [
+   {
+    "op": "insert_segment",
+    "marker": 254,
+    "hex": "534f535f4245464f5245"
+   },
+   {
+    "op": "insert_segment",
+    "marker": 239,
+    "hex": "534f535f4146544552"
+   }
+  ]
+ },
+ "journal": [
+  {
+   "op": "insert_segment",
+   "offset": 609,
+   "length": 14
+  },
+  {
+   "op": "insert_segment",
+   "offset": 623,
+   "length": 13
+  }
+ ],
+ "control_equals_baseline": true,
+ "poc_vs_control": {
+  "same_length": false,
+  "left": 1539,
+  "right": 1512
+ },
+ "poc_vs_baseline": {
+  "same_length": false,
+  "left": 1539,
+  "right": 1512
+ }
+}

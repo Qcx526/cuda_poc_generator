@@ -1,0 +1,247 @@
+{
+ "adapter": {
+  "adapter_source_sha256": "73428e8b44c33245d2ef21da10405bf7160d10f5803efc560d62379a3997bea9",
+  "adapter_version": "1.1.0",
+  "python": "3.12",
+  "reference_decoder": "Pillow",
+  "reference_decoder_version": "13.0.0",
+  "schema": "jpeg-bundle-manifest/v1"
+ },
+ "artifacts": {
+  "baseline": {
+   "bytes": 1512,
+   "file": "benign_baseline.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "baseline",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "candidate": {
+   "bytes": 1518,
+   "file": "poc_plan.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     48,
+     32
+    ]
+   },
+   "role": "candidate",
+   "sha256": "7334ac030a0fe979bc2e11d02f85efb53bd4c681574c3e943ff6345aa7f3e636",
+   "structure": {
+    "dri_count": 1,
+    "dri_values": [
+     0
+    ],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DRI",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 32,
+     "marker": 192,
+     "precision": 8,
+     "width": 48
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "control": {
+   "bytes": 1512,
+   "file": "ctrl_restored.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "control",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  }
+ },
+ "manifest_sha256": "bfaeb0025d35bd62560508e7883dd5490520559fc240e909dde32f1f0861bc0d",
+ "pairing": {
+  "candidate_differs_from_baseline": true,
+  "control_equals_baseline_bytes": true,
+  "control_sha256_equals_baseline": true,
+  "diff_candidate_baseline": {
+   "left": 1518,
+   "right": 1512,
+   "same_length": false
+  },
+  "diff_candidate_control": {
+   "left": 1518,
+   "right": 1512,
+   "same_length": false
+  }
+ },
+ "provenance": {
+  "journal": [
+   {
+    "op": "set_sof_size",
+    "prev": {
+     "height": 64,
+     "width": 64
+    }
+   },
+   {
+    "mode": "insert",
+    "offset": 609,
+    "op": "set_dri",
+    "prev_interval": null
+   }
+  ],
+  "journal_sha256": "2a56f5dcb63719f2842ef98e249530f4049d5943e622ecadecc9d1925404863a",
+  "plan": {
+   "operations": [
+    {
+     "height": 32,
+     "op": "set_sof_size",
+     "width": 48
+    },
+    {
+     "interval": 0,
+     "op": "set_dri"
+    }
+   ]
+  },
+  "plan_sha256": "721a77ddb9326392b7004a8c0de1619b4e7fdda2181b7e2b27c8c02fabf9d321"
+ },
+ "schema": "jpeg-bundle-manifest/v1"
+}

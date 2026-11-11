@@ -1,0 +1,3 @@
+```json
+{"hypothesis":"将帧宽高改为 1×65535 的极不均匀尺寸，以观察 MCU 网格计算在极端宽高比下的行为。","operations":[{"op":"set_sof_size","width":1,"height":65535}]}
+```

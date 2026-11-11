@@ -1,0 +1,240 @@
+{
+ "adapter": {
+  "adapter_source_sha256": "73428e8b44c33245d2ef21da10405bf7160d10f5803efc560d62379a3997bea9",
+  "adapter_version": "1.1.0",
+  "python": "3.12",
+  "reference_decoder": "Pillow",
+  "reference_decoder_version": "13.0.0",
+  "schema": "jpeg-bundle-manifest/v1"
+ },
+ "artifacts": {
+  "baseline": {
+   "bytes": 1512,
+   "file": "benign_baseline.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "baseline",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "candidate": {
+   "bytes": 1512,
+   "file": "poc_plan.jpg",
+   "reference": {
+    "error": "OSError: broken data stream when reading image file",
+    "mode": "",
+    "ok": false,
+    "size": [
+     0,
+     0
+    ]
+   },
+   "role": "candidate",
+   "sha256": "d87419080c0379b33bd6d1f5e14b5a74e9bfe2dc55a6bbd241ffa8372c627b8f",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 4,
+       "id": 2,
+       "quant": 1,
+       "v": 4
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  },
+  "control": {
+   "bytes": 1512,
+   "file": "ctrl_restored.jpg",
+   "reference": {
+    "error": "",
+    "mode": "RGB",
+    "ok": true,
+    "size": [
+     64,
+     64
+    ]
+   },
+   "role": "control",
+   "sha256": "36636339868bb20054fe254c5c76bdb6a1c2a55f1a6d2115704c2925dc69401c",
+   "structure": {
+    "dri_count": 0,
+    "dri_values": [],
+    "entropy_bytes": 887,
+    "segments": [
+     "APP0",
+     "DQT",
+     "DQT",
+     "SOF0",
+     "DHT",
+     "DHT",
+     "DHT",
+     "DHT",
+     "SOS",
+     "EOI"
+    ],
+    "sof": {
+     "components": 3,
+     "comps": [
+      {
+       "h": 2,
+       "id": 1,
+       "quant": 0,
+       "v": 2
+      },
+      {
+       "h": 1,
+       "id": 2,
+       "quant": 1,
+       "v": 1
+      },
+      {
+       "h": 1,
+       "id": 3,
+       "quant": 1,
+       "v": 1
+      }
+     ],
+     "height": 64,
+     "marker": 192,
+     "precision": 8,
+     "width": 64
+    },
+    "sos_count": 1,
+    "valid": true
+   }
+  }
+ },
+ "manifest_sha256": "68272f586dd21ed5a21122dc7cb118cefa86f3c9448c85c103b7f114a34db36c",
+ "pairing": {
+  "candidate_differs_from_baseline": true,
+  "control_equals_baseline_bytes": true,
+  "control_sha256_equals_baseline": true,
+  "diff_candidate_baseline": {
+   "differences": 1,
+   "first": 172,
+   "last": 172,
+   "same_length": true
+  },
+  "diff_candidate_control": {
+   "differences": 1,
+   "first": 172,
+   "last": 172,
+   "same_length": true
+  }
+ },
+ "provenance": {
+  "journal": [
+   {
+    "index": 1,
+    "offset": 172,
+    "op": "set_component_sampling",
+    "prev": {
+     "h": 1,
+     "v": 1
+    }
+   }
+  ],
+  "journal_sha256": "f223a59d0ed5d782e08751902d8c9c3d8e73e1e5cf8740f484aa7e852187559b",
+  "plan": {
+   "hypothesis": "将 Cb 分量的采样因子改为 4x4，使色度平面尺寸相对亮度平面异常放大并破坏原有下采样比例。",
+   "operations": [
+    {
+     "component": 1,
+     "h": 4,
+     "op": "set_component_sampling",
+     "v": 4
+    }
+   ]
+  },
+  "plan_sha256": "e471ce18155ae18eb82e64b22c3edd84b998419e39ab64e1f75a258603a7d0e8"
+ },
+ "schema": "jpeg-bundle-manifest/v1"
+}

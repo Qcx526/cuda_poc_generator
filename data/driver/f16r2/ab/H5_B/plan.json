@@ -1,0 +1,34 @@
+{
+ "plan": {
+  "hypothesis": "将帧宽高改为 1×65535 的极不均匀尺寸，以观察 MCU 网格计算在极端宽高比下的行为。",
+  "operations": [
+   {
+    "op": "set_sof_size",
+    "width": 1,
+    "height": 65535
+   }
+  ]
+ },
+ "journal": [
+  {
+   "op": "set_sof_size",
+   "prev": {
+    "width": 64,
+    "height": 64
+   }
+  }
+ ],
+ "control_equals_baseline": true,
+ "poc_vs_control": {
+  "same_length": true,
+  "differences": 3,
+  "first": 163,
+  "last": 166
+ },
+ "poc_vs_baseline": {
+  "same_length": true,
+  "differences": 3,
+  "first": 163,
+  "last": 166
+ }
+}

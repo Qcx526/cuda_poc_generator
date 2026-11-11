@@ -1,0 +1,30 @@
+{
+ "plan": {
+  "hypothesis": "将 DRI 设为 0，使重启间隔参与的分组计数为 0 或失效。",
+  "operations": [
+   {
+    "op": "set_dri",
+    "interval": 0
+   }
+  ]
+ },
+ "journal": [
+  {
+   "op": "set_dri",
+   "mode": "insert",
+   "prev_interval": null,
+   "offset": 609
+  }
+ ],
+ "control_equals_baseline": true,
+ "poc_vs_control": {
+  "same_length": false,
+  "left": 1518,
+  "right": 1512
+ },
+ "poc_vs_baseline": {
+  "same_length": false,
+  "left": 1518,
+  "right": 1512
+ }
+}

@@ -28,6 +28,7 @@ DISTRIBUTIONS = {
     "langchain_core": "langchain-core",
     "sentence_transformers": "sentence-transformers",
     "yaml": "pyyaml",
+    "PIL": "pillow",
 }
 
 
