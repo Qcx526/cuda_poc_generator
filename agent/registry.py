@@ -108,7 +108,8 @@ class ToolRegistry:
         return added
 
 
-def build_registry(workspace, runner, log, memory, legacy: bool = False) -> tuple:
+def build_registry(workspace, runner, log, memory, legacy: bool = False,
+                   search: bool = True) -> tuple:
     """Builtins first and always; legacy adapters only add, never replace.
 
     The earlier CLI could end up with a registry that had only legacy tools, because the
@@ -121,13 +122,23 @@ def build_registry(workspace, runner, log, memory, legacy: bool = False) -> tupl
     registry = ToolRegistry()
     registry.register_many(build_tools(workspace, runner, log, memory))
     conflicts = []
+    providers = []
+    if search:
+        from .tavily_provider import build_tools as provider_tools, status as provider_status
+        state = provider_status()
+        providers.append(state)
+        for spec in provider_tools(log):
+            if registry.get(spec["name"]) is not None:
+                conflicts.append(spec["name"])
+                continue
+            registry.register(Tool(**spec))
     if legacy:
         for spec in _legacy_specs():
             if registry.get(spec["name"]) is not None:
                 conflicts.append(spec["name"])
                 continue
             registry.register(Tool(**spec))
-    return registry, conflicts
+    return registry, conflicts, providers
 
 
 def _legacy_specs() -> List[dict]:

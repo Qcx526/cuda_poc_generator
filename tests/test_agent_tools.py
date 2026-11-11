@@ -114,7 +114,7 @@ def test_memory_note_requires_evidence_for_findings(tools):
 
 def test_registry_always_has_builtins(tmp_path):
     log = EvidenceLog(tmp_path / "e.jsonl", ArtifactStore(tmp_path / "a"))
-    registry, conflicts = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path, log),
+    registry, conflicts, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path, log),
                                          log, ResearchMemory(tmp_path / "m.jsonl"),
                                          legacy=False)
     assert set(registry.names()) >= {"shell", "fs_list", "fs_read", "fs_write",
@@ -129,7 +129,7 @@ def test_legacy_tools_add_without_replacing_builtins(tmp_path, monkeypatch):
         {"name": "shell", "description": "impostor", "parameters": {}, "fn": lambda: "no"},
         {"name": "legacy_probe", "description": "extra", "parameters": {}, "fn": lambda: 1},
     ])
-    registry, conflicts = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path, log),
+    registry, conflicts, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path, log),
                                          log, ResearchMemory(tmp_path / "m.jsonl"),
                                          legacy=True)
     assert conflicts == ["shell"]
@@ -160,7 +160,7 @@ def test_native_tool_call_is_adapted_to_action(tmp_path):
             return Response()
 
     log = EvidenceLog(tmp_path / "e.jsonl", ArtifactStore(tmp_path / "a"))
-    registry, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path / "ws", log),
+    registry, _, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path / "ws", log),
                                  log, ResearchMemory(tmp_path / "m.jsonl"))
     action, error, mode = NativeActionModel(FakeModel(), registry).act([])
     assert error == "" and mode == "native"
@@ -181,7 +181,7 @@ def test_native_adapter_falls_back_to_json(tmp_path):
             return Response()
 
     log = EvidenceLog(tmp_path / "e.jsonl", ArtifactStore(tmp_path / "a"))
-    registry, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path / "ws", log),
+    registry, _, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path / "ws", log),
                                  log, ResearchMemory(tmp_path / "m.jsonl"))
     action, error, mode = NativeActionModel(FakeModel(), registry).act([])
     assert mode == "json_fallback" and action["final"] == "done"
@@ -191,7 +191,7 @@ def test_openai_tool_schema_lists_required_params(tmp_path):
     from agent.native_tools import to_openai_tools
 
     log = EvidenceLog(tmp_path / "e.jsonl", ArtifactStore(tmp_path / "a"))
-    registry, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path / "ws", log),
+    registry, _, _ = build_registry(Workspace(tmp_path / "ws"), Runner(tmp_path / "ws", log),
                                  log, ResearchMemory(tmp_path / "m.jsonl"))
     tools = {t["function"]["name"]: t["function"] for t in to_openai_tools(registry)}
     assert "command" in tools["shell"]["parameters"]["required"]

@@ -22,6 +22,8 @@ def main() -> int:
     parser.add_argument("--turns", type=int, default=12)
     parser.add_argument("--legacy", action="store_true",
                         help="also register adapters that legacy src modules expose")
+    parser.add_argument("--no-search", action="store_true",
+                        help="do not register web search providers even when configured")
     parser.add_argument("--resume", action="store_true",
                         help="continue the run already present in --root")
     args = parser.parse_args()
@@ -30,7 +32,11 @@ def main() -> int:
     sys.path.insert(0, str(Path.cwd()))
     runtime = AgentRuntime(goal=goal, root=Path(args.root),
                            client=LLMClient(ConfigLoader()), max_turns=args.turns,
-                           legacy=args.legacy, resume=args.resume)
+                           legacy=args.legacy, search=not args.no_search,
+                           resume=args.resume)
+    for provider in runtime.provider_status:
+        print("[provider] %s available=%s (%s)"
+              % (provider["provider"], provider["available"], provider["reason"]))
     result = runtime.run()
     print(json.dumps({"stopped": result.stopped, "turns": len(result.turns),
                       "final": result.final[:2000]}, ensure_ascii=False, indent=1))

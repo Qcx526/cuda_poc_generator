@@ -130,7 +130,7 @@ def shrink(value, limit: int = 1200) -> dict:
 class AgentRuntime:
     def __init__(self, *, goal: str, root: Path, client, max_turns: int = 12,
                  registry: Optional[ToolRegistry] = None, legacy: bool = False,
-                 timeout: int = 300, resume: bool = False):
+                 search: bool = True, timeout: int = 300, resume: bool = False):
         self.goal = goal.strip()
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
@@ -147,17 +147,21 @@ class AgentRuntime:
         self.memory = ResearchMemory(self.root / "memory.jsonl", self.run_id)
         self.runner = Runner(self.workspace.root, self.log, timeout=timeout)
         if registry is None:
-            registry, conflicts = build_registry(self.workspace, self.runner, self.log,
-                                                 self.memory, legacy=legacy)
+            registry, conflicts, providers = build_registry(
+                self.workspace, self.runner, self.log, self.memory,
+                legacy=legacy, search=search)
             self.tool_conflicts = conflicts
+            self.provider_status = providers
         else:
             self.tool_conflicts = []
+            self.provider_status = []
         self.registry = registry
         self.transcript_path = self.root / "transcript.jsonl"
         # First record in every log: what this run is and what it could call.
         self.log.append("start", {"goal_sha256": self.run_state["goal_sha256"],
                                   "tools": self.registry.names(),
                                   "legacy_conflicts": self.tool_conflicts,
+                                  "providers": self.provider_status,
                                   "mode": "resume" if resume else "new"})
 
     # -- run state ------------------------------------------------------

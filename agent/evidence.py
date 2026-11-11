@@ -30,6 +30,7 @@ SCHEMA = "agent-tool-execution/v1"
 
 SECRET_PATTERNS = [
     (re.compile(r"sk-[A-Za-z0-9]{16,}"), "sk-***REDACTED***"),
+    (re.compile(r"tvly-[A-Za-z0-9_-]{8,}"), "tvly-***REDACTED***"),
     (re.compile(r"(api[_-]?key\s*[=:]\s*[\"']?)[A-Za-z0-9\-_]{12,}", re.I), r"\1***REDACTED***"),
     (re.compile(r"(Authorization:\s*Bearer\s+)[A-Za-z0-9\-_.]{12,}", re.I), r"\1***REDACTED***"),
 ]
@@ -182,16 +183,25 @@ class Runner:
         started = time.time()
         timed_out = False
         try:
-            proc = subprocess.run(argv, cwd=str(cwd), capture_output=True, text=True,
-                                  errors="replace", timeout=limit, env=env)
-            exit_code, stdout, stderr = proc.returncode, proc.stdout or "", proc.stderr or ""
-        except subprocess.TimeoutExpired as exc:
-            timed_out = True
-            exit_code = -9
-            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-            stderr = "timeout after %ds" % limit
+            proc = subprocess.Popen(argv, cwd=str(cwd), stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, text=True, errors="replace",
+                                    env=env)
         except FileNotFoundError as exc:
+            proc = None
             exit_code, stdout, stderr = -2, "", str(exc)
+        if proc is not None:
+            try:
+                stdout, stderr = proc.communicate(timeout=limit)
+                exit_code = proc.returncode
+            except subprocess.TimeoutExpired:
+                timed_out = True
+                # A shell wrapper that spawns a child leaves that child running when only
+                # the parent is killed, which is how a "timed out" command keeps a core
+                # busy and keeps a file handle open.
+                _kill_tree(proc)
+                stdout, stderr = proc.communicate()
+                exit_code = -9
+                stderr = (stderr or "") + "\ntimeout after %ds; process tree killed" % limit
         stdout, out_hits = redact(stdout)
         stderr, err_hits = redact(stderr)
 
@@ -223,6 +233,14 @@ class Runner:
                             "python": sys.version.split()[0]},
         }
         return self.log.append("exec", record, status=status)
+
+
+def _kill_tree(proc) -> None:
+    """Kill the process and anything it spawned."""
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+        return
+    proc.kill()
 
 
 def clamp_timeout(value) -> Optional[int]:
