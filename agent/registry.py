@@ -93,10 +93,19 @@ class ToolRegistry:
         if not available:
             return envelope(False, False, None,
                             "tool %r needs %s on PATH" % (name, missing))
+        # Bind first: a TypeError raised by signature binding means the caller got the
+        # arguments wrong, while the same exception from inside the tool is a tool fault.
+        # Conflating them hid real bugs behind "bad arguments".
+        try:
+            inspect.signature(tool.fn).bind(**(arguments or {}))
+        except TypeError as exc:
+            return envelope(False, False, None, "bad arguments for %s: %s" % (name, exc))
         try:
             payload = tool.fn(**(arguments or {}))
         except TypeError as exc:
-            return envelope(False, False, None, "bad arguments for %s: %s" % (name, exc))
+            return envelope(True, False, None,
+                            "tool raised TypeError (internal fault): %s: %s"
+                            % (type(exc).__name__, exc))
         except Exception as exc:  # noqa: BLE001 - a tool failure is data, not a crash
             return envelope(True, False, None, "%s: %s" % (type(exc).__name__, exc))
         return envelope(True, True, payload, None)

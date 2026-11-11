@@ -240,13 +240,67 @@ class AgentRuntime:
                                                item["description"]))
         return "\n".join(lines)
 
+    def _render_observation(self, observation, budget: int) -> str:
+        """Render one observation for the prompt, sized by what the tool returned.
+
+        Cutting every observation to the same short length threw away the body an extract
+        or an artifact read had just fetched. A search needs its result list, a shell
+        needs its exit status and the head of stdout, a read needs the text plus the
+        pointer that continues it.
+        """
+        if not isinstance(observation, dict):
+            return str(observation)[:budget]
+        summary = observation.get("summary")
+        if not isinstance(summary, dict):
+            return json.dumps(observation, ensure_ascii=False)[:budget]
+
+        parts = []
+        if "exit" in summary:
+            parts.append("exit=%s timeout=%s" % (summary.get("exit"), summary.get("timed_out")))
+            parts.append("stdout:\n" + (summary.get("stdout") or "")[:budget])
+            if summary.get("stderr"):
+                parts.append("stderr:\n" + summary["stderr"][:600])
+        elif "items" in summary:
+            parts.append("results=%s" % summary.get("results"))
+            for item in summary["items"][:5]:
+                parts.append("- [%s] %s | %s" % (item.get("score"), item.get("title"),
+                                                 (item.get("content") or "")[:200]))
+        elif "content" in summary:
+            parts.append("artifact=%s offset=%s has_more=%s total=%s"
+                         % (summary.get("artifact"), summary.get("offset"),
+                            summary.get("has_more"), summary.get("total_bytes")))
+            parts.append((summary.get("content") or "")[:budget])
+        elif "content_preview" in summary:
+            parts.append("chars=%s truncated=%s payload=%s"
+                         % (summary.get("chars"), summary.get("truncated"),
+                            str(summary.get("payload_sha256", ""))[:12]))
+            parts.append(summary["content_preview"][:budget])
+        elif "error" in summary:
+            parts.append("error: " + str(summary["error"])[:400])
+        else:
+            parts.append(json.dumps(summary, ensure_ascii=False)[:budget])
+
+        if observation.get("artifacts"):
+            refs = [a.get("artifact") for a in observation["artifacts"][:3] if a]
+            if refs:
+                parts.append("artifacts: " + ", ".join(refs))
+        if not observation.get("ok", True):
+            parts.insert(0, "STATUS=failed")
+        return "\n".join(parts)[:budget + 700]
+
     def _prompt(self, turns: List[Turn], remaining: int) -> str:
         recent = ""
         for turn in turns[-4:]:
             recent += "\n[第%d轮] 想法: %s\n工具: %s %s\n观测: %s\n" % (
                 turn.index, turn.thought[:160], turn.tool,
                 json.dumps(turn.args, ensure_ascii=False)[:160],
-                json.dumps(shrink(turn.observation), ensure_ascii=False)[:600])
+                self._render_observation(turn.observation, 2400))
+        older = turns[:-4]
+        if older:
+            lines = ["[更早 %d 轮，完整记录在 evidence.jsonl]" % len(older)]
+            for turn in older[-6:]:
+                lines.append("- 第%d轮 %s -> %s" % (turn.index, turn.tool, turn.status))
+            recent = "\n".join(lines) + "\n" + recent
         digest = self.memory.digest(self.goal)
         return ("研究目标：\n%s\n\n可用工具：\n%s\n\n相关记忆：\n%s\n\n最近过程：%s\n"
                 "剩余轮次：%d\n工作区：%s\n\n下一轮 JSON："

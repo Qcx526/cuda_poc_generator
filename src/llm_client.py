@@ -98,6 +98,20 @@ class StructuredResponse(dict):
         self.raw_response = raw_response
 
 
+def _normalise_usage(usage):
+    """Map provider usage fields to {prompt, completion, total}; None if absent."""
+    if not isinstance(usage, dict):
+        return None
+    prompt = usage.get("input_tokens", usage.get("prompt_tokens"))
+    completion = usage.get("output_tokens", usage.get("completion_tokens"))
+    total = usage.get("total_tokens")
+    if prompt is None and completion is None and total is None:
+        return None
+    if total is None and prompt is not None and completion is not None:
+        total = prompt + completion
+    return {"prompt_tokens": prompt, "completion_tokens": completion, "total_tokens": total}
+
+
 class LLMClient:
     """基于 LangChain 的 LLM 调用客户端。
 
@@ -188,6 +202,7 @@ class LLMClient:
         )
         # Last completion's stop reason; "length" means the budget was exhausted.
         self.last_finish_reason: Optional[str] = None
+        self.last_usage: Optional[dict] = None
 
     # ------------------------------------------------------------------
     # 基础聊天
@@ -254,7 +269,9 @@ class LLMClient:
                 pieces = []
                 if getattr(self, "streaming", False) and callable(stream_fn):
                     metadata, extra = None, None
+                    usage = None
                     for chunk in stream_fn(lc_messages):
+                        usage = usage or getattr(chunk, "usage_metadata", None)
                         piece = getattr(chunk, "content", "")
                         if isinstance(piece, str):
                             pieces.append(piece)
@@ -281,6 +298,13 @@ class LLMClient:
                     metadata.get("finish_reason") if isinstance(metadata, dict) else None
                 )
                 self.last_chat_raw_response = content
+                # Real token accounting when the provider reports it; None otherwise.
+                # Never estimated: a fabricated number is worse than a missing one.
+                usage = locals().get("usage") or getattr(locals().get("resp", None),
+                                                         "usage_metadata", None)
+                if not usage and isinstance(metadata, dict):
+                    usage = metadata.get("token_usage") or metadata.get("usage")
+                self.last_usage = _normalise_usage(usage)
                 truncated = empty_completion_diagnostic(content, metadata, extra)
                 if truncated is not None:
                     # A reasoning model can spend the whole budget before emitting
